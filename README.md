@@ -1,3 +1,42 @@
-# raytracinginoneweekend
-# raytracinginoneweekend
-# raytracinginoneweekend
+Ray Tracing in One Weekend
+====================================================================================================
+
+![Ray Tracing in One Weekend](./RTOneWeekend.jpg)
+
+## Getting the Book
+You can download the PDF version of the book from Eric Haines [Real-Time Rendering] site.
+Alternatively, you can purchase a Kindle version of this series from [Amazon.com]. Half of the
+proceeds of these sales go to [Hack the Hood], a really neat organization.
+
+## Overview
+I’ve taught many graphics classes over the years. Often I do them in ray tracing, because you
+are forced to write all the code but you can still get cool images with no API. I decided to adapt
+my course notes into a how-to, to get you to a cool program as quickly as possible. It will not be
+a full-featured ray tracer, but it does have the indirect lighting which has made ray tracing a
+staple in movies. Follow these steps, and the architecture of the ray tracer you produce will be
+good for extending to a more extensive ray tracer if you get excited and want to pursue that.
+
+When somebody says “ray tracing” it could mean many things. What I am going to describe is
+technically a path tracer, and a fairly general one. While the code will be pretty simple (let the
+computer do the work!) I think you’ll be very happy with the images you can make.
+
+I’ll take you through writing a ray tracer in the order I do it, along with some debugging tips. By
+the end, you will have a ray tracer that produces some great images. You should be able to do
+this in a weekend. If you take longer, don’t worry about it. I use C++ as the driving language,
+but you don’t need to. However, I suggest you do, because it’s fast, portable, and most
+production movie and video game renderers are written in C++. Note that I avoid most “modern
+features” of C++, but inheritance and operator overloading are too useful for ray tracers to pass
+on. I do not provide the code online, but the code is real and I show all of it except for a few
+straightforward operators in the vec3 class. I am a big believer in typing in code to learn it, but
+when code is available I use it, so I only practice what I preach when the code is not available.
+So don’t ask!
+
+I have left that last part in because it is funny what a 180 I have done. Several readers ended
+up with subtle errors that were helped when we compared code. So please do type in the
+code, but if you want to look at mine, here it is.
+
+
+
+[Amazon.com]:          https://amazon.com/dp/B01B5AODD8
+[Hack the Hood]:       http://www.hackthehood.org
+[Real-Time Rendering]: http://www.realtimerendering.com/#books-small-table
