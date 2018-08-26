@@ -1,6 +1,8 @@
 Ray Tracing in One Weekend
 ====================================================================================================
 
+![Ray Tracing in One Weekend](./RTOneWeekend.jpg)
+
 ## Getting the Book
 You can download the PDF version of the book from Eric Haines [Real-Time Rendering] site.
 Alternatively, you can purchase a Kindle version of this series from [Amazon.com]. Half of the
