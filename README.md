@@ -5,9 +5,11 @@ Ray Tracing: The Rest Of Your Life
 
 Getting the Book
 -----------------
-You can download the PDF version of the book from Eric Haine's [Real-Time Rendering] site.
-Alternatively, you can purchase a Kindle version of this series from [Amazon.com]. Half of the
-proceeds of these sales go to [Hack the Hood], a really neat organization.
+The _Ray Tracing in One Weekend_ series of books are now available to the public for free in PDF
+form, along with the accompanying source code. Releases are available [directly from GitHub], or
+from Eric Haine's [Real-Time Rendering] site. Alternatively, you can purchase the Kindle version of
+this series from [Amazon.com]. Half of the proceeds of these sales go to [Hack the Hood], a really
+neat organization.
 
 Overview
 ---------
@@ -25,6 +27,9 @@ will equip you with some of the concepts, math, and terms you will need to study
 
 As before, www.in1weekend.com will have further readings and references.
 
+## Corrections
+If you spot errors or have suggested corrections, please [submit issues via GitHub].
+
 Acknowledgements
 -----------------
 Thanks to Dave Hart and Jean Buckley for help on the original manuscript. Thanks to Paul Melis,
@@ -33,7 +38,9 @@ Nakata Daisuke, Filipe Scur, Vahan Sosoyan, and Matthew Heimlich for finding err
 
 
 [Amazon.com]:                 https://amazon.com/dp/B01DN58P8C
+[directly from GitHub]:       https://github.com/petershirley/raytracingtherestofyourlife/releases/
 [Hack the Hood]:              http://www.hackthehood.org
 [Ray Tracing In One Weekend]: https://github.com/petershirley/raytracinginoneweekend
 [Ray Tracing: The Next Week]: https://github.com/petershirley/raytracingthenextweek
 [Real-Time Rendering]:        http://www.realtimerendering.com/#books-small-table
+[submit issues via GitHub]:   https://github.com/petershirley/raytracingtherestofyourlife/issues/
