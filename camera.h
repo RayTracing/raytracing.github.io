@@ -1,3 +1,14 @@
+//==================================================================================================
+// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+//
+// To the extent possible under law, the author(s) have dedicated all copyright and related and
+// neighboring rights to this software to the public domain worldwide. This software is distributed
+// without any warranty.
+//
+// You should have received a copy (see file COPYING.md) of the CC0 Public Domain Dedication along
+// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==================================================================================================
+
 #ifndef CAMERAH
 #define CAMERAH
 #include "ray.h"
@@ -34,7 +45,7 @@ class camera {
             vec3 rd = lens_radius*random_in_unit_disk();
             vec3 offset = u * rd.x() + v * rd.y();
             float time = time0 + drand48()*(time1-time0);
-            return ray(origin + offset, lower_left_corner + s*horizontal + t*vertical - origin - offset, time); 
+            return ray(origin + offset, lower_left_corner + s*horizontal + t*vertical - origin - offset, time);
         }
 
         vec3 origin;
@@ -46,7 +57,4 @@ class camera {
         float lens_radius;
 };
 #endif
-
-
-
 

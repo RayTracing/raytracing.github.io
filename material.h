@@ -1,5 +1,16 @@
+//==================================================================================================
+// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+//
+// To the extent possible under law, the author(s) have dedicated all copyright and related and
+// neighboring rights to this software to the public domain worldwide. This software is distributed
+// without any warranty.
+//
+// You should have received a copy (see file COPYING.md) of the CC0 Public Domain Dedication along
+// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==================================================================================================
+
 #ifndef MATERIALH
-#define MATERIALH 
+#define MATERIALH
 
 struct hit_record;
 
@@ -25,7 +36,7 @@ bool refract(const vec3& v, const vec3& n, float ni_over_nt, vec3& refracted) {
         refracted = ni_over_nt*(uv - n*dt) - n*sqrt(discriminant);
         return true;
     }
-    else 
+    else
         return false;
 }
 
@@ -52,13 +63,13 @@ class material  {
         virtual vec3 emitted(const ray& r_in, const hit_record& rec, float u, float v, const vec3& p) const { return vec3(0,0,0); }
 };
 
-class dielectric : public material { 
+class dielectric : public material {
     public:
         dielectric(float ri) : ref_idx(ri) {}
         virtual bool scatter(const ray& r_in, const hit_record& hrec, scatter_record& srec) const {
             srec.is_specular = true;
             srec.pdf_ptr = 0;
-            srec.attenuation = vec3(1.0, 1.0, 1.0); 
+            srec.attenuation = vec3(1.0, 1.0, 1.0);
             vec3 outward_normal;
              vec3 reflected = reflect(r_in.direction(), hrec.normal);
              vec3 refracted;
@@ -116,7 +127,7 @@ class lambertian : public material {
         lambertian(texture *a) : albedo(a) {}
         float scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
             float cosine = dot(rec.normal, unit_vector(scattered.direction()));
-            if (cosine < 0) 
+            if (cosine < 0)
                 return 0;
             return cosine / M_PI;
         }
@@ -172,14 +183,14 @@ class metal : public material {
         float fuzz;
 };
 
-class dielectric : public material { 
+class dielectric : public material {
     public:
         dielectric(float ri) : ref_idx(ri) {}
         virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const  {
              vec3 outward_normal;
              vec3 reflected = reflect(r_in.direction(), rec.normal);
              float ni_over_nt;
-             attenuation = vec3(1.0, 1.0, 1.0); 
+             attenuation = vec3(1.0, 1.0, 1.0);
              vec3 refracted;
              float reflect_prob;
              float cosine;
@@ -215,7 +226,4 @@ class dielectric : public material {
 */
 
 #endif
-
-
-
 

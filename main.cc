@@ -1,3 +1,14 @@
+//==================================================================================================
+// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+//
+// To the extent possible under law, the author(s) have dedicated all copyright and related and
+// neighboring rights to this software to the public domain worldwide. This software is distributed
+// without any warranty.
+//
+// You should have received a copy (see file COPYING.md) of the CC0 Public Domain Dedication along
+// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==================================================================================================
+
 #include <iostream>
 #include "sphere.h"
 #include "moving_sphere.h"
@@ -26,7 +37,7 @@ inline vec3 de_nan(const vec3& c) {
 
 vec3 color(const ray& r, hitable *world, hitable *light_shape, int depth) {
     hit_record hrec;
-    if (world->hit(r, 0.001, MAXFLOAT, hrec)) { 
+    if (world->hit(r, 0.001, MAXFLOAT, hrec)) {
         scatter_record srec;
         vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
         if (depth < 50 && hrec.mat_ptr->scatter(r, hrec, srec)) {
@@ -42,10 +53,10 @@ vec3 color(const ray& r, hitable *world, hitable *light_shape, int depth) {
                 return emitted + srec.attenuation*hrec.mat_ptr->scattering_pdf(r, hrec, scattered)*color(scattered, world, light_shape, depth+1) / pdf_val;
             }
         }
-        else 
+        else
             return emitted;
     }
-    else 
+    else
         return vec3(0,0,0);
 }
 
@@ -104,9 +115,9 @@ int main() {
             }
             col /= float(ns);
             col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
-            int ir = int(255.99*col[0]); 
-            int ig = int(255.99*col[1]); 
-            int ib = int(255.99*col[2]); 
+            int ir = int(255.99*col[0]);
+            int ig = int(255.99*col[1]);
+            int ib = int(255.99*col[2]);
             std::cout << ir << " " << ig << " " << ib << "\n";
         }
     }

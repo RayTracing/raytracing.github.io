@@ -1,5 +1,16 @@
+//==================================================================================================
+// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+//
+// To the extent possible under law, the author(s) have dedicated all copyright and related and
+// neighboring rights to this software to the public domain worldwide. This software is distributed
+// without any warranty.
+//
+// You should have received a copy (see file COPYING.md) of the CC0 Public Domain Dedication along
+// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==================================================================================================
+
 #ifndef PDFH
-#define PDFH 
+#define PDFH
 #include "onb.h"
 
 
@@ -60,7 +71,7 @@ class cosine_pdf : public pdf {
 
 class hitable_pdf : public pdf {
     public:
-        hitable_pdf(hitable *p, const vec3& origin) : ptr(p), o(origin) {} 
+        hitable_pdf(hitable *p, const vec3& origin) : ptr(p), o(origin) {}
         virtual float value(const vec3& direction) const {
             return ptr->pdf_value(o, direction);
         }

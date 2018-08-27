@@ -1,5 +1,16 @@
+//==================================================================================================
+// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+//
+// To the extent possible under law, the author(s) have dedicated all copyright and related and
+// neighboring rights to this software to the public domain worldwide. This software is distributed
+// without any warranty.
+//
+// You should have received a copy (see file COPYING.md) of the CC0 Public Domain Dedication along
+// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==================================================================================================
+
 #ifndef HITABLEH
-#define HITABLEH 
+#define HITABLEH
 
 #include "aabb.h"
 #include <float.h>
@@ -16,11 +27,11 @@ void get_sphere_uv(const vec3& p, float& u, float& v) {
 
 struct hit_record
 {
-    float t;  
+    float t;
     float u;
     float v;
     vec3 p;
-    vec3 normal; 
+    vec3 normal;
     material *mat_ptr;
 };
 
@@ -55,7 +66,7 @@ class translate : public hitable {
         virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
         virtual bool bounding_box(float t0, float t1, aabb& box) const;
         hitable *ptr;
-        vec3 offset; 
+        vec3 offset;
 };
 
 bool translate::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
@@ -117,7 +128,7 @@ rotate_y::rotate_y(hitable *p, float angle) : ptr(p) {
         }
     }
     bbox = aabb(min, max);
-}   
+}
 
 bool rotate_y::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
     vec3 origin = r.origin();
@@ -138,12 +149,9 @@ bool rotate_y::hit(const ray& r, float t_min, float t_max, hit_record& rec) cons
         rec.normal = normal;
         return true;
     }
-    else 
+    else
         return false;
 }
 
 #endif
-
-
-
 

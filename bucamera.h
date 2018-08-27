@@ -1,3 +1,14 @@
+//==================================================================================================
+// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+//
+// To the extent possible under law, the author(s) have dedicated all copyright and related and
+// neighboring rights to this software to the public domain worldwide. This software is distributed
+// without any warranty.
+//
+// You should have received a copy (see file COPYING.md) of the CC0 Public Domain Dedication along
+// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==================================================================================================
+
 #ifndef CAMERAH
 #define CAMERAH
 
@@ -7,12 +18,12 @@ class camera {
     public:
         camera() {
             lower_left_corner = vec3(-2.0, -1.0, -1.0);
-            horizontal = vec3(4.0, 0.0, 0.0); 
-            vertical = vec3(0.0, 2.0, 0.0); 
+            horizontal = vec3(4.0, 0.0, 0.0);
+            vertical = vec3(0.0, 2.0, 0.0);
             /*
             lower_left_corner = vec3(-.1, -0.05, -1.0);
-            horizontal = vec3(0.2, 0.0, 0.0); 
-            vertical = vec3(0.0, 0.1, 0.0); 
+            horizontal = vec3(0.2, 0.0, 0.0);
+            vertical = vec3(0.0, 0.1, 0.0);
             */
             origin = vec3(0.0, 0.0, 0.0);
         }
@@ -35,7 +46,4 @@ class camera {
 };
 
 #endif
-
-
-
 
