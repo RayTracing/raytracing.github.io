@@ -1,3 +1,14 @@
+//==================================================================================================
+// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+//
+// To the extent possible under law, the author(s) have dedicated all copyright and related and
+// neighboring rights to this software to the public domain worldwide. This software is distributed
+// without any warranty.
+//
+// You should have received a copy (see file COPYING.md) of the CC0 Public Domain Dedication along
+// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==================================================================================================
+
 #ifndef PERLINH
 #define PERLINH
 
@@ -53,7 +64,7 @@ class perlin {
         static int *perm_z;
 };
 
-static vec3* perlin_generate() {  
+static vec3* perlin_generate() {
     vec3 * p = new vec3[256];
     for ( int i = 0; i < 256; ++i )
         p[i] = unit_vector(vec3(-1 + 2*drand48(), -1 + 2*drand48(), -1 + 2*drand48()));
@@ -70,7 +81,7 @@ void permute(int *p, int n) {
     return;
 }
 
-static int* perlin_generate_perm() {  
+static int* perlin_generate_perm() {
     int * p = new int[256];
     for (int i = 0; i < 256; i++)
         p[i] = i;
@@ -85,7 +96,4 @@ int *perlin::perm_z = perlin_generate_perm();
 
 
 #endif
-
-
-
 
