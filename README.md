@@ -5,9 +5,11 @@ Ray Tracing: The Next Week
 
 Getting the Book
 -----------------
-You can download the PDF version of the book from Eric Haine's [Real-Time Rendering] site.
-Alternatively, you can purchase a Kindle version of this series from [Amazon.com]. Half of the
-proceeds of these sales go to [Hack the Hood], a really neat organization.
+The _Ray Tracing in One Weekend_ series of books are now available to the public for free in PDF
+form, along with the accompanying source code. Releases are available [directly from GitHub], or
+from Eric Haine's [Real-Time Rendering] site. Alternatively, you can purchase the Kindle version of
+this series from [Amazon.com]. Half of the proceeds of these sales go to [Hack the Hood], a really
+neat organization.
 
 Overview
 ---------
@@ -27,6 +29,9 @@ suggests you take a week rather than a weekend for this endeavor. But you can sa
 you want a weekend project. Order is not very important for the concepts presented in this book, and
 without BVH and Perlin texture you will still get a Cornell Box!
 
+## Corrections
+If you spot errors or have suggested corrections, please [submit issues via GitHub].
+
 Acknowledgments
 ----------------
 Thanks to Becker for his many helpful comments on the draft and to Matthew Heimlich for spotting a
@@ -37,6 +42,8 @@ Jean Buckley for editing.
 
 
 [Amazon.com]:                 https://amazon.com/dp/B01CO7PQ8C
+[directly from GitHub]:     https://github.com/petershirley/raytracingthenextweek/releases/
 [Hack the Hood]:              http://www.hackthehood.org
 [Ray Tracing In One Weekend]: https://github.com/petershirley/raytracinginoneweekend/
 [Real-Time Rendering]:        http://www.realtimerendering.com/#books-small-table
+[submit issues via GitHub]:   https://github.com/petershirley/raytracingthenextweek/issues/
