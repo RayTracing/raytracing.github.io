@@ -4,9 +4,11 @@ Ray Tracing in One Weekend
 ![Ray Tracing in One Weekend](./RTOneWeekend.jpg)
 
 ## Getting the Book
-You can download the PDF version of the book from Eric Haines [Real-Time Rendering] site.
-Alternatively, you can purchase a Kindle version of this series from [Amazon.com]. Half of the
-proceeds of these sales go to [Hack the Hood], a really neat organization.
+The _Ray Tracing in One Weekend_ series of books are now available to the public for free in PDF
+form, along with the accompanying source code. Releases are available [directly from GitHub], or
+from Eric Haine's [Real-Time Rendering] site. Alternatively, you can purchase the Kindle version of
+this series from [Amazon.com]. Half of the proceeds of these sales go to [Hack the Hood], a really
+neat organization.
 
 ## Overview
 I’ve taught many graphics classes over the years. Often I do them in ray tracing, because you
@@ -35,8 +37,13 @@ I have left that last part in because it is funny what a 180 I have done. Severa
 up with subtle errors that were helped when we compared code. So please do type in the
 code, but if you want to look at mine, here it is.
 
+## Corrections
+If you spot errors or have suggested corrections, please [submit issues via GitHub].
 
 
-[Amazon.com]:          https://amazon.com/dp/B01B5AODD8
-[Hack the Hood]:       http://www.hackthehood.org
-[Real-Time Rendering]: http://www.realtimerendering.com/#books-small-table
+
+[Amazon.com]:           https://amazon.com/dp/B01B5AODD8
+[directly from GitHub]:     https://github.com/petershirley/raytracinginoneweekend/releases/
+[Hack the Hood]:        http://www.hackthehood.org
+[Real-Time Rendering]:  http://www.realtimerendering.com/#books-small-table
+[submit issues via GitHub]: https://github.com/petershirley/raytracinginoneweekend/issues/
