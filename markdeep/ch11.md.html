@@ -1,0 +1,37 @@
+<meta charset="utf-8">
+
+Chapter 11: Defocus Blur
+Now our final feature: ​defocus blur
+​
+. Note, all photographers will call it “depth of field”​
+​
+so be
+aware of only using “defocus blur” among friends.
+The reason we defocus blur in real cameras is because they need a big hole (rather than just a
+pinhole) to gather light. This would defocus everything, but if we stick a lens in the hole, there
+will be a certain distance where everything is in focus. The distance to that plane where things
+are in focus is controlled by the distance between the lens and the film/sensor. That is why you
+see the lens move relative to the camera when you change what is in focus (that may happen in
+your phone camera too, but the sensor moves). The “aperture” is a hole to control how big the
+lens is effectively. For a real camera, if you need more light you make the aperture bigger, and
+will get more defocus blur. For our virtual camera, we can have a perfect sensor and never
+need more light, so we only have an aperture when we want defocus blur.
+A real camera has a compound lens that is complicated. For our code we could simulate the
+order: sensor, then lens, then aperture, and figure out where to send the rays and flip the
+image once computed (the image is projected upside down on the film). Graphics people
+usually use a thin lens approximation.
+We also don’t need to simulate any of the inside of the camera. For the purposes of rendering
+an image outside the camera, that would be unnecessary complexity. Instead I usually start rays
+from the surface of the lens, and send them toward a virtual film plane, by finding the projection
+of the film on the plane that is in focus (at the distance focus_dist).
+For that we just need to have the ray origins be on a disk around lookfrom rather than from a
+point:
+Using a big aperture:
+We get:
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
