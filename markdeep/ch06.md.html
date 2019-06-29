@@ -1,0 +1,29 @@
+<meta charset="utf-8">
+
+Chapter 6: Antialiasing
+When a real camera takes a picture, there are usually no jaggies along edges because the edge
+pixels are a blend of some foreground and some background. We can get the same effect by
+averaging a bunch of samples inside each pixel. We will not bother with stratification, which is
+controversial but is usual for my programs. For some ray tracers it is critical, but the kind of
+general one we are writing doesn’t benefit very much from it and it makes the code uglier. We
+abstract the camera class a bit so we can make a cooler camera later.
+One thing we need is a random number generator that returns real random numbers. C++ did
+not traditionally have a standard random number generator but most systems have drand48()
+tucked away someplace and that is what I use here. However, newer versions of C++ have
+addressed this issue with the <random> header (if imperfectly according to some experts).
+Whatever your infrastructure, find a function that returns a canonical random number which by
+convention returns random real in the range 0 <= ran < 1. The “less than” before the 1 is
+important as we will sometimes take advantage of that.
+For a given pixel we have several samples within that pixel and send rays through each of the
+samples. The colors of these rays are then averaged:
+Putting that all together yields a camera class encapsulating our simple axis-aligned camera
+from before:
+Main is also changed:
+Zooming into the image that is produced, the big change is in edge pixels that are part
+background and part foreground:
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
