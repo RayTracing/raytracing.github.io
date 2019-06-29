@@ -72,7 +72,7 @@ class isotropic : public material {
     public:
         isotropic(texture *a) : albedo(a) {}
         virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const  {
-             scattered = ray(rec.p, random_in_unit_sphere());
+             scattered = ray(rec.p, random_in_unit_sphere(), r_in.time());
              attenuation = albedo->value(rec.u, rec.v, rec.p);
              return true;
         }
@@ -97,7 +97,7 @@ class metal : public material {
         metal(const vec3& a, float f) : albedo(a) { if (f < 1) fuzz = f; else fuzz = 1; }
         virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const  {
             vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
-            scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());
+            scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
             attenuation = albedo;
             return (dot(scattered.direction(), rec.normal) > 0);
         }
@@ -130,14 +130,14 @@ class dielectric : public material {
                 reflect_prob = schlick(cosine, ref_idx);
              }
              else {
-                scattered = ray(rec.p, reflected);
+                scattered = ray(rec.p, reflected, r_in.time());
                 reflect_prob = 1.0;
              }
              if (drand48() < reflect_prob) {
-                scattered = ray(rec.p, reflected);
+                scattered = ray(rec.p, reflected, r_in.time());
              }
              else {
-                scattered = ray(rec.p, refracted);
+                scattered = ray(rec.p, refracted, r_in.time());
              }
              return true;
         }
