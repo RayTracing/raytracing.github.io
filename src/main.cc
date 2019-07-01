@@ -97,7 +97,6 @@ int main() {
                 float u = float(i + drand48()) / float(nx);
                 float v = float(j + drand48()) / float(ny);
                 ray r = cam.get_ray(u, v);
-                vec3 p = r.point_at_parameter(2.0);
                 col += color(r, world,0);
             }
             col /= float(ns);
@@ -109,6 +108,3 @@ int main() {
         }
     }
 }
-
-
-
