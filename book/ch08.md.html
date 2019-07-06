@@ -1,52 +1,85 @@
 <meta charset="utf-8">
 
-Chapter 8: Metal
+                                        **Chapter 8: Metal**
+
 If we want different objects to have different materials, we have a design decision. We could
 have a universal material with lots of parameters and different material types just zero out some
 of those parameters. This is not a bad approach. Or we could have an abstract material class
 that encapsulates behavior. I am a fan of the latter approach. For our program the material
 needs to do two things:
-1. produce a scattered ray (or say it absorbed the incident ray)
-2. if scattered, say how much the ray should be attenuated
+
+  1. produce a scattered ray (or say it absorbed the incident ray)
+  2. if scattered, say how much the ray should be attenuated
+
 This suggests the abstract class:
+
+{CODE}
+
 The hit_record is to avoid a bunch of arguments so we can stuff whatever info we want in there.
 You can use arguments instead; it’s a matter of taste. Hitables and materials need to know
 each other so there is some circularity of the references. In C++ you just need to alert the
 compiler that the pointer is to a class, which the “class material” in the hitable class below does:
-What we have set up here is that ​material
-​
-will tell us how rays interact with the surface.
-Hit_record
-​
-is just a way to stuff a bunch of arguments into a struct so we can send them as a
+
+{CODE}
+
+What we have set up here is that material will tell us how rays interact with the surface.
+Hit_record is just a way to stuff a bunch of arguments into a struct so we can send them as a
 group. When a ray hits a surface (a particular sphere for example), the material pointer in the
 hit_record will be set to point at the material pointer the sphere was given when it was set up in
-main()
-​
-when we start. When the color() routine gets the hit_record it can call member
+main() when we start. When the color() routine gets the hit_record it can call member
 functions of the material pointer to find out what ray, if any, is scattered.
+
 For the Lambertian (diffuse) case we already have, it can either scatter always and attenuate by
 its reflectance R, or it can scatter with no attenuation but absorb the fraction 1-R of the rays. Or
 it could be a mixture of those strategies. For Lambertian materials we get this simple class:
+
+{CODE}
+
 Note we could just as well only scatter with some probability p and have attenuation be
 albedo/p. Your choice.
+
 For smooth metals the ray won’t be randomly scattered. The key math is: how does a ray get
 reflected from a metal mirror? Vector math is our friend here:
-The reflected ray direction in red is just (​v​​ + 2​B​​). In our design, ​N​​ is a unit vector, but ​v​​ may not
-be. The length of B should be dot(​v​​,​N​​). Because v points in, we will need a minus sign yielding:
+
+![Figure 8-1](./assets/fig08-1.jpg)
+
+The reflected ray direction in red is just (v + 2B). In our design, N is a unit vector, but v may not
+be. The length of B should be dot(v,N). Because v points in, we will need a minus sign yielding:
+
+{CODE}
+
 The metal material just reflects rays using that formula:
+
+{CODE}
+
 We need to modify the color function to use this:
+
+{CODE}
 
 You will also need to modify the sphere class to have a material pointer to it. And add some
 metal spheres:
+
+{CODE}
+
 Which gives:
+
+![Image 8-1](./assets/img08-1.jpg)
+
 We can also randomize the reflected direction by using a small sphere and choosing a new
 endpoint for the ray:
+
+![Figure 8-2](./assets/fig08-2.jpg)
+
 The bigger the sphere, the fuzzier the reflections will be. This suggests adding a fuzziness
 parameter that is just the radius of the sphere (so zero is no perturbation). The catch is that for
 big spheres or grazing rays, we may scatter below the surface. We can just have the surface
 absorb those. We’ll put a maximum of 1 on the radius of the sphere which yields:
+
+{CODE}
+
 We can try that out by adding fuzziness 0.3 and 1.0 to the metals:
+
+![Image 8-2](./assets/img08-2.jpg)
 
 
 
