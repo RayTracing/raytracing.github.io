@@ -1,41 +1,68 @@
 <meta charset="utf-8">
 
-Chapter 10: Positionable camera
+                                **Chapter 10: Positionable camera**
+
 Cameras, like dielectrics, are a pain to debug. So I always develop mine incrementally. First,
 let’s allow an adjustable field of view (fov). This is the angle you see through the portal. Since
 our image is not square, the fov is different horizontally and vertically. I always use vertical fov. I
-also usually specify it in degrees and change to radians inside a constructor-- a matter of
+also usually specify it in degrees and change to radians inside a constructor -- a matter of
 personal taste.
+
 I first keep the rays coming from the origin and heading to the z=-1 plane. We could make it the
 z=-2 plane, or whatever, as long as we made h a ratio to that distance. Here is our setup:
+
+![Figure 10-1](./assets/fig10-1.jpg)
+
 This implies h = tan(theta/2). Our camera now becomes:
+
+{CODE}
+
 With calling it camera cam(90, float(nx)/float(ny)) and these spheres:
+
+{CODE}
+
 gives:
+
+![Image 10-1](./assets/img10-1.jpg)
+
 To get an arbitrary viewpoint, let’s first name the points we care about. We’ll call the position
-where we place the camera ​lookfrom
-​
-, and the point we look at ​lookat
-​
-. (Later, if you want, you
+where we place the camera lookfrom, and the point we look at lookat. (Later, if you want, you
 could define a direction to look in instead of a point to look at.)
-We also need a way to specify the ​roll
-​
-, or sideways tilt, of the camera; the rotation around the
+
+We also need a way to specify the roll, or sideways tilt, of the camera; the rotation around the
 lookat-lookfrom axis. Another way to think about it is even if you keep lookfrom and lookat
 constant, you can still rotate your head around your nose. What we need is a way to specify an
 up vector for the camera. Notice we already we already have a plane that the up vector should
 be in, the plane orthogonal to the view direction.
+
+![Figure 10-2](./assets/fig10-2.jpg)
+
 We can actually use any up vector we want, and simply project it onto this plane to get an up
 vector for the camera. I use the common convention of naming a “view up” (vup) vector. A
 couple of cross products, and we now have a complete orthonormal basis (u,v,w) to describe
 our camera’s orientation.
+
+![Figure 10-3](./assets/fig10-3.jpg)
+
 Remember that vup, v, and w are all in the same plane. Note that, like before when our fixed
-camera faced -Z, our arbitrary view camera faces -w. And keep in mind that we can-- but we
-don’t have to-- use world up (0,1,0) to specify vup. This is convenient and will naturally keep
+camera faced -Z, our arbitrary view camera faces -w. And keep in mind that we can -- but we
+don’t have to -- use world up (0,1,0) to specify vup. This is convenient and will naturally keep
 your camera horizontally level until you decide to experiment with crazy camera angles.
+
+{CODE}
+
 This allows us to change the viewpoint:
+
+{CODE}
+
 to get:
+
+![Image 10-2](./assets/img10-2.jpg)
+
 And we can change field of view to get:
+
+![Image 10-3](./assets/img10-3.jpg)
+
 
 
 <!-- Markdeep: -->
