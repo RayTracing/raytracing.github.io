@@ -32,9 +32,29 @@ use what is usually the easiest algorithm: a rejection method. First, we pick a 
 the unit cube where x, y, and z all range from -1 to +1. We reject this point and try again if the
 point is outside the sphere. A do/while construct is perfect for that:
 
-{CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    vec3 random_in_unit_sphere() {
+        vec3 p;
+        do {
+            p = 2.0*vec3(drand48(),drand48(),drand48()) - vec3(1,1,1);
+        } while (p.squared_length() >= 1.0);
+        return p;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-{CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    vec3 color(const ray& r, hitable *world, int depth) {
+        hit_record rec;
+        if (world->hit(r, 0.0, MAXFLOAT, rec)) {
+            vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+        }
+        else {
+            vec3 unit_direction = unit_vector(r.direction());
+            float t = 0.5*(unit_direction.y() + 1.0);
+            return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+        }
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This gives us:
 
@@ -49,7 +69,14 @@ good reasons for that, but for our purposes we just need to be aware of it. To a
 approximation, we can use “gamma 2” which means raising the color to the power 1/gamma, or
 in our simple case ½, which is just square-root:
 
-{CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    col /= float(ns);
+    col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
+    int ir = int(255.99*col[0]);
+    int ig = int(255.99*col[1]);
+    int ib = int(255.99*col[2]);
+    std::cout << ir << " " << ig << " " << ib << "\n";
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 That yields light grey, as we desire:
 
@@ -59,10 +86,11 @@ There’s also a subtle bug in there. Some of the reflected rays hit the object 
 off of not at exactly t=0, but instead at t=-0.0000001 or t=0.00000001 or whatever floating point
 approximation the sphere intersector gives us. So we need to ignore hits very near zero:
 
-{CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This gets rid of the shadow acne problem. Yes it is really called that.
-
 
 
 
