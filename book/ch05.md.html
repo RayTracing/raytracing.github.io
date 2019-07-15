@@ -13,11 +13,11 @@ minus the center:
 
 On the earth, this implies that the vector from the earth’s center to you points straight up. Let’s
 throw that into the code now, and shade it. We don’t have any lights or anything yet, so let’s just
-visualize the normals with a color map. A common trick used for visualizing normals (because
-it’s easy and somewhat intuitive to assume N is a unit length vector– so each component is
-between -1 and 1) is to map each component to the interval from 0 to 1, and then map x/y/z to
-r/g/b. For the normal we need the hit point, not just whether we hit or not. Let’s assume the
-closest hit point (smallest t). These changes in the code let us compute and visualize N:
+visualize the normals with a color map. A common trick used for visualizing normals (because it’s
+easy and somewhat intuitive to assume $N$ is a unit length vector -- so each component is between -1
+and 1) is to map each component to the interval from 0 to 1, and then map x/y/z to r/g/b. For the
+normal, we need the hit point, not just whether we hit or not. Let’s assume the closest hit point
+(smallest $t$). These changes in the code let us compute and visualize $N$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
     bool hit_sphere(const vec3& center, float radius, const ray& r) {
@@ -51,21 +51,20 @@ And that yields this picture:
 ![Image 5-1](./assets/img05-1.jpg)
 
 Now, how about several spheres? While it is tempting to have an array of spheres, a very clean
-solution is the make an “abstract class” for anything a ray might hit and make both a sphere and
-a list of spheres just something you can hit. What that class should be called is something of a
-quandary-- calling it an “object” would be good if not for “object oriented” programming.
-“Surface” is often used, with the weakness being maybe we will want volumes. “Hitable”
-emphasizes the member function that unites them. I don’t love any of these but I will go with
-“hitable”.
+solution is the make an “abstract class” for anything a ray might hit and make both a sphere and a
+list of spheres just something you can hit. What that class should be called is something of a
+quandary -- calling it an “object” would be good if not for “object oriented” programming. “Surface”
+is often used, with the weakness being maybe we will want volumes. “Hitable” emphasizes the member
+function that unites them. I don’t love any of these but I will go with “hitable”.
 
-This hitable abstract class will have a hit function that takes in a ray. Most ray tracers have
-found it convenient to add a valid interval for hits tmin to tmax, so the hit only “counts” if tmin < t
-< tmax. For the initial rays this is positive t, but as we will see, it can help some details in the
-code to have an interval tmin to tmax. One design question is whether to do things like compute
-the normal if we hit something; we might end up hitting something closer as we do our search,
-and we will only need the normal of the closest thing. I will go with the simple solution and
-compute a bundle of stuff I will store in some structure. I know we’ll want motion blur at some
-point, so I’ll add a time input variable. Here’s the abstract class:
+This `hitable` abstract class will have a hit function that takes in a ray. Most ray tracers have
+found it convenient to add a valid interval for hits $t_{min}$ to $t_{max}$, so the hit only
+“counts” if $t_{min} < t < t_{max}$. For the initial rays this is positive $t$, but as we will see,
+it can help some details in the code to have an interval $t_{min}$ to $t_{max}$. One design question
+is whether to do things like compute the normal if we hit something. We might end up hitting
+something closer as we do our search, and we will only need the normal of the closest thing. I will
+go with the simple solution and compute a bundle of stuff I will store in some structure. I know
+we’ll want motion blur at some point, so I’ll add a time input variable. Here’s the abstract class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
     #ifndef HITABLEH
