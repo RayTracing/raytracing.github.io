@@ -1,0 +1,660 @@
+Ray Tracing: The Next Week
+Peter Shirley
+Version 1.41
+Copyright 2018. Peter Shirley. All rights reserved.
+Pay What You Want. ​ptrshrl@gmail.com​ at ​paypal
+50% of all payments donated to programming education related not-for-profits
+Chapter 0: Overview
+In ​Ray Tracing In One Weekend
+​
+, you built a simple brute force path tracer. In this installment
+we’ll add textures, volumes (like fog), rectangles, instances, lights, and support for lots of
+objects using a BVH. When done, you’ll have a “real” ray tracer.
+A heuristic in ray tracing that many people-- including me-- believe, is that most optimizations
+complicate the code without delivering much speedup. What I will do in this mini-book is go with
+the simplest approach in each design decision I make. Check ​www.in1weekend.com​ for
+readings and references to a more sophisticated approach. However, I strongly encourage you
+to do no premature optimization; if it doesn’t show up high in the execution time profile, it
+doesn’t need optimization until all the features are supported!
+The two hardest parts of this book are the BVH and the Perlin textures. This is why the title
+suggests you take a week rather than a weekend for this endeavor. But you can save those for
+last if you want a weekend project. Order is not very important for the concepts presented in this
+book, and without BVH and Perlin texture you will still get a Cornell Box!
+Acknowledgments​​: Thanks to Becker for his many helpful comments on the draft and to
+Matthew Heimlich for spotting a critical motion blur error. Thanks to Andrew Kensler, Thiago Ize,
+and Ingo Wald for advice on ray-AABB tests. Thanks to David Hart and Grue Debry for help with
+a bunch of the details. Thanks to Jean Buckley for editing.
+Chapter 1: Motion Blur
+When you decided to ray trace, you decided visual quality was worth more run-time. In your
+fuzzy reflection and defocus blur you needed multiple samples per pixel. Once you have taken a
+step down that road, the good news is that almost all effects can be brute-forced. Motion blur is
+certainly one of those. In a real camera, the shutter opens and stays open for a time interval,
+and the camera and objects may move during that time. Its really an average of what the
+camera sees over that interval that we want. We can get a random estimate by sending each
+ray at some random time when the shutter is open. As long as the objects are where they
+should be at that time, we can get the right average answer with a ray that is at exactly a single
+time. This is fundamentally why random ray tracing tends to be simple.
+The basic idea is to generate rays at random times while the shutter is open and intersect the
+model at that one time. The way it is usually done is to have the camera move and the objects
+move, but have each ray exist at exactly one time. This way the “engine” of the ray tracer can
+just make sure the objects are where they need to be for the ray, and the intersection guts don’t
+change much.
+For this we will first need to have a ray store the time it exists at:
+Now we need to modify the camera to generate rays at a random time between ​time1
+​
+and
+time2
+​
+. Should the camera keep track of ​time1
+​
+and ​time2
+​
+or should that be up to the user of
+camera when a ray is created? When in doubt, I like to make constructors complicated if it
+makes calls simple, so I will make the camera keep track, but that’s a personal preference. Not
+many changes are needed to camera because for now it is not allowed to move; it just sends
+out rays over a time period.
+We also need a moving object. I’ll create a sphere class that has its center move linearly from
+center0
+​
+at ​time0
+​
+to ​center1
+​
+at ​time1
+​
+. Outside that time interval it continues on, so those times
+need not match up with the camera aperture open close.
+An alternative to making a new moving sphere class is to just make them all move and have the
+stationary ones have the same begin and end point. I’m on the fence about that trade-off
+between fewer classes and more efficient stationary spheres, so let your design taste guide you.
+The intersection code barely needs a change: ​center
+​
+just needs to become a function
+center(time)
+​
+:
+Be sure that in the materials you have the scattered rays be at the time of the incident ray.
+If we take the example diffuse spheres from scene at the end of the last book and make them
+move from their ​centers
+​
+at ​time=0
+​
+to ​center+vec3(0,0.5*drand48(), 0)
+​
+at ​time=1,
+​
+with the camera
+aperture open over that frame.
+And with these viewing parameters gives:
+Chapter 2: Bounding Volume Hierarchies
+This part is by far the most difficult and involved part of the ray tracer we are working on. I am
+sticking it in Chapter 2 so the code can run faster, and because it refactors ​hitable
+​
+a little, and
+when I add rectangles and boxes we won't have to go back and refactor them.
+The ray-object intersection is the main time-bottleneck in a ray tracer, and the time is linear with
+the number of objects. But it’s a repeated search on the same model, so we ought to be able to
+make it a logarithmic search in the spirit of binary search. Because we are sending millions to
+billions of rays on the same model, we can do an analog of sorting the model and then each ray
+intersection can be a sublinear search. The two most common families of sorting are to 1) divide
+the space, and 2) divide the objects. The latter is usually much easier to code up and just as
+fast to run for most models.
+The key idea of a bounding volume over a set of primitives is to find a volume that fully encloses
+(bounds) all the objects. For example, suppose you computed a bounding sphere of 10 objects.
+Any ray that misses the bounding sphere definitely misses all ten objects. If the ray hits the
+bounding sphere, then it might hit one of the ten objects. So the bounding code is always of the
+form:
+if (ray hits bounding object)
+return whether ray hits bounded objects
+else
+return false
+A key thing is we are dividing objects into subsets. We are not dividing the screen or the
+volume. Any object is in just one bounding volume, but bounding volumes can overlap.
+To make things sub-linear we need to make the bounding volumes hierarchical. For example, if
+we divided a set of objects into two groups, red and blue, and used rectangular bounding
+volumes, we’d have:
+Note that the blue and red bounding volumes are contained in the purple one, but they might
+overlap, and they are not ordered-- they are just both inside. So the tree shown on the right has
+no concept of ordering in the left and right children; they are simply inside. The code would be:
+if (hits purple)
+hit0 = hits blue enclosed objects
+hit1 = hits red enclosed objects
+if (hit0 or hit1)
+return true and info of closer hit
+return false
+To get that all to work we need a way to make good divisions, rather than bad ones, and a way
+to intersect a ray with a bounding volume. A ray bounding volume intersection needs to be fast,
+and bounding volumes need to be pretty compact. In practice for most models, axis-aligned
+boxes work better than the alternatives, but this design choice is always something to keep in
+mind if you encounter unusual types of models.
+From now on we will call axis-aligned bounding rectangular parallelepiped (really, that is what
+they need to be called if precise) axis-aligned bounding boxes, or AABBs. Any method you want
+to use to intersect a ray with an AABB is fine. And all we need to know is whether or not we hit
+it; we don’t need hit points or normals or any of that stuff that we need for an object we want to
+display.
+Most people use the “slab” method. This is based on the observation that an ​n
+​
+-dimensional
+AABB is just the intersection of ​n
+​
+axis-aligned intervals, often called “slabs’’. An interval is just
+the points between two endpoints, e.g., ​x
+​
+such that 3 < ​x
+​
+< 5, or more succinctly ​x
+​
+in (3,5). In
+2D, two intervals overlapping makes a 2D AABB (a rectangle):
+For a ray to hit one interval we first need to figure out whether the ray hits the boundaries. For
+example, again in 2D, this is the ray parameters ​t0
+​
+and ​t1.
+​
+(If the ray is parallel to the plane
+those will be undefined.)
+In 3D, those boundaries are planes. The equations for the planes are ​x = x0
+​
+, and ​x = x1
+​
+. Where
+does the ray hit that plane? Recall that the ray can be thought of as just a function that given a ​t
+returns a location ​p
+​
+(​t
+​
+):
+p
+​
+(t) =
+​
+A
+​
++ t
+​
+B
+That equation applies to all three of the ​x/y/z
+​
+coordinates. For example ​x(t) = Ax + t*Bx.
+​
+This ray
+hits the plane ​x = x0
+​
+at the t that satisfies this equation:
+x0 = Ax + t0* Bx
+Thus t at that hitpoint is:
+t0 = (x0 - Ax) / Bx
+We get the similar expression ​t1 = (x1 - Ax) / Bx
+​
+for ​x1
+​
+.
+The key observation to turn that 1D math into a hit test is that for a hit, the t-intervals need to
+overlap. For example, in 2D the green and blue overlapping only happens if there is a hit:
+What “do the ​t
+​
+intervals in the slabs overlap?” would like in code is something like:
+compute (tx0, tx1)
+compute (ty0, ty1)
+return overlap?( (tx0, tx1), (ty0, ty1))
+That is awesomely simple, and the fact that the 3D version also works is why people love the
+slab method:
+compute (tx0, tx1)
+compute (ty0, ty1)
+compute (tz0, tz1)
+return overlap?( (tx0, tx1), (ty0, ty1), (tz0, tz1))
+There are some caveats that make this less pretty than it first appears. First, suppose the ray is
+travelling in the negative ​x
+​
+direction. The interval (tx0, tx1) as computed above might be
+reversed, e.g. something like (7, 3). Second, the divide in there could give us infinities. And if
+the ray origin is on one of the slab boundaries, we can get a NaN. There are many ways these
+issues are dealt with in various ray tracers’ AABB. (There are also vectorization issues like
+SIMD which we will not discuss here. Ingo Wald’s papers are a great place to start if you want to
+go the extra mile in vectorization for speed.) For our purposes, this is unlikely to be a major
+bottleneck as long as we make it reasonably fast, so let’s go for simplest, which is often fastest
+anyway! First let’s look at computing the intervals:
+tx0 = (x0 - Ax) / Bx
+tx1 = (x1 - Ax) / Bx
+One troublesome thing is that perfectly valid rays will have ​Bx=0,
+​
+causing division by zero.
+Some of those rays are inside the slab, and some are not. Also, the zero will have a +/- sign
+under IEEE floating point. The good news for ​Bx=0
+​
+is that​ tx0
+​
+and​ tx1
+​
+will both be +infty or both
+be -infty if not between​ x0
+​
+and ​x1
+​
+. So, using min and max should get us the right answers:
+tx0 = min(​(x0 - Ax) / Bx, (x1 - Ax) / Bx);
+tx1 = max(​(x0 - Ax) / Bx, (x1 - Ax) / Bx);
+The remaining troublesome case if we do that is if ​Bx = 0
+​
+and either ​x0 - Ax = 0
+​
+or ​x1-Ax = 0
+​
+so
+we get a NaN. In that case we can probably accept either hit or no hit answer, but we’ll revisit
+that later.
+Now, let’s look at that overlap function. Suppose we can assume the intervals are not reversed
+(so the first value is less than the second value in the interval) and we want to return true in that
+case. The boolean overlap that also computes the overlap interval (f, F) of intervals (d,D) and
+(e, E) would be:
+bool overlap(d, D, e, E, f, F)
+f = max(d, e)
+F = min(D, E)
+return (f < F)
+If there are any NaNs running around there, the compare will return false so we need to be sure
+our bounding boxes have a little padding if we care about grazing cases (and we probably
+should because in a ray tracer all cases come up eventually). With all three dimensions in a
+loop and passing in the interval ​tmin, tmax
+​
+we get:
+Note that the built-in fmax() is replaced by ffmax() which is quite a bit faster because it doesn’t
+worry about NaNs and other exceptions. In reviewing this intersection method, Andrew Kensler
+at Pixar tried some experiments and has proposed this version of the code which works
+extremely well on many compilers, and I have adopted it as my go-to method:
+We now need to add a function to compute bounding boxes to all of the hitables. Then we will
+make a hierarchy of boxes over all the primitives and the individual primitives, like spheres, will
+live at the leaves. That function returns a bool because not all primitives have bounding boxes
+(e.g., infinite planes). In addition, objects move so it takes time1 and time2 for the interval of the
+frame and the bounding box will bound the object moving through that interval.
+For a sphere, that bounding_box function is easy:
+For ​moving sphere
+​
+, we can take the box of the sphere at ​t0
+​
+, and the box of the sphere at ​t1,
+​
+and
+compute the box of those two boxes:
+For lists you can store the bounding box at construction, or compute it on the fly. I like doing it
+the fly because it is only usually called at BVH construction.
+This requires the ​surrounding_box
+​
+function for ​aabb
+​
+which computes the bounding box of two
+boxes.:
+A BVH is also going to be a hitable-- just like lists of hitables. It’s really a container, but it can
+respond to the query “does this ray hit you?”. One design question is whether we have two
+classes, one for the tree, and one for the nodes in the tree; or do we have just one class and
+have the root just be a node we point to. I am a fan of the one class design when feasible. Here
+is such a class:
+Note that the children pointers are to generic hitables. They can be other bvh_notes, or spheres,
+or any other hitable.
+The hit function is pretty straightforward: check whether the box for the node is hit, and if so,
+check the children and sort out any details:
+The most complicated part of any efficiency structure, including the BVH, is building it. We do
+this in the constructor. A cool thing about BVHs is that as long as the list of objects in a
+bvh_node gets divided into two sub-lists, the hit function will work. It will work best if the division
+is done well, so that the two children have smaller bounding boxes than their parent’s bounding
+box, but that is for speed not correctness. I’ll choose the middle ground, and at each node split
+the list along one axis. I’ll go for simplicity:
+1)randomly choose an axis
+2)sort the primitives using library qsort
+3)put half in each subtree
+I used the old-school C qsort rather than the C++ sort because I need a different compare
+operator depending on axis, and qsort takes a compare function rather than using the less-than
+operator. I pass in a pointer to pointer-- this is just C for “array of pointers” because a pointer in
+C can also just be a pointer to the first element of an array.
+When the list coming in is two elements, I put one in each subtree and end the recursion. The
+traverse algorithm should be smooth and not have to check for null pointers, so if I just have one
+element I duplicate it in each subtree. Checking explicitly for three elements and just following
+one recursion would probably help a little, but I figure the whole method will get optimized later.
+This yields:
+The check for whether there is a bounding box at all is in case you sent in something like an
+infinite plane that doesn’t have a bounding box. We don’t have any of those primitives, so it
+shouldn’t happen until you add such a thing.
+The compare function has to take void pointers which you cast. This is old-school C and
+reminded me why C++ was invented. I had to really mess with this to get all the pointer junk
+right. If you like this part, you have a future as a systems person!
+Chapter 3 Solid Textures
+A ​texture
+​
+in graphics usually means a function that makes the colors on a surface procedural.
+This procedure can be synthesis code, or it could be an image lookup, or a combination of both.
+We will first make ​all colors
+​
+a texture. Most programs keep constant rgb colors and textures
+different classes so feel free to do something different, but I am a big believer in this architecture
+because being able to make any color a texture is great.
+Now we can make textured materials by replacing the vec3 color with a texture pointer:
+where you used to have
+new lambertian(vec3(0.5, 0.5, 0.5)))
+now you should replace the vec3(...) with ​new constant_texture(vec3(...))
+new lambertian(new constant_texture(vec3(0.5, 0.5, 0.5))))
+We can create a checker texture by noting that the sign of sine and cosine just alternates in a
+regular way and if we multiply trig functions in all three dimensions, the sign of that product
+forms a 3D checker pattern.
+Those checker odd/even pointers can be to a constant texture or to some other procedural
+texture. This is in the spirit of shader networks introduced by Pat Hanrahan back in the 1980s.
+If we add this to our random_scene() function’s base sphere:
+We get:
+If we add a new scene:
+With camera:
+We get:
+Chapter 4 Perlin Noise
+To get cool looking solid textures most people use some form of ​Perlin noise
+​
+. These are named
+after their inventor Ken Perlin. Perlin texture doesn’t return white noise like this:
+Instead it returns something similar to blurred white noise:
+A key part of Perlin noise is that it is repeatable: it takes a 3D point as input and always returns
+the same randomish number. Nearby points return similar numbers. Another important part of
+Perlin noise is that it be simple and fast, so it’s usually done as a hack. I’ll build that hack up
+incrementally based on Andrew Kensler’s description.
+We could just tile all of space with a 3D array of random numbers and use them in blocks. You
+get something blocky where the repeating is clear:
+Let’s just use some sort of hashing to scramble this, instead of tiling. This has a bit of support
+code to make it all happen:
+Now if we create an actual texture that takes these floats between 0 and 1 and creates grey
+colors:
+And we can use that one some spheres:
+With the same camera as before:
+Add the hashing does scramble as hoped:
+To make it smooth, we can linearly interpolate:
+And we get:
+Better, but there are obvious grid features in there. Some of it is ​Mach bands,
+​
+a known
+perceptual artifact of linear interpolation of color. A standard trick is to use a ​hermite cubic
+​
+to
+round off the interpolation:
+This gives a smoother looking image:
+It is also a bit low frequency. We can scale the input point to make it vary more quickly:
+which gives:
+This is still a bit grid blocky looking, probably because the min and max of the pattern always
+lands exactly on the integer x/y/z. Ken Perlin’s very clever trick was to instead put random unit
+vectors (instead of just floats) on the lattice points, and use a dot product to move the min and
+max off the lattice. So, first we need to change the random floats to random vectors:
+These vectors are any reasonable set of irregular directions, and I won't bother to make them
+exactly uniform:
+The Perlin class is now:
+And the interpolation becomes a bit more complicated:
+This finally gives something more reasonable looking:
+Very often, a composite noise that has multiple summed frequencies is used. This is usually
+called ​turbulence
+​
+and is a sum of repeated calls to noise:
+Here fabs() is the math.h absolute value function.
+Used directly, turbulence gives a sort of camouflage netting appearance:
+However, usually turbulence is used indirectly. For example, the “hello world” of procedural solid
+textures is a simple marble-like texture. The basic idea is to make color proportional to
+something like a sine function, and use turbulence to adjust the phase (so it shifts ​x
+​
+in sin(​x
+​
+))
+which makes the stripes undulate. Commenting out straight noise and turbulence, and giving a
+marble-like effect is:
+Which yields:
+Chapter 5: Image Texture Mapping
+We used the hitpoint​ p​​ before to index a procedure solid texture like marble. We can also read
+in an image and use a 2D (u,v) texture coordinate to index into the image.
+A direct way to use scaled ​(u,v)
+​
+in an image is to round the ​u
+​
+and ​v
+​
+to integers, and use that as
+(i,j)
+​
+pixels. This is awkward, because we don’t want to have to change the code when we
+change image resolution. So instead, one of the the most universal unofficial standards in
+graphics is to use ​texture coordinates
+​
+instead of image pixel coordinates. These are just some
+form of fractional position in the image. For example, for pixel ​(i,j)
+​
+in an ​nx
+​
+by ​ny
+​
+image, the
+image texture position is:
+u = i/(nx-1)
+v = j/(nx-1)
+This is just a fractional position. For a hitable, we need to also return a ​u
+​
+and ​v
+​
+in the hit record.
+For spheres, this is usually based on some form of longitude and latitude, i.e., spherical
+coordinates. So if we have a (theta,phi) in spherical coordinates we just need to scale ​theta
+​
+and
+phi
+​
+to fractions. If theta is the angle down from the pole, and phi is the angle around the axis
+through the poles, the normalization to [0,1] would be:
+u = phi / (2*Pi)
+v = theta / Pi
+To compute ​theta
+​
+and ​phi
+​
+, for a given hitpoint, the formula for spherical coordinates of a unit
+radius sphere on the origin is:
+x = cos(phi) cos(theta)
+y = sin(phi) cos(theta)
+z = sin(theta)
+We need to invert that. Because of the lovely math.h function ​atan2()
+​
+which takes any number
+proportional to sine and cosine and returns the angle, we can pass in​ x
+​
+and​ y
+​
+(the ​cos(theta)
+cancel):
+phi = atan2(y, x)
+The ​atan2
+​
+returns in the range -Pi to Pi so we need to take a little care there. The ​theta
+​
+is more
+straightforward:
+theta = asin(z)
+which returns numbers in the range -Pi/2 to Pi/2.
+So for a sphere, the u,v coord computation is accomplished by a utility function that expects
+things on the unit sphere centered at the origin. The call inside sphere::hit should be:
+get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
+The utility function is:
+Now we also need to create a texture class that holds an image. I am going to use my favorite
+image utility stb_image. It reads in an image into a big array of ​unsigned char
+​
+. These are just
+packed RGBs that each range 0..255 for black to fully-on.
+The representation of a packed array in that order is pretty standard. Thankfully, the stb_image
+package makes that super simple-- just include the header in main.h with a #define:
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+To read an image from a file eathmap.jpg (I just grabbed a random earth map from the web--
+any standard projection will do for our purposes), and then assign it to a diffuse material, the
+code is:
+int nx, ny, nn;
+unsigned char *tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
+material *mat = new lambertian(new image_texture(tex_data, nx, ny));
+We start to see some of the power of all colors being textures-- we can assign any kind of
+texture to the lambertian material, and lambertian doesn’t need to be aware of it.
+To test this, assign it to a sphere, and then temporarily cripple the color() function in main to just
+return attenuation. You should get something like:
+Chapter 6 Rectangles and Lights
+First, let’s make a light emitting material. We need to add an emitted function (we could also add
+it to hit_record instead-- that’s a matter of design taste). Like the background, it just tells the ray
+what color it is and performs no reflection. It’s very simple:
+So that I don’t have to make all the non-emitting materials implement emitted(), I have the base
+class return black:
+Next, let’s make the background black in our color function, and pay attention to emitted.:
+Now, let’s make some rectangles. Rectangles are often convenient for modelling man-made
+environments. I’m a fan of doing axis-aligned rectangles because they are easy. (We’ll get to
+instancing so we can rotate them later.)
+First, here is a rectangle in an xy plane. Such a plane is defined by its ​z
+​
+value. For example, ​z =
+k
+​
+. An axis-aligned rectangle is defined by lines ​x=x0
+​
+, ​x=x1
+​
+, ​y=y0
+​
+, ​y=y1
+​
+.
+To determine whether a ray hits such a rectangle, we first determine where the ray hits the
+plane. Recall that a ray ​p
+​
+(t) =
+​
+a
+​
++ t*
+​
+b
+​
+has its ​z
+​
+component defined by ​z(t) = az + t*bz
+​
+.
+Rearranging those terms we can solve for what the ​t
+​
+is where ​z=k
+​
+.
+t = (k-az) / bz
+Once we have ​t
+​
+, we can plug that into the equations for ​x
+​
+and ​y
+​
+:
+x = ax + t*bx
+y = ay + t*by
+It is a hit if ​x0 < x < x1
+​
+and ​y0 < y < y1
+​
+.
+The actual xy_rect class is thus:
+And the hit function is:
+If we set up a rectangle as a light:
+We get:
+Note that the light is brighter than (1,1,1). This allows it to be bright enough to light things.
+Fool around with making some spheres lights too.
+Now let’s add the other two axes and the famous Cornell Box.
+This is yz and xz.
+With unsurprising hit functions:
+Let’s make the 5 walls and the light of the box:
+And the view info:
+We get:
+This is very noisy because the light is small. But why are the other walls missing? They are
+facing the wrong way. We need outward facing normals. Let’s make a hitable that does nothing
+but hold another hitable, but reverses the normals:
+This makes Cornell:
+And voila:
+Chapter 7 Instances
+The Cornell Box usually has two blocks in it. These are rotated relative to the walls. First, let’s
+make an axis-aligned block primitive that holds 6 rectangles:
+Now we can add two blocks (but not rotated)
+This gives:
+Now that we have boxes, we need to rotate them a bit to have them match the ​real
+​
+Cornell box.
+In ray tracing, this is usually done with an ​instance
+​
+. An instance is a geometric primitive that has
+been moved or rotated somehow. This is especially easy in ray tracing because we don’t move
+anything; instead we move the rays in the opposite direction. For example, consider a
+translation
+​
+(often called a ​move
+​
+). We could take the pink box at the origin and add 2 to all its x
+components, or (as we almost always do in ray tracing) leave the box where it is, but in its hit
+routine subtract 2 off the x-component of the ray origin.
+Whether you think of this as a move or a change of coordinates is up to you. The code for this,
+to move any underlying hitable is a ​translate
+​
+instance.
+Rotation isn’t quite as easy to understand or generate the formulas for. A common graphics
+tactic is to apply all rotations about the x, y, and z axes. These rotations are in some sense
+axis-aligned. First, let’s rotate by theta about the z-axis. That will be changing only x and y, and
+in ways that don’t depend on z.
+This involves some basic trigonometry that uses formulas that I will not cover here. That gives
+you the correct impression it’s a little involved, but it is straightforward, and you can find it in any
+graphics text and in many lecture notes. The result for rotating counter-clockwise about z is:
+x’ = cos(theta)*x - sin(theta)*y
+y’ = sin(theta)*x + cos(theta)*y
+The great thing is that it works for any theta and doesn’t need any cases for quadrants or
+anything like that. The inverse transform is the opposite geometric operation: rotate by -theta.
+Here, recall that cos(theta) = cos(-theta) and sin(-theta) = -sin(theta), so the formulas are very
+simple.
+Similarly, for rotating about y (as we want to do for the blocks in the box) the formulas are:
+x’ = cos(theta)*x + sin(theta)*z
+z’ = -sin(theta)*x + cos(theta)*z
+And about the x-axis:
+y’ = cos(theta)*y - sin(theta)*z
+z’ = sin(theta)*y + cos(theta)*z
+Unlike the situation with translations, the surface normal vector also changes, so we need to
+transform directions too if we get a hit. Fortunately for rotations, the same formulas apply. If you
+add scales, things get more complicated. See the web page ​www.in1weekend.com​ for links to
+that.
+For a y-rotation class we have:
+With constructor:
+And the hit function:
+And the changes to Cornell is:
+Which yields:
+Chapter 8 Volumes
+One thing it’s nice to add to a ray tracer is smoke/fog/mist. These are sometimes called ​volumes
+or ​participating media
+​
+. Another feature that is nice to add is subsurface scattering, which is sort
+of like dense fog inside an object. This usually adds software architectural mayhem because
+volumes are a different animal than surfaces. But a cute technique is to make a volume a
+random surface. A bunch of smoke can be replaced with a surface that probabilistically might or
+might not be there at every point in the volume. This will make more sense when you see the
+code.
+First, let’s start with a volume of constant density. A ray going through there can either scatter
+inside the volume, or it can make it all the way through like the middle ray in the figure. More
+thin transparent volumes, like a light fog, are more likely to have rays like the middle one. How
+far the ray has to travel through the volume also determines how likely it is for the ray to make it
+through.
+As the ray passes through the volume, it may scatter at any point. The denser the volume, the
+more likely that is. The probability that the ray scatters in any small distance dL is:
+probability = C*dL
+where C is proportional to the optical density of the volume. If you go through all the differential
+equations, for a random number you get a distance where the scattering occurs. If that distance
+is outside the volume, then there is no “hit”. For a constant volume we just need the density C
+and the boundary. I’ll use another hitable for the boundary. The resulting class is:
+The scattering function of isotropic picks a uniform random direction:
+And the hit function is:
+The reason we have to be so careful about the logic around the boundary is we need to make
+sure this works for ray origins inside the volume. In clouds, things bounce around a lot so that is
+a common case.
+If we replace the two blocks with smoke and fog (dark and light particles) and make the light
+bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
+We get:
+Chapter 9: A Scene Testing All New Features
+Let’s put it all together, with a big thin mist covering everything, and a blue subsurface reflection
+sphere (we didn’t implement that explicitly, but a volume inside a dielectric is what a subsurface
+material is). The biggest limitation left in the renderer is no shadow rays, but that is why we get
+caustics and subsurface for free. It’s a double-edged design decision.
+Running it with 10,000 rays per pixel yields:
+Now go off and make a really cool image of your own! See ​in1weekend.com​ for pointers to
+further reading and features, and feel free to email questions, comments, and cool images to
+me at ​ptrshrl@gmail.com
