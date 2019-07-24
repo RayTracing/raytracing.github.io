@@ -2,17 +2,17 @@ Ray Tracing: The Next Week
 Peter Shirley
 Version 1.41
 Copyright 2018. Peter Shirley. All rights reserved.
-Pay What You Want. ​ptrshrl@gmail.com​ at ​paypal
+Pay What You Want.  ptrshrl@gmail.com  at  paypal
 50% of all payments donated to programming education related not-for-profits
 Chapter 0: Overview
-In ​Ray Tracing In One Weekend
-​
+In  Ray Tracing In One Weekend
+
 , you built a simple brute force path tracer. In this installment
 we’ll add textures, volumes (like fog), rectangles, instances, lights, and support for lots of
 objects using a BVH. When done, you’ll have a “real” ray tracer.
 A heuristic in ray tracing that many people-- including me-- believe, is that most optimizations
 complicate the code without delivering much speedup. What I will do in this mini-book is go with
-the simplest approach in each design decision I make. Check ​www.in1weekend.com​ for
+the simplest approach in each design decision I make. Check  www.in1weekend.com  for
 readings and references to a more sophisticated approach. However, I strongly encourage you
 to do no premature optimization; if it doesn’t show up high in the execution time profile, it
 doesn’t need optimization until all the features are supported!
@@ -20,7 +20,7 @@ The two hardest parts of this book are the BVH and the Perlin textures. This is 
 suggests you take a week rather than a weekend for this endeavor. But you can save those for
 last if you want a weekend project. Order is not very important for the concepts presented in this
 book, and without BVH and Perlin texture you will still get a Cornell Box!
-Acknowledgments​​: Thanks to Becker for his many helpful comments on the draft and to
+Acknowledgments  : Thanks to Becker for his many helpful comments on the draft and to
 Matthew Heimlich for spotting a critical motion blur error. Thanks to Andrew Kensler, Thiago Ize,
 and Ingo Wald for advice on ray-AABB tests. Thanks to David Hart and Grue Debry for help with
 a bunch of the details. Thanks to Jean Buckley for editing.
@@ -40,15 +40,15 @@ move, but have each ray exist at exactly one time. This way the “engine” of 
 just make sure the objects are where they need to be for the ray, and the intersection guts don’t
 change much.
 For this we will first need to have a ray store the time it exists at:
-Now we need to modify the camera to generate rays at a random time between ​time1
-​
+Now we need to modify the camera to generate rays at a random time between  time1
+
 and
 time2
-​
-. Should the camera keep track of ​time1
-​
-and ​time2
-​
+
+. Should the camera keep track of  time1
+
+and  time2
+
 or should that be up to the user of
 camera when a ray is created? When in doubt, I like to make constructors complicated if it
 makes calls simple, so I will make the camera keep track, but that’s a personal preference. Not
@@ -56,41 +56,41 @@ many changes are needed to camera because for now it is not allowed to move; it 
 out rays over a time period.
 We also need a moving object. I’ll create a sphere class that has its center move linearly from
 center0
-​
-at ​time0
-​
-to ​center1
-​
-at ​time1
-​
+
+at  time0
+
+to  center1
+
+at  time1
+
 . Outside that time interval it continues on, so those times
 need not match up with the camera aperture open close.
 An alternative to making a new moving sphere class is to just make them all move and have the
 stationary ones have the same begin and end point. I’m on the fence about that trade-off
 between fewer classes and more efficient stationary spheres, so let your design taste guide you.
-The intersection code barely needs a change: ​center
-​
+The intersection code barely needs a change:  center
+
 just needs to become a function
 center(time)
-​
+
 :
 Be sure that in the materials you have the scattered rays be at the time of the incident ray.
 If we take the example diffuse spheres from scene at the end of the last book and make them
-move from their ​centers
-​
-at ​time=0
-​
-to ​center+vec3(0,0.5*drand48(), 0)
-​
-at ​time=1,
-​
+move from their  centers
+
+at  time=0
+
+to  center+vec3(0,0.5*drand48(), 0)
+
+at  time=1,
+
 with the camera
 aperture open over that frame.
 And with these viewing parameters gives:
 Chapter 2: Bounding Volume Hierarchies
 This part is by far the most difficult and involved part of the ray tracer we are working on. I am
-sticking it in Chapter 2 so the code can run faster, and because it refactors ​hitable
-​
+sticking it in Chapter 2 so the code can run faster, and because it refactors  hitable
+
 a little, and
 when I add rectangles and boxes we won't have to go back and refactor them.
 The ray-object intersection is the main time-bottleneck in a ray tracer, and the time is linear with
@@ -133,67 +133,67 @@ they need to be called if precise) axis-aligned bounding boxes, or AABBs. Any me
 to use to intersect a ray with an AABB is fine. And all we need to know is whether or not we hit
 it; we don’t need hit points or normals or any of that stuff that we need for an object we want to
 display.
-Most people use the “slab” method. This is based on the observation that an ​n
-​
+Most people use the “slab” method. This is based on the observation that an  n
+
 -dimensional
-AABB is just the intersection of ​n
-​
+AABB is just the intersection of  n
+
 axis-aligned intervals, often called “slabs’’. An interval is just
-the points between two endpoints, e.g., ​x
-​
-such that 3 < ​x
-​
-< 5, or more succinctly ​x
-​
+the points between two endpoints, e.g.,  x
+
+such that 3 <  x
+
+< 5, or more succinctly  x
+
 in (3,5). In
 2D, two intervals overlapping makes a 2D AABB (a rectangle):
 For a ray to hit one interval we first need to figure out whether the ray hits the boundaries. For
-example, again in 2D, this is the ray parameters ​t0
-​
-and ​t1.
-​
+example, again in 2D, this is the ray parameters  t0
+
+and  t1.
+
 (If the ray is parallel to the plane
 those will be undefined.)
-In 3D, those boundaries are planes. The equations for the planes are ​x = x0
-​
-, and ​x = x1
-​
+In 3D, those boundaries are planes. The equations for the planes are  x = x0
+
+, and  x = x1
+
 . Where
-does the ray hit that plane? Recall that the ray can be thought of as just a function that given a ​t
-returns a location ​p
-​
-(​t
-​
+does the ray hit that plane? Recall that the ray can be thought of as just a function that given a  t
+returns a location  p
+
+( t
+
 ):
 p
-​
+
 (t) =
-​
+
 A
-​
+
 + t
-​
+
 B
-That equation applies to all three of the ​x/y/z
-​
-coordinates. For example ​x(t) = Ax + t*Bx.
-​
+That equation applies to all three of the  x/y/z
+
+coordinates. For example  x(t) = Ax + t*Bx.
+
 This ray
-hits the plane ​x = x0
-​
+hits the plane  x = x0
+
 at the t that satisfies this equation:
 x0 = Ax + t0* Bx
 Thus t at that hitpoint is:
 t0 = (x0 - Ax) / Bx
-We get the similar expression ​t1 = (x1 - Ax) / Bx
-​
-for ​x1
-​
+We get the similar expression  t1 = (x1 - Ax) / Bx
+
+for  x1
+
 .
 The key observation to turn that 1D math into a hit test is that for a hit, the t-intervals need to
 overlap. For example, in 2D the green and blue overlapping only happens if there is a hit:
-What “do the ​t
-​
+What “do the  t
+
 intervals in the slabs overlap?” would like in code is something like:
 compute (tx0, tx1)
 compute (ty0, ty1)
@@ -205,8 +205,8 @@ compute (ty0, ty1)
 compute (tz0, tz1)
 return overlap?( (tx0, tx1), (ty0, ty1), (tz0, tz1))
 There are some caveats that make this less pretty than it first appears. First, suppose the ray is
-travelling in the negative ​x
-​
+travelling in the negative  x
+
 direction. The interval (tx0, tx1) as computed above might be
 reversed, e.g. something like (7, 3). Second, the divide in there could give us infinities. And if
 the ray origin is on one of the slab boundaries, we can get a NaN. There are many ways these
@@ -217,30 +217,30 @@ bottleneck as long as we make it reasonably fast, so let’s go for simplest, wh
 anyway! First let’s look at computing the intervals:
 tx0 = (x0 - Ax) / Bx
 tx1 = (x1 - Ax) / Bx
-One troublesome thing is that perfectly valid rays will have ​Bx=0,
-​
+One troublesome thing is that perfectly valid rays will have  Bx=0,
+
 causing division by zero.
 Some of those rays are inside the slab, and some are not. Also, the zero will have a +/- sign
-under IEEE floating point. The good news for ​Bx=0
-​
-is that​ tx0
-​
-and​ tx1
-​
+under IEEE floating point. The good news for  Bx=0
+
+is that  tx0
+
+and  tx1
+
 will both be +infty or both
-be -infty if not between​ x0
-​
-and ​x1
-​
+be -infty if not between  x0
+
+and  x1
+
 . So, using min and max should get us the right answers:
-tx0 = min(​(x0 - Ax) / Bx, (x1 - Ax) / Bx);
-tx1 = max(​(x0 - Ax) / Bx, (x1 - Ax) / Bx);
-The remaining troublesome case if we do that is if ​Bx = 0
-​
-and either ​x0 - Ax = 0
-​
-or ​x1-Ax = 0
-​
+tx0 = min( (x0 - Ax) / Bx, (x1 - Ax) / Bx);
+tx1 = max( (x0 - Ax) / Bx, (x1 - Ax) / Bx);
+The remaining troublesome case if we do that is if  Bx = 0
+
+and either  x0 - Ax = 0
+
+or  x1-Ax = 0
+
 so
 we get a NaN. In that case we can probably accept either hit or no hit answer, but we’ll revisit
 that later.
@@ -255,8 +255,8 @@ return (f < F)
 If there are any NaNs running around there, the compare will return false so we need to be sure
 our bounding boxes have a little padding if we care about grazing cases (and we probably
 should because in a ray tracer all cases come up eventually). With all three dimensions in a
-loop and passing in the interval ​tmin, tmax
-​
+loop and passing in the interval  tmin, tmax
+
 we get:
 Note that the built-in fmax() is replaced by ffmax() which is quite a bit faster because it doesn’t
 worry about NaNs and other exceptions. In reviewing this intersection method, Andrew Kensler
@@ -268,20 +268,20 @@ live at the leaves. That function returns a bool because not all primitives have
 (e.g., infinite planes). In addition, objects move so it takes time1 and time2 for the interval of the
 frame and the bounding box will bound the object moving through that interval.
 For a sphere, that bounding_box function is easy:
-For ​moving sphere
-​
-, we can take the box of the sphere at ​t0
-​
-, and the box of the sphere at ​t1,
-​
+For  moving sphere
+
+, we can take the box of the sphere at  t0
+
+, and the box of the sphere at  t1,
+
 and
 compute the box of those two boxes:
 For lists you can store the bounding box at construction, or compute it on the fly. I like doing it
 the fly because it is only usually called at BVH construction.
-This requires the ​surrounding_box
-​
-function for ​aabb
-​
+This requires the  surrounding_box
+
+function for  aabb
+
 which computes the bounding box of two
 boxes.:
 A BVH is also going to be a hitable-- just like lists of hitables. It’s really a container, but it can
@@ -318,19 +318,19 @@ The compare function has to take void pointers which you cast. This is old-schoo
 reminded me why C++ was invented. I had to really mess with this to get all the pointer junk
 right. If you like this part, you have a future as a systems person!
 Chapter 3 Solid Textures
-A ​texture
-​
+A  texture
+
 in graphics usually means a function that makes the colors on a surface procedural.
 This procedure can be synthesis code, or it could be an image lookup, or a combination of both.
-We will first make ​all colors
-​
+We will first make  all colors
+
 a texture. Most programs keep constant rgb colors and textures
 different classes so feel free to do something different, but I am a big believer in this architecture
 because being able to make any color a texture is great.
 Now we can make textured materials by replacing the vec3 color with a texture pointer:
 where you used to have
 new lambertian(vec3(0.5, 0.5, 0.5)))
-now you should replace the vec3(...) with ​new constant_texture(vec3(...))
+now you should replace the vec3(...) with  new constant_texture(vec3(...))
 new lambertian(new constant_texture(vec3(0.5, 0.5, 0.5))))
 We can create a checker texture by noting that the sign of sine and cosine just alternates in a
 regular way and if we multiply trig functions in all three dimensions, the sign of that product
@@ -343,8 +343,8 @@ If we add a new scene:
 With camera:
 We get:
 Chapter 4 Perlin Noise
-To get cool looking solid textures most people use some form of ​Perlin noise
-​
+To get cool looking solid textures most people use some form of  Perlin noise
+
 . These are named
 after their inventor Ken Perlin. Perlin texture doesn’t return white noise like this:
 Instead it returns something similar to blurred white noise:
@@ -363,11 +363,11 @@ With the same camera as before:
 Add the hashing does scramble as hoped:
 To make it smooth, we can linearly interpolate:
 And we get:
-Better, but there are obvious grid features in there. Some of it is ​Mach bands,
-​
+Better, but there are obvious grid features in there. Some of it is  Mach bands,
+
 a known
-perceptual artifact of linear interpolation of color. A standard trick is to use a ​hermite cubic
-​
+perceptual artifact of linear interpolation of color. A standard trick is to use a  hermite cubic
+
 to
 round off the interpolation:
 This gives a smoother looking image:
@@ -383,86 +383,86 @@ The Perlin class is now:
 And the interpolation becomes a bit more complicated:
 This finally gives something more reasonable looking:
 Very often, a composite noise that has multiple summed frequencies is used. This is usually
-called ​turbulence
-​
+called  turbulence
+
 and is a sum of repeated calls to noise:
 Here fabs() is the math.h absolute value function.
 Used directly, turbulence gives a sort of camouflage netting appearance:
 However, usually turbulence is used indirectly. For example, the “hello world” of procedural solid
 textures is a simple marble-like texture. The basic idea is to make color proportional to
-something like a sine function, and use turbulence to adjust the phase (so it shifts ​x
-​
-in sin(​x
-​
+something like a sine function, and use turbulence to adjust the phase (so it shifts  x
+
+in sin( x
+
 ))
 which makes the stripes undulate. Commenting out straight noise and turbulence, and giving a
 marble-like effect is:
 Which yields:
 Chapter 5: Image Texture Mapping
-We used the hitpoint​ p​​ before to index a procedure solid texture like marble. We can also read
+We used the hitpoint  p   before to index a procedure solid texture like marble. We can also read
 in an image and use a 2D (u,v) texture coordinate to index into the image.
-A direct way to use scaled ​(u,v)
-​
-in an image is to round the ​u
-​
-and ​v
-​
+A direct way to use scaled  (u,v)
+
+in an image is to round the  u
+
+and  v
+
 to integers, and use that as
 (i,j)
-​
+
 pixels. This is awkward, because we don’t want to have to change the code when we
 change image resolution. So instead, one of the the most universal unofficial standards in
-graphics is to use ​texture coordinates
-​
+graphics is to use  texture coordinates
+
 instead of image pixel coordinates. These are just some
-form of fractional position in the image. For example, for pixel ​(i,j)
-​
-in an ​nx
-​
-by ​ny
-​
+form of fractional position in the image. For example, for pixel  (i,j)
+
+in an  nx
+
+by  ny
+
 image, the
 image texture position is:
 u = i/(nx-1)
 v = j/(nx-1)
-This is just a fractional position. For a hitable, we need to also return a ​u
-​
-and ​v
-​
+This is just a fractional position. For a hitable, we need to also return a  u
+
+and  v
+
 in the hit record.
 For spheres, this is usually based on some form of longitude and latitude, i.e., spherical
-coordinates. So if we have a (theta,phi) in spherical coordinates we just need to scale ​theta
-​
+coordinates. So if we have a (theta,phi) in spherical coordinates we just need to scale  theta
+
 and
 phi
-​
+
 to fractions. If theta is the angle down from the pole, and phi is the angle around the axis
 through the poles, the normalization to [0,1] would be:
 u = phi / (2*Pi)
 v = theta / Pi
-To compute ​theta
-​
-and ​phi
-​
+To compute  theta
+
+and  phi
+
 , for a given hitpoint, the formula for spherical coordinates of a unit
 radius sphere on the origin is:
 x = cos(phi) cos(theta)
 y = sin(phi) cos(theta)
 z = sin(theta)
-We need to invert that. Because of the lovely math.h function ​atan2()
-​
+We need to invert that. Because of the lovely math.h function  atan2()
+
 which takes any number
-proportional to sine and cosine and returns the angle, we can pass in​ x
-​
-and​ y
-​
-(the ​cos(theta)
+proportional to sine and cosine and returns the angle, we can pass in  x
+
+and  y
+
+(the  cos(theta)
 cancel):
 phi = atan2(y, x)
-The ​atan2
-​
-returns in the range -Pi to Pi so we need to take a little care there. The ​theta
-​
+The  atan2
+
+returns in the range -Pi to Pi so we need to take a little care there. The  theta
+
 is more
 straightforward:
 theta = asin(z)
@@ -472,8 +472,8 @@ things on the unit sphere centered at the origin. The call inside sphere::hit sh
 get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
 The utility function is:
 Now we also need to create a texture class that holds an image. I am going to use my favorite
-image utility stb_image. It reads in an image into a big array of ​unsigned char
-​
+image utility stb_image. It reads in an image into a big array of  unsigned char
+
 . These are just
 packed RGBs that each range 0..255 for black to fully-on.
 The representation of a packed array in that order is pretty standard. Thankfully, the stb_image
@@ -500,55 +500,55 @@ Next, let’s make the background black in our color function, and pay attention
 Now, let’s make some rectangles. Rectangles are often convenient for modelling man-made
 environments. I’m a fan of doing axis-aligned rectangles because they are easy. (We’ll get to
 instancing so we can rotate them later.)
-First, here is a rectangle in an xy plane. Such a plane is defined by its ​z
-​
-value. For example, ​z =
+First, here is a rectangle in an xy plane. Such a plane is defined by its  z
+
+value. For example,  z =
 k
-​
-. An axis-aligned rectangle is defined by lines ​x=x0
-​
-, ​x=x1
-​
-, ​y=y0
-​
-, ​y=y1
-​
+
+. An axis-aligned rectangle is defined by lines  x=x0
+
+,  x=x1
+
+,  y=y0
+
+,  y=y1
+
 .
 To determine whether a ray hits such a rectangle, we first determine where the ray hits the
-plane. Recall that a ray ​p
-​
+plane. Recall that a ray  p
+
 (t) =
-​
+
 a
-​
+
 + t*
-​
+
 b
-​
-has its ​z
-​
-component defined by ​z(t) = az + t*bz
-​
+
+has its  z
+
+component defined by  z(t) = az + t*bz
+
 .
-Rearranging those terms we can solve for what the ​t
-​
-is where ​z=k
-​
+Rearranging those terms we can solve for what the  t
+
+is where  z=k
+
 .
 t = (k-az) / bz
-Once we have ​t
-​
-, we can plug that into the equations for ​x
-​
-and ​y
-​
+Once we have  t
+
+, we can plug that into the equations for  x
+
+and  y
+
 :
 x = ax + t*bx
 y = ay + t*by
-It is a hit if ​x0 < x < x1
-​
-and ​y0 < y < y1
-​
+It is a hit if  x0 < x < x1
+
+and  y0 < y < y1
+
 .
 The actual xy_rect class is thus:
 And the hit function is:
@@ -572,24 +572,24 @@ The Cornell Box usually has two blocks in it. These are rotated relative to the 
 make an axis-aligned block primitive that holds 6 rectangles:
 Now we can add two blocks (but not rotated)
 This gives:
-Now that we have boxes, we need to rotate them a bit to have them match the ​real
-​
+Now that we have boxes, we need to rotate them a bit to have them match the  real
+
 Cornell box.
-In ray tracing, this is usually done with an ​instance
-​
+In ray tracing, this is usually done with an  instance
+
 . An instance is a geometric primitive that has
 been moved or rotated somehow. This is especially easy in ray tracing because we don’t move
 anything; instead we move the rays in the opposite direction. For example, consider a
 translation
-​
-(often called a ​move
-​
+
+(often called a  move
+
 ). We could take the pink box at the origin and add 2 to all its x
 components, or (as we almost always do in ray tracing) leave the box where it is, but in its hit
 routine subtract 2 off the x-component of the ray origin.
 Whether you think of this as a move or a change of coordinates is up to you. The code for this,
-to move any underlying hitable is a ​translate
-​
+to move any underlying hitable is a  translate
+
 instance.
 Rotation isn’t quite as easy to understand or generate the formulas for. A common graphics
 tactic is to apply all rotations about the x, y, and z axes. These rotations are in some sense
@@ -612,7 +612,7 @@ y’ = cos(theta)*y - sin(theta)*z
 z’ = sin(theta)*y + cos(theta)*z
 Unlike the situation with translations, the surface normal vector also changes, so we need to
 transform directions too if we get a hit. Fortunately for rotations, the same formulas apply. If you
-add scales, things get more complicated. See the web page ​www.in1weekend.com​ for links to
+add scales, things get more complicated. See the web page  www.in1weekend.com  for links to
 that.
 For a y-rotation class we have:
 With constructor:
@@ -620,9 +620,9 @@ And the hit function:
 And the changes to Cornell is:
 Which yields:
 Chapter 8 Volumes
-One thing it’s nice to add to a ray tracer is smoke/fog/mist. These are sometimes called ​volumes
-or ​participating media
-​
+One thing it’s nice to add to a ray tracer is smoke/fog/mist. These are sometimes called  volumes
+or  participating media
+
 . Another feature that is nice to add is subsurface scattering, which is sort
 of like dense fog inside an object. This usually adds software architectural mayhem because
 volumes are a different animal than surfaces. But a cute technique is to make a volume a
@@ -655,6 +655,6 @@ sphere (we didn’t implement that explicitly, but a volume inside a dielectric 
 material is). The biggest limitation left in the renderer is no shadow rays, but that is why we get
 caustics and subsurface for free. It’s a double-edged design decision.
 Running it with 10,000 rays per pixel yields:
-Now go off and make a really cool image of your own! See ​in1weekend.com​ for pointers to
+Now go off and make a really cool image of your own! See  in1weekend.com  for pointers to
 further reading and features, and feel free to email questions, comments, and cool images to
-me at ​ptrshrl@gmail.com
+me at  ptrshrl@gmail.com
