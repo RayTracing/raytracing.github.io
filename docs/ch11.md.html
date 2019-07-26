@@ -1,0 +1,192 @@
+<meta charset="utf-8">
+
+
+                            **Chapter 11: Cleaning Up pdf Management.**
+
+So far I have the color function create two hard-coded pdfs
+
+:
+1. p0()
+
+related to the shape of the light
+2. p1()
+
+related to the normal vector and type of surface
+We can pass information about the light (or whatever hitable
+
+we want to sample) into the color
+function, and we can ask the material
+
+function for a pdf
+
+(we would have to instrument it to do
+that). We can also either ask hit
+
+function or the material
+
+class to supply whether there is a
+specular vector.
+One thing we would like to allow for is a material like varnished wood that is partially ideal
+specular (the polish) and partially diffuse (the wood). Some renderers have the material
+generate two rays: one specular and one diffuse. I am not fond of branching, so I would rather
+have the material randomly decide whether it is diffuse or specular. The catch with that
+approach is that we need to be careful when we ask for the pdf
+
+value and be aware of whether
+for this evaluation of color()
+
+it is diffuse or specular. Fortunately, we know that we should only
+call the pdf
+
+value()
+
+if it is diffuse so we can handle that implicitly.
+We can redesign material
+
+and stuff all the new arguments into a struct
+
+like we did for hitable
+
+:
+The Lambertian material becomes simpler (highlighted where the change is):
+And color()
+
+changes are small:
+We have not yet dealt with specular surfaces, nor instances that mess with the surface normal,
+and we have added a memory leak by calling new
+
+in Lambertian material. But this design is
+clean overall, and those are all fixable. For now, I will just fix specular
+
+. Metal is easy to fix.
+Note that if fuzziness is high, this surface isn’t ideally specular, but the implicit sampling works
+just like it did before.
+Color
+
+just needs a new case to generate an implicitly sampled ray:
+We also need to change the block to metal.
+The resulting image has a noisy reflection on the ceiling because the directions toward the box
+are not sampled with more density.
+We could make the pdf
+
+include the block. Let’s do that instead with a glass sphere because it’s
+easier. When we sample a sphere’s solid angle uniformly from a point outside the sphere, we
+are really just sampling a cone uniformly (the cone is tangent to the sphere). Let’s say the code
+has theta_max. Recall from Chapter 6, that to sample theta
+
+we have:
+r2 = INTEGRAL_0^theta 2*Pi*f(t)sin(t)
+Here f(t)
+
+is an as yet uncalculated constant C
+
+, so:
+r2 = INTEGRAL_0^theta 2*Pi*C*sin(t)
+Doing some algebra/calculus this yields:
+r2 = 2*Pi*C*(1-cos(theta))
+So
+cos(theta) = 1 - r2/(2*Pi*C)
+We know that for R2 = 1
+
+we should get theta_max,
+
+so we can solve for C:
+cos(theta) = 1 + r2*(cos(theta_max)-1)
+Phi
+
+we sample like before, so:
+z = cos(theta) = 1 + r2*(cos(theta_max)-1)
+x = cos(phi)*sin(theta) = cos(2*Pi*r1)*sqrt(1-z^2)
+y = sin(phi)*sin(theta) = sin(2*Pi*r1)*sqrt(1-z^2)
+Now what is theta_max?
+We can see from the figure that sin(theta_max) = R / length(
+
+c
+
+-
+
+p
+
+).
+
+So:
+cos(theta_max) = sqrt(1- R^2/lenghth_squared(
+
+c
+
+-
+
+p
+
+))
+We also need to evaluate the pdf
+
+of directions. For directions toward the sphere this is
+1/solid_angle.
+
+What is the solid angle of the sphere? It has something to do with the C
+
+above.
+It, by definition, is the area on the unit sphere, so the integral is
+Solid_angle = INT_0^2Pi INT_0^theta_max sin(theta) = 2*Pi (1-cos(theta_max))
+It’s good to check the math on all such calculations. I usually plug in the extreme cases (thank
+you for that concept, Mr. Horton-- my high school physics teacher). For a zero radius sphere
+cos(theta_max) = 0,
+
+and that works. For a sphere tangent at p,
+
+cos(theta_max) = 0,
+
+and 2*Pi
+is the area of a hemisphere, so that works too.
+The sphere
+
+class needs the two pdf
+
+-related functions:
+With the utility function:
+We can first try just sampling the sphere rather than the light:
+This yields a noisy box, but the caustic under the sphere is good. It took five times as long as
+sampling the light did for my code. This is probably because those rays that hit the glass are
+expensive!
+We should probably just sample both the sphere and the light. We can do that by creating a
+mixture density of their two densities. We could do that in the color
+
+function by passing a list of
+hitables in and building a mixture pdf
+
+, or we could add pdf
+
+functions to hitable_list
+
+. I think both
+tactics would work fine, but I will go with instrumenting hitable_list
+
+.
+We assemble a list to pass in to color
+
+.
+And we get a decent image with 1000 samples as before:
+An astute reader pointed out there are some black specks in the image above. All Monte
+Carlo Ray Tracers have this as a main loop:
+pixel_color = average(many many samples)
+If you find yourself getting some form of acne in the images, and this acne is white or black, so
+one "bad" sample seems to kill the whole pixel, that sample is probably a huge number or a
+NaN. This particular acne is probably a NaN. Mine seems to come up once in every 10-100
+million rays or so.
+So big decision: sweep this bug under the rug and check for NaNs, or just kill NaNs and hope
+this doesn't come back to bite us later. I will always opt for the lazy strategy, especially when
+I know floating point is hard. First, how do we check for a NaN? The one thing I always
+remember for NaNs is that any if
+
+test with a NaN in it is false. This leads to the common trick:
+And we can insert that in the main loop:
+Happily, the black specks are gone:
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

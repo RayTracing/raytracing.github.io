@@ -1,0 +1,110 @@
+<meta charset="utf-8">
+
+
+                                  **Chapter 9: Mixture Densities**
+
+We have used a pdf
+
+related to cosine theta
+
+, and a pdf
+
+related to sampling the light. We would
+like a pdf
+
+that combines these. A common tool in probability is to mix the densities to form a
+mixture density
+
+. Any weighted average of pdf
+
+s is a pdf
+
+. For example, we could just average
+the two densities:
+pdf_mixture(direction) = ½ pdf_reflection(direction) + ½ pdf_light(direction)
+How would we instrument our code to do that? There is a very important detail that makes this
+not quite as easy as one might expect. Choosing the random direction is simple:
+if (drand48() < 0.5)
+Pick direction according to pdf_reflection
+else
+Pick direction according to pdf_light
+But evaluating pdf_mixture
+
+is slightly more subtle. We need to evaluate both pdf_reflection
+and pdf_light
+
+because there are some directions where either pdf
+
+could have generated the
+direction. For example, we might generate a direction toward the light using pdf_reflection
+
+.
+If we step back a bit, we see that there are two functions a pdf
+
+needs to support:
+1. What is your value at this location?
+2. Return a random number that is distributed appropriately.
+The details of how this is done under the hood varies for the pdf_reflection
+
+and the pdf_light
+and the mixture density of the two of them, but that is exactly what class hierarchies were
+invented for! It’s never obvious what goes in an abstract class, so my approach is to be greedy
+and hope a minimal interface works, and for the pdf
+
+this implies:
+We’ll see if that works by fleshing out the subclasses. For sampling the light, we will need
+hitable
+
+to answer some queries that it doesn’t have an interface for. We’ll probably need to
+mess with it too, but we can start by seeing if we can put something in hitable
+
+involving
+sampling the bounding box that works with all its subclasses.
+First, let’s try a cosine density:
+We can try this in the color() function
+
+, with the main changes highlighted. We also need to
+change variable pdf
+
+to some other variable name to avoid a name conflict with the new pdf
+class.
+This yields an apparently matching result so all we’ve done so far is refactor where pdf
+
+is
+computed:
+Now we can try sampling directions toward a hitable
+
+like the light.
+This assumes two as-yet not implemented functions in the hitable
+
+class. To avoid having to
+add instrumentation to all of hitable
+
+subclasses, we’ll add two dummy functions to the hitable
+class:
+And we change xz_rect
+
+to implement those functions:
+And then change color()
+
+:
+At 10 samples per pixel we get:
+Now we would like to do a mixture density of the cosine and light sampling. The mixture density
+class is straightforward:
+And plugging it into color()
+
+:
+1000 samples per pixel yields:
+We’ve basically gotten this same picture (with different levels of noise) with several different
+sampling patterns. It looks like the original picture was slightly wrong! Note by “wrong” here I
+mean not a correct Lambertian picture. But Lambertian is just an ideal approximation to matte,
+so our original picture was some other accidental approximation to matte. I don’t think the new
+one is any better, but we can at least compare it more easily with other Lambertian renderers.
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
