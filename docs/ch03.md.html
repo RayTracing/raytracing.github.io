@@ -1,30 +1,66 @@
 <meta charset="utf-8">
 
-Chapter 3 Solid Textures
-A  texture
+                                    **Chapter 3 Solid Textures**
 
-in graphics usually means a function that makes the colors on a surface procedural.
-This procedure can be synthesis code, or it could be an image lookup, or a combination of both.
-We will first make  all colors
+A texture in graphics usually means a function that makes the colors on a surface procedural. This
+procedure can be synthesis code, or it could be an image lookup, or a combination of both. We will
+first make all colors a texture. Most programs keep constant rgb colors and textures different
+classes so feel free to do something different, but I am a big believer in this architecture because
+being able to make any color a texture is great.
 
-a texture. Most programs keep constant rgb colors and textures
-different classes so feel free to do something different, but I am a big believer in this architecture
-because being able to make any color a texture is great.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Now we can make textured materials by replacing the vec3 color with a texture pointer:
-where you used to have
-new lambertian(vec3(0.5, 0.5, 0.5)))
-now you should replace the vec3(...) with  new constant_texture(vec3(...))
-new lambertian(new constant_texture(vec3(0.5, 0.5, 0.5))))
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+where you used to have new lambertian(vec3(0.5, 0.5, 0.5))) now you should replace the vec3(...)
+with  new constant_texture(vec3(...)) new lambertian(new constant_texture(vec3(0.5, 0.5, 0.5))))
+
 We can create a checker texture by noting that the sign of sine and cosine just alternates in a
 regular way and if we multiply trig functions in all three dimensions, the sign of that product
 forms a 3D checker pattern.
-Those checker odd/even pointers can be to a constant texture or to some other procedural
-texture. This is in the spirit of shader networks introduced by Pat Hanrahan back in the 1980s.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Those checker odd/even pointers can be to a constant texture or to some other procedural texture.
+This is in the spirit of shader networks introduced by Pat Hanrahan back in the 1980s.
+
 If we add this to our random_scene() function’s base sphere:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 We get:
+
+![Image 3-1](assets/img3-01.jpg)
+
 If we add a new scene:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 With camera:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 We get:
+
+![Image 3-2](assets/img3-02.jpg)
 
 
 

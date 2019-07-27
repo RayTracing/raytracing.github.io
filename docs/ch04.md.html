@@ -1,61 +1,146 @@
 <meta charset="utf-8">
 
-Chapter 4 Perlin Noise
-To get cool looking solid textures most people use some form of  Perlin noise
+                                     **Chapter 4 Perlin Noise**
 
-. These are named
-after their inventor Ken Perlin. Perlin texture doesn’t return white noise like this:
+To get cool looking solid textures most people use some form of  Perlin noise. These are named after
+their inventor Ken Perlin. Perlin texture doesn’t return white noise like this:
+
+![Image 4-1](assets/img4-01.jpg)
+
 Instead it returns something similar to blurred white noise:
+
+![Image 4-2](assets/img4-02.jpg)
+
 A key part of Perlin noise is that it is repeatable: it takes a 3D point as input and always returns
-the same randomish number. Nearby points return similar numbers. Another important part of
-Perlin noise is that it be simple and fast, so it’s usually done as a hack. I’ll build that hack up
+the same randomish number. Nearby points return similar numbers. Another important part of Perlin
+noise is that it be simple and fast, so it’s usually done as a hack. I’ll build that hack up
 incrementally based on Andrew Kensler’s description.
-We could just tile all of space with a 3D array of random numbers and use them in blocks. You
-get something blocky where the repeating is clear:
+
+We could just tile all of space with a 3D array of random numbers and use them in blocks. You get
+something blocky where the repeating is clear:
+
+![Image 4-3](assets/img4-03.jpg)
+
 Let’s just use some sort of hashing to scramble this, instead of tiling. This has a bit of support
 code to make it all happen:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Now if we create an actual texture that takes these floats between 0 and 1 and creates grey
 colors:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 And we can use that one some spheres:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 With the same camera as before:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Add the hashing does scramble as hoped:
+
+![Image 4-4](assets/img4-04.jpg)
+
 To make it smooth, we can linearly interpolate:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 And we get:
-Better, but there are obvious grid features in there. Some of it is  Mach bands,
 
-a known
-perceptual artifact of linear interpolation of color. A standard trick is to use a  hermite cubic
+![Image 4-5](assets/img4-05.jpg)
 
-to
-round off the interpolation:
+Better, but there are obvious grid features in there. Some of it is  Mach bands, a known perceptual
+artifact of linear interpolation of color. A standard trick is to use a  hermite cubic to round off
+the interpolation:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 This gives a smoother looking image:
+
+![Image 4-6](assets/img4-06.jpg)
+
 It is also a bit low frequency. We can scale the input point to make it vary more quickly:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 which gives:
+
+![Image 4-7](assets/img4-07.jpg)
+
 This is still a bit grid blocky looking, probably because the min and max of the pattern always
 lands exactly on the integer x/y/z. Ken Perlin’s very clever trick was to instead put random unit
 vectors (instead of just floats) on the lattice points, and use a dot product to move the min and
 max off the lattice. So, first we need to change the random floats to random vectors:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 These vectors are any reasonable set of irregular directions, and I won't bother to make them
 exactly uniform:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 The Perlin class is now:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 And the interpolation becomes a bit more complicated:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 This finally gives something more reasonable looking:
-Very often, a composite noise that has multiple summed frequencies is used. This is usually
-called  turbulence
 
-and is a sum of repeated calls to noise:
+![Image 4-8](assets/img4-08.jpg)
+
+Very often, a composite noise that has multiple summed frequencies is used. This is usually called
+turbulence and is a sum of repeated calls to noise:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Here fabs() is the math.h absolute value function.
+
 Used directly, turbulence gives a sort of camouflage netting appearance:
+
+![Image 4-9](assets/img4-09.jpg)
+
 However, usually turbulence is used indirectly. For example, the “hello world” of procedural solid
-textures is a simple marble-like texture. The basic idea is to make color proportional to
-something like a sine function, and use turbulence to adjust the phase (so it shifts  x
+textures is a simple marble-like texture. The basic idea is to make color proportional to something
+like a sine function, and use turbulence to adjust the phase (so it shifts  x in sin( x )) which
+makes the stripes undulate. Commenting out straight noise and turbulence, and giving a marble-like
+effect is:
 
-in sin( x
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-))
-which makes the stripes undulate. Commenting out straight noise and turbulence, and giving a
-marble-like effect is:
 Which yields:
+
+![Image 4-10](assets/img4-10.jpg)
 
 
 
