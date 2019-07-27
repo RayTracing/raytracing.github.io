@@ -1,82 +1,125 @@
 <meta charset="utf-8">
 
-Chapter 6 Rectangles and Lights
+                                **Chapter 6 Rectangles and Lights**
+
 First, let’s make a light emitting material. We need to add an emitted function (we could also add
-it to hit_record instead-- that’s a matter of design taste). Like the background, it just tells the ray
-what color it is and performs no reflection. It’s very simple:
+it to hit_record instead -- that’s a matter of design taste). Like the background, it just tells the
+ray what color it is and performs no reflection. It’s very simple:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 So that I don’t have to make all the non-emitting materials implement emitted(), I have the base
 class return black:
-Next, let’s make the background black in our color function, and pay attention to emitted.:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Next, let’s make the background black in our color function, and pay attention to emitted:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Now, let’s make some rectangles. Rectangles are often convenient for modelling man-made
 environments. I’m a fan of doing axis-aligned rectangles because they are easy. (We’ll get to
 instancing so we can rotate them later.)
-First, here is a rectangle in an xy plane. Such a plane is defined by its  z
 
-value. For example,  z =
-k
+First, here is a rectangle in an xy plane. Such a plane is defined by its z value. For example, z =
+k. An axis-aligned rectangle is defined by lines x=x0 , x=x1 , y=y0 , y=y1.
 
-. An axis-aligned rectangle is defined by lines  x=x0
+![Figure 6-1](assets/fig6-01.jpg)
 
-,  x=x1
+To determine whether a ray hits such a rectangle, we first determine where the ray hits the plane.
+Recall that a ray p (t) = a + t* b has its z component defined by z(t) = az + t*bz. Rearranging
+those terms we can solve for what the t is where z=k.
 
-,  y=y0
-
-,  y=y1
-
-.
-To determine whether a ray hits such a rectangle, we first determine where the ray hits the
-plane. Recall that a ray  p
-
-(t) =
-
-a
-
-+ t*
-
-b
-
-has its  z
-
-component defined by  z(t) = az + t*bz
-
-.
-Rearranging those terms we can solve for what the  t
-
-is where  z=k
-
-.
 t = (k-az) / bz
-Once we have  t
 
-, we can plug that into the equations for  x
+Once we have t, we can plug that into the equations for x and y:
 
-and  y
-
-:
 x = ax + t*bx
 y = ay + t*by
-It is a hit if  x0 < x < x1
 
-and  y0 < y < y1
+It is a hit if x0 < x < x1 and y0 < y < y1.
 
-.
 The actual xy_rect class is thus:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 And the hit function is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 If we set up a rectangle as a light:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 We get:
+
+![Image 6-1](assets/img6-01.jpg)
+
 Note that the light is brighter than (1,1,1). This allows it to be bright enough to light things.
+
 Fool around with making some spheres lights too.
+
+![Image 6-2](assets/img6-02.jpg)
+
 Now let’s add the other two axes and the famous Cornell Box.
+
 This is yz and xz.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 With unsurprising hit functions:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Let’s make the 5 walls and the light of the box:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 And the view info:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 We get:
-This is very noisy because the light is small. But why are the other walls missing? They are
-facing the wrong way. We need outward facing normals. Let’s make a hitable that does nothing
-but hold another hitable, but reverses the normals:
+
+![Image 6-3](assets/img6-03.jpg)
+
+This is very noisy because the light is small. But why are the other walls missing? They are facing
+the wrong way. We need outward facing normals. Let’s make a hitable that does nothing but hold
+another hitable, but reverses the normals:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 This makes Cornell:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    {CODE}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 And voila:
+
+![Image 6-4](assets/img6-04.jpg)
 
 
 
