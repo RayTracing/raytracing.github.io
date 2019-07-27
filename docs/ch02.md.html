@@ -155,7 +155,35 @@ in a ray tracer all cases come up eventually). With all three dimensions in a lo
 the interval tmin, tmax we get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
-    {CODE}
+    inline float ffmin(float a, float b) { return a < b ? a : b; }
+    inline float ffmax(float a, float b) { return a > b ? a : b; }
+
+    class aabb {
+        public:
+            aabb() {}
+            aabb(const vec3& a, const vec3& b) { _min = a; _max = b;}  
+
+            vec3 min() const {return _min; }
+            vec3 max() const {return _max; }
+
+            bool hit(const ray& r, float tmin, float tmax) const {
+                for (int a = 0; a < 3; a++) {
+                    float t0 = ffmin((_min[a] - r.origin()[a]) / r.direction()[a],  
+                                    (_max[a] - r.origin()[a]) / r.direction()[a]);
+                    float t1 = ffmax((_min[a] - r.origin()[a]) / r.direction()[a],  
+                                    (_max[a] - r.origin()[a]) / r.direction()[a]);
+                    tmin = ffmax(t0, tmin);
+                    tmax = ffmin(t1, tmax);
+                    if (tmax <= tmin)
+                        return false;
+                }
+                return true;
+            }
+
+            vec3 _min;
+            vec3 _max;
+    };
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Note that the built-in fmax() is replaced by ffmax() which is quite a bit faster because it doesn’t
@@ -164,7 +192,21 @@ Pixar tried some experiments and has proposed this version of the code which wor
 many compilers, and I have adopted it as my go-to method:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
-    {CODE}
+    inline bool aabb::hit(const ray& r, float tmin, float tmax) const {
+        for (int a = 0; a < 3; a++) {
+            float invD = 1.0f / r.direction()[a];
+            float t0 = (min()[a] - r.origin()[a]) * invD;
+            float t1 = (max()[a] - r.origin()[a]) * invD;
+            if (invD < 0.0f)
+                std::swap(t0, t1);
+            tmin = t0 > tmin ? t0 : tmin;
+            tmax = t1 < tmax ? t1 : tmax;
+            if (tmax <= tmin)
+                return false;
+        }
+        return true;
+    }
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We now need to add a function to compute bounding boxes to all of the hitables. Then we will make a
@@ -174,33 +216,74 @@ infinite planes). In addition, objects move so it takes time1 and time2 for the 
 frame and the bounding box will bound the object moving through that interval.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
-    {CODE}
+    class hitable  {
+        public:
+            virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
+            virtual bool bounding_box(float t0, float t1, aabb& box) const = 0;
+    };
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For a sphere, that bounding_box function is easy:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
-    {CODE}
+    bool sphere::bounding_box(float t0, float t1, aabb& box) const {
+        box = aabb(center - vec3(radius, radius, radius), center + vec3(radius, radius, radius));
+        return true;
+    }
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For moving sphere, we can take the box of the sphere at t0, and the box of the sphere at t1, and
 compute the box of those two boxes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
-    {CODE}
+    bool moving_sphere::bounding_box(float t0, float t1, aabb& box) const {
+            aabb box0(center(t0) - vec3(radius, radius, radius), center(t0) + vec3(radius, radius, radius));
+            aabb box1(center(t1) - vec3(radius, radius, radius), center(t1) + vec3(radius, radius, radius));
+            box = surrounding_box(box0, box1);
+            return true;
+    }
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For lists you can store the bounding box at construction, or compute it on the fly. I like doing it
 the fly because it is only usually called at BVH construction.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
-    {CODE}
+    bool hitable_list::bounding_box(float t0, float t1, aabb& box) const {
+        if (list_size < 1) return false;
+        aabb temp_box;
+        bool first_true = list[0]->bounding_box(t0, t1, temp_box);
+        if (!first_true)
+            return false;
+        else 
+            box = temp_box;
+        for (int i = 1; i < list_size; i++) {
+            if(list[0]->bounding_box(t0, t1, temp_box)) {
+                box = surrounding_box(box, temp_box);
+            }
+            else
+                return false;
+        }
+        return true;
+    }
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This requires the surrounding_box function for aabb which computes the bounding box of two boxes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
-    {CODE}
+    aabb surrounding_box(aabb box0, aabb box1) {
+        vec3 small( fmin(box0.min().x(), box1.min().x()),
+                    fmin(box0.min().y(), box1.min().y()),
+                    fmin(box0.min().z(), box1.min().z()));
+        vec3 big  ( fmax(box0.max().x(), box1.max().x()),
+                    fmax(box0.max().y(), box1.max().y()),
+                    fmax(box0.max().z(), box1.max().z()));
+        return aabb(small,big);
+    }
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A BVH is also going to be a hitable -- just like lists of hitables. It’s really a container, but it
@@ -210,7 +293,23 @@ the root just be a node we point to. I am a fan of the one class design when fea
 a class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
-    {CODE}
+    class bvh_node : public hitable  {
+        public:
+            bvh_node() {}
+            bvh_node(hitable **l, int n, float time0, float time1);
+            virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
+            virtual bool bounding_box(float t0, float t1, aabb& box) const;
+            hitable *left;
+            hitable *right;
+            aabb box;
+    };
+
+
+    bool bvh_node::bounding_box(float t0, float t1, aabb& b) const {
+        b = box;
+        return true;
+    }
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Note that the children pointers are to generic hitables. They can be other bvh_notes, or spheres, or
@@ -220,7 +319,32 @@ The hit function is pretty straightforward: check whether the box for the node i
 check the children and sort out any details:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
-    {CODE}
+    bool bvh_node::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+        if (box.hit(r, t_min, t_max)) {
+            hit_record left_rec, right_rec;
+            bool hit_left = left->hit(r, t_min, t_max, left_rec);
+            bool hit_right = right->hit(r, t_min, t_max, right_rec);
+            if (hit_left && hit_right) {
+                if (left_rec.t < right_rec.t) 
+                    rec = left_rec;
+                else 
+                    rec = right_rec;
+                return true;
+            }
+            else if (hit_left) {
+                rec = left_rec;
+                return true;
+            }
+            else if (hit_right) {
+                rec = right_rec;
+                return true;
+            }
+            else 
+                return false;
+        }
+        else return false;
+    }
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The most complicated part of any efficiency structure, including the BVH, is building it. We do this
@@ -246,7 +370,32 @@ one recursion would probably help a little, but I figure the whole method will g
 This yields:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
-    {CODE}
+    bvh_node::bvh_node(hitable **l, int n, float time0, float time1) {
+        int axis = int(3*drand48());
+        if (axis == 0)
+           qsort(l, n, sizeof(hitable *), box_x_compare);
+        else if (axis == 1)
+           qsort(l, n, sizeof(hitable *), box_y_compare);
+        else
+           qsort(l, n, sizeof(hitable *), box_z_compare);
+        if (n == 1) {
+            left = right = l[0];
+        }
+        else if (n == 2) {
+            left = l[0];
+            right = l[1];
+        }
+        else {
+            left = new bvh_node(l, n/2, time0, time1);
+            right = new bvh_node(l + n/2, n - n/2, time0, time1);
+        }
+        aabb box_left, box_right;
+        if(!left->bounding_box(time0,time1, box_left) || !right->bounding_box(time0,time1, box_right))
+            std::cerr << "no bounding box in bvh_node constructor\n"; 
+        box = surrounding_box(box_left, box_right);
+    }
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The check for whether there is a bounding box at all is in case you sent in something like an
@@ -258,7 +407,18 @@ reminded me why C++ was invented. I had to really mess with this to get all the 
 right. If you like this part, you have a future as a systems person!
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
-    {CODE}
+    int box_x_compare (const void * a, const void * b) {
+            aabb box_left, box_right;
+            hitable *ah = *(hitable**)a;
+            hitable *bh = *(hitable**)b;
+            if(!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
+                            std::cerr << "no bounding box in bvh_node constructor\n";
+            if ( box_left.min().x() - box_right.min().x() < 0.0  )
+                return -1;
+            else
+                return 1;
+    }
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
