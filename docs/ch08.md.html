@@ -1,0 +1,40 @@
+<meta charset="utf-8">
+
+Chapter 8 Volumes
+One thing it’s nice to add to a ray tracer is smoke/fog/mist. These are sometimes called  volumes
+or  participating media
+
+. Another feature that is nice to add is subsurface scattering, which is sort
+of like dense fog inside an object. This usually adds software architectural mayhem because
+volumes are a different animal than surfaces. But a cute technique is to make a volume a
+random surface. A bunch of smoke can be replaced with a surface that probabilistically might or
+might not be there at every point in the volume. This will make more sense when you see the
+code.
+First, let’s start with a volume of constant density. A ray going through there can either scatter
+inside the volume, or it can make it all the way through like the middle ray in the figure. More
+thin transparent volumes, like a light fog, are more likely to have rays like the middle one. How
+far the ray has to travel through the volume also determines how likely it is for the ray to make it
+through.
+As the ray passes through the volume, it may scatter at any point. The denser the volume, the
+more likely that is. The probability that the ray scatters in any small distance dL is:
+probability = C*dL
+where C is proportional to the optical density of the volume. If you go through all the differential
+equations, for a random number you get a distance where the scattering occurs. If that distance
+is outside the volume, then there is no “hit”. For a constant volume we just need the density C
+and the boundary. I’ll use another hitable for the boundary. The resulting class is:
+The scattering function of isotropic picks a uniform random direction:
+And the hit function is:
+The reason we have to be so careful about the logic around the boundary is we need to make
+sure this works for ray origins inside the volume. In clouds, things bounce around a lot so that is
+a common case.
+If we replace the two blocks with smoke and fog (dark and light particles) and make the light
+bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
+We get:
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

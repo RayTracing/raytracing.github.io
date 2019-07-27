@@ -1,0 +1,62 @@
+<meta charset="utf-8">
+
+Chapter 7 Instances
+The Cornell Box usually has two blocks in it. These are rotated relative to the walls. First, let’s
+make an axis-aligned block primitive that holds 6 rectangles:
+Now we can add two blocks (but not rotated)
+This gives:
+Now that we have boxes, we need to rotate them a bit to have them match the  real
+
+Cornell box.
+In ray tracing, this is usually done with an  instance
+
+. An instance is a geometric primitive that has
+been moved or rotated somehow. This is especially easy in ray tracing because we don’t move
+anything; instead we move the rays in the opposite direction. For example, consider a
+translation
+
+(often called a  move
+
+). We could take the pink box at the origin and add 2 to all its x
+components, or (as we almost always do in ray tracing) leave the box where it is, but in its hit
+routine subtract 2 off the x-component of the ray origin.
+Whether you think of this as a move or a change of coordinates is up to you. The code for this,
+to move any underlying hitable is a  translate
+
+instance.
+Rotation isn’t quite as easy to understand or generate the formulas for. A common graphics
+tactic is to apply all rotations about the x, y, and z axes. These rotations are in some sense
+axis-aligned. First, let’s rotate by theta about the z-axis. That will be changing only x and y, and
+in ways that don’t depend on z.
+This involves some basic trigonometry that uses formulas that I will not cover here. That gives
+you the correct impression it’s a little involved, but it is straightforward, and you can find it in any
+graphics text and in many lecture notes. The result for rotating counter-clockwise about z is:
+x’ = cos(theta)*x - sin(theta)*y
+y’ = sin(theta)*x + cos(theta)*y
+The great thing is that it works for any theta and doesn’t need any cases for quadrants or
+anything like that. The inverse transform is the opposite geometric operation: rotate by -theta.
+Here, recall that cos(theta) = cos(-theta) and sin(-theta) = -sin(theta), so the formulas are very
+simple.
+Similarly, for rotating about y (as we want to do for the blocks in the box) the formulas are:
+x’ = cos(theta)*x + sin(theta)*z
+z’ = -sin(theta)*x + cos(theta)*z
+And about the x-axis:
+y’ = cos(theta)*y - sin(theta)*z
+z’ = sin(theta)*y + cos(theta)*z
+Unlike the situation with translations, the surface normal vector also changes, so we need to
+transform directions too if we get a hit. Fortunately for rotations, the same formulas apply. If you
+add scales, things get more complicated. See the web page  www.in1weekend.com  for links to
+that.
+For a y-rotation class we have:
+With constructor:
+And the hit function:
+And the changes to Cornell is:
+Which yields:
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

@@ -1,0 +1,73 @@
+<meta charset="utf-8">
+
+Chapter 1: Motion Blur
+When you decided to ray trace, you decided visual quality was worth more run-time. In your
+fuzzy reflection and defocus blur you needed multiple samples per pixel. Once you have taken a
+step down that road, the good news is that almost all effects can be brute-forced. Motion blur is
+certainly one of those. In a real camera, the shutter opens and stays open for a time interval,
+and the camera and objects may move during that time. Its really an average of what the
+camera sees over that interval that we want. We can get a random estimate by sending each
+ray at some random time when the shutter is open. As long as the objects are where they
+should be at that time, we can get the right average answer with a ray that is at exactly a single
+time. This is fundamentally why random ray tracing tends to be simple.
+The basic idea is to generate rays at random times while the shutter is open and intersect the
+model at that one time. The way it is usually done is to have the camera move and the objects
+move, but have each ray exist at exactly one time. This way the “engine” of the ray tracer can
+just make sure the objects are where they need to be for the ray, and the intersection guts don’t
+change much.
+For this we will first need to have a ray store the time it exists at:
+Now we need to modify the camera to generate rays at a random time between  time1
+
+and
+time2
+
+. Should the camera keep track of  time1
+
+and  time2
+
+or should that be up to the user of
+camera when a ray is created? When in doubt, I like to make constructors complicated if it
+makes calls simple, so I will make the camera keep track, but that’s a personal preference. Not
+many changes are needed to camera because for now it is not allowed to move; it just sends
+out rays over a time period.
+We also need a moving object. I’ll create a sphere class that has its center move linearly from
+center0
+
+at  time0
+
+to  center1
+
+at  time1
+
+. Outside that time interval it continues on, so those times
+need not match up with the camera aperture open close.
+An alternative to making a new moving sphere class is to just make them all move and have the
+stationary ones have the same begin and end point. I’m on the fence about that trade-off
+between fewer classes and more efficient stationary spheres, so let your design taste guide you.
+The intersection code barely needs a change:  center
+
+just needs to become a function
+center(time)
+
+:
+Be sure that in the materials you have the scattered rays be at the time of the incident ray.
+If we take the example diffuse spheres from scene at the end of the last book and make them
+move from their  centers
+
+at  time=0
+
+to  center+vec3(0,0.5*drand48(), 0)
+
+at  time=1,
+
+with the camera
+aperture open over that frame.
+And with these viewing parameters gives:
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
