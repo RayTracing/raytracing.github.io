@@ -19,7 +19,7 @@ and 1) is to map each component to the interval from 0 to 1, and then map x/y/z 
 normal, we need the hit point, not just whether we hit or not. Let’s assume the closest hit point
 (smallest $t$). These changes in the code let us compute and visualize $N$:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool hit_sphere(const vec3& center, float radius, const ray& r) {
         vec3 oc = r.origin() - center;
         float a = dot(r.direction(), r.direction());
@@ -44,7 +44,7 @@ normal, we need the hit point, not just whether we hit or not. Let’s assume th
         t = 0.5*(unit_direction.y() + 1.0);
         return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 And that yields this picture:
 
@@ -66,7 +66,7 @@ something closer as we do our search, and we will only need the normal of the cl
 go with the simple solution and compute a bundle of stuff I will store in some structure. I know
 we’ll want motion blur at some point, so I’ll add a time input variable. Here’s the abstract class:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef HITABLEH
     #define HITABLEH
 
@@ -81,15 +81,16 @@ we’ll want motion blur at some point, so I’ll add a time input variable. Her
 
     class hitable  {
         public:
-            virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
+            virtual bool hit(
+                const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
     };
 
     #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 And here’s the sphere (note that I eliminated a bunch of redundant 2’s that cancel each other out):
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef SPHEREH
     #define SPHEREH
 
@@ -131,11 +132,11 @@ And here’s the sphere (note that I eliminated a bunch of redundant 2’s that 
 
 
     #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 And a list of objects:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef HITABLELISTH
     #define HITABLELISTH
 
@@ -145,12 +146,15 @@ And a list of objects:
         public:
             hitable_list() {}
             hitable_list(hitable **l, int n) {list = l; list_size = n; }
-            virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
+            virtual bool hit(
+                const ray& r, float tmin, float tmax, hit_record& rec) const;
             hitable **list;
             int list_size;
     };
 
-    bool hitable_list::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+    bool hitable_list::hit(
+        const ray& r, float t_min, float t_max, hit_record& rec) const {
+
         hit_record temp_rec;
         bool hit_anything = false;
         double closest_so_far = t_max;
@@ -165,11 +169,11 @@ And a list of objects:
     }
 
     #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 And the new main:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include <iostream>
     #include "sphere.h"
     #include "hitable_list.h"
@@ -215,7 +219,7 @@ And the new main:
             }
         }
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This yields a picture that is really just a visualization of where the spheres are along with their
 surface normal. This is often a great way to look at your model for flaws and characteristics.
