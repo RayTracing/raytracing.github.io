@@ -61,33 +61,33 @@ need hit points or normals or any of that stuff that we need for an object we wa
 
 Most people use the “slab” method. This is based on the observation that an n-dimensional AABB is
 just the intersection of n axis-aligned intervals, often called “slabs” An interval is just
-the points between two endpoints, _e.g._, x such that 3 < x < 5, or more succinctly x in (3,5). In
+the points between two endpoints, _e.g._, x such that $3 < x < 5$, or more succinctly x in $(3,5)$. In
 2D, two intervals overlapping makes a 2D AABB (a rectangle):
 
 ![Figure 2-2](assets/fig2-02.jpg)
 
 For a ray to hit one interval we first need to figure out whether the ray hits the boundaries. For
-example, again in 2D, this is the ray parameters t0 and t1. (If the ray is parallel to the plane
+example, again in 2D, this is the ray parameters $t_0$ and $t_1$. (If the ray is parallel to the plane
 those will be undefined.)
 
 ![Figure 2-3](assets/fig2-03.jpg)
 
-In 3D, those boundaries are planes. The equations for the planes are x = x0, and x = x1. Where does
+In 3D, those boundaries are planes. The equations for the planes are $x = x_0$, and $x = x_1$. Where does
 the ray hit that plane? Recall that the ray can be thought of as just a function that given a t
 returns a location p(t):
 
-p(t) = A + t B
+    $$ p(t) = A + t \cdot B $$
 
-That equation applies to all three of the x/y/z coordinates. For example x(t) = Ax + t*Bx. This ray
-hits the plane x = x0 at the t that satisfies this equation:
+That equation applies to all three of the x/y/z coordinates. For example $x(t) = A_x + t \cdot B_x$. This ray
+hits the plane $x = x_0$ at the t that satisfies this equation:
 
-x0 = Ax + t0* Bx
+    $$ x_0 = A_x + t_0 \cdot B_x $$
 
 Thus t at that hitpoint is:
 
-t0 = (x0 - Ax) / Bx
+    $$ t_0 = (x_0 - A_x) / B_x $$
 
-We get the similar expression t1 = (x1 - Ax) / Bx for x1.
+We get the similar expression $t_1 = (x_1 - A_x) / B_x$ for $x_1$.
 
 The key observation to turn that 1D math into a hit test is that for a hit, the t-intervals need to
 overlap. For example, in 2D the green and blue overlapping only happens if there is a hit:
@@ -113,8 +113,8 @@ slab method:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are some caveats that make this less pretty than it first appears. First, suppose the ray is
-travelling in the negative x direction. The interval (tx0, tx1) as computed above might be reversed,
-_e.g._ something like (7, 3). Second, the divide in there could give us infinities. And if the ray
+travelling in the negative x direction. The interval $({t_x}_0, {t_x}_1)$ as computed above might be reversed,
+_e.g._ something like $(7, 3)$. Second, the divide in there could give us infinities. And if the ray
 origin is on one of the slab boundaries, we can get a NaN. There are many ways these issues are
 dealt with in various ray tracers’ AABB. (There are also vectorization issues like SIMD which we
 will not discuss here. Ingo Wald’s papers are a great place to start if you want to go the extra
@@ -122,25 +122,25 @@ mile in vectorization for speed.) For our purposes, this is unlikely to be a maj
 long as we make it reasonably fast, so let’s go for simplest, which is often fastest anyway! First
 let’s look at computing the intervals:
 
-tx0 = (x0 - Ax) / Bx
-tx1 = (x1 - Ax) / Bx
+    $$ {t_x}_0 = (x_0 - A_x) / B_x $$
+    $$ {t_x}_1 = (x_1 - A_x) / B_x $$
 
-One troublesome thing is that perfectly valid rays will have Bx=0, causing division by zero. Some of
-those rays are inside the slab, and some are not. Also, the zero will have a +/- sign under IEEE
-floating point. The good news for Bx=0 is that tx0 and tx1 will both be +infty or both be -infty if
-not between x0 and x1. So, using min and max should get us the right answers:
+One troublesome thing is that perfectly valid rays will have $B_x=0$, causing division by zero. Some of
+those rays are inside the slab, and some are not. Also, the zero will have a $\pm$ sign under IEEE
+floating point. The good news for $B_x=0$ is that ${t_x}_0$ and ${t_x}_1$ will both be $+\infty$ or both be $-\infty$ if
+not between $x_0$ and $x_1$. So, using min and max should get us the right answers:
 
-tx0 = min( (x0 - Ax) / Bx, (x1 - Ax) / Bx)
-tx1 = max( (x0 - Ax) / Bx, (x1 - Ax) / Bx)
+    $$ {t_x}_0 = min( (x_0 - A_x) / B_x, (x_1 - A_x) / B_x) $$
+    $$ {t_x}_1 = max( (x_0 - A_x) / B_x, (x_1 - A_x) / B_x) $$
 
-The remaining troublesome case if we do that is if Bx = 0 and either x0 - Ax = 0 or x1-Ax = 0 so we
+The remaining troublesome case if we do that is if $B_x = 0$ and either $x_0 - A_x = 0$ or $x_1-A_x = 0$ so we
 get a NaN. In that case we can probably accept either hit or no hit answer, but we’ll revisit that
 later.
 
 Now, let’s look at that overlap function. Suppose we can assume the intervals are not reversed (so
 the first value is less than the second value in the interval) and we want to return true in that
-case. The boolean overlap that also computes the overlap interval (f, F) of intervals (d,D) and (e,
-E) would be:
+case. The boolean overlap that also computes the overlap interval $(f, F)$ of intervals $(d,D)$ and $(e,
+E)$ would be:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     bool overlap(d, D, e, E, f, F)
@@ -152,7 +152,7 @@ E) would be:
 If there are any NaNs running around there, the compare will return false so we need to be sure our
 bounding boxes have a little padding if we care about grazing cases (and we probably should because
 in a ray tracer all cases come up eventually). With all three dimensions in a loop and passing in
-the interval tmin, tmax we get:
+the interval $t_{min}$, $t_{max}$ we get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
     inline float ffmin(float a, float b) { return a < b ? a : b; }
@@ -234,7 +234,7 @@ For a sphere, that bounding_box function is easy:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For moving sphere, we can take the box of the sphere at t0, and the box of the sphere at t1, and
+For moving sphere, we can take the box of the sphere at $t_0$, and the box of the sphere at $t_1$, and
 compute the box of those two boxes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
