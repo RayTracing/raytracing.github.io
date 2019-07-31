@@ -25,7 +25,7 @@ the objects are where they need to be for the ray, and the intersection guts don
 
 For this we will first need to have a ray store the time it exists at:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class ray
     {
         public:
@@ -49,7 +49,7 @@ created? When in doubt, I like to make constructors complicated if it makes call
 make the camera keep track, but that’s a personal preference. Not many changes are needed to camera
 because for now it is not allowed to move; it just sends out rays over a time period.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
         public:
             // new:  add t0 and t1
@@ -92,7 +92,7 @@ We also need a moving object. I’ll create a sphere class that has its center m
 center0 at time0 to center1 at time1. Outside that time interval it continues on, so those times
 need not match up with the camera aperture open close.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class moving_sphere: public hitable  {
         public:
             moving_sphere() {}
@@ -117,7 +117,7 @@ stationary ones have the same begin and end point. I’m on the fence about that
 fewer classes and more efficient stationary spheres, so let your design taste guide you. The
 intersection code barely needs a change: center just needs to become a function center(time):
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     // replace "center" with "center(r.time())"
     bool moving_sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
         vec3 oc = r.origin() - center(r.time());
@@ -150,7 +150,7 @@ intersection code barely needs a change: center just needs to become a function 
 
 Be sure that in the materials you have the scattered rays be at the time of the incident ray.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
         public:
             lambertian(const vec3& a) : albedo(a) {}
@@ -170,7 +170,7 @@ If we take the example diffuse spheres from scene at the end of the last book an
 from their centers at time=0 to center+vec3(0,0.5*drand48(), 0) at time=1, with the camera aperture
 open over that frame.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hitable *random_scene() {
         int n = 50000;
         hitable **list = new hitable*[n+1];
@@ -205,7 +205,7 @@ open over that frame.
 
 And with these viewing parameters gives:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 lookfrom(13,2,3);
     vec3 lookat(0,0,0);
     float dist_to_focus = 10.0;
