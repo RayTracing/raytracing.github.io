@@ -234,7 +234,7 @@ For a sphere, that `bounding_box` function is easy:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For _moving sphere_, we can take the box of the sphere at $t_0$, and the box of the sphere at $t_1$,
+For `moving sphere`, we can take the box of the sphere at $t_0$, and the box of the sphere at $t_1$,
 and compute the box of those two boxes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -271,7 +271,8 @@ the fly because it is only usually called at BVH construction.
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This requires the `surrounding_box` function for aabb which computes the bounding box of two boxes:
+This requires the `surrounding_box` function for `aabb` which computes the bounding box of two
+boxes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     aabb surrounding_box(aabb box0, aabb box1) {
@@ -285,8 +286,8 @@ This requires the `surrounding_box` function for aabb which computes the boundin
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A BVH is also going to be a hitable -- just like lists of hitables. It’s really a container, but it
-can respond to the query “does this ray hit you?”. One design question is whether we have two
+A BVH is also going to be a `hitable` -- just like lists of `hitable`s. It’s really a container, but
+it can respond to the query “does this ray hit you?”. One design question is whether we have two
 classes, one for the tree, and one for the nodes in the tree; or do we have just one class and have
 the root just be a node we point to. I am a fan of the one class design when feasible. Here is such
 a class:
@@ -355,8 +356,8 @@ list along one axis. I’ll go for simplicity:
 2. sort the primitives using library qsort
 3. put half in each subtree
 
-I used the old-school C qsort rather than the C++ sort because I need a different compare operator
-depending on axis, and qsort takes a compare function rather than using the less-than operator. I
+I used the old-school C `qsort` rather than the C++ sort because I need a different compare operator
+depending on axis, and `qsort` takes a compare function rather than using the less-than operator. I
 pass in a pointer to pointer -- this is just C for “array of pointers” because a pointer in C can
 also just be a pointer to the first element of an array.
 
@@ -409,9 +410,11 @@ this part, you have a future as a systems person!
         aabb box_left, box_right;
         hitable *ah = *(hitable**)a;
         hitable *bh = *(hitable**)b;
-        if(!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
-                        std::cerr << "no bounding box in bvh_node constructor\n";
-        if ( box_left.min().x() - box_right.min().x() < 0.0  )
+
+        if (!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
+            std::cerr << "no bounding box in bvh_node constructor\n";
+
+        if (box_left.min().x() - box_right.min().x() < 0.0)
             return -1;
         else
             return 1;
