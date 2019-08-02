@@ -23,13 +23,13 @@ If the light does scatter, it will have a directional distribution that we can d
 
 The color of a surface in terms of these quantities is:
 
-	$$ Color = \int A \cdot s(direction) \cdot color(direction) $$
+    $$ Color = \int A \cdot s(direction) \cdot color(direction) $$
 
 Note that $A$ and $s()$ might depend on the view direction, so of course color can vary with view direction. Also $A$ and $s()$ may vary with position on the surface or within the volume.
 
 If we apply the MC basic formula we get the following statistical estimate:
 
-	$$ Color = (A \cdot s(direction) \cdot color(direction)) / p(direction) $$
+    $$ Color = (A \cdot s(direction) \cdot color(direction)) / p(direction) $$
 
 Where $p(direction)$ is the pdf of whatever direction we randomly generate.
 
@@ -37,19 +37,19 @@ For a Lambertian surface we already implicitly implemented this formula for the 
 
 To see that remember that in spherical coordinates remember that:
 
-	$$ \delta A = sin(\theta) \delta \theta \delta \phi $$
+    $$ \delta A = sin(\theta) \delta \theta \delta \phi $$
 
 So:
 
-	$$ Area = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} cos(\theta)sin(\theta) \delta \theta \delta \phi = 2 \pi \cdot \frac{1}{2} = \pi $$
+    $$ Area = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} cos(\theta)sin(\theta) \delta \theta \delta \phi = 2 \pi \cdot \frac{1}{2} = \pi $$
 
 So for a Lambertian surface the scattering pdf is:
 
-	$$ s(direction) = cos(\theta) / \pi $$
+    $$ s(direction) = cos(\theta) / \pi $$
 
 If we sample using the same pdf, so $p(direction) = cos(\theta) / \pi$, the numerator and denominator cancel out and we get:
 
-	$$ Color = A * s(direction) $$
+    $$ Color = A * s(direction) $$
 
 This is exactly what we had in our original color() function! But we need to generalize now so we can send extra rays in important directions such as toward the lights.
 
@@ -57,7 +57,7 @@ The treatment above is slightly non-standard because I want the same math to wor
 
 If you read the literature, you’ll see reflection described by the bidirectional reflectance distribution function (BRDF). It relates pretty simply to our terms:
 
-	$$ BRDF = A * s(direction) / cos(\theta) $$
+    $$ BRDF = A * s(direction) / cos(\theta) $$
 
 So for a Lambertian surface for example, $BRDF = A / \pi$. Translation between our terms and BRDF is easy.
 
