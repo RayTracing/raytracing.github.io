@@ -24,13 +24,13 @@ through.
 ![Figure 8-1](assets/fig8-01.jpg)
 
 As the ray passes through the volume, it may scatter at any point. The denser the volume, the more
-likely that is. The probability that the ray scatters in any small distance dL is:
+likely that is. The probability that the ray scatters in any small distance $\delta L$ is:
 
-probability = C*dL
+    $$ probability = C \cdot \delta L $$
 
-where C is proportional to the optical density of the volume. If you go through all the differential
+where $C$ is proportional to the optical density of the volume. If you go through all the differential
 equations, for a random number you get a distance where the scattering occurs. If that distance is
-outside the volume, then there is no “hit”. For a constant volume we just need the density C and the
+outside the volume, then there is no “hit”. For a constant volume we just need the density $C$ and the
 boundary. I’ll use another hitable for the boundary. The resulting class is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -92,7 +92,8 @@ And the hit function is:
                     return false;
                 if (rec1.t < 0)
                     rec1.t = 0;
-                float distance_inside_boundary = (rec2.t - rec1.t)*r.direction().length();
+                float distance_inside_boundary = 
+                    (rec2.t - rec1.t)*r.direction().length();
                 float hit_distance = -(1/density)*log(drand48());
                 if (hit_distance < distance_inside_boundary) {
                 if (db) std::cerr << "hit_distance = " <<  hit_distance << "\n";
