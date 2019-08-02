@@ -35,9 +35,9 @@ Let’s do simple refactoring and temporarily remove all materials that aren’t
 	    list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
 	    list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
 	    list[i++] = new translate(new rotate_y(
-	                    new box(vec3(0, 0, 0), vec3(165, 165, 165), white), -18), vec3(130,0,65));
+	        new box(vec3(0, 0, 0), vec3(165, 165, 165), white), -18), vec3(130,0,65));
 	    list[i++] = new translate(new rotate_y(
-	                    new box(vec3(0, 0, 0), vec3(165, 330, 165), white),  15), vec3(265,0,295));
+	        new box(vec3(0, 0, 0), vec3(165, 330, 165), white),  15), vec3(265,0,295));
 	    *scene = new hitable_list(list,i);
 	    vec3 lookfrom(278, 278, -800);
 	    vec3 lookat(278,278,0);
@@ -63,11 +63,17 @@ We modify the base-class materialto enable this importance sampling:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 	class material  {
 	    public:
-	        virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& albedo, ray& scattered, float& pdf) const {
-	              return false;}
-	        virtual float scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
-	              return false;}
-	        virtual vec3 emitted(float u, float v, const vec3& p) const { return vec3(0,0,0); }
+	        virtual bool scatter(const ray& r_in, 
+	        	const hit_record& rec, vec3& albedo, ray& scattered, float& pdf) const {
+	            return false;
+	        }
+	        virtual float scattering_pdf(const ray& r_in, 
+	        	const hit_record& rec, const ray& scattered) const {
+	            return false;
+	        }
+	        virtual vec3 emitted(float u, float v, const vec3& p) const { 
+	        	return vec3(0,0,0); 
+	        }
 	};
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,13 +84,15 @@ And Lambertian material becomes:
 	class lambertian : public material {
 	    public:
 	        lambertian(texture *a) : albedo(a) {}
-	        float scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
+	        float scattering_pdf(const ray& r_in, 
+	        	const hit_record& rec, const ray& scattered) const {
 	            float cosine = dot(rec.normal, unit_vector(scattered.direction()));
 	            if (cosine < 0)
 	                return 0;
 	            return cosine / M_PI;
 	        }
-	        bool scatter(const ray& r_in, const hit_record& rec, vec3& alb, ray& scattered, float& pdf) const {
+	        bool scatter(const ray& r_in, 
+	        	const hit_record& rec, vec3& alb, ray& scattered, float& pdf) const {
 	        	vec3 target = rec.p + rec.normal + random_in_unit_sphere();
 	        	scattered = ray(rec.p, unit_vector(target-rec.p), r_in.time());
 	        	alb = albedo->value(rec.u, rec.v, rec.p);
@@ -108,7 +116,8 @@ And the color function gets a minor modification.
 	        float pdf;
 	        vec3 albedo;
 	        if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf)) {
-	        	return emitted + albedo*rec.mat_ptr->scattering_pdf(r, rec, scattered)*color(scattered, world, depth+1) / pdf;
+	        	return emitted + albedo*rec.mat_ptr->scattering_pdf(r, rec, scattered)
+	        		*color(scattered, world, depth+1) / pdf;
 	    	}
 	        else
 	            return emitted;
@@ -124,7 +133,8 @@ You should get exactly the same picture.
 Now, just for the experience, try a different sampling strategy. Let’s choose randomly from the hemisphere that is above the surface. This would be $p(direction) = 1/(2 \pi)$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool scatter(const ray& r_in, const hit_record& rec, vec3& alb, ray& scattered, float& pdf) const {
+    bool scatter(const ray& r_in, 
+    	const hit_record& rec, vec3& alb, ray& scattered, float& pdf) const {
     	vec3 direction;
     	do {
     		direction = random_in_unit_sphere();
