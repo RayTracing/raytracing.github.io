@@ -47,7 +47,6 @@ Let’s do simple refactoring and temporarily remove all materials that aren’t
         *cam = new camera(lookfrom, lookat, vec3(0,1,0),
                           vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
     }
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 At 500x500 my code produces this image in 10min on 1 core of my Macbook:
@@ -75,7 +74,6 @@ We modify the base-class materialto enable this importance sampling:
                 return vec3(0,0,0); 
             }
     };
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 And Lambertian material becomes:
@@ -101,7 +99,6 @@ And Lambertian material becomes:
             }
             texture *albedo;
     };
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 And the color function gets a minor modification.
@@ -125,7 +122,6 @@ And the color function gets a minor modification.
         else
             return vec3(0,0,0);
     }
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You should get exactly the same picture.
@@ -144,7 +140,6 @@ Now, just for the experience, try a different sampling strategy. Let’s choose 
         pdf = 0.5 / M_PI;
         return true;
     }
-    
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 And again I __should__ get the same picture except with different variance, but I don’t!
