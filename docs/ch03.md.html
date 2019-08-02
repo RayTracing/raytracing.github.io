@@ -11,18 +11,18 @@ latest official PDF version.</div>
 
 In our ray tracer we pick random directions, and directions can be represented as points on the unit-sphere. The same methodology as before applies. But now we need to have a _pdf_ defined over 2D. Suppose we have this integral over all directions:
 
-	$$ \int cos^2(\theta) $$
+    $$ \int cos^2(\theta) $$
 
 By MC integration, we should just be able to sample $cos^2(\theta) / p(direction)$. But what is direction in that context? We could make it based on polar coordinates, so $p$ would be in terms of $(\theta, \phi)$. However you do it, remember that a pdf has to integrate to 1 and represent the relative probability of that direction being sampled. We have a method from the last books to take uniform random samples in a unit sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_in_unit_sphere() {
-    	vec3 p;
-    	do {
-    		p = 2.0*vec3(drand48(),drand48(),drand48()) - vec3(1,1,1);
-    	} while (dot(p,p) >= 1.0);
-    	return p;
-	}
+        vec3 p;
+        do {
+            p = 2.0*vec3(drand48(),drand48(),drand48()) - vec3(1,1,1);
+        } while (dot(p,p) >= 1.0);
+        return p;
+    }
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -30,12 +30,12 @@ To get points on a unit sphere we can just normalize the vector to those points:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_on_unit_sphere() {
-    	vec3 p;
-    	do {
-    		p = 2.0*vec3(drand48(),drand48(),drand48()) - vec3(1,1,1);
-    	} while (dot(p,p) >= 1.0);
-    	return unit_vector(p);
-	}
+        vec3 p;
+        do {
+            p = 2.0*vec3(drand48(),drand48(),drand48()) - vec3(1,1,1);
+        } while (dot(p,p) >= 1.0);
+        return unit_vector(p);
+    }
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -43,19 +43,19 @@ Now what is the pdf of these uniform points? As a density on the unit sphere, it
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline float pdf(const vec3& p) {
-    	return 1 / (4*M_PI);
-	}
+        return 1 / (4*M_PI);
+    }
 
-	int main() {
-		int N = 1000000;
-		float sum;
-		for (int i = 0; i < N; i++) {
-				vec3 d = random_on_unit_sphere();
-				float cosine_squared = d.z()*d.z();
-				sum += cosine_squared / pdf(d);
-		}
-		std::cout << "I =" << sum/N << "\n";
-	}
+    int main() {
+        int N = 1000000;
+        float sum;
+        for (int i = 0; i < N; i++) {
+                vec3 d = random_on_unit_sphere();
+                float cosine_squared = d.z()*d.z();
+                sum += cosine_squared / pdf(d);
+        }
+        std::cout << "I =" << sum/N << "\n";
+    }
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
