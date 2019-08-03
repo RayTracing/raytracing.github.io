@@ -8,30 +8,30 @@ latest official PDF version.</div>
 
                                 **Chapter 5: Image Texture Mapping**
 
-We used the hitpoint p before to index a procedure solid texture like marble. We can also read
-in an image and use a 2D $(u,v)$ texture coordinate to index into the image.
+We used the hitpoint p before to index a procedure solid texture like marble. We can also read in an
+image and use a 2D $(u,v)$ texture coordinate to index into the image.
 
 A direct way to use scaled $(u,v)$ in an image is to round the u and v to integers, and use that as
-$(i,j)$ pixels. This is awkward, because we don’t want to have to change the code when we change image
-resolution. So instead, one of the the most universal unofficial standards in graphics is to use
-texture coordinates instead of image pixel coordinates. These are just some form of fractional
-position in the image. For example, for pixel $(i,j)$ in an nx by ny image, the image texture position
-is:
+$(i,j)$ pixels. This is awkward, because we don’t want to have to change the code when we change
+image resolution. So instead, one of the the most universal unofficial standards in graphics is to
+use texture coordinates instead of image pixel coordinates. These are just some form of fractional
+position in the image. For example, for pixel $(i,j)$ in an nx by ny image, the image texture
+position is:
 
     $$ u = i/(nx-1) $$
     $$ v = j/(nx-1) $$
 
 This is just a fractional position. For a hitable, we need to also return a u and v in the hit
 record. For spheres, this is usually based on some form of longitude and latitude, _i.e._, spherical
-coordinates. So if we have a $(\theta,\phi)$ in spherical coordinates we just need to scale $\theta$ and
-$\phi$ to fractions. If $\theta$ is the angle down from the pole, and $\phi$ is the angle around the axis
-through the poles, the normalization to $[0,1]$ would be:
+coordinates. So if we have a $(\theta,\phi)$ in spherical coordinates we just need to scale $\theta$
+and $\phi$ to fractions. If $\theta$ is the angle down from the pole, and $\phi$ is the angle around
+the axis through the poles, the normalization to $[0,1]$ would be:
 
     $$ u = \phi / (2\pi) $$
     $$ v = \theta / \pi $$
 
-To compute $\theta$ and $\phi$, for a given hitpoint, the formula for spherical coordinates of a unit
-radius sphere on the origin is:
+To compute $\theta$ and $\phi$, for a given hitpoint, the formula for spherical coordinates of a
+unit radius sphere on the origin is:
 
     $$ x = cos(\phi) cos(\theta) $$
     $$ y = sin(\phi) cos(\theta) $$
@@ -43,15 +43,15 @@ cancel):
 
     $$ \phi = atan2(y, x) $$
 
-The atan2 returns in the range $-\pi$ to $\pi$ so we need to take a little care there. The $\theta$ is more
-straightforward:
+The atan2 returns in the range $-\pi$ to $\pi$ so we need to take a little care there. The $\theta$
+is more straightforward:
 
     $$ \theta = asin(z) $$
 
 which returns numbers in the range $-\pi/2$ to $\pi/2$.
 
-So for a sphere, the $(u,v)$ coord computation is accomplished by a utility function that expects things
-on the unit sphere centered at the origin. The call inside sphere::hit should be:
+So for a sphere, the $(u,v)$ coord computation is accomplished by a utility function that expects
+things on the unit sphere centered at the origin. The call inside sphere::hit should be:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
@@ -69,7 +69,7 @@ The utility function is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now we also need to create a texture class that holds an image. I am going to use my favorite image
-utility stb_image. It reads in an image into a big array of unsigned char. These are just packed
+utility `stb_image`. It reads in an image into a big array of unsigned char. These are just packed
 RGBs that each range 0..255 for black to fully-on.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -97,7 +97,7 @@ RGBs that each range 0..255 for black to fully-on.
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The representation of a packed array in that order is pretty standard. Thankfully, the stb_image
+The representation of a packed array in that order is pretty standard. Thankfully, the `stb_image`
 package makes that super simple -- just include the header in main.h with a #define:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -115,8 +115,8 @@ is:
     material *mat = new lambertian(new image_texture(tex_data, nx, ny));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We start to see some of the power of all colors being textures -- we can assign any kind of
-texture to the lambertian material, and lambertian doesn’t need to be aware of it.
+We start to see some of the power of all colors being textures -- we can assign any kind of texture
+to the lambertian material, and lambertian doesn’t need to be aware of it.
 
 To test this, assign it to a sphere, and then temporarily cripple the color() function in main to
 just return attenuation. You should get something like:
