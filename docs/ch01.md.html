@@ -43,11 +43,11 @@ For this we will first need to have a ray store the time it exists at:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now we need to modify the camera to generate rays at a random time between time1 and time2. Should
-the camera keep track of time1 and time2 or should that be up to the user of camera when a ray is
-created? When in doubt, I like to make constructors complicated if it makes calls simple, so I will
-make the camera keep track, but that’s a personal preference. Not many changes are needed to camera
-because for now it is not allowed to move; it just sends out rays over a time period.
+Now we need to modify the camera to generate rays at a random time between `time1` and `time2`.
+Should the camera keep track of `time1` and `time2` or should that be up to the user of camera when
+a ray is created? When in doubt, I like to make constructors complicated if it makes calls simple,
+so I will make the camera keep track, but that’s a personal preference. Not many changes are needed
+to camera because for now it is not allowed to move; it just sends out rays over a time period.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
@@ -105,8 +105,8 @@ because for now it is not allowed to move; it just sends out rays over a time pe
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We also need a moving object. I’ll create a sphere class that has its center move linearly from
-center0 at time0 to center1 at time1. Outside that time interval it continues on, so those times
-need not match up with the camera aperture open close.
+`center0` at `time0` to `center1` at `time1`. Outside that time interval it continues on, so those
+times need not match up with the camera aperture open close.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class moving_sphere: public hitable  {
@@ -132,7 +132,7 @@ need not match up with the camera aperture open close.
 An alternative to making a new moving sphere class is to just make them all move and have the
 stationary ones have the same begin and end point. I’m on the fence about that trade-off between
 fewer classes and more efficient stationary spheres, so let your design taste guide you. The
-intersection code barely needs a change: center just needs to become a function center(time):
+intersection code barely needs a change: `center` just needs to become a function `center(time)`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     // replace "center" with "center(r.time())"
@@ -187,8 +187,8 @@ Be sure that in the materials you have the scattered rays be at the time of the 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If we take the example diffuse spheres from scene at the end of the last book and make them move
-from their centers at time=0 to center+vec3(0,0.5*drand48(), 0) at time=1, with the camera aperture
-open over that frame.
+from their centers at `time==0`, to `center + vec3(0, 0.5*drand48(), 0)` at `time==1`, with the
+camera aperture open over that frame.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hitable *random_scene() {
