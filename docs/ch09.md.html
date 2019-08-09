@@ -51,8 +51,8 @@ minimal interface works, and for the _pdf_ this implies:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We’ll see if that works by fleshing out the subclasses. For sampling the light, we will need
-_hitable_ to answer some queries that it doesn’t have an interface for. We’ll probably need to mess
-with it too, but we can start by seeing if we can put something in _hitable_ involving sampling the
+`hitable` to answer some queries that it doesn’t have an interface for. We’ll probably need to mess
+with it too, but we can start by seeing if we can put something in `hitable` involving sampling the
 bounding box that works with all its subclasses.
 
 First, let’s try a cosine density:
@@ -75,11 +75,11 @@ First, let’s try a cosine density:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We can try this in the $color()$ function, with the main changes highlighted. We also need to change
-variable _pdf_ to some other variable name to avoid a name conflict with the new _pdf_ class.
+We can try this in the `color()` function, with the main changes highlighted. We also need to change
+variable `pdf` to some other variable name to avoid a name conflict with the new `pdf` class.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hitable *world, hitable *light_shape, int depth) {
+    vec3 color(const ray& r, hitable *world, int depth) {
         hit_record rec;
         if (world->hit(r, 0.001, MAXFLOAT, rec)) {
             ray scattered;
@@ -87,12 +87,14 @@ variable _pdf_ to some other variable name to avoid a name conflict with the new
             vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
             float pdf_val;
             vec3 albedo;
-            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val)) 
+            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val)) {
                 cosine_pdf p(rec.normal);
                 scattered = ray(rec.p, p.generate(), r.time());
                 pdf_val = p.value(scattered.direction());
-                return emitted + albedo*rec.mat_ptr->scattering_pdf(r, rec, scattered)*
-                    color(scattered, world, depth+1) / pdf_val;
+                return emitted
+                     + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                              * color(scattered, world, depth+1)
+                              / pdf_val;
             }
             else
                 return emitted;
@@ -102,12 +104,12 @@ variable _pdf_ to some other variable name to avoid a name conflict with the new
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This yields an apparently matching result so all we’ve done so far is refactor where _pdf_ is
+This yields an apparently matching result so all we’ve done so far is refactor where `pdf` is
 computed:
 
 ![Image 9-1](assets/img08-1.jpg)
 
-Now we can try sampling directions toward a _hitable_ like the light.
+Now we can try sampling directions toward a `hitable` like the light.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hitable_pdf : public pdf {
@@ -124,8 +126,8 @@ Now we can try sampling directions toward a _hitable_ like the light.
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This assumes two as-yet not implemented functions in the _hitable_ class. To avoid having to add
-instrumentation to all of _hitable_ subclasses, we’ll add two dummy functions to the _hitable_
+This assumes two as-yet not implemented functions in the `hitable` class. To avoid having to add
+instrumentation to all of `hitable` subclasses, we’ll add two dummy functions to the `hitable`
 class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -139,7 +141,7 @@ class:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-And we change *xz_rect* to implement those functions:
+And we change `xz_rect` to implement those functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class xz_rect: public hitable  {
@@ -150,7 +152,7 @@ And we change *xz_rect* to implement those functions:
             virtual bool hit(const ray& r, float t0, float t1, hit_record& rec) const;
             virtual bool bounding_box(float t0, float t1, aabb& box) const {
                 box =  aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
-                return true; 
+                return true;
             }
             virtual float  pdf_value(const vec3& o, const vec3& v) const {
                 hit_record rec;
@@ -163,9 +165,9 @@ And we change *xz_rect* to implement those functions:
                 else
                     return 0;
             }
-            virtual vec3 random(const vec3& o) const { 
+            virtual vec3 random(const vec3& o) const {
                 vec3 random_point = vec3(x0 + drand48()*(x1-x0), k,
-                    z0 + drand48()*(z1-z0)); 
+                    z0 + drand48()*(z1-z0));
                 return random_point - o;
             }
             material  *mp;
@@ -173,10 +175,10 @@ And we change *xz_rect* to implement those functions:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-And then change $color()$:
+And then change `color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hitable *world, hitable *light_shape, int depth) {
+    vec3 color(const ray& r, hitable *world, int depth) {
         hit_record rec;
         if (world->hit(r, 0.001, MAXFLOAT, rec)) {
             ray scattered;
@@ -184,13 +186,15 @@ And then change $color()$:
             vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
             float pdf_val;
             vec3 albedo;
-            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val)) 
+            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
                 hitable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
                 hitable_pdf p(light_shape, rec.p);
                 scattered = ray(rec.p, p.generate(), r.time());
                 pdf_val = p.value(scattered.direction());
-                return emitted + albedo*rec.mat_ptr->scattering_pdf(r, rec, scattered)*
-                    color(scattered, world, depth+1) / pdf_val;
+                return emitted
+                     + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                              * color(scattered, world, depth+1)
+                              / pdf_val;
             }
             else
                 return emitted;
@@ -224,7 +228,7 @@ class is straightforward:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-And plugging it into $color()$:
+And plugging it into `color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hitable *world, hitable *light_shape, int depth) {
@@ -235,7 +239,7 @@ And plugging it into $color()$:
             vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
             float pdf_val;
             vec3 albedo;
-            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val)) 
+            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
                 hitable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
                 hitable_pdf p0(light_shape, rec.p);
                 cosine_pdf p1(rec.normal);
