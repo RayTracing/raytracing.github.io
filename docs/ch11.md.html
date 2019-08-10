@@ -47,6 +47,8 @@ We also need to change the block to metal.
 The resulting image has a noisy reflection on the ceiling because the directions toward the box are
 not sampled with more density.
 
+![Image 11-1](assets/img11-1.jpg)
+
 We could make the pdf include the block. Let’s do that instead with a glass sphere because it’s
 easier. When we sample a sphere’s solid angle uniformly from a point outside the sphere, we are
 really just sampling a cone uniformly (the cone is tangent to the sphere). Let’s say the code has
@@ -78,6 +80,9 @@ y = sin(phi)*sin(theta) = sin(2*Pi*r1)*sqrt(1-z^2)
 
 Now what is theta_max?
 
+![Figure 11-1](assets/fig11-1.jpg)
+
+
 We can see from the figure that sin(theta_max) = R / length( c - p ). So:
 
 cos(theta_max) = sqrt(1- R^2/lenghth_squared( c - p ))
@@ -103,6 +108,8 @@ This yields a noisy box, but the caustic under the sphere is good. It took five 
 sampling the light did for my code. This is probably because those rays that hit the glass are
 expensive!
 
+![Image 11-2](assets/img11-2.jpg)
+
 We should probably just sample both the sphere and the light. We can do that by creating a mixture
 density of their two densities. We could do that in the color function by passing a list of hitables
 in and building a mixture pdf , or we could add pdf functions to hitable_list . I think both tactics
@@ -111,6 +118,8 @@ would work fine, but I will go with instrumenting hitable_list .
 We assemble a list to pass in to color .
 
 And we get a decent image with 1000 samples as before:
+
+![Image 11-3](assets/img11-3.jpg)
 
 An astute reader pointed out there are some black specks in the image above. All Monte Carlo Ray
 Tracers have this as a main loop:
@@ -130,7 +139,7 @@ And we can insert that in the main loop:
 
 Happily, the black specks are gone:
 
-
+![Image 11-4](assets/img11-4.jpg)
 
 <!-- Markdeep: -->
 <style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
