@@ -338,17 +338,6 @@ We assemble a list to pass in to `color`.
     a[0] = light_shape;
     a[1] = glass_sphere;
     hitable_list hlist(a,2);
-
-    for (int j = ny-1; j >= 0; j--) {
-        for (int i = 0; i < nx; i++) {
-            vec3 col(0, 0, 0);
-            for (int s=0; s < ns; s++) {
-                float u = float(i+drand48())/ float(nx);
-                float v = float(j+drand48())/ float(ny);
-                ray r = cam->get_ray(u, v);
-                vec3 p = r.point_at_parameter(2.0);
-                col += color(r, world, &hlist, 0);
-            }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 And we get a decent image with 1000 samples as before:
