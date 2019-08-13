@@ -1,19 +1,19 @@
 Ray Tracing: The Next Week
 ====================================================================================================
 
-![Ray Tracing: The Next Week](./RTNextWeek.jpg)
+![Ray Tracing: The Next Week](assets/RTNextWeek.jpg)
 
 Getting the Book
 -----------------
 The _Ray Tracing in One Weekend_ series of books are now available to the public for free in PDF
-form, along with the accompanying source code. Releases are available [directly from GitHub], or
-from Eric Haine's [Real-Time Rendering] site. Alternatively, you can purchase the Kindle version of
-this series from [Amazon.com]. Half of the proceeds of these sales go to [Hack the Hood], a really
-neat organization.
+form, along with the accompanying source code. Releases are available [directly from GitHub][], or
+from Eric Haine's [Real-Time Rendering][] site. Alternatively, you can purchase the Kindle version
+of this series from [Amazon.com][]. Half of the proceeds of these sales go to [Hack the Hood][], a
+really neat organization.
 
 Overview
 ---------
-In [Ray Tracing In One Weekend], you built a simple brute force path tracer. In this installment
+In [Ray Tracing In One Weekend][], you built a simple brute force path tracer. In this installment
 we’ll add textures, volumes (like fog), rectangles, instances, lights, and support for lots of
 objects using a BVH. When done, you’ll have a “real” ray tracer.
 
@@ -30,7 +30,7 @@ you want a weekend project. Order is not very important for the concepts present
 without BVH and Perlin texture you will still get a Cornell Box!
 
 ## Corrections
-If you spot errors or have suggested corrections, please [submit issues via GitHub].
+If you spot errors or have suggested corrections, please [submit issues via GitHub][].
 
 Acknowledgments
 ----------------
@@ -42,8 +42,8 @@ Jean Buckley for editing.
 
 
 [Amazon.com]:                 https://amazon.com/dp/B01CO7PQ8C
-[directly from GitHub]:     https://github.com/petershirley/raytracingthenextweek/releases/
+[directly from GitHub]:       https://github.com/raytracing/TheNextWeek/releases/
 [Hack the Hood]:              http://www.hackthehood.org
-[Ray Tracing In One Weekend]: https://github.com/petershirley/raytracinginoneweekend/
+[Ray Tracing In One Weekend]: https://github.com/raytracing/InOneWeekend/
 [Real-Time Rendering]:        http://www.realtimerendering.com/#books-small-table
-[submit issues via GitHub]:   https://github.com/petershirley/raytracingthenextweek/issues/
+[submit issues via GitHub]:   https://github.com/raytracing/TheNextWeek/issues/
