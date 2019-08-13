@@ -41,11 +41,11 @@ We can redesign `material` and stuff all the new arguments into a `struct` like 
 
     class material  {
         public:
-            virtual bool scatter(const ray& r_in, const hit_record& hrec, 
+            virtual bool scatter(const ray& r_in, const hit_record& hrec,
                 scatter_record& srec) const { return false; }
-            virtual float scattering_pdf(const ray& r_in, const hit_record& rec, 
+            virtual float scattering_pdf(const ray& r_in, const hit_record& rec,
                 const ray& scattered) const { return false; }
-            virtual vec3 emitted(const ray& r_in, const hit_record& rec, 
+            virtual vec3 emitted(const ray& r_in, const hit_record& rec,
                 float u, float v, const vec3& p) const { return vec3(0,0,0); }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,14 +56,14 @@ The Lambertian material becomes simpler:
     class lambertian : public material {
         public:
             lambertian(texture *a) : albedo(a) {}
-            float scattering_pdf(const ray& r_in, const hit_record& rec, 
+            float scattering_pdf(const ray& r_in, const hit_record& rec,
                 const ray& scattered) const {
                 float cosine = dot(rec.normal, unit_vector(scattered.direction()));
                 if (cosine < 0)
                     return 0;
                 return cosine / M_PI;
             }
-            bool scatter(const ray& r_in, const hit_record& hrec, 
+            bool scatter(const ray& r_in, const hit_record& hrec,
                 scatter_record& srec) const {
                 srec.is_specular = false;
                 srec.attenuation = albedo->value(hrec.u, hrec.v, hrec.p);
@@ -107,9 +107,9 @@ overall, and those are all fixable. For now, I will just fix `specular`. Metal i
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class metal : public material {
         public:
-            metal(const vec3& a, float f) : albedo(a) 
+            metal(const vec3& a, float f) : albedo(a)
                 { if (f < 1) fuzz = f; else fuzz = 1; }
-            virtual bool scatter(const ray& r_in, const hit_record& hrec, 
+            virtual bool scatter(const ray& r_in, const hit_record& hrec,
                 scatter_record& srec) const {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), hrec.normal);
                 srec.specular_ray = ray(hrec.p, reflected+fuzz*random_in_unit_sphere());
@@ -136,7 +136,7 @@ just like it did before.
             vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
             if (depth < 50 && hrec.mat_ptr->scatter(r, hrec, srec)) {
                 if (srec.is_specular) {
-                    return srec.attenuation 
+                    return srec.attenuation
                          * color(srec.specular_ray, world, light_shape, depth+1);
                 }
                 else {
@@ -147,7 +147,7 @@ just like it did before.
                     delete srec.pdf_ptr;
                     return emitted + srec.attenuation
                                    * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
-                                   * color(scattered, world, light_shape, depth+1) 
+                                   * color(scattered, world, light_shape, depth+1)
                                    / pdf_val;
                 }
             }
@@ -196,7 +196,7 @@ We also need to change the block to metal.
 The resulting image has a noisy reflection on the ceiling because the directions toward the box are
 not sampled with more density.
 
-![Image 11-1](assets/img11-1.jpg)
+![Image 11-1](../assets/img11-1.jpg)
 
 We could make the pdf include the block. Let’s do that instead with a glass sphere because it’s
 
@@ -230,7 +230,7 @@ $\phi$ we sample like before, so:
 
 Now what is $\theta_{max}$?
 
-![Figure 11-1](assets/fig11-1.jpg)
+![Figure 11-1](../assets/fig11-1.jpg)
 
 We can see from the figure that $sin(\theta_{max}) = R / length( c - p )$. So:
 
@@ -307,7 +307,7 @@ This yields a noisy box, but the caustic under the sphere is good. It took five 
 sampling the light did for my code. This is probably because those rays that hit the glass are
 expensive!
 
-![Image 11-2](assets/img11-2.jpg)
+![Image 11-2](../assets/img11-2.jpg)
 
 We should probably just sample both the sphere and the light. We can do that by creating a mixture
 density of their two densities. We could do that in the `color` function by passing a list of
@@ -353,7 +353,7 @@ We assemble a list to pass in to `color`.
 
 And we get a decent image with 1000 samples as before:
 
-![Image 11-3](assets/img11-3.jpg)
+![Image 11-3](../assets/img11-3.jpg)
 
 An astute reader pointed out there are some black specks in the image above. All Monte Carlo Ray
 Tracers have this as a main loop:
@@ -396,12 +396,12 @@ And we can insert that in the main loop:
 
 Happily, the black specks are gone:
 
-![Image 11-4](assets/img11-4.jpg)
+![Image 11-4](../assets/img11-4.jpg)
 
 
 
 <!-- Markdeep: -->
 <style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
-<script src="markdeep.min.js"></script>
+<script src="../assets/markdeep.min.js"></script>
 <script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
 <script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

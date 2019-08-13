@@ -60,7 +60,7 @@ our Cornell Box scene again, and let’s generate the camera in the function tha
 
 At 500x500 my code produces this image in 10min on 1 core of my Macbook:
 
-![Figure 5-1](assets/img05-1.jpg)
+![Figure 5-1](../assets/img05-1.jpg)
 
 Reducing that noise is our goal. We’ll do that by constructing a pdf that sends more rays to the
 light.
@@ -74,16 +74,16 @@ We modify the base-class _material_ to enable this importance sampling:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material  {
         public:
-            virtual bool scatter(const ray& r_in, 
+            virtual bool scatter(const ray& r_in,
                 const hit_record& rec, vec3& albedo, ray& scattered, float& pdf) const {
                 return false;
             }
-            virtual float scattering_pdf(const ray& r_in, 
+            virtual float scattering_pdf(const ray& r_in,
                 const hit_record& rec, const ray& scattered) const {
                 return false;
             }
-            virtual vec3 emitted(float u, float v, const vec3& p) const { 
-                return vec3(0,0,0); 
+            virtual vec3 emitted(float u, float v, const vec3& p) const {
+                return vec3(0,0,0);
             }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,14 +94,14 @@ And _Lambertian_ material becomes:
     class lambertian : public material {
         public:
             lambertian(texture *a) : albedo(a) {}
-            float scattering_pdf(const ray& r_in, 
+            float scattering_pdf(const ray& r_in,
                 const hit_record& rec, const ray& scattered) const {
                 float cosine = dot(rec.normal, unit_vector(scattered.direction()));
                 if (cosine < 0)
                     return 0;
                 return cosine / M_PI;
             }
-            bool scatter(const ray& r_in, 
+            bool scatter(const ray& r_in,
                 const hit_record& rec, vec3& alb, ray& scattered, float& pdf) const {
                 vec3 target = rec.p + rec.normal + random_in_unit_sphere();
                 scattered = ray(rec.p, unit_vector(target-rec.p), r_in.time());
@@ -142,7 +142,7 @@ Now, just for the experience, try a different sampling strategy. Let’s choose 
 hemisphere that is above the surface. This would be $p(direction) = 1/(2* \pi)$ .
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool scatter(const ray& r_in, 
+    bool scatter(const ray& r_in,
         const hit_record& rec, vec3& alb, ray& scattered, float& pdf) const {
         vec3 direction;
         do {
@@ -157,7 +157,7 @@ hemisphere that is above the surface. This would be $p(direction) = 1/(2* \pi)$ 
 
 And again I __should__ get the same picture except with different variance, but I don’t!
 
-![Figure 5-2](assets/img05-2.jpg)
+![Figure 5-2](../assets/img05-2.jpg)
 
 It’s pretty close to our old picture, but there are differences that are not noise. The front of the
 tall box is much more uniform in color. So I have the most difficult kind of bug to find in a Monte
@@ -169,6 +169,6 @@ Let’s build some infrastructure to address this.
 
 <!-- Markdeep: -->
 <style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
-<script src="markdeep.min.js"></script>
+<script src="../assets/markdeep.min.js"></script>
 <script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
 <script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
