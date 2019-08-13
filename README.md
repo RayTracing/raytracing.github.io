@@ -1,7 +1,7 @@
 Ray Tracing in One Weekend
 ====================================================================================================
 
-![Ray Tracing in One Weekend](docs/assets/RTOneWeekend.jpg)
+![Ray Tracing in One Weekend](assets/RTOneWeekend.jpg)
 
 ## Getting the Book
 The _Ray Tracing in One Weekend_ series of books are now available to the public for free in PDF
@@ -45,7 +45,7 @@ If you spot errors or have suggested corrections, please [submit issues via GitH
 
 
 [Amazon.com]:               https://amazon.com/dp/B01B5AODD8
-[releases]:                 https://github.com/petershirley/raytracinginoneweekend/releases/
-[Hack the Hood]:            https://hackthehood.org
+[releases]:                 https://github.com/raytracing/InOneWeekend/releases/
+[Hack the Hood]:            https://hackthehood.org/
 [Real-Time Rendering]:      https://realtimerendering.com/#books-small-table
-[submit issues via GitHub]: https://github.com/petershirley/raytracinginoneweekend/issues/
+[submit issues via GitHub]: https://github.com/raytracing/InOneWeekend/issues/
