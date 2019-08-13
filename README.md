@@ -11,6 +11,7 @@ from Eric Haine's [Real-Time Rendering][] site. Alternatively, you can purchase 
 of this series from [Amazon.com][]. Half of the proceeds of these sales go to [Hack the Hood][], a
 really neat organization.
 
+
 Overview
 ---------
 In [Ray Tracing In One Weekend][] and [Ray Tracing: the Next Week][], you built a “real” ray tracer.
@@ -30,10 +31,18 @@ As before, www.in1weekend.com will have further readings and references.
 ## Corrections
 If you spot errors or have suggested corrections, please [submit issues via GitHub][].
 
+
 Acknowledgements
 -----------------
-Thanks to Dave Hart and Jean Buckley for help on the original manuscript. Thanks to Paul Melis,
-Nakata Daisuke, Filipe Scur, Vahan Sosoyan, and Matthew Heimlich for finding errors.
+Thanks to Dave Hart and Jean Buckley for help on the original manuscript.
+
+Thanks to Paul Melis, Nakata Daisuke, Filipe Scur, Vahan Sosoyan, and Matthew Heimlich for finding
+errors.
+
+Thanks to Tatsuya Ogawa and Aaryaman Vasishta for code improvements.
+
+Thanks to Steve Hollasch, Trevor David Black, Berna Kabadayı and Lorenzo Mancini for translating the
+book to Markdeep and moving it to the web.
 
 
 
