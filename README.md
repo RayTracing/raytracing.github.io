@@ -7,8 +7,8 @@ Ray Tracing in One Weekend
 The _Ray Tracing in One Weekend_ series of books are now available to the public for free in PDF
 form, along with the accompanying source code.
 
-Releases are available [directly from GitHub][releases], or from Eric Haine's [Real-Time
-Rendering][] site. Alternatively, you can purchase the Kindle version of this series from
+Releases are available [directly from GitHub][releases], or from Eric Haines's
+[Real-Time Rendering][] site. Alternatively, you can purchase the Kindle version of this series from
 [Amazon.com][]. Half of the proceeds of these sales go to [Hack the Hood][], a really neat
 organization.
 
