@@ -1,3 +1,5 @@
+#ifndef RAYH
+#define RAYH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,15 +11,14 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef RAYH
-#define RAYH
 #include "vec3.h"
+
 
 class ray
 {
     public:
         ray() {}
-        ray(const vec3& a, const vec3& b) { A = a; B = b; }  
+        ray(const vec3& a, const vec3& b) { A = a; B = b; }
         vec3 origin() const       { return A; }
         vec3 direction() const    { return B; }
         vec3 point_at_parameter(float t) const { return A + t*B; }
@@ -26,6 +27,5 @@ class ray
         vec3 B;
 };
 
-#endif 
 
-
+#endif

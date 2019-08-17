@@ -1,3 +1,5 @@
+#ifndef HITABLEH
+#define HITABLEH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,20 +11,15 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef HITABLEH
-#define HITABLEH 
-
 #include "ray.h"
 
 class material;
 
-
-
 struct hit_record
 {
-    float t;  
+    float t;
     vec3 p;
-    vec3 normal; 
+    vec3 normal;
     material *mat_ptr;
 };
 
@@ -31,8 +28,5 @@ class hitable  {
         virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
 };
 
+
 #endif
-
-
-
-

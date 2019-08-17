@@ -1,3 +1,5 @@
+#ifndef SPHEREH
+#define SPHEREH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,22 +11,19 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef SPHEREH
-#define SPHEREH
-
 #include "hitable.h"
+
 
 class sphere: public hitable  {
     public:
         sphere() {}
-        sphere(vec3 cen, float r, material *m) : center(cen),
-						 radius(r),
-						 mat_ptr(m)  {};
+        sphere(vec3 cen, float r, material *m) : center(cen), radius(r), mat_ptr(m)  {};
         virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
         vec3 center;
         float radius;
         material *mat_ptr;
 };
+
 
 bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
     vec3 oc = r.origin() - center;
@@ -55,6 +54,3 @@ bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const 
 
 
 #endif
-
-
-
