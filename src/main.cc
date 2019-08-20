@@ -79,8 +79,6 @@ int main() {
     int ny = 800;
     int ns = 10;
     std::cout << "P3\n" << nx << " " << ny << "\n255\n";
-    hitable *list[5];
-    float R = cos(M_PI/4);
     hitable *world = random_scene();
 
     vec3 lookfrom(13,2,3);
