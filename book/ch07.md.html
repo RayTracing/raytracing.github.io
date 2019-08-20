@@ -17,21 +17,21 @@ world, and some virtual place and orientation in the virtual world. A picture is
 relative positions/orientations of the camera and scene, so as long as the camera and scene are
 described in the same coordinate system, all is well.
 
-Suppose we have an origin o and cartesian unit vectors **x**/**y**/**z**. When we say a location is (3, -2, 7),
+Suppose we have an origin o and cartesian unit vectors $ x/y/z $. When we say a location is (3, -2, 7),
 we really are saying:
 
-Location is **o** + **3** * **x** - 2* **y** + 7* **z**
+Location is $ o + 3\cdot x - 2\cdot y + 7\cdot z $.
 
-If we want to measure coordinates in another coordinate system with origin **o’** and basis vectors
-**u**/**v**/**w**, we can just find the numbers (u, v, w) such that:
+If we want to measure coordinates in another coordinate system with origin $ o’ $ and basis vectors
+$u/v/w$ , we can just find the numbers (u, v, w) such that:
 
-Location is **o’** + u***u** + v***v** + **w**.
+Location is $ o’ + u\cdot u + v\cdot v + w $.
 
 If you take an intro graphics course, there will be a lot of time spent on coordinate systems and
 4x4 coordinate transformation matrices. Pay attention, it’s important stuff in graphics! But we
-won’t need it. What we need to is generate random directions with a set distribution relative to **n**.
+won’t need it. What we need to is generate random directions with a set distribution relative to $n$.
 We don’t need an origin because a direction is relative to no specified origin. We do need two
-cotangent vectors that are mutually perpendicular to **n** and each other.
+cotangent vectors that are mutually perpendicular to $n$ and each other.
 
 Some models will come with at least one cotangent vector. The hard case of making an ONB is when we
 just have one vector. Suppose we have any vector **a** that is not zero length or parallel to n. We can
@@ -40,15 +40,15 @@ perpendicular to both **c** and **d**:
 
 **t** = *unit_vector*( *cross*( **a**, **n**) ) 
 
-**s** = *cross*( **t**,**n**)
+$ s = cross( t,n) $
 
 The catch is, we don’t have an a and if we pick a particular one at some point we will get an n
 parallel to a. A common method is to use an if statement to determine whether n is a particular
 axis, and if not, use that axis.
 
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-if (fabs(n.x()) > 0.9)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+If (fabs(n.x()) > 0.9)
     a = (0, 1, 0)
 else
     a = (1, 0, 0)
