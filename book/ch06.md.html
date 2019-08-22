@@ -13,58 +13,66 @@ In this and the next two chapters let’s harden our understanding and tools and
 Cornell Box is right. Let’s first figure out how to generate random directions, but to simplify
 things let’s assume the z-axis is the surface normal and theta is the angle from the normal. We’ll
 get them oriented to the surface normal vector in the next chapter. We will only deal with
-distributions that are rotationally symmetric about z . So p(direction) = f(theta) . If you have had
-advanced calculus, you may recall that on the sphere in spherical coordinates dA =
-sin(theta)*dtheta*dphi . If you haven’t, you’ll have to take my word for the next step, but you’ll
+distributions that are rotationally symmetric about z . So $ p(direction) = f(\theta) $. If you have had
+advanced calculus, you may recall that on the sphere in spherical coordinates $ dA =
+sin(\theta)*dtheta*dphi $. If you haven’t, you’ll have to take my word for the next step, but you’ll
 get it when you take advanced calc.
 
-Given a directional pdf, p(direction) = f(theta) on the sphere, the 1D pdfs on theta and phi are:
+Given a directional pdf, $ p(direction) = f(\theta) $ on the sphere, the 1D pdfs on $ \theta $ and $ \phi $ are:
 
-a(phi) = 1/(2Pi) (uniform)
-b(theta) = 2*Pi*f(theta)sin(theta)
+$$ a(\phi) = 1/(2\pi) (uniform) $$
+
+$$ b(\theta) = 2*\pi*f(\theta)sin(\theta) $$
 
 For uniform random numbers r1 and r2, the material presented in Chapter 2 leads to:
+ 
+$$ r1 = \int_{0}^{\phi} (1/(2*\pi)) = \phi/(2*\pi) $$
 
-r1 = INTEGRAL_0^phi (1/(2*Pi)) = phi/(2*Pi)
+Solving for $ \phi $ we get:
 
-Solving for phi we get:
-
-phi = 2*Pi*r1
+$$ \phi = 2*\pi*r1 $$
 
 For theta we have:
 
-r2 = INTEGRAL_0^theta 2*Pi*f(t)sin(t)
+$$ r2 = \int_{0}^{\theta} 2*\pi*f(t)sin(t) $$
+
 
 Here, t is a dummy variable. Let’s try some different functions for f() . Let’s first try a uniform
-density on the sphere. The area of the unit sphere is 4Pi , so a uniform p(direction) = 1/(4Pi) on
+density on the sphere. The area of the unit sphere is $ 4\pi $ , so a uniform $ p(direction) = 1/(4 \pi) $ on
 the unit sphere.
 
-r2 = -cos(theta)/2 - (-cos(0)/2)= (1 - cos(theta))/2
+$$ r2 = -cos(\theta)/2 - (-cos(0)/2)= (1 - cos(\theta))/2 $$
 
-Solving for cos(theta) gives:
+Solving for $ cos(\theta) $ gives:
 
-cos(theta) = 1 - 2*r2
+$$ cos(\theta) = 1 - 2*r2 $$
 
-We don’t solve for theta because we probably only need to know cos(theta) anyway and don’t want
+We don’t solve for theta because we probably only need to know $ cos(\theta) $ anyway and don’t want
 needless acos() calls running around.
 
-To generate a unit vector direction toward (theta,phi) we convert to Cartesian coordinates:
+To generate a unit vector direction toward $ (\theta,\phi) $ we convert to Cartesian coordinates:
 
-x = cos(phi)*sin(theta)
-y = sin(phi)*sin(theta)
-z = cos(theta)
+$$ x = cos(\phi)*sin(\theta) $$
 
-And using the identity that cos^2 + sin^2 = 1 , we get the following in terms of random (r1,r2) :
+$$ y = sin(\phi)*sin(\theta) $$
 
-x = cos(2*Pi*r1)*sqrt(1 - (1-2*r2)^2)
-y = sin(2*Pi*r1)*sqrt(1 - (1-2*r2)^2)
-z = 1 - 2*r2
+$$ z = cos(\theta) $$
 
-Simplifying a little, (1-2*r2)^2 = 1 - 4*r2 + 4*r2^2, so:
+And using the identity that $ cos^2 + sin^2 = 1 $  , we get the following in terms of random (r1,r2) :
 
-x = cos(2*Pi*r1)*2*sqrt(r2*(1-r2))
-y = sin(2*Pi*r1)*2*sqrt(r2*(1-r2))
-z = 1 - 2*r2
+$$ x = cos(2*\pi*r1)*sqrt(1 - (1-2*r2)^2) $$
+
+$$ y = sin(2*\pi*r1)*sqrt(1 - (1-2*r2)^2) $$
+
+$$ z = 1 - 2*r2 $$
+
+Simplifying a little, $ (1-2*r2)^2 = 1 - 4*r2 + 4*r2^2 $, so:
+
+$$ x = cos(2*\pi*r1)*2*sqrt(r2*(1-r2)) $$
+
+$$ y = sin(2*\pi*r1)*2*sqrt(r2*(1-r2)) $$
+
+$$ z = 1 - 2*r2 $$
 
 We can output some of these:
 
@@ -73,31 +81,34 @@ And plot them for free on plot.ly (a great site with 3D scatterplot support):
 On the plot.ly website you can rotate that around and see that it appears uniform.
 
 Now let’s derive uniform on the hemisphere . The density being uniform on the hemisphere means
-p(direction) = 1/(2*Pi) and just changing the constant in the theta equations yields:
+$ p(direction) = 1/(2*\pi) $ and just changing the constant in the theta equations yields:
 
-cos(theta) = 1 - r2
+$$ cos(\theta) = 1 - r2 $$
 
-It is comforting that cos(theta) will vary from 1 to 0, and thus theta will vary from 0 to Pi/2.
+It is comforting that $ cos(\theta) $ will vary from 1 to 0, and thus theta will vary from $ 0 $ to $ \pi/2 $.
 Rather than plot it, let’s do a 2D integral with a known solution. Let’s integrate cosine cubed over
 the hemisphere (just picking something arbitrary with a known solution). First let’s do it by hand:
-INTEGRAL cos^3 = 2*Pi*INTEGRAL_0^PI/2 cos^3 sin = PI/2 .
 
-Now for integration with importance sampling. p(direction) = 1/(2*Pi) , so we average f/p which is
-cos^3/ (1/(2*Pi)) , and we can test this:
+$$ \int cos^3 = 2*\pi*\int_{0}^{\pi/2} cos^3 sin = \pi/2 . $$
 
-Now let’s generate directions with p(directions) = cos(theta) / Pi .
+Now for integration with importance sampling. $ p(direction) = 1/(2*\pi) $ , so we average $ f/p $ which is
+$ cos^3/ (1/(2*\pi)) $, and we can test this:
 
-r2 = INTEGRAL_0^theta 2*Pi*(cos(t)/Pi)*sin(t) = 1-cos^2(theta)
+Now let’s generate directions with $ p(directions) = cos(\theta) / \pi $ .
+
+$$ r2 = \int_{0}^{\theta} 2*\pi*(cos(t)/\pi)*sin(t) = 1-cos^2(\theta) $$
+
+
 
 So,
 
-cos(theta) = sqrt(1-r2)
+$$ cos(\theta) = sqrt(1-r2) $$
 
 We can save a little algebra on specific cases by noting
 
-z = cos(theta) = sqrt(1-r2)
-x = cos(phi)*sin(theta) = cos(2*Pi*r1)*sqrt(1-z^2) = cos(2*Pi*r1)*sqrt(r2)
-y = sin(phi)*sin(theta) = sin(2*Pi*r1)*sqrt(1-z^2) = sin(2*Pi*r1)*sqrt(r2)
+$$ z = cos(\theta) = sqrt(1-r2) $$
+$$ x = cos(\phi)*sin(\theta) = cos(2*\pi*r1)*sqrt(1-z^2) = cos(2*\pi*r1)*sqrt(r2) $$
+$$ y = sin(\phi)*sin(\theta) = sin(2*\pi*r1)*sqrt(1-z^2) = sin(2*\pi*r1)*sqrt(r2) $$
 
 Let’s also start generating them as random vectors:
 
