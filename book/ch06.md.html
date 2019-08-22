@@ -76,7 +76,24 @@ $$ z = 1 - 2*r2 $$
 
 We can output some of these:
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+        for (int i = 0; i < 200; i++) {
+            float r1 = drand48();
+            float r2 = drand48();
+            float x = cos(2*M_PI*r1)*2*sqrt(r2*(1-r2));
+            float y = sin(2*M_PI*r1)*2*sqrt(r2*(1-r2));
+            float z = 1 - r2;
+
+            std::cout << x << " " << y << " " << z << "\n";
+
+        }
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 And plot them for free on plot.ly (a great site with 3D scatterplot support):
+
+![Image 6-1](../assets/fig06-1.jpg)
 
 On the plot.ly website you can rotate that around and see that it appears uniform.
 
@@ -94,11 +111,26 @@ $$ \int cos^3 = 2*\pi*\int_{0}^{\pi/2} cos^3 sin = \pi/2 . $$
 Now for integration with importance sampling. $ p(direction) = 1/(2*\pi) $ , so we average $ f/p $ which is
 $ cos^3/ (1/(2*\pi)) $, and we can test this:
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+        int N = 1000000;
+        float sum = 0.0;
+        for (int i = 0; i < N; i++) {
+            float r1 = drand48();
+            float r2 = drand48();
+            float x = cos(2*M_PI*r1)*2*sqrt(r2*(1-r2));
+            float y = sin(2*M_PI*r1)*2*sqrt(r2*(1-r2));
+            float z = 1 - r2;
+            sum += z*z*z / (1.0/(2.0*M_PI));
+        }
+        std::cout << "PI/2 = " << M_PI/2 << "\n";
+        std::cout << "Estimate = " << sum/N << "\n";
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Now let’s generate directions with $ p(directions) = cos(\theta) / \pi $ .
 
 $$ r2 = \int_{0}^{\theta} 2*\pi*(cos(t)/\pi)*sin(t) = 1-cos^2(\theta) $$
-
-
 
 So,
 
@@ -112,9 +144,32 @@ $$ y = sin(\phi)*sin(\theta) = sin(2*\pi*r1)*sqrt(1-z^2) = sin(2*\pi*r1)*sqrt(r2
 
 Let’s also start generating them as random vectors:
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    inline vec3 random_cosine_direction() {
+        float r1 = drand48();
+        float r2 = drand48();
+        float z = sqrt(1-r2);
+        float phi = 2*M_PI*r1;
+        float x = cos(phi)*2*sqrt(r2);
+        float y = sin(phi)*2*sqrt(r2);
+        return vec3(x, y, z);
+    }
+
+    int main() {
+        int N = 1000000;
+        float sum = 0.0;
+        for (int i = 0; i < N; i++) {
+            vec3 v = random_cosine_direction();
+            sum += v.z()*v.z()*v.z() / (v.z()/(M_PI));
+        }
+        std::cout << "PI/2 = " << M_PI/2 << "\n";
+        std::cout << "Estimate = " << sum/N << "\n";
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 We can generate other densities later as we need them. In the next chapter we’ll get them aligned to
 the surface normal vector.
-
 
 
 <!-- Markdeep: -->
