@@ -15,6 +15,7 @@
 #include "float.h"
 #include "camera.h"
 #include "material.h"
+#include "random.h"
 
 
 vec3 color(const ray& r, hitable *world, int depth) {
@@ -44,19 +45,24 @@ hitable *random_scene() {
     int i = 1;
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
-            float choose_mat = drand48();
-            vec3 center(a+0.9*drand48(),0.2,b+0.9*drand48());
+            float choose_mat = random_double();
+            vec3 center(a+0.9*random_double(),0.2,b+0.9*random_double());
             if ((center-vec3(4,0.2,0)).length() > 0.9) {
                 if (choose_mat < 0.8) {  // diffuse
                     list[i++] = new sphere(
                         center, 0.2,
-                        new lambertian(vec3(drand48()*drand48(), drand48()*drand48(), drand48()*drand48()))
+                        new lambertian(vec3(random_double()*random_double(),
+                                            random_double()*random_double(),
+                                            random_double()*random_double()))
                     );
                 }
                 else if (choose_mat < 0.95) { // metal
                     list[i++] = new sphere(
                         center, 0.2,
-                        new metal(vec3(0.5*(1 + drand48()), 0.5*(1 + drand48()), 0.5*(1 + drand48())),  0.5*drand48())
+                        new metal(vec3(0.5*(1 + random_double()),
+                                       0.5*(1 + random_double()),
+                                       0.5*(1 + random_double())),
+                                  0.5*random_double())
                     );
                 }
                 else {  // glass
@@ -92,8 +98,8 @@ int main() {
         for (int i = 0; i < nx; i++) {
             vec3 col(0, 0, 0);
             for (int s=0; s < ns; s++) {
-                float u = float(i + drand48()) / float(nx);
-                float v = float(j + drand48()) / float(ny);
+                float u = float(i + random_double()) / float(nx);
+                float v = float(j + random_double()) / float(ny);
                 ray r = cam.get_ray(u, v);
                 col += color(r, world,0);
             }
