@@ -33,7 +33,7 @@ class constant_medium : public hitable  {
 bool constant_medium::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
 
     // Print occasional samples when debugging. To enable, set enableDebug true.
-    const enableDebug = false;
+    const bool enableDebug = false;
     bool debugging = enableDebug && drand48() < 0.00001;
 
     hit_record rec1, rec2;
@@ -60,8 +60,8 @@ bool constant_medium::hit(const ray& r, float t_min, float t_max, hit_record& re
                 rec.p = r.point_at_parameter(rec.t);
 
                 if (debugging) {
-                    std::cerr << "hit_distance = " <<  hit_distance << '\n';
-                              << "rec.t = " <<  rec.t << '\n';
+                    std::cerr << "hit_distance = " <<  hit_distance << '\n'
+                              << "rec.t = " <<  rec.t << '\n'
                               << "rec.p = " <<  rec.p << '\n';
                 }
 
