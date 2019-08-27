@@ -9,19 +9,22 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "vec3.h"
+
 #include <iostream>
 #include <math.h>
-#include "vec3.h"
+
 
 inline vec3 random_cosine_direction() {
     float r1 = drand48();
     float r2 = drand48();
     float z = sqrt(1-r2);
     float phi = 2*M_PI*r1;
-    float x = cos(phi)*2*sqrt(r2);
-    float y = sin(phi)*2*sqrt(r2);
+    float x = cos(phi)*sqrt(r2);
+    float y = sin(phi)*sqrt(r2);
     return vec3(x, y, z);
 }
+
 
 int main() {
     int N = 1000000;
