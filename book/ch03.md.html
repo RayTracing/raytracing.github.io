@@ -1,0 +1,86 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+
+                     **Chapter 3: MC Integration on the Sphere of Directions**
+
+
+In our ray tracer we pick random directions, and directions can be represented as points on the
+unit-sphere. The same methodology as before applies. But now we need to have a pdf defined over 2D.
+Suppose we have this integral over all directions:
+
+    $$ \int cos^2(\theta) $$
+
+By MC integration, we should just be able to sample $cos^2(\theta) / p(direction)$. But what is
+direction in that context? We could make it based on polar coordinates, so $p$ would be in terms of
+$(\theta, \phi)$ . However you do it, remember that a pdf has to integrate to 1 and represent the
+relative probability of that direction being sampled. We have a method from the last books to take
+uniform random samples in a unit sphere:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 random_in_unit_sphere() {
+        vec3 p;
+        do {
+            p = 2.0*vec3(drand48(),drand48(),drand48()) - vec3(1,1,1);
+        } while (dot(p,p) >= 1.0);
+        return p;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To get points on a unit sphere we can just normalize the vector to those points:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 random_on_unit_sphere() {
+        vec3 p;
+        do {
+            p = 2.0*vec3(drand48(),drand48(),drand48()) - vec3(1,1,1);
+        } while (dot(p,p) >= 1.0);
+        return unit_vector(p);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Now what is the pdf of these uniform points? As a density on the unit sphere, it is $1/area$ of the
+sphere or $1/(4\pi)$. If the integrand is $cos^2(\theta)$ and $\theta$ is the angle with the z axis:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline float pdf(const vec3& p) {
+        return 1 / (4*M_PI);
+    }
+
+    int main() {
+        int N = 1000000;
+        float sum;
+        for (int i = 0; i < N; i++) {
+                vec3 d = random_on_unit_sphere();
+                float cosine_squared = d.z()*d.z();
+                sum += cosine_squared / pdf(d);
+        }
+        std::cout << "I =" << sum/N << "\n";
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The analytic answer (if you remember enough advanced calc, check me!) is $\frac{4}{3} \pi$, and the code
+above produces that. Next, we are ready to apply that in ray tracing!
+
+The key point here is that all the integrals and probability and all that are over the unit sphere.
+The area on the unit sphere is how you measure the directions. Call it direction, solid angle, or
+area-- it’s all the same thing. Solid angle is the term usually used. If you are comfortable with
+that, great! If not, do what I do and imagine the area on the unit sphere that a set of directions
+goes through. The solid angle $\omega$ and the projected area $A$ on the unit sphere are the same thing.
+
+![Figure 3-1](../assets/fig03-1.jpg)
+
+Now let’s go on to the light transport equation we are solving.
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="../assets/markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

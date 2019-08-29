@@ -1,0 +1,174 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+
+                            **Chapter 5: Importance Sampling Materials**
+
+Our goal over the next two chapters is to instrument our program to send a bunch of extra rays
+toward light sources so that our picture is less noisy. Let’s assume we can send a bunch of rays
+toward the light source using a pdf $pLight(direction)$ . Let’s also assume we have a pdf related to
+$s$, and let’s call that $pSurface(direction)$ . A great thing about pdfs is that you can just use
+linear mixtures of them to form mixture densities that are also pdfs. For example, the simplest
+would be:
+
+    $$ p(direction) = 0.5 \cdot pLight(direction) + 0.5* \cdot pSurface(direction) $$
+
+As long as the weights are positive and add up to one, any such mixture of pdfs is a pdf. And
+remember, we can use any pdf-- it doesn’t change the answer we converge to! So, the game is to
+figure out how to make the pdf larger where the product $s(direction)*color(direction)$ is large. For
+diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is high.
+
+For a mirror, $s()$ is huge only near one direction, so it matters a lot more. Most renderers in
+fact make mirrors a special case and just make the $s/p$ implicit-- our code currently does that.
+
+Let’s do simple refactoring and temporarily remove all materials that aren’t Lambertian. We can use
+our Cornell Box scene again, and let’s generate the camera in the function that generates the model:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    void cornell_box(hitable **scene, camera **cam, float aspect) {
+        int i = 0;
+        hitable **list = new hitable*[8];
+        material *red = new lambertian( new constant_texture(vec3(0.65, 0.05, 0.05)) );
+        material *white = new lambertian( new constant_texture(vec3(0.73, 0.73, 0.73)) );
+        material *green = new lambertian( new constant_texture(vec3(0.12, 0.45, 0.15)) );
+        material *light = new diffuse_light( new constant_texture(vec3(15, 15, 15)) );
+        list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
+        list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
+        list[i++] = new flip_normals(new xz_rect(213, 343, 227, 332, 554, light));
+        list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
+        list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
+        list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
+        list[i++] = new translate(new rotate_y(
+            new box(vec3(0, 0, 0), vec3(165, 165, 165), white), -18), vec3(130,0,65));
+        list[i++] = new translate(new rotate_y(
+            new box(vec3(0, 0, 0), vec3(165, 330, 165), white),  15), vec3(265,0,295));
+        *scene = new hitable_list(list,i);
+        vec3 lookfrom(278, 278, -800);
+        vec3 lookat(278,278,0);
+        float dist_to_focus = 10.0;
+        float aperture = 0.0;
+        float vfov = 40.0;
+        *cam = new camera(lookfrom, lookat, vec3(0,1,0),
+                          vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+At 500x500 my code produces this image in 10min on 1 core of my Macbook:
+
+![Figure 5-1](../assets/img05-1.jpg)
+
+Reducing that noise is our goal. We’ll do that by constructing a pdf that sends more rays to the
+light.
+
+First, let’s instrument the code so that it explicitly samples some pdf and then normalizes for
+that. Remember MC basics: $\int f(x) \approx f(r)/p(r)$ . For the Lambertian material,
+let’s sample like we do now: $p(direction) = cos(\theta) / \pi$.
+
+We modify the base-class _material_ to enable this importance sampling:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class material  {
+        public:
+            virtual bool scatter(const ray& r_in,
+                const hit_record& rec, vec3& albedo, ray& scattered, float& pdf) const {
+                return false;
+            }
+            virtual float scattering_pdf(const ray& r_in,
+                const hit_record& rec, const ray& scattered) const {
+                return false;
+            }
+            virtual vec3 emitted(float u, float v, const vec3& p) const {
+                return vec3(0,0,0);
+            }
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And _Lambertian_ material becomes:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class lambertian : public material {
+        public:
+            lambertian(texture *a) : albedo(a) {}
+            float scattering_pdf(const ray& r_in,
+                const hit_record& rec, const ray& scattered) const {
+                float cosine = dot(rec.normal, unit_vector(scattered.direction()));
+                if (cosine < 0)
+                    return 0;
+                return cosine / M_PI;
+            }
+            bool scatter(const ray& r_in,
+                const hit_record& rec, vec3& alb, ray& scattered, float& pdf) const {
+                vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+                scattered = ray(rec.p, unit_vector(target-rec.p), r_in.time());
+                alb = albedo->value(rec.u, rec.v, rec.p);
+                pdf = dot(rec.normal, scattered.direction()) / M_PI;
+                return true;
+            }
+            texture *albedo;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And the color function gets a minor modification.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 color(const ray& r, hitable *world, int depth) {
+        hit_record rec;
+        if (world->hit(r, 0.001, MAXFLOAT, hrec)) {
+            ray scattered;
+            vec3 attenuation;
+            vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+            float pdf;
+            vec3 albedo;
+            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf)) {
+                return emitted + albedo*rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                    *color(scattered, world, depth+1) / pdf;
+            }
+            else
+                return emitted;
+        }
+        else
+            return vec3(0,0,0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You should get exactly the same picture.
+
+Now, just for the experience, try a different sampling strategy. Let’s choose randomly from the
+hemisphere that is above the surface. This would be $p(direction) = 1/(2* \pi)$ .
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool scatter(const ray& r_in,
+        const hit_record& rec, vec3& alb, ray& scattered, float& pdf) const {
+        vec3 direction;
+        do {
+            direction = random_in_unit_sphere();
+        } while (dot(direction, rec.normal) < 0);
+        scattered = ray(rec.p, unit_vector(direction), r_in.time());
+        alb = albedo->value(rec.u, rec.v, rec.p);
+        pdf = 0.5 / M_PI;
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And again I __should__ get the same picture except with different variance, but I don’t!
+
+![Figure 5-2](../assets/img05-2.jpg)
+
+It’s pretty close to our old picture, but there are differences that are not noise. The front of the
+tall box is much more uniform in color. So I have the most difficult kind of bug to find in a Monte
+Carlo program-- a bug that produces a reasonable looking image. And I don’t know if the bug is the
+first version of the program or the second, or even in both!
+
+Let’s build some infrastructure to address this.
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="../assets/markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

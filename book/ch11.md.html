@@ -1,0 +1,407 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+
+                            **Chapter 11: Cleaning Up pdf Management.**
+
+So far I have the color function create two hard-coded `pdf`s :
+
+1. `p0()` related to the shape of the light
+2. `p1()` related to the normal vector and type of surface
+
+We can pass information about the light (or whatever `hitable` we want to sample) into the `color`
+function, and we can ask the `material` function for a `pdf` (we would have to instrument it to do
+that). We can also either ask `hit` function or the `material` class to supply whether there is a
+specular vector.
+
+One thing we would like to allow for is a material like varnished wood that is partially ideal
+specular (the polish) and partially diffuse (the wood). Some renderers have the material generate
+two rays: one specular and one diffuse. I am not fond of branching, so I would rather have the
+material randomly decide whether it is diffuse or specular. The catch with that approach is that we
+need to be careful when we ask for the `pdf` value and be aware of whether for this evaluation of
+`color()` it is diffuse or specular. Fortunately, we know that we should only call the `pdf value()`
+if it is diffuse so we can handle that implicitly.
+
+We can redesign `material` and stuff all the new arguments into a `struct` like we did for
+`hitable`:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    struct scatter_record
+    {
+        ray specular_ray;
+        bool is_specular;
+        vec3 attenuation;
+        pdf *pdf_ptr;
+    };
+
+    class material  {
+        public:
+            virtual bool scatter(const ray& r_in, const hit_record& hrec,
+                scatter_record& srec) const { return false; }
+            virtual float scattering_pdf(const ray& r_in, const hit_record& rec,
+                const ray& scattered) const { return false; }
+            virtual vec3 emitted(const ray& r_in, const hit_record& rec,
+                float u, float v, const vec3& p) const { return vec3(0,0,0); }
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Lambertian material becomes simpler:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class lambertian : public material {
+        public:
+            lambertian(texture *a) : albedo(a) {}
+            float scattering_pdf(const ray& r_in, const hit_record& rec,
+                const ray& scattered) const {
+                float cosine = dot(rec.normal, unit_vector(scattered.direction()));
+                if (cosine < 0)
+                    return 0;
+                return cosine / M_PI;
+            }
+            bool scatter(const ray& r_in, const hit_record& hrec,
+                scatter_record& srec) const {
+                srec.is_specular = false;
+                srec.attenuation = albedo->value(hrec.u, hrec.v, hrec.p);
+                srec.pdf_ptr = new cosine_pdf(hrec.normal);
+                return true;
+            }
+            texture *albedo;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And `color()` changes are small:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 color(const ray& r, hitable *world, hitable *light_shape, int depth) {
+        hit_record hrec;
+        if (world->hit(r, 0.001, MAXFLOAT, hrec)) {
+            scatter_record srec;
+            vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
+            if (depth < 50 && hrec.mat_ptr->scatter(r, hrec, srec)) {
+                hitable_pdf plight(light_shape, hrec.p);
+                mixture_pdf p(&plight, srec.pdf_ptr);
+                ray scattered = ray(hrec.p, p.generate(), r.time());
+                float pdf_val = p.value(scattered.direction());
+                return emitted
+                    + srec.attenuation * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+                                       * color(scattered, world, light_shape, depth+1)
+                                       / pdf_val;
+            }
+            else
+                return emitted;
+        }
+        else
+            return vec3(0,0,0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We have not yet dealt with specular surfaces, nor instances that mess with the surface normal, and
+we have added a memory leak by calling `new` in Lambertian material. But this design is clean
+overall, and those are all fixable. For now, I will just fix `specular`. Metal is easy to fix.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class metal : public material {
+        public:
+            metal(const vec3& a, float f) : albedo(a)
+                { if (f < 1) fuzz = f; else fuzz = 1; }
+            virtual bool scatter(const ray& r_in, const hit_record& hrec,
+                scatter_record& srec) const {
+                vec3 reflected = reflect(unit_vector(r_in.direction()), hrec.normal);
+                srec.specular_ray = ray(hrec.p, reflected+fuzz*random_in_unit_sphere());
+                srec.attenuation = albedo;
+                srec.is_specular = true;
+                srec.pdf_ptr = 0;
+                return true;
+            }
+            vec3 albedo;
+            float fuzz;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Note that if fuzziness is high, this surface isn’t ideally specular, but the implicit sampling works
+just like it did before.
+
+`Color` just needs a new case to generate an implicitly sampled ray:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 color(const ray& r, hitable *world, hitable *light_shape, int depth) {
+        hit_record hrec;
+        if (world->hit(r, 0.001, MAXFLOAT, hrec)) {
+            scatter_record srec;
+            vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
+            if (depth < 50 && hrec.mat_ptr->scatter(r, hrec, srec)) {
+                if (srec.is_specular) {
+                    return srec.attenuation
+                         * color(srec.specular_ray, world, light_shape, depth+1);
+                }
+                else {
+                    hitable_pdf plight(light_shape, hrec.p);
+                    mixture_pdf p(&plight, srec.pdf_ptr);
+                    ray scattered = ray(hrec.p, p.generate(), r.time());
+                    float pdf_val = p.value(scattered.direction());
+                    delete srec.pdf_ptr;
+                    return emitted + srec.attenuation
+                                   * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+                                   * color(scattered, world, light_shape, depth+1)
+                                   / pdf_val;
+                }
+            }
+            else
+                return emitted;
+        }
+        else
+            return vec3(0,0,0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We also need to change the block to metal.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    void cornell_box(hitable **scene, camera **cam, float aspect) {
+        int i = 0;
+        hitable **list = new hitable*[8];
+        material *red = new lambertian( new constant_texture(vec3(0.65, 0.05, 0.05)) );
+        material *white = new lambertian( new constant_texture(vec3(0.73, 0.73, 0.73)) );
+        material *green = new lambertian( new constant_texture(vec3(0.12, 0.45, 0.15)) );
+        material *light = new diffuse_light( new constant_texture(vec3(15, 15, 15)) );
+        list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
+        list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
+        list[i++] = new flip_normals(new xz_rect(213, 343, 227, 332, 554, light));
+        list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
+        list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
+        list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
+        list[i++] = new translate(
+            new rotate_y(new box(vec3(0, 0, 0), vec3(165, 165, 165), white),  -18),
+            vec3(130,0,65));
+        material *aluminum = new metal(vec3(0.8, 0.85, 0.88), 0.0);
+        list[i++] = new translate(
+            new rotate_y(new box(vec3(0, 0, 0), vec3(165, 330, 165), aluminum),  15),
+            vec3(265,0,295));
+        *scene = new hitable_list(list,i);
+        vec3 lookfrom(278, 278, -800);
+        vec3 lookat(278,278,0);
+        float dist_to_focus = 10.0;
+        float aperture = 0.0;
+        float vfov = 40.0;
+        *cam = new camera(lookfrom, lookat, vec3(0,1,0),
+                          vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The resulting image has a noisy reflection on the ceiling because the directions toward the box are
+not sampled with more density.
+
+![Image 11-1](../assets/img11-1.jpg)
+
+We could make the pdf include the block. Let’s do that instead with a glass sphere because it’s
+
+easier. When we sample a sphere’s solid angle uniformly from a point outside the sphere, we are
+really just sampling a cone uniformly (the cone is tangent to the sphere). Let’s say the code has
+`theta_max`. Recall from Chapter 6, that to sample $\theta$ we have:
+
+    $$ r2 = \int_{0}^{\theta} 2 \pi \cdot f(t) \cdot sin(t) dt $$
+
+Here $f(t)$ is an as yet uncalculated constant $C$, so:
+
+    $$ r2 = \int_{0}^{\theta} 2 \pi \cdot C \cdot sin(t) dt $$
+
+Doing some algebra/calculus this yields:
+
+    $$ r2 = 2 \pi \cdot C \cdot (1-cos(\theta)) $$
+
+So
+
+    $$ cos(\theta) = 1 - r2/(2 \pi \cdot C) $$
+
+We know that for $r2 = 1$ we should get $\theta_{max}$, so we can solve for $C$:
+
+    $$ cos(\theta) = 1 + r2 \cdot (cos(\theta_{max})-1) $$
+
+$\phi$ we sample like before, so:
+
+    $$ z = cos(\theta) = 1 + r2 \cdot (cos(\theta_{max})-1) $$
+    $$ x = cos(\phi) \cdot sin(\theta) = cos(2 \pi \cdot r1) \cdot \sqrt{1-z^2} $$
+    $$ y = sin(\phi) \cdot sin(\theta) = sin(2 \pi \cdot r1) \cdot \sqrt{1-z^2} $$
+
+Now what is $\theta_{max}$?
+
+![Figure 11-1](../assets/fig11-1.jpg)
+
+We can see from the figure that $sin(\theta_{max}) = R / length( c - p )$. So:
+
+    $$ cos(\theta_{max}) = \sqrt{1- (R / length( c - p ))^2} $$
+
+We also need to evaluate the _pdf_ of directions. For directions toward the sphere this is
+$1/solid\_angle$. What is the solid angle of the sphere? It has something to do with the $C$ above.
+It, by definition, is the area on the unit sphere, so the integral is
+
+    $$ solid\_angle = \int_{0}^{2 \pi} \int_{0}^{\theta_{max}} sin(\theta) d \theta d \phi
+       = 2 \pi \cdot (1-cos(\theta_{max})) $$
+
+It’s good to check the math on all such calculations. I usually plug in the extreme cases (thank you
+for that concept, Mr. Horton--my high school physics teacher). For a zero radius sphere
+$cos(\theta_{max}) = 0$, and that works. For a sphere tangent at $p$, $cos(\theta_{max}) = 0$, and
+$2 \pi$ is the area of a hemisphere, so that works too.
+
+The sphere class needs the two `pdf`-related functions:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    float sphere::pdf_value(const vec3& o, const vec3& v) const {
+        hit_record rec;
+        if (this->hit(ray(o, v), 0.001, FLT_MAX, rec)) {
+            float cos_theta_max = sqrt(1 - radius*radius/(center-o).squared_length());
+            float solid_angle = 2*M_PI*(1-cos_theta_max);
+            return  1 / solid_angle;
+        }
+        else
+            return 0;
+    }
+
+    vec3 sphere::random(const vec3& o) const {
+        vec3 direction = center - o;
+        float distance_squared = direction.squared_length();
+        onb uvw;
+        uvw.build_from_w(direction);
+        return uvw.local(random_to_sphere(radius, distance_squared));
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With the utility function:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline vec3 random_to_sphere(float radius, float distance_squared) {
+        float r1 = drand48();
+        float r2 = drand48();
+        float z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
+        float phi = 2*M_PI*r1;
+        float x = cos(phi)*sqrt(1-z*z);
+        float y = sin(phi)*sqrt(1-z*z);
+        return vec3(x, y, z);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We can first try just sampling the sphere rather than the light:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hitable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
+    hitable *glass_sphere = new sphere(vec3(190, 90, 190), 90, 0);
+
+    for (int j = ny-1; j >= 0; j--) {
+        for (int i = 0; i < nx; i++) {
+            vec3 col(0, 0, 0);
+            for (int s=0; s < ns; s++) {
+                float u = float(i+drand48())/ float(nx);
+                float v = float(j+drand48())/ float(ny);
+                ray r = cam->get_ray(u, v);
+                vec3 p = r.point_at_parameter(2.0);
+                col += color(r, world, glass_sphere, 0);
+            }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This yields a noisy box, but the caustic under the sphere is good. It took five times as long as
+sampling the light did for my code. This is probably because those rays that hit the glass are
+expensive!
+
+![Image 11-2](../assets/img11-2.jpg)
+
+We should probably just sample both the sphere and the light. We can do that by creating a mixture
+density of their two densities. We could do that in the `color` function by passing a list of
+hitables in and building a mixture `pdf`, or we could add `pdf` functions to `hitable_list`. I
+think both tactics would work fine, but I will go with instrumenting `hitable_list`.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    float hitable_list::pdf_value(const vec3& o, const vec3& v) const {
+        float weight = 1.0/list_size;
+        float sum = 0;
+        for (int i = 0; i < list_size; i++)
+            sum += weight*list[i]->pdf_value(o, v);
+        return sum;
+    }
+
+    vec3 hitable_list::random(const vec3& o) const {
+        int index = int(drand48() * list_size);
+        return list[ index ]->random(o);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We assemble a list to pass in to `color`.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hitable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
+    hitable *glass_sphere = new sphere(vec3(190, 90, 190), 90, 0);
+    hitable *a[2];
+    a[0] = light_shape;
+    a[1] = glass_sphere;
+    hitable_list hlist(a,2);
+
+    for (int j = ny-1; j >= 0; j--) {
+        for (int i = 0; i < nx; i++) {
+            vec3 col(0, 0, 0);
+            for (int s=0; s < ns; s++) {
+                float u = float(i+drand48())/ float(nx);
+                float v = float(j+drand48())/ float(ny);
+                ray r = cam->get_ray(u, v);
+                vec3 p = r.point_at_parameter(2.0);
+                col += color(r, world, &hlist, 0);
+            }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And we get a decent image with 1000 samples as before:
+
+![Image 11-3](../assets/img11-3.jpg)
+
+An astute reader pointed out there are some black specks in the image above. All Monte Carlo Ray
+Tracers have this as a main loop:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    pixel_color = average(many many samples)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you find yourself getting some form of acne in the images, and this acne is white or black, so
+one "bad" sample seems to kill the whole pixel, that sample is probably a huge number or a `NaN`.
+This particular acne is probably a `NaN`. Mine seems to come up once in every 10-100 million rays
+or so.
+
+So big decision: sweep this bug under the rug and check for `NaN`s, or just kill `NaN`s and hope
+this doesn't come back to bite us later. I will always opt for the lazy strategy, especially when I
+know floating point is hard. First, how do we check for a `NaN`? The one thing I always remember
+for `NaN`s is that any `if` test with a `NaN` in it is false. This leads to the common trick:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline vec3 de_nan(const vec3& c) {
+        vec3 temp = c;
+        if (!(temp[0] == temp[0])) temp[0] = 0;
+        if (!(temp[1] == temp[1])) temp[1] = 0;
+        if (!(temp[2] == temp[2])) temp[2] = 0;
+        return temp;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And we can insert that in the main loop:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    for (int s=0; s < ns; s++) {
+        float u = float(i+drand48())/ float(nx);
+        float v = float(j+drand48())/ float(ny);
+        ray r = cam->get_ray(u, v);
+        vec3 p = r.point_at_parameter(2.0);
+        col += de_nan(color(r, world, &hlist, 0));
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Happily, the black specks are gone:
+
+![Image 11-4](../assets/img11-4.jpg)
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="../assets/markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

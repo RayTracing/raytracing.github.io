@@ -1,0 +1,127 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+
+                                 **Chapter 7: Ortho-normal Bases**
+
+In the last chapter we developed methods to generate random directions relative to the Z-axis. We’d
+like to do that relative to a surface normal vector. An ortho-normal basis (ONB) is a collection of
+three mutually orthogonal unit vectors. The Cartesian XYZ axes are one such ONB, and I sometimes
+forget that it has to sit in some real place with real orientation to have meaning in the real
+world, and some virtual place and orientation in the virtual world. A picture is a result of the
+relative positions/orientations of the camera and scene, so as long as the camera and scene are
+described in the same coordinate system, all is well.
+
+Suppose we have an origin $\mathbf{O}$ and cartesian unit vectors $\vec{x}$, $\vec{y}$, and
+$\vec{z}$. When we say a location is (3, -2, 7), we really are saying:
+
+  $$ \text{Location is } \mathbf{O} + 3\vec{x} - 2\vec{y} + 7\vec{z} $$
+
+If we want to measure coordinates in another coordinate system with origin $\mathbf{O}’$ and basis
+vectors $\vec{U}$, $\vec{V}$, and $\vec{W}$, we can just find the numbers $(u, v, w)$ such that:
+
+  $$ \text{Location is } \mathbf{O}’ + u\vec{U} + v\vec{V} + w\vec{W} $$
+
+If you take an intro graphics course, there will be a lot of time spent on coordinate systems and
+4×4 coordinate transformation matrices. Pay attention, it’s important stuff in graphics! But we
+won’t need it. What we need to is generate random directions with a set distribution relative to
+$\vec{n}$. We don’t need an origin because a direction is relative to no specified origin. We do
+need two cotangent vectors that are mutually perpendicular to $\vec{n}$ and each other.
+
+Some models will come with at least one cotangent vector. The hard case of making an ONB is when we
+just have one vector. Suppose we have any vector $\vec{a}$ that is not zero length or parallel to
+$\vec{n}$. We can get to vectors $\vec{s}$ and $\vec{t}$ parallel to $\vec{n}$ by using the property
+of the cross product that $\vec{c} \times \vec{d}$ is perpendicular to both $\vec{c}$ and $\vec{d}$:
+
+  $$ \vec{t} = \text{unit_vector}(\vec{a} \times \vec{n}) $$
+
+  $$ \vec{s} = \vec{t} \times \vec{n} $$
+
+The catch is, we don’t have an $\vec{a}$ and if we pick a particular one at some point we will get
+an $\vec{n}$ parallel to $\vec{a}$. A common method is to use an if-statement to determine whether
+$\vec{n}$ is a particular axis, and if not, use that axis.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if (fabs(n.x()) > 0.9)
+        a = (0, 1, 0)
+    else
+        a = (1, 0, 0)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once we have an ONB and we have a $random(x,y,z)$ relative the the Z-axis we can get the vector
+relative to $\vec{n}$ as:
+
+  $$ \text{Random vector} = \vec{x} \cdot \vec{s} + \vec{y} \cdot \vec{t} + \vec{z} \cdot \vec{n} $$
+
+You may notice we used similar math to get rays from a camera. That could be viewed as a change to
+the camera’s natural coordinate system. Should we make a class for ONBs or are utility functions
+enough? I’m not sure, but let’s make a class because it won't really be more complicated than
+utility functions:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class onb
+    {
+        public:
+            onb() {}
+            inline vec3 operator[](int i) const { return axis[i]; }
+            vec3 u() const       { return axis[0]; }
+            vec3 v() const       { return axis[1]; }
+            vec3 w() const       { return axis[2]; }
+            vec3 local(float a, float b, float c) const { return a*u() + b*v() + c*w(); }
+            vec3 local(const vec3& a) const { return a.x()*u() + a.y()*v() + a.z()*w(); }
+            void build_from_w(const vec3&);
+            vec3 axis[3];
+    };
+
+
+    void onb::build_from_w(const vec3& n) {
+        axis[2] = unit_vector(n);
+        vec3 a;
+        if (fabs(w().x()) > 0.9)
+            a = vec3(0, 1, 0);
+        else
+            a = vec3(1, 0, 0);
+        axis[1] = unit_vector( cross( w(), a ) );
+        axis[0] = cross(w(), v());
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We can rewrite our Lambertian material using this to get:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool scatter(
+        const ray& r_in,
+        const hit_record& rec,
+        vec3& alb,
+        ray& scattered,
+        float& pdf) const
+    {
+        onb uvw;
+        uvw.build_from_w(rec.normal);
+        vec3 direction = uvw.local(random_cosine_direction() );
+        scattered = ray(rec.p, unit_vector(direction), r_in.time());
+        alb = albedo->value(rec.u, rec.v, rec.p);
+        pdf = dot(uvw.w(), scattered.direction()) / M_PI;
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Which produces:
+
+![Image 7-1](../assets/img07-1.jpg)
+
+Is that right? We still don’t know for sure. Tracking down bugs is hard in the absence of reliable
+reference solutions. Let’s table that for now and move on to get rid of some of that noise.
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="../assets/markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

@@ -1,0 +1,173 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+
+                            **Chapter 6: Generating Random Directions**
+
+In this and the next two chapters let’s harden our understanding and tools and figure out which
+Cornell Box is right. Let’s first figure out how to generate random directions, but to simplify
+things let’s assume the z-axis is the surface normal and $\theta$ is the angle from the normal.
+We’ll get them oriented to the surface normal vector in the next chapter. We will only deal with
+distributions that are rotationally symmetric about $z$. So $p(direction) = f(\theta)$. If you
+have had advanced calculus, you may recall that on the sphere in spherical coordinates
+$dA = \sin(\theta) \cdot d\theta \cdot d\phi$. If you haven’t, you’ll have to take my word for the
+next step, but you’ll get it when you take advanced calc.
+
+Given a directional pdf, $p(direction) = f(\theta)$ on the sphere, the 1D pdfs on $\theta$ and
+$\phi$ are:
+
+  $$ a(\phi) = \frac{1}{2\pi} $$
+(uniform)
+  $$ b(\theta) = 2*\pi*f(\theta)\sin(\theta) $$
+
+For uniform random numbers $r_1$ and $r_2$, the material presented in Chapter 2 leads to:
+
+  $$ r_1 = \int_{0}^{\phi} \frac{1}{2\pi} = \frac{\phi}{2\pi} $$
+
+Solving for $\phi$ we get:
+
+  $$ \phi = 2 \pi \cdot r_1 $$
+
+For theta we have:
+
+  $$ r_2 = \int_{0}^{\theta} 2 \pi f(t) \sin(t) $$
+
+Here, $t$ is a dummy variable. Let’s try some different functions for $f()$. Let’s first try a
+uniform density on the sphere. The area of the unit sphere is $4\pi$ , so a uniform $p(direction) =
+\frac{1}{4\pi}$ on the unit sphere.
+
+  $$ r_2 = \frac{-\cos(\theta)}{2} - \frac{-\cos(0)}{2} = \frac{1 - \cos(\theta)}{2} $$
+
+Solving for $\cos(\theta)$ gives:
+
+  $$ \cos(\theta) = 1 - 2 r_2 $$
+
+We don’t solve for theta because we probably only need to know $\cos(\theta)$ anyway and don’t want
+needless $\arccos()$ calls running around.
+
+To generate a unit vector direction toward $(\theta,\phi)$ we convert to Cartesian coordinates:
+
+  $$ x = \cos(\phi) \cdot \sin(\theta) $$
+  $$ y = \sin(\phi) \cdot \sin(\theta) $$
+  $$ z = \cos(\theta) $$
+
+And using the identity that $\cos^2 + \sin^2 = 1$, we get the following in terms of random
+$(r_1,r_2)$:
+
+  $$ x = \cos(2\pi \cdot r_1)\sqrt{1 - (1-2 r_2)^2} $$
+  $$ y = \sin(2\pi \cdot r_1)\sqrt{1 - (1-2 r_2)^2} $$
+  $$ z = 1 - 2  r_2 $$
+
+Simplifying a little, $(1 - 2 r_2)^2 = 1 - 4r_2 + 4r_2^2$, so:
+
+  $$ x = \cos(2 \pi r_1) \cdot 2 \sqrt{r_2(1 - r_2)} $$
+  $$ y = \sin(2 \pi r_1) \cdot 2 \sqrt{r_2(1 - r_2)} $$
+  $$ z = 1 - 2 r_2 $$
+
+We can output some of these:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+        for (int i = 0; i < 200; i++) {
+            float r1 = drand48();
+            float r2 = drand48();
+            float x = cos(2*M_PI*r1)*2*sqrt(r2*(1-r2));
+            float y = sin(2*M_PI*r1)*2*sqrt(r2*(1-r2));
+            float z = 1 - r2;
+
+            std::cout << x << " " << y << " " << z << "\n";
+        }
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And plot them for free on plot.ly (a great site with 3D scatterplot support):
+
+  ![Image 6-1](../assets/fig06-1.jpg)
+
+On the plot.ly website you can rotate that around and see that it appears uniform.
+
+Now let’s derive uniform on the hemisphere . The density being uniform on the hemisphere means
+$p(direction) = 1 / (2 \pi)$ and just changing the constant in the theta equations yields:
+
+  $$ \cos(\theta) = 1 - r_2 $$
+
+It is comforting that $\cos(\theta)$ will vary from 1 to 0, and thus theta will vary from 0 to
+$\pi/2$. Rather than plot it, let’s do a 2D integral with a known solution. Let’s integrate cosine
+cubed over the hemisphere (just picking something arbitrary with a known solution). First let’s do
+it by hand:
+
+  $$ \int \cos^3 = 2 \pi \int_{0}^{\pi/2} \cos^3 \sin = \frac{\pi}{2} $$
+
+Now for integration with importance sampling. $p(direction) = 1/(2 \pi)$, so we average $f/p$
+which is $\cos^3 / (1/(2 \pi))$, and we can test this:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+        int N = 1000000;
+        float sum = 0.0;
+        for (int i = 0; i < N; i++) {
+            float r1 = drand48();
+            float r2 = drand48();
+            float x = cos(2*M_PI*r1)*2*sqrt(r2*(1-r2));
+            float y = sin(2*M_PI*r1)*2*sqrt(r2*(1-r2));
+            float z = 1 - r2;
+            sum += z*z*z / (1.0/(2.0*M_PI));
+        }
+        std::cout << "PI/2 = " << M_PI/2 << "\n";
+        std::cout << "Estimate = " << sum/N << "\n";
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Now let’s generate directions with $p(directions) = \cos(\theta) / \pi$.
+
+  $$ r_2 = \int_{0}^{\theta} 2 \pi \frac{\cos(t)}{\pi} \sin(t) = 1 - \cos^2(\theta) $$
+
+So,
+
+  $$ \cos(\theta) = \sqrt{1 - r_2} $$
+
+We can save a little algebra on specific cases by noting
+
+  $$ z = \cos(\theta) = \sqrt{1 - r_2} $$
+  $$ x = \cos(\phi) \sin(\theta) = \cos(2 \pi r_1) \sqrt{1 - z^2} = \cos(2 \pi r_1) \sqrt{r_2} $$
+  $$ y = \sin(\phi) \sin(\theta) = \sin(2 \pi r_1) \sqrt{1 - z^2} = \sin(2 \pi r_1) \sqrt{r_2} $$
+
+Let’s also start generating them as random vectors:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline vec3 random_cosine_direction() {
+        float r1 = drand48();
+        float r2 = drand48();
+        float z = sqrt(1-r2);
+        float phi = 2*M_PI*r1;
+        float x = cos(phi)*sqrt(r2);
+        float y = sin(phi)*sqrt(r2);
+        return vec3(x, y, z);
+    }
+
+    int main() {
+        int N = 1000000;
+        float sum = 0.0;
+        for (int i = 0; i < N; i++) {
+            vec3 v = random_cosine_direction();
+            sum += v.z()*v.z()*v.z() / (v.z()/(M_PI));
+        }
+        std::cout << "PI/2 = " << M_PI/2 << "\n";
+        std::cout << "Estimate = " << sum/N << "\n";
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We can generate other densities later as we need them. In the next chapter we’ll get them aligned to
+the surface normal vector.
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="../assets/markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

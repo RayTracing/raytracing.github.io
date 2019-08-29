@@ -1,0 +1,94 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+
+                                  **Chapter 4: Light Scattering**
+
+In this chapter we won't actually implement anything. We will set up for a big lighting change in
+our program in Chapter 5.
+
+Our program from the last books already scatters rays from a surface or volume. This is the commonly
+used model for light interacting with a surface. One natural way to model this is with probability.
+First, is the light absorbed?
+
+Probability of light scattering: $A$
+Probability of light being absorbed: $1-A$
+
+Here $A$ stands for _albedo_ (latin for _whiteness_). Albedo is a precise technical term in some
+disciplines, but in all uses it means some form of fractional reflectance. As we implemented for
+glass, the albedo may vary with incident direction, and it varies with color. In the most physically
+based renderers, we would use a set of wavelengths for the light color rather than RGB. We can
+almost always harness our intuition by thinking of R, G, and B as specific long, medium, and short
+wavelengths.
+
+If the light does scatter, it will have a directional distribution that we can describe as a pdf
+over solid angle. I will refer to this as its _scattering pdf_: $s(direction)$. The scattering pdf
+can also vary with incident direction, as you will notice when you look at reflections off a road--
+they become mirror-like as your viewing angle approaches grazing.
+
+The color of a surface in terms of these quantities is:
+
+    $$ Color = \int A \cdot s(direction) \cdot color(direction) $$
+
+Note that $A$ and $s()$ might depend on the view direction, so of course color can vary with view
+direction. Also $A$ and $s()$ may vary with position on the surface or within the volume.
+
+If we apply the MC basic formula we get the following statistical estimate:
+
+    $$ Color = (A \cdot s(direction) \cdot color(direction)) / p(direction) $$
+
+Where $p(direction)$ is the pdf of whatever direction we randomly generate.
+
+For a Lambertian surface we already implicitly implemented this formula for the special case where
+$p()$ is a cosine density. The $s()$ of a Lambertian surface is proportional to $cos(\theta)$, where
+$\theta$ is the angle relative to the surface normal. Remember that all pdf need to integrate to
+one. For $cos(\theta) < 0$ we have $s(direction) = 0$, and the integral of cos over the hemisphere
+is $\pi$.
+
+To see that remember that in spherical coordinates remember that:
+
+    $$ \delta A = sin(\theta) \delta \theta \delta \phi $$
+
+So:
+
+    $$ Area = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} cos(\theta)sin(\theta) \delta \theta \delta \phi =
+    2 \pi \cdot \frac{1}{2} = \pi $$
+
+So for a Lambertian surface the scattering pdf is:
+
+    $$ s(direction) = cos(\theta) / \pi $$
+
+If we sample using the same pdf, so $p(direction) = cos(\theta) / \pi$, the numerator and
+denominator cancel out and we get:
+
+    $$ Color = A * s(direction) $$
+
+This is exactly what we had in our original color() function! But we need to generalize now so we
+can send extra rays in important directions such as toward the lights.
+
+The treatment above is slightly non-standard because I want the same math to work for surfaces and
+volumes. To do otherwise will make some ugly code.
+
+If you read the literature, you’ll see reflection described by the bidirectional reflectance
+distribution function (BRDF). It relates pretty simply to our terms:
+
+    $$ BRDF = A * s(direction) / cos(\theta) $$
+
+So for a Lambertian surface for example, $BRDF = A / \pi$. Translation between our terms and BRDF is
+easy.
+
+For participation media (volumes), our albedo is usually called scattering albedo, and our
+scattering pdf is usually called phase function.
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="../assets/markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

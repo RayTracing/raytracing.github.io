@@ -1,0 +1,281 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+                           **Chapter 2: One Dimensional MC Integration**
+
+Integration is all about computing areas and volumes, so we could have framed Chapter 1 in an
+integral form if we wanted to make it maximally confusing. But sometimes integration is the most
+natural and clean way to formulate things. Rendering is often such a problem. Let’s look at a
+classic integral:
+
+$$ I = \int_{0}^{2} x^2 dx $$
+
+In computer sciency notation, we might write this as:
+
+$$ I = area( x^2, 0, 2 ) $$
+
+We could also write it as:
+
+$$ I = 2 \cdot average(x^2, 0, 2) $$
+
+This suggests a MC approach:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+        int inside_circle = 0;
+        int inside_circle_stratified = 0;
+        int N = 1000000;
+        float sum;
+        for (int i = 0; i < N; i++) {
+            float x = 2*drand48();
+            sum += x*x;
+        }
+        std::cout << "I =" << 2*sum/N << "\n";
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This, as expected, produces approximately the exact answer we get with algebra, $I = 8/3$. But we
+could also do it for functions that we can’t analytically integrate like $log(sin(x))$. In graphics,
+we often have functions we can evaluate but can’t write down explicitly, or functions we can only
+probabilistically evaluate. That is in fact what the ray tracing `color()` function of the last two
+books is -- we don’t know what color is seen in every direction, but we can statistically estimate
+it in any given dimension.
+
+One problem with the random program we wrote in the first two books is small light sources create
+too much noise because our uniform sampling doesn’t sample the light often enough. We could lessen
+that problem if we sent more random samples toward the light, but then we would need to downweight
+those samples to adjust for the over-sampling. How we do that adjustment? To do that we will need
+the concept of a _probability density function_.
+
+First, what is a _density function_? It’s just a continuous form of a histogram. Here’s an example
+from the histogram Wikipedia page:
+
+![Figure 2-1][fig02-1]
+
+If we added data for more trees, the histogram would get taller. If we divided the data into more
+bins, it would get shorter. A discrete density function differs from a histogram in that it
+normalizes the frequency y-axis to a fraction or percentage (just a fraction times 100). A
+continuous histogram, where we take the number of bins to infinity, can’t be a fraction because the
+height of all the bins would drop to zero. A density function is one where we take the bins and
+adjust them so they don’t get shorter as we add more bins. For the case of the tree histogram above
+we might try:
+
+  $$ \text{Bin-height} = \frac{(\text{Fraction of trees between height }H\text{ and }H’)}{(H-H’)} $$
+
+That would work! We could interpret that as a statistical predictor of a tree’s height:
+
+  $$ \text{Probability a random tree is between } H \text{ and } H’ = \text{Bin-height}\cdot(H-H’)$$
+
+If we wanted to know about the chances of being in a span of multiple bins, we would sum.
+
+A _probability density function_, henceforth pdf, is that fractional histogram made continuous.
+
+Let’s make a _pdf_ and use it a bit to understand it more. Suppose I want a random number $r$
+between 0 and 2 whose probability is proportional to itself: $r$. We would expect the pdf $p(r)$
+to look something like the figure below. But how high should it be?
+
+![Figure 2-2][fig02-2]
+
+The height is just $p(2)$. What should that be? We could reasonably make it anything by
+convention, and we should pick something that is convenient. Just as with histograms we can sum up
+(integrate) the region to figure out the probability that $r$ is in some interval $(x0,x1)$:
+
+  $$ \text{Probability } x0 < r < x1 = C \cdot area(p(r), x0, x1) $$
+
+where $C$ is a scaling constant. We may as well make $C = 1$ for cleanliness, and that is exactly
+what is done in probability. And we know the probability $r$ has the value 1 somewhere, so for
+this case
+
+  $$ area(p(r), 0, 2) = 1 $$
+
+Since $p(r)$ is proportional to $r$ , _i.e._, $p = C’ \cdot r$ for some other constant $C’$
+
+  $$
+  area(C’r, 0, 2) = \int_{0}^{2} C’ r dr
+                  = \frac{C’r^2}{2}(2) - \frac{C’r^2}{2}(0)
+                  = 2C’
+  $$
+
+So $p(r) = r/2$.
+
+How do we generate a random number with that pdf $p(r)$? For that we will need some more machinery.
+Don’t worry this doesn’t go on forever!
+
+Given a random number from `d = drand48()` that is uniform and between 0 and 1, we should be able
+to find some function $f(d)$ that gives us what we want. Suppose $e = f(d) = d^2$. That is no
+longer a uniform _pdf_ . The _pdf_ of $e$ will be bigger near 0 than it is near 1 (squaring a
+number between 0 and 1 makes it smaller). To take this general observation to a function, we need
+the cumulative probability distribution function $P(x)$:
+
+  $$ P(x) = area(p, -\infty, x) $$
+
+Note that for x where we didn’t define $p(x)$, $p(x) = 0$, _i.e._, the probability of an $x$ there
+is zero. For our example _pdf_ $p(r) = r/2$ , the $P(x)$ is:
+
+  $$ P(x) = 0 : x < 0                 $$
+  $$ P(x) = \frac{x^2}{4} : 0 < x < 2 $$
+  $$ P(x) = 1 : x > 2                 $$
+
+One question is, what’s up with $x$ versus $r$? They are dummy variables -- analogous to the
+function arguments in a program. If we evaluate $P$ at $x = 0.5$ , we get:
+
+  $$ P(1.0) = \frac{1}{4} $$
+
+This says _the probability that a random variable with our pdf is less than one is 25%_ . This
+gives rise to a clever observation that underlies many methods to generate non-uniform random
+numbers. We want a function `f()` that when we call it as `f(drand48())` we get a return value with
+a pdf $\frac{x^2}{4}$ . We don’t know what that is, but we do know that 25% of what it returns
+should be less than 1, and 75% should be above one. If $f()$ is increasing, then we would expect
+$f(0.25) = 1.0$. This can be generalized to figure out $f()$ for every possible input:
+
+  $$ f(P(x)) = x $$
+
+That means $f$ just undoes whatever $P$ does. So,
+
+  $$ f(x) = P^-1 (x) $$
+
+The -1 means “inverse function”. Ugly notation, but standard. For our purposes what this means is,
+if we have pdf $p()$ and its cumulative distribution function $P()$ , then if we do this to a random
+number we’ll get what we want:
+
+  $$ e = P^-1 (drand48()) $$
+
+For our _pdf_ $p(x) = x/2$ , and corresponding $P(x)$ , we need to compute the inverse of $P$. If
+we have
+
+  $$ y = \frac{x^2}{4} $$
+
+we get the inverse by solving for $x$ in terms of $y$:
+
+  $$ x = \sqrt{4y} $$
+
+Thus our random number with density $p$ we get by:
+
+  $$ e = \sqrt{4*drand48()} $$
+
+Note that does range 0 to 2 as hoped, and if we send in $1/4$ for `drand48()` we get 1 as desired.
+
+We can now sample our old integral
+
+  $$ I = \int_{0}^{2} x^2 $$
+
+We need to account for the non-uniformity of the _pdf_ of $x$. Where we sample too much we should
+down-weight. The _pdf_ is a perfect measure of how much or little sampling is being done. So the
+weighting function should be proportional to $1/pdf$ . In fact it is exactly $1/pdf$ :
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include <math.h>
+    #include <stdlib.h>
+    #include <iostream>
+
+    inline float pdf(float x) {
+        return 0.5*x;
+    }
+
+    int main() {
+        int inside_circle = 0;
+        int inside_circle_stratified = 0;
+        int N = 1000000;
+        float sum;
+        for (int i = 0; i < N; i++) {
+            float x = sqrt(4*drand48());
+            sum += x*x / pdf(x);
+        }
+        std::cout << "I =" << sum/N << "\n";
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Since we are sampling more where the integrand is big, we might expect less noise and thus faster
+convergence. This is why using a carefully chosen non-uniform pdf is usually called _importance
+sampling_.
+
+If we take that same code with uniform samples so the pdf = $1/2$ over the range [0,2] we can use
+the machinery to get `x = 2*drand48()` and the code is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include <math.h>
+    #include <stdlib.h>
+    #include <iostream>
+
+    inline float pdf(float x) {
+        return 0.5;
+    }
+
+    int main() {
+        int inside_circle = 0;
+        int inside_circle_stratified = 0;
+        int N = 1000000;
+        float sum;
+        for (int i = 0; i < N; i++) {
+            float x = 2*drand48();
+            sum += x*x / pdf(x);
+        }
+        std::cout << "I =" << sum/N << "\n";
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Note that we don’t need that 2 in the `2*sum/N` anymore -- that is handled by the _pdf_ , which is
+2 when you divide by it. You’ll note that importance sampling helps a little, but not a ton. We
+could make the pdf follow the integrand exactly:
+
+  $$ p(x) = (3/8)x^2 $$
+
+And we get the corresponding
+
+  $$ P(x) = \frac{x^3}{8} $$
+
+and
+
+  $$ P^-1(x) = 8x^{1/3} $$
+
+This perfect importance sampling is only possible when we already know the answer (we got $P$ by
+integrating $p$ analytically), but it’s a good exercise to make sure our code works. For just 1
+sample we get:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include <math.h>
+    #include <stdlib.h>
+    #include <iostream>
+
+    inline float pdf(float x) {
+        return 3*x*x/8;
+    }
+
+    int main() {
+        int inside_circle = 0;
+        int inside_circle_stratified = 0;
+        int N = 1;
+        float sum;
+        for (int i = 0; i < N; i++) {
+            float x = pow(8*drand48(), 1./3.);
+            sum += x*x / pdf(x);
+        }
+        std::cout << "I =" << sum/N << "\n";
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Which always returns the exact answer.
+
+Let’s review now because that was most of the concepts that underlie MC ray tracers.
+
+  1. You have an integral of $f(x)$ over some domain $[a,b]$
+  2. You pick a pdf $p$ that is non-zero over $[a,b]$
+  3. You average a whole ton of $f(r)/p(r)$ where $r$ is a random number $r$ with pdf $p$ .
+
+This will always converge to the right answer. The more $p$ follows $f$, the faster it converges.
+
+
+
+[fig02-1]: ./assets/fig02-1.jpg
+[fig02-2]: ./assets/fig02-2.jpg
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="../assets/markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

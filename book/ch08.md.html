@@ -1,0 +1,115 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+
+                              **Chapter 8: Sampling Lights Directly**
+
+The problem with sampling almost uniformly over directions is that lights are not sampled any more
+than unimportant directions. We could use shadow rays and separate out direct lighting. But instead,
+I’ll just send more rays to the light. We can then use that later to send more rays in whatever
+direction we want.
+
+It’s really easy to pick a random direction toward the light; just pick a random point on the light
+and send a ray in that direction. But we also need to know the _pdf(direction)_. What is that? For a
+light of area $A$, if we sample uniformly on that light, the _pdf_ on the surface of the light is
+$1/A$. But what is it on the area of the unit sphere that defines directions? Fortunately, there is
+a simple correspondence, as outlined in the diagram:
+
+![Figure 8-1][fig08-1]
+
+If we look at a small area $dA$ on the light, the probability of sampling it is $p_q(q) \cdot dA$.
+On the sphere, the probability of sampling the small area $dw$ on the sphere is $p(direction) \cdot
+dw$. There is a geometric relationship between $dw$ and $dA$:
+
+  $$ dw = \frac{dA \cdot cos(alpha)}{distance(p,q)^2} $$
+
+Since the probability of sampling dw and dA must be the same, we have
+
+  $$ \frac{p(direction) \cdot cos(alpha)}{distance(p,q)^2} \cdot dA
+     = p_q(q) \cdot dA
+     = \frac{dA}{A}
+  $$
+
+So
+
+  $$ p(direction) = \frac{distance(p,q)^2}{cos(alpha) \cdot A} $$
+
+If we hack our color function to sample the light in a very hard-coded fashion just to check that
+math and get the concept, we can add it (see the highlighted region):
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 color(const ray& r, hitable *world, int depth) {
+        hit_record rec;
+        if (world->hit(r, 0,001, MAXFLOAT, rec)) {
+            ray scattered;
+            vec3 attenuation;
+            vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+            float pdf;
+            vec3 albedo;
+            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf)) {
+                vec3 on_light = vec3(213 + drand48()*(343-213),
+                                     554,
+                                     227 + drand48()*(332-227));
+                vec3 to_light = on_light - rec.p;
+                float distance_squared = to_light.squared_length();
+                to_light.make_unit_vector();
+                if (dot(to_light, rec.normal) < 0)
+                    return emitted;
+                float light_area = (343-213)*(332-227);
+                float light_cosine = fabs(to_light.y());
+                if (light_cosine < 0.000001)
+                    return emitted;
+                pdf = distance_squared / (light_cosine * light_area);
+                scattered = ray(rec.p, to_light, r.time());
+
+                return emitted
+                     + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                              * color(scattered, world, depth+1) / pdf;
+            }
+            else
+                return emitted;
+        }
+        else
+            return vec3(0,0,0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+With 10 samples per pixel this yields:
+
+![Image 8-1][img08-1]
+
+This is about what we would expect from something that samples only the light sources, so this
+appears to work. The noisy pops around the light on the ceiling are because the light is two-sided
+and there is a small space between light and ceiling. We probably want to have the light just emit
+down. We can do that by letting the emitted member function of hitable take extra information:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    virtual vec3 emitted(const ray& r_in, const hit_record& rec, float u, float v,
+        const vec3& p) const {
+
+        if (dot(rec.normal, r_in.direction()) < 0.0)
+            return emit->value(u, v, p);
+        else
+            return vec3(0,0,0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We also need to flip the light so its normals point in the -y direction and we get:
+
+![Image 8-2][img08-2]
+
+[fig08-1]: ../assets/fig08-1.jpg
+[img08-1]: ../assets/img08-1.jpg
+[img08-2]: ../assets/img08-2.jpg
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="../assets/markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

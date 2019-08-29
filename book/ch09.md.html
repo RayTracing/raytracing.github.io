@@ -1,0 +1,276 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+
+                                  **Chapter 9: Mixture Densities**
+
+We have used a _pdf_ related to $cosine(\theta)$, and a _pdf_ related to sampling the light. We
+would like a _pdf_ that combines these. A common tool in probability is to mix the densities to
+form a mixture density. Any weighted average of _pdf_ s is a _pdf_. For example, we could just
+average the two densities:
+
+    $$ pdf\_mixture(direction) = \frac{1}{2} pdf\_reflection(direction) +
+        \frac{1}{2}pdf\_light(direction)
+    $$
+
+How would we instrument our code to do that? There is a very important detail that makes this not
+quite as easy as one might expect. Choosing the random direction is simple:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if (drand48() < 0.5)
+        Pick direction according to pdf_reflection
+    else
+        Pick direction according to pdf_light
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+But evaluating $pdf\_mixture$ is slightly more subtle. We need to evaluate both $pdf\_reflection$
+and $pdf\_light$ because there are some directions where either _pdf_ could have generated the
+direction. For example, we might generate a direction toward the light using $pdf\_reflection$.
+
+If we step back a bit, we see that there are two functions a _pdf_ needs to support:
+
+1. What is your value at this location?
+2. Return a random number that is distributed appropriately.
+
+The details of how this is done under the hood varies for the $pdf\_reflection$ and the $pdf\_light$
+and the mixture density of the two of them, but that is exactly what class hierarchies were invented
+for! It’s never obvious what goes in an abstract class, so my approach is to be greedy and hope a
+minimal interface works, and for the _pdf_ this implies:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class pdf  {
+        public:
+            virtual float value(const vec3& direction) const = 0;
+            virtual vec3 generate() const = 0;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We’ll see if that works by fleshing out the subclasses. For sampling the light, we will need
+`hitable` to answer some queries that it doesn’t have an interface for. We’ll probably need to mess
+with it too, but we can start by seeing if we can put something in `hitable` involving sampling the
+bounding box that works with all its subclasses.
+
+First, let’s try a cosine density:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class cosine_pdf : public pdf {
+        public:
+            cosine_pdf(const vec3& w) { uvw.build_from_w(w); }
+            virtual float value(const vec3& direction) const {
+                float cosine = dot(unit_vector(direction), uvw.w());
+                if (cosine > 0)
+                    return cosine/M_PI;
+                else
+                    return 0;
+            }
+            virtual vec3 generate() const  {
+                return uvw.local(random_cosine_direction());
+            }
+            onb uvw;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We can try this in the `color()` function, with the main changes highlighted. We also need to change
+variable `pdf` to some other variable name to avoid a name conflict with the new `pdf` class.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 color(const ray& r, hitable *world, int depth) {
+        hit_record rec;
+        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+            ray scattered;
+            vec3 attenuation;
+            vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+            float pdf_val;
+            vec3 albedo;
+            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val)) {
+                cosine_pdf p(rec.normal);
+                scattered = ray(rec.p, p.generate(), r.time());
+                pdf_val = p.value(scattered.direction());
+                return emitted
+                     + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                              * color(scattered, world, depth+1)
+                              / pdf_val;
+            }
+            else
+                return emitted;
+        }
+        else
+            return vec3(0,0,0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This yields an apparently matching result so all we’ve done so far is refactor where `pdf` is
+computed:
+
+![Image 9-1](../assets/img09-1.jpg)
+
+Now we can try sampling directions toward a `hitable` like the light.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class hitable_pdf : public pdf {
+        public:
+            hitable_pdf(hitable *p, const vec3& origin) : ptr(p), o(origin) {}
+            virtual float value(const vec3& direction) const {
+                return ptr->pdf_value(o, direction);
+            }
+            virtual vec3 generate() const {
+                return ptr->random(o);
+            }
+            vec3 o;
+            hitable *ptr;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This assumes two as-yet not implemented functions in the `hitable` class. To avoid having to add
+instrumentation to all of `hitable` subclasses, we’ll add two dummy functions to the `hitable`
+class:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class hitable  {
+        public:
+            virtual bool hit(const ray& r, float t_min, float t_max,
+                hit_record& rec) const = 0;
+            virtual bool bounding_box(float t0, float t1, aabb& box) const = 0;
+            virtual float  pdf_value(const vec3& o, const vec3& v) const  {return 0.0;}
+            virtual vec3 random(const vec3& o) const {return vec3(1, 0, 0);}
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And we change `xz_rect` to implement those functions:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class xz_rect: public hitable  {
+        public:
+            xz_rect() {}
+            xz_rect(float _x0, float _x1, float _z0, float _z1, float _k, material *mat)
+                : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+            virtual bool hit(const ray& r, float t0, float t1, hit_record& rec) const;
+            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+                box =  aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
+                return true;
+            }
+            virtual float  pdf_value(const vec3& o, const vec3& v) const {
+                hit_record rec;
+                if (this->hit(ray(o, v), 0.001, FLT_MAX, rec)) {
+                    float area = (x1-x0)*(z1-z0);
+                    float distance_squared = rec.t * rec.t * v.squared_length();
+                    float cosine = fabs(dot(v, rec.normal) / v.length());
+                    return  distance_squared / (cosine * area);
+                }
+                else
+                    return 0;
+            }
+            virtual vec3 random(const vec3& o) const {
+                vec3 random_point = vec3(x0 + drand48()*(x1-x0), k,
+                    z0 + drand48()*(z1-z0));
+                return random_point - o;
+            }
+            material  *mp;
+            float x0, x1, z0, z1, k;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And then change `color()`:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 color(const ray& r, hitable *world, int depth) {
+        hit_record rec;
+        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+            ray scattered;
+            vec3 attenuation;
+            vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+            float pdf_val;
+            vec3 albedo;
+            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
+                hitable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
+                hitable_pdf p(light_shape, rec.p);
+                scattered = ray(rec.p, p.generate(), r.time());
+                pdf_val = p.value(scattered.direction());
+                return emitted
+                     + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                              * color(scattered, world, depth+1)
+                              / pdf_val;
+            }
+            else
+                return emitted;
+        }
+        else
+            return vec3(0,0,0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+At 10 samples per pixel we get:
+
+![Image 9-2](../assets/img09-2.jpg)
+
+Now we would like to do a mixture density of the cosine and light sampling. The mixture density
+class is straightforward:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class mixture_pdf : public pdf {
+        public:
+            mixture_pdf(pdf *p0, pdf *p1 ) { p[0] = p0; p[1] = p1; }
+            virtual float value(const vec3& direction) const {
+                return 0.5 * p[0]->value(direction) + 0.5 *p[1]->value(direction);
+            }
+            virtual vec3 generate() const {
+                if (drand48() < 0.5)
+                    return p[0]->generate();
+                else
+                    return p[1]->generate();
+            }
+            pdf *p[2];
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And plugging it into `color()`:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 color(const ray& r, hitable *world, hitable *light_shape, int depth) {
+        hit_record rec;
+        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+            ray scattered;
+            vec3 attenuation;
+            vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+            float pdf_val;
+            vec3 albedo;
+            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
+                hitable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
+                hitable_pdf p0(light_shape, rec.p);
+                cosine_pdf p1(rec.normal);
+                mixture_pdf p(&p0, &p1);
+                scattered = ray(rec.p, p.generate(), r.time());
+                pdf_val = p.value(scattered.direction());
+                return emitted + albedo*rec.mat_ptr->scattering_pdf(r, rec, scattered)*
+                    color(scattered, world, depth+1) / pdf_val;
+            }
+            else
+                return emitted;
+        }
+        else
+            return vec3(0,0,0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1000 samples per pixel yields:
+
+![Image 9-3](../assets/img09-3.jpg)
+
+We’ve basically gotten this same picture (with different levels of noise) with several different
+sampling patterns. It looks like the original picture was slightly wrong! Note by “wrong” here I
+mean not a correct Lambertian picture. But Lambertian is just an ideal approximation to matte, so
+our original picture was some other accidental approximation to matte. I don’t think the new one is
+any better, but we can at least compare it more easily with other Lambertian renderers.
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="../assets/markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

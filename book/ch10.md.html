@@ -1,0 +1,51 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+
+                            **Chapter 10: Some Architectural Decisions**
+
+I won't write any code in this chapter. We’re at a crossroads where I need to make some
+architectural decisions. The mixture-density approach is to not have traditional shadow rays and is
+something I personally like, because in addition to lights you can sample windows or bright cracks
+under doors or whatever else you think might be bright. But most programs branch, and send one or
+more terminal rays to lights explicitly and one according to the reflective distribution of the
+surface. This could be a time you want faster convergence on more restricted scenes and add shadow
+rays; that’s a personal design preference.
+
+There are some other issues with the code.
+
+The pdf construction is hard coded in the color() function and we should clean that up. Probably we
+should pass something into color about the lights. Unlike bvh construction, we should be careful
+about memory leaks as there are an unbounded number of samples.
+
+The specular rays (glass and metal) are no longer supported. The math would work out if we just made
+their scattering function a delta function . But that would be floating point disaster. We could
+either separate out specular reflections, or have surface roughness never be zero and have
+almost-mirrors that look perfectly smooth but don’t generate NaNs. I don’t have an opinion on which
+way to do it -- I have tried both and they both have their advantages -- but we have smooth metal
+and glass code anyway, so I add perfect specular surfaces that do not do explicit f()/p()
+calculations.
+
+We also lack a real background function infrastructure in case we want to add an environment map or
+more interesting functional background. Some environment maps are HDR (the R/G/B components are
+floats rather than 0-255 bytes usually interpreted as 0-1). Our output has been HDR all along and
+we’ve just been truncating it.
+
+Finally, our renderer is RGB and a more physically-based one -- like an automobile manufacturer
+might use -- would probably need to use spectral colors and maybe even polarization. For a movie
+renderer, you would probably want RGB. You can make a hybrid renderer that has both modes, but that
+is of course harder. I’m going to stick to RGB for now, but I will revisit this near the end of the
+book.
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="../assets/markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

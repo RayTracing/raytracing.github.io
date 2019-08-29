@@ -1,0 +1,135 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+                            **Chapter 1: A Simple Monte Carlo Program**
+
+Let’s start with one of the simplest Monte Carlo (MC) programs. MC programs give a statistical
+estimate of an answer, and this estimate gets more and more accurate the longer you run it. This
+basic characteristic of simple programs producing noisy but ever-better answers is what MC is all
+about, and it is especially good for applications like graphics where great accuracy is not needed.
+
+As an example, let’s estimate $ \pi $. There are many ways to do this, with the Buffon Needle problem
+being a classic case study. We’ll do a variation inspired by that. Suppose you have a circle
+inscribed inside a square:
+
+  ![Figure 1-1][fig01-1]
+
+Now, suppose you pick random points inside the square. The fraction of those random points that end
+up inside the circle should be proportional to the area of the circle. The exact fraction should in
+fact be the ratio of the circle area to the square area. Fraction:
+
+    $$ \frac{Pi \cdot R^2}{(2R)^2} = \frac{Pi}{4} $$
+
+Since the *R* cancels out, we can pick whatever is computationally convenient. Let’s go with R=1
+centered at the origin:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include <math.h>
+    #include <stdlib.h>
+    #include <iostream>
+
+    int main() {
+        int N = 1000;
+        int inside_circle = 0;
+        for (int i = 0; i < nx; i++) {
+            float x = 2*drand48() - 1;
+            float y = 2*drand48() - 1;
+            if(x*x + y*y < 1)
+                inside_circle++;
+        }
+        std::cout << "Estimate of Pi = " << 4*float(inside_circle) / N << "\n";
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This gives me the answer `Estimate of Pi = 3.196`
+
+If we change the program to run forever and just print out a running estimate:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include <math.h>
+    #include <stdlib.h>
+    #include <iostream>
+
+    int main() {
+        int inside_circle = 0;
+        int runs = 0;
+        while (true) {
+            runs++;
+            float x = 2*drand48() - 1;
+            float y = 2*drand48() - 1;
+            if(x*x + y*y < 1)
+                inside_circle++;
+
+            if(runs% 100000 == 0)
+                std::cout << "Estimate of Pi = " << 4*float(inside_circle) / runs << "\n";
+
+        }
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We get very quickly near $\pi$, and then more slowly zero in on it. This is an example of the *Law
+of Diminishing Returns*, where each sample helps less than the last. This is the worst part of MC.
+We can mitigate this diminishing return by *stratifying* the samples (often called *jittering*),
+where instead of taking random samples, we take a grid and take one sample within each:
+
+  ![Figure 1-2][fig01-2]
+
+This changes the sample generation, but we need to know how many samples we are taking in advance
+because we need to know the grid. Let’s take a hundred million and try it both ways:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include <iostream>
+
+    int main() {
+        int inside_circle = 0;
+        int inside_circle_stratified = 0;
+        int sqrt_N = 10000;
+        for (int i = 0; i < sqrt_N; i++) {
+            for (int j = 0; j < sqrt_N; j++) {
+                float x = 2*drand48() - 1;
+                float y = 2*drand48() - 1;
+                if (x*x + y*y < 1)
+                    inside_circle++;
+                x = 2*((i + drand48()) / sqrt_N) - 1;
+                y = 2*((j + drand48()) / sqrt_N) - 1;
+                if (x*x + y*y < 1)
+                    inside_circle_stratified++;
+            }
+        }
+        std::cout << "Regular    Estimate of Pi = " <<
+              4*float(inside_circle) / (sqrt_N*sqrt_N) << "\n";
+        std::cout << "Stratified Estimate of Pi = " <<
+              4*float(inside_circle_stratified) / (sqrt_N*sqrt_N) << "\n";
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+I get:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Regular Estimate of Pi = 3.1415
+    Stratified Estimate of Pi = 3.14159
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Interestingly, the stratified method is not only better, it converges with a better asymptotic rate!
+Unfortunately, this advantage decreases with the dimension of the problem (so for example, with the
+3D sphere volume version the gap would be less). This is called the *Curse of Dimensionality*. We
+are going to be very high dimensional (each reflection adds two dimensions), so I won't stratify in
+this book. But if you are ever doing single-reflection or shadowing or some strictly 2D problem, you
+definitely want to stratify.
+
+
+[fig01-1]: ../assets/fig01-1.jpg
+[fig01-2]: ../assets/fig01-2.jpg
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="../assets/markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
