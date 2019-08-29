@@ -1,0 +1,244 @@
+<meta charset="utf-8">
+
+<div class='warning'>
+  <p class='title'>WARNING<br>Content Under Development</h1>
+  <p class='text'>
+    See <a href='https://github.com/raytracing/InOneWeekend/releases'>release page</a> for latest official PDF version.
+</div>
+
+
+
+                        **Chapter 5: Surface normals and multiple objects**
+
+First, let’s get ourselves a surface normal so we can shade. This is a vector that is perpendicular
+to the surface, and by convention, points out. One design decision is whether these normals
+(again by convention) are unit length. That is convenient for shading so I will say yes, but I won’t
+enforce that in the code. This could allow subtle bugs, so be aware this is personal preference
+as are most design decisions like that. For a sphere, the normal is in the direction of the hitpoint
+minus the center:
+
+![Figure 5-1](../assets/fig05-1.jpg)
+
+On the earth, this implies that the vector from the earth’s center to you points straight up. Let’s
+throw that into the code now, and shade it. We don’t have any lights or anything yet, so let’s just
+visualize the normals with a color map. A common trick used for visualizing normals (because it’s
+easy and somewhat intuitive to assume $N$ is a unit length vector -- so each component is between -1
+and 1) is to map each component to the interval from 0 to 1, and then map x/y/z to r/g/b. For the
+normal, we need the hit point, not just whether we hit or not. Let’s assume the closest hit point
+(smallest $t$). These changes in the code let us compute and visualize $N$:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool hit_sphere(const vec3& center, float radius, const ray& r) {
+        vec3 oc = r.origin() - center;
+        float a = dot(r.direction(), r.direction());
+        float b = 2.0 * dot(oc, r.direction());
+        float c = dot(oc, oc) - radius*radius;
+        float discriminant = b*b - 4*a*c;
+        if (discriminant < 0) {
+            return -1.0;
+        }
+        else {
+            return (-b - sqrt(discriminant) ) / (2.0*a);
+        }
+    }
+
+    vec3 color(const ray& r) {
+        float t = hit_sphere(vec3(0,0,-1), 0.5, r);
+        if (t > 0.0) {
+            vec3 N = unit_vector(r.point_at_parameter(t) - vec3(0,0,-1));
+            return 0.5*vec3(N.x()+1, N.y()+1, N.z()+1);
+        }
+        vec3 unit_direction = unit_vector(r.direction());
+        t = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And that yields this picture:
+
+![Image 5-1](../assets/img05-1.jpg)
+
+Now, how about several spheres? While it is tempting to have an array of spheres, a very clean
+solution is the make an “abstract class” for anything a ray might hit and make both a sphere and a
+list of spheres just something you can hit. What that class should be called is something of a
+quandary -- calling it an “object” would be good if not for “object oriented” programming. “Surface”
+is often used, with the weakness being maybe we will want volumes. “Hitable” emphasizes the member
+function that unites them. I don’t love any of these but I will go with “hitable”.
+
+This `hitable` abstract class will have a hit function that takes in a ray. Most ray tracers have
+found it convenient to add a valid interval for hits $t_{min}$ to $t_{max}$, so the hit only
+“counts” if $t_{min} < t < t_{max}$. For the initial rays this is positive $t$, but as we will see,
+it can help some details in the code to have an interval $t_{min}$ to $t_{max}$. One design question
+is whether to do things like compute the normal if we hit something. We might end up hitting
+something closer as we do our search, and we will only need the normal of the closest thing. I will
+go with the simple solution and compute a bundle of stuff I will store in some structure. I know
+we’ll want motion blur at some point, so I’ll add a time input variable. Here’s the abstract class:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef HITABLEH
+    #define HITABLEH
+
+    #include "ray.h"
+
+    struct hit_record
+    {
+        float t;
+        vec3 p;
+        vec3 normal;
+    };
+
+    class hitable  {
+        public:
+            virtual bool hit(
+                const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
+    };
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And here’s the sphere (note that I eliminated a bunch of redundant 2’s that cancel each other out):
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef SPHEREH
+    #define SPHEREH
+
+    #include "hitable.h"
+
+    class sphere: public hitable  {
+        public:
+            sphere() {}
+            sphere(vec3 cen, float r) : center(cen), radius(r)  {};
+            virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
+            vec3 center;
+            float radius;
+    };
+
+    bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+        vec3 oc = r.origin() - center;
+        float a = dot(r.direction(), r.direction());
+        float b = dot(oc, r.direction());
+        float c = dot(oc, oc) - radius*radius;
+        float discriminant = b*b - a*c;
+        if (discriminant > 0) {
+            float temp = (-b - sqrt(discriminant))/a;
+            if (temp < t_max && temp > t_min) {
+                rec.t = temp;
+                rec.p = r.point_at_parameter(rec.t);
+                rec.normal = (rec.p - center) / radius;
+                return true;
+            }
+            temp = (-b + sqrt(discriminant)) / a;
+            if (temp < t_max && temp > t_min) {
+                rec.t = temp;
+                rec.p = r.point_at_parameter(rec.t);
+                rec.normal = (rec.p - center) / radius;
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And a list of objects:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef HITABLELISTH
+    #define HITABLELISTH
+
+    #include "hitable.h"
+
+    class hitable_list: public hitable  {
+        public:
+            hitable_list() {}
+            hitable_list(hitable **l, int n) {list = l; list_size = n; }
+            virtual bool hit(
+                const ray& r, float tmin, float tmax, hit_record& rec) const;
+            hitable **list;
+            int list_size;
+    };
+
+    bool hitable_list::hit(
+        const ray& r, float t_min, float t_max, hit_record& rec) const {
+
+        hit_record temp_rec;
+        bool hit_anything = false;
+        double closest_so_far = t_max;
+        for (int i = 0; i < list_size; i++) {
+            if (list[i]->hit(r, t_min, closest_so_far, temp_rec)) {
+                hit_anything = true;
+                closest_so_far = temp_rec.t;
+                rec = temp_rec;
+            }
+        }
+        return hit_anything;
+    }
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And the new main:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include <iostream>
+    #include "sphere.h"
+    #include "hitable_list.h"
+    #include "float.h"
+
+    vec3 color(const ray& r, hitable *world) {
+        hit_record rec;
+        if (world->hit(r, 0.0, MAXFLOAT, rec)) {
+            return 0.5*vec3(rec.normal.x()+1, rec.normal.y()+1, rec.normal.z()+1);
+        }
+        else {
+            vec3 unit_direction = unit_vector(r.direction());
+            float t = 0.5*(unit_direction.y() + 1.0);
+            return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+        }
+    }
+
+    int main() {
+        int nx = 200;
+        int ny = 100;
+        std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+        vec3 lower_left_corner(-2.0, -1.0, -1.0);
+        vec3 horizontal(4.0, 0.0, 0.0);
+        vec3 vertical(0.0, 2.0, 0.0);
+        vec3 origin(0.0, 0.0, 0.0);
+        hitable *list[2];
+        list[0] = new sphere(vec3(0,0,-1), 0.5);
+        list[1] = new sphere(vec3(0,-100.5,-1), 100);
+        hitable *world = new hitable_list(list,2);
+        for (int j = ny-1; j >= 0; j--) {
+            for (int i = 0; i < nx; i++) {
+                float u = float(i) / float(nx);
+                float v = float(j) / float(ny);
+                ray r(origin, lower_left_corner + u*horizontal + v*vertical);
+
+                vec3 p = r.point_at_parameter(2.0);
+                vec3 col = color(r, world);
+                int ir = int(255.99*col[0]);
+                int ig = int(255.99*col[1]);
+                int ib = int(255.99*col[2]);
+
+                std::cout << ir << " " << ig << " " << ib << "\n";
+            }
+        }
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This yields a picture that is really just a visualization of where the spheres are along with their
+surface normal. This is often a great way to look at your model for flaws and characteristics.
+
+![Image 5-2](../assets/img05-2.jpg)
+
+
+
+<!-- Markdeep: -->
+<link rel='stylesheet' href='../assets/book.css'>
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="../assets/markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

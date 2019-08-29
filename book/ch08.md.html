@@ -1,0 +1,274 @@
+<meta charset="utf-8">
+
+<div class='warning'>
+  <p class='title'>WARNING<br>Content Under Development</h1>
+  <p class='text'>
+    See <a href='https://github.com/raytracing/InOneWeekend/releases'>release page</a> for latest official PDF version.
+</div>
+
+
+
+                                        **Chapter 8: Metal**
+
+If we want different objects to have different materials, we have a design decision. We could have a
+universal material with lots of parameters and different material types just zero out some of those
+parameters. This is not a bad approach. Or we could have an abstract material class that
+encapsulates behavior. I am a fan of the latter approach. For our program the material needs to do
+two things:
+
+  1. Produce a scattered ray (or say it absorbed the incident ray).
+  2. If scattered, say how much the ray should be attenuated.
+
+This suggests the abstract class:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class material  {
+        public:
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation,
+                ray& scattered) const = 0;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The `hit_record` is to avoid a bunch of arguments so we can stuff whatever info we want in there.
+You can use arguments instead; it’s a matter of taste. Hitables and materials need to know each
+other so there is some circularity of the references. In C++ you just need to alert the compiler
+that the pointer is to a class, which the “class material” in the hitable class below does:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef HITABLEH
+    #define HITABLEH
+    #include "ray.h"
+
+    class material;
+
+    struct hit_record
+    {
+        float t;
+        vec3 p;
+        vec3 normal;
+        material *mat_ptr;
+    };
+
+    class hitable  {
+        public:
+            virtual bool hit(
+                const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
+    };
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+What we have set up here is that material will tell us how rays interact with the surface.
+`hit_record` is just a way to stuff a bunch of arguments into a struct so we can send them as a
+group. When a ray hits a surface (a particular sphere for example), the material pointer in the
+`hit_record` will be set to point at the material pointer the sphere was given when it was set up in
+`main()` when we start. When the `color()` routine gets the `hit_record` it can call member
+functions of the material pointer to find out what ray, if any, is scattered.
+
+To achieve this, we must have a reference to the material for our sphere class to returned
+within `hit_record`. See the lines below marked with **`/* NEW */`**.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class sphere: public hitable  {
+        public:
+            sphere() {}
+            sphere(vec3 cen, float r, material *m)
+                : center(cen), radius(r), mat_ptr(m)  {};
+            virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
+            vec3 center;
+            float radius;
+            material *mat_ptr; /* NEW */
+    };
+
+    bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+        vec3 oc = r.origin() - center;
+        float a = dot(r.direction(), r.direction());
+        float b = dot(oc, r.direction());
+        float c = dot(oc, oc) - radius*radius;
+        float discriminant = b*b - a*c;
+        if (discriminant > 0) {
+            float temp = (-b - sqrt(discriminant))/a;
+            if (temp < t_max && temp > t_min) {
+                rec.t = temp;
+                rec.p = r.point_at_parameter(rec.t);
+                rec.normal = (rec.p - center) / radius;
+                rec.mat_ptr = mat_ptr; /* NEW */
+                return true;
+            }
+            temp = (-b + sqrt(discriminant)) / a;
+            if (temp < t_max && temp > t_min) {
+                rec.t = temp;
+                rec.p = r.point_at_parameter(rec.t);
+                rec.normal = (rec.p - center) / radius;
+                rec.mat_ptr = mat_ptr; /* NEW */
+                return true;
+            }
+        }
+        return false;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For the Lambertian (diffuse) case we already have, it can either scatter always and attenuate by its
+reflectance $R$, or it can scatter with no attenuation but absorb the fraction $1-R$ of the rays. Or
+it could be a mixture of those strategies. For Lambertian materials we get this simple class:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class lambertian : public material {
+        public:
+            lambertian(const vec3& a) : albedo(a) {}
+            virtual bool scatter(const ray& r_in, const hit_record& rec,
+                vec3& attenuation, ray& scattered) const
+            {
+                 vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+                 scattered = ray(rec.p, target-rec.p);
+                 attenuation = albedo;
+                 return true;
+            }
+
+            vec3 albedo;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Note we could just as well only scatter with some probability $p$ and have attenuation be
+$albedo/p$. Your choice.
+
+For smooth metals the ray won’t be randomly scattered. The key math is: how does a ray get
+reflected from a metal mirror? Vector math is our friend here:
+
+![Figure 8-1](../assets/fig08-1.jpg)
+
+The reflected ray direction in red is just $(v + 2B)$. In our design, $N$ is a unit vector, but $v$
+may not be. The length of $B$ should be $dot(v,N)$. Because $v$ points in, we will need a minus
+sign, yielding:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 reflect(const vec3& v, const vec3& n) {
+        return v - 2*dot(v,n)*n;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The metal material just reflects rays using that formula:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class metal : public material {
+        public:
+            metal(const vec3& a) : albedo(a) {}
+            virtual bool scatter(const ray& r_in, const hit_record& rec,
+                vec3& attenuation, ray& scattered) const
+            {
+                vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+                scattered = ray(rec.p, reflected);
+                attenuation = albedo;
+                return (dot(scattered.direction(), rec.normal) > 0);
+            }
+            vec3 albedo;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We need to modify the color function to use this:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 color(const ray& r, hitable *world, int depth) {
+        hit_record rec;
+        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+            ray scattered;
+            vec3 attenuation;
+            if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
+                return attenuation*color(scattered, world, depth+1);
+            }
+            else {
+                return vec3(0,0,0);
+            }
+        }
+        else {
+            vec3 unit_direction = unit_vector(r.direction());
+            float t = 0.5*(unit_direction.y() + 1.0);
+            return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+        }
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You will also need to modify the sphere class to have a material pointer to it. And add some
+metal spheres:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+        int nx = 200;
+        int ny = 100;
+        int ns = 100;
+        std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+        hitable *list[4];
+        list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
+        list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
+        list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2), 0.0));
+        list[3] = new sphere(vec3(-1,0,-1), 0.5, new metal(vec3(0.8, 0.8, 0.8)));
+        hitable *world = new hitable_list(list,4);
+        camera cam;
+        for (int j = ny-1; j >= 0; j--) {
+            for (int i = 0; i < nx; i++) {
+                vec3 col(0, 0, 0);
+                for (int s=0; s < ns; s++) {
+                    float u = float(i + random_double()) / float(nx);
+                    float v = float(j + random_double()) / float(ny);
+                    ray r = cam.get_ray(u, v);
+                    vec3 p = r.point_at_parameter(2.0);
+                    col += color(r, world,0);
+                }
+                col /= float(ns);
+                col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
+                int ir = int(255.99*col[0]);
+                int ig = int(255.99*col[1]);
+                int ib = int(255.99*col[2]);
+                std::cout << ir << " " << ig << " " << ib << "\n";
+            }
+        }
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Which gives:
+
+![Image 8-1](../assets/img08-1.jpg)
+
+We can also randomize the reflected direction by using a small sphere and choosing a new endpoint
+for the ray:
+
+![Figure 8-2](../assets/fig08-2.jpg)
+
+The bigger the sphere, the fuzzier the reflections will be. This suggests adding a fuzziness
+parameter that is just the radius of the sphere (so zero is no perturbation). The catch is that for
+big spheres or grazing rays, we may scatter below the surface. We can just have the surface
+absorb those. We’ll put a maximum of 1 on the radius of the sphere which yields:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class metal : public material {
+        public:
+            metal(const vec3& a, float f) : albedo(a) {
+                if (f < 1) fuzz = f; else fuzz = 1;
+            }
+
+            virtual bool scatter(const ray& r_in, const hit_record& rec,
+                vec3& attenuation, ray& scattered) const
+            {
+                vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+                scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());
+                attenuation = albedo;
+                return (dot(scattered.direction(), rec.normal) > 0);
+            }
+            vec3 albedo;
+            float fuzz;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We can try that out by adding fuzziness 0.3 and 1.0 to the metals:
+
+![Image 8-2](../assets/img08-2.jpg)
+
+
+
+<!-- Markdeep: -->
+<link rel='stylesheet' href='../assets/book.css'>
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="../assets/markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

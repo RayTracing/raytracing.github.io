@@ -1,0 +1,198 @@
+<meta charset="utf-8">
+
+<div class='warning'>
+  <p class='title'>WARNING<br>Content Under Development</h1>
+  <p class='text'>
+    See <a href='https://github.com/raytracing/InOneWeekend/releases'>release page</a> for latest official PDF version.
+</div>
+
+
+
+                                     **Chapter 9: Dielectrics**
+
+Clear materials such as water, glass, and diamonds are dielectrics. When a light ray hits them, it
+splits into a reflected ray and a refracted (transmitted) ray. We’ll handle that by randomly
+choosing between reflection or refraction and only generating one scattered ray per interaction.
+
+The hardest part to debug is the refracted ray. I usually first just have all the light refract if
+there is a refraction ray at all. For this project, I tried to put two glass balls in our scene, and
+I got this (I have not told you how to do this right or wrong yet, but soon!):
+
+![Image 9-1](../assets/img09-1.jpg)
+
+Is that right? Glass balls look odd in real life. But no, it isn’t right. The world should be
+flipped upside down and no weird black stuff. I just printed out the ray straight through the middle
+of the image and it was clearly wrong. That often does the job.
+
+The refraction is described by Snell’s law:
+
+    $$ n \cdot sin(theta) = n' \cdot sin(theta') $$
+
+Where $n$ and $n'$ are the refractive indices (typically air = 1, glass = 1.3–1.7, diamond = 2.4)
+and the geometry is:
+
+![Figure 9-1](../assets/fig09-1.jpg)
+
+One troublesome practical issue is that when the ray is in the material with the higher refractive
+index, there is no real solution to Snell’s law and thus there is no refraction possible. Here all
+the light is reflected, and because in practice that is usually inside solid objects, it is called
+“total internal reflection”. This is why sometimes the water-air boundary acts as a perfect mirror
+when you are submerged. The code for refraction is thus a bit more complicated than for reflection:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool refract(const vec3& v, const vec3& n, float ni_over_nt, vec3& refracted) {
+        vec3 uv = unit_vector(v);
+        float dt = dot(uv, n);
+        float discriminant = 1.0 - ni_over_nt*ni_over_nt*(1-dt*dt);
+        if (discriminant > 0) {
+            refracted = ni_over_nt*(uv - n*dt) - n*sqrt(discriminant);
+            return true;
+        }
+        else
+            return false;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And the dielectric material that always refracts when possible is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class dielectric : public material {
+        public:
+            dielectric(float ri) : ref_idx(ri) {}
+            virtual bool scatter(const ray& r_in, const hit_record& rec,
+                vec3& attenuation, ray& scattered) const
+            {
+                vec3 outward_normal;
+                vec3 reflected = reflect(r_in.direction(), rec.normal);
+                float ni_over_nt;
+                attenuation = vec3(1.0, 1.0, 0.0);
+                vec3 refracted;
+                if (dot(r_in.direction(), rec.normal) > 0) {
+                     outward_normal = -rec.normal;
+                     ni_over_nt = ref_idx;
+                }
+                else {
+                     outward_normal = rec.normal;
+                     ni_over_nt = 1.0 / ref_idx;
+                }
+                if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted))
+                   scattered = ray(rec.p, refracted);
+                else {
+                   scattered = ray(rec.p, reflected);
+                   return false;
+                }
+                return true;
+            }
+
+            float ref_idx;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Attenuation is always 1 -- the glass surface absorbs nothing. The `attenuation = vec3(1.0, 1.0,
+0.0)` above will also kill the blue channel which is the type of color bug that can be hard to find
+-- it will give a color shift only. Try it the way it is and then change it to
+`attenuation = vec3(1.0, 1.0, 1.0)` to see the difference.
+
+If we try that out with these parameters:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
+    list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
+    list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2), 0.0));
+    list[3] = new sphere(vec3(-1,0,-1), 0.5, new dielectric(1.5));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We get:
+
+![Image 9-2](../assets/img09-2.jpg)
+
+(The reader Becker has pointed out that when there is a reflection ray the function returns `false`
+so there are no reflections. He is right, and that is why there are none in the image above. I
+am leaving this in rather than correcting this because it is a very interesting example of a major
+bug that still leaves a reasonably plausible image. These sleeper bugs are the hardest bugs to
+find because we humans are not designed to find fault with what we see.)
+
+Now real glass has reflectivity that varies with angle -- look at a window at a steep angle and it
+becomes a mirror. There is a big ugly equation for that, but almost everybody uses a simple and
+surprisingly simple polynomial approximation by Christophe Schlick:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    float schlick(float cosine, float ref_idx) {
+        float r0 = (1-ref_idx) / (1+ref_idx);
+        r0 = r0*r0;
+        return r0 + (1-r0)*pow((1 - cosine),5);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This yields our full glass material:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class dielectric : public material {
+        public:
+            dielectric(float ri) : ref_idx(ri) {}
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation,
+                ray& scattered) const
+            {
+                vec3 outward_normal;
+                vec3 reflected = reflect(r_in.direction(), rec.normal);
+                float ni_over_nt;
+                attenuation = vec3(1.0, 1.0, 1.0);
+                vec3 refracted;
+                float reflect_prob;
+                float cosine;
+                if (dot(r_in.direction(), rec.normal) > 0) {
+                     outward_normal = -rec.normal;
+                     ni_over_nt = ref_idx;
+                     cosine = ref_idx * dot(r_in.direction(), rec.normal)
+                            / r_in.direction().length();
+                }
+                else {
+                     outward_normal = rec.normal;
+                     ni_over_nt = 1.0 / ref_idx;
+                     cosine = -dot(r_in.direction(), rec.normal)
+                            / r_in.direction().length();
+                }
+                if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
+                   reflect_prob = schlick(cosine, ref_idx);
+                }
+                else {
+                   reflect_prob = 1.0;
+                }
+                if (random_double() < reflect_prob) {
+                   scattered = ray(rec.p, reflected);
+                }
+                else {
+                   scattered = ray(rec.p, refracted);
+                }
+                return true;
+            }
+
+            float ref_idx;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An interesting and easy trick with dielectric spheres is to note that if you use a negative radius,
+the geometry is unaffected but the surface normal points inward, so it can be used as a bubble
+to make a hollow glass sphere:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
+    list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
+    list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2)));
+    list[3] = new sphere(vec3(-1,0,-1), 0.5, new dielectric(1.5));
+    list[4] = new sphere(vec3(-1,0,-1), -0.45, new dielectric(1.5));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This gives:
+
+![Image 9-3](../assets/img09-3.jpg)
+
+
+
+<!-- Markdeep: -->
+<link rel='stylesheet' href='../assets/book.css'>
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="../assets/markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
