@@ -1,0 +1,239 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+                                      **Chapter 7 Instances**
+
+The Cornell Box usually has two blocks in it. These are rotated relative to the walls. First, let’s
+make an axis-aligned block primitive that holds 6 rectangles:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class box: public hitable  {
+        public:
+            box() {}
+            box(const vec3& p0, const vec3& p1, material *ptr);
+            virtual bool hit(const ray& r, float t0, float t1, hit_record& rec) const;
+            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+                box =  aabb(pmin, pmax);
+                return true;
+            }
+            vec3 pmin, pmax;
+            hitable *list_ptr;
+    };
+
+    box::box(const vec3& p0, const vec3& p1, material *ptr) {
+        pmin = p0;
+        pmax = p1;
+        hitable **list = new hitable*[6];
+        list[0] = new xy_rect(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr);
+        list[1] = new flip_normals(
+            new xy_rect(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr));
+        list[2] = new xz_rect(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), ptr);
+        list[3] = new flip_normals(
+            new xz_rect(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr));
+        list[4] = new yz_rect(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr);
+        list[5] = new flip_normals(
+            new yz_rect(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
+        list_ptr = new hitable_list(list,6);
+    }
+
+    bool box::hit(const ray& r, float t0, float t1, hit_record& rec) const {
+        return list_ptr->hit(r, t0, t1, rec);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Now we can add two blocks (but not rotated)
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    list[i++] = new box(vec3(130, 0, 65), vec3(295, 165, 230), white);
+    list[i++] = new box(vec3(265, 0, 295), vec3(430, 330, 460), white);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This gives:
+
+![Image 7-1](../assets/img7-01.jpg)
+
+Now that we have boxes, we need to rotate them a bit to have them match the _real_ Cornell box. In
+ray tracing, this is usually done with an _instance_. An instance is a geometric primitive that has
+been moved or rotated somehow. This is especially easy in ray tracing because we don’t move
+anything; instead we move the rays in the opposite direction. For example, consider a _translation_
+(often called a _move_). We could take the pink box at the origin and add 2 to all its x components,
+or (as we almost always do in ray tracing) leave the box where it is, but in its hit routine
+subtract 2 off the x-component of the ray origin.
+
+![Figure 7-1](../assets/fig7-01.jpg)
+
+Whether you think of this as a move or a change of coordinates is up to you. The code for this, to
+move any underlying hitable is a _translate_ instance.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class translate : public hitable {
+        public:
+            translate(hitable *p, const vec3& displacement)
+                : ptr(p), offset(displacement) {}
+            virtual bool hit(
+                const ray& r, float t_min, float t_max, hit_record& rec) const;
+            virtual bool bounding_box(float t0, float t1, aabb& box) const;
+            hitable *ptr;
+            vec3 offset;
+    };
+
+    bool translate::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+        ray moved_r(r.origin() - offset, r.direction(), r.time());
+        if (ptr->hit(moved_r, t_min, t_max, rec)) {
+            rec.p += offset;
+            return true;
+        }
+        else
+            return false;
+    }
+
+    bool translate::bounding_box(float t0, float t1, aabb& box) const {
+        if (ptr->bounding_box(t0, t1, box)) {
+            box = aabb(box.min() + offset, box.max() + offset);
+            return true;
+        }
+        else
+            return false;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Rotation isn’t quite as easy to understand or generate the formulas for. A common graphics tactic is
+to apply all rotations about the x, y, and z axes. These rotations are in some sense axis-aligned.
+First, let’s rotate by theta about the z-axis. That will be changing only x and y, and in ways that
+don’t depend on z.
+
+![Figure 7-2](../assets/fig7-02.jpg)
+
+This involves some basic trigonometry that uses formulas that I will not cover here. That gives you
+the correct impression it’s a little involved, but it is straightforward, and you can find it in any
+graphics text and in many lecture notes. The result for rotating counter-clockwise about z is:
+
+    $$ x\prime = cos(\theta) \cdot x - sin(\theta) \cdot y $$
+    $$ y\prime = sin(\theta) \cdot x + cos(\theta) \cdot y $$
+
+The great thing is that it works for any theta and doesn’t need any cases for quadrants or anything
+like that. The inverse transform is the opposite geometric operation: rotate by -theta. Here, recall
+that cos(theta) = cos(-theta) and sin(-theta) = -sin(theta), so the formulas are very simple.
+
+Similarly, for rotating about y (as we want to do for the blocks in the box) the formulas are:
+
+    $$ x\prime =  cos(\theta) \cdot x + sin(\theta) \cdot z $$
+    $$ z\prime = -sin(\theta) \cdot x + cos(\theta) \cdot z $$
+
+And about the x-axis:
+
+    $$ y\prime = cos(\theta) \cdot y - sin(\theta) \cdot z $$
+    $$ z\prime = sin(\theta) \cdot y + cos(\theta) \cdot z $$
+
+Unlike the situation with translations, the surface normal vector also changes, so we need to
+transform directions too if we get a hit. Fortunately for rotations, the same formulas apply. If you
+add scales, things get more complicated. See the web page  www.in1weekend.com  for links to that.
+
+For a y-rotation class we have:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class rotate_y : public hitable {
+        public:
+            rotate_y(hitable *p, float angle);
+            virtual bool hit(
+                const ray& r, float t_min, float t_max, hit_record& rec) const;
+            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+                box = bbox; return hasbox;
+            }
+            hitable *ptr;
+            float sin_theta;
+            float cos_theta;
+            bool hasbox;
+            aabb bbox;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With constructor:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    rotate_y::rotate_y(hitable *p, float angle) : ptr(p) {
+        float radians = (M_PI / 180.) * angle;
+        sin_theta = sin(radians);
+        cos_theta = cos(radians);
+        hasbox = ptr->bounding_box(0, 1, bbox);
+        vec3 min(FLT_MAX, FLT_MAX, FLT_MAX);
+        vec3 max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                for (int k = 0; k < 2; k++) {
+                    float x = i*bbox.max().x() + (1-i)*bbox.min().x();
+                    float y = j*bbox.max().y() + (1-j)*bbox.min().y();
+                    float z = k*bbox.max().z() + (1-k)*bbox.min().z();
+                    float newx = cos_theta*x + sin_theta*z;
+                    float newz = -sin_theta*x + cos_theta*z;
+                    vec3 tester(newx, y, newz);
+                    for ( int c = 0; c < 3; c++ )
+                    {
+                        if ( tester[c] > max[c] )
+                            max[c] = tester[c];
+                        if ( tester[c] < min[c] )
+                            min[c] = tester[c];
+                    }
+                }
+            }
+        }
+        bbox = aabb(min, max);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And the hit function:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool rotate_y::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+        vec3 origin = r.origin();
+        vec3 direction = r.direction();
+        origin[0] = cos_theta*r.origin()[0] - sin_theta*r.origin()[2];
+        origin[2] =  sin_theta*r.origin()[0] + cos_theta*r.origin()[2];
+        direction[0] = cos_theta*r.direction()[0] - sin_theta*r.direction()[2];
+        direction[2] = sin_theta*r.direction()[0] + cos_theta*r.direction()[2];
+        ray rotated_r(origin, direction, r.time());
+        if (ptr->hit(rotated_r, t_min, t_max, rec)) {
+            vec3 p = rec.p;
+            vec3 normal = rec.normal;
+            p[0] = cos_theta*rec.p[0] + sin_theta*rec.p[2];
+            p[2] = -sin_theta*rec.p[0] + cos_theta*rec.p[2];
+            normal[0] = cos_theta*rec.normal[0] + sin_theta*rec.normal[2];
+            normal[2] = -sin_theta*rec.normal[0] + cos_theta*rec.normal[2];
+            rec.p = p;
+            rec.normal = normal;
+            return true;
+        }
+        else
+            return false;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And the changes to Cornell is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    list[i++] = new translate(
+                    new rotate_y(new box(vec3(0,0,0), vec3(165,165,165), white), -18),
+                    vec3(130,0,65)
+                );
+    list[i++] = new translate(
+                    new rotate_y(new box(vec3(0,0,0), vec3(165,330,165), white), 15),
+                    vec3(265,,0,295)
+                );
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Which yields:
+
+![Image 7-2](../assets/img7-02.jpg)
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

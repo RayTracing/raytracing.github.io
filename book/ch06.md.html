@@ -1,0 +1,318 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+                                **Chapter 6 Rectangles and Lights**
+
+First, let’s make a light emitting material. We need to add an emitted function (we could also add
+it to hit_record instead -- that’s a matter of design taste). Like the background, it just tells the
+ray what color it is and performs no reflection. It’s very simple:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class diffuse_light : public material  {
+        public:
+            diffuse_light(texture *a) : emit(a) {}
+            virtual bool scatter(const ray& r_in, const hit_record& rec,
+                vec3& attenuation, ray& scattered) const { return false; }
+            virtual vec3 emitted(float u, float v, const vec3& p) const {
+                return emit->value(u, v, p);
+            }
+            texture *emit;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+So that I don’t have to make all the non-emitting materials implement emitted(), I have the base
+class return black:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class material {
+        public:
+            virtual bool scatter(const ray& r_in, const hit_record& rec,
+                vec3& attenuation, ray& scattered) const = 0;
+            virtual vec3 emitted(float u, float v, const vec3& p) const {
+                return vec3(0,0,0);
+            }
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Next, let’s make the background black in our color function, and pay attention to emitted:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 color(const ray& r, hitable *world, int depth) {
+        hit_record rec;
+        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+            ray scattered;
+            vec3 attenuation;
+            vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+            if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+                 return emitted + attenuation*color(scattered, world, depth+1);
+            else
+                return emitted;
+        }
+        else
+            return vec3(0,0,0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Now, let’s make some rectangles. Rectangles are often convenient for modelling man-made
+environments. I’m a fan of doing axis-aligned rectangles because they are easy. (We’ll get to
+instancing so we can rotate them later.)
+
+First, here is a rectangle in an xy plane. Such a plane is defined by its z value. For example, $z =
+k$. An axis-aligned rectangle is defined by lines $x=x_0$ , $x=x_1$ , $y=y_0$ , $y=y_1$.
+
+![Figure 6-1](../assets/fig6-01.jpg)
+
+To determine whether a ray hits such a rectangle, we first determine where the ray hits the plane.
+Recall that a ray $p(t) = a + t \cdot b$ has its z component defined by $z(t) = a_z + t \cdot b_z$.
+Rearranging those terms we can solve for what the t is where $z=k$.
+
+    $$ t = (k-a_z) / b_z $$
+
+Once we have t, we can plug that into the equations for x and y:
+
+    $$ x = a_x + t*b_x $$
+    $$ y = a_y + t*b_y $$
+
+It is a hit if $x_0 < x < x_1$ and $y_0 < y < y_1$.
+
+The actual xy_rect class is thus:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class xy_rect: public hitable  {
+        public:
+            xy_rect() {}
+            xy_rect(float _x0, float _x1, float _y0, float _y1, float _k, material *mat)
+                : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
+            virtual bool hit(const ray& r, float t0, float t1, hit_record& rec) const;
+            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+                box =  aabb(vec3(x0,y0, k-0.0001), vec3(x1, y1, k+0.0001));
+                return true;
+            }
+            material *mp;
+            float x0, x1, y0, y1, k;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And the hit function is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool xy_rect::hit(const ray& r, float t0, float t1, hit_record& rec) const {
+        float t = (k-r.origin().z()) / r.direction().z();
+        if (t < t0 || t > t1)
+            return false;
+        float x = r.origin().x() + t*r.direction().x();
+        float y = r.origin().y() + t*r.direction().y();
+        if (x < x0 || x > x1 || y < y0 || y > y1)
+            return false;
+        rec.u = (x-x0)/(x1-x0);
+        rec.v = (y-y0)/(y1-y0);
+        rec.t = t;
+        rec.mat_ptr = mp;
+        rec.p = r.point_at_parameter(t);
+        rec.normal = vec3(0, 0, 1);
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If we set up a rectangle as a light:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hitable *simple_light() {
+        texture *pertext = new noise_texture(4);
+        hitable **list = new hitable*[4];
+        list[0] = new sphere(vec3(0,-1000, 0), 1000, new lambertian(pertext));
+        list[1] = new sphere(vec3(0, 2, 0), 2, new lambertian(pertext));
+        list[2] = new sphere(vec3(0, 7, 0), 2,
+            new diffuse_light(new constant_texture(vec3(4,4,4))));
+        list[3] = new xy_rect(3, 5, 1, 3, -2,
+            new diffuse_light(new constant_texture(vec3(4,4,4))));
+        return new hitable_list(list,4);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We get:
+
+![Image 6-1](../assets/img6-01.jpg)
+
+Note that the light is brighter than $(1,1,1)$. This allows it to be bright enough to light things.
+
+Fool around with making some spheres lights too.
+
+![Image 6-2](../assets/img6-02.jpg)
+
+Now let’s add the other two axes and the famous Cornell Box.
+
+This is yz and xz.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class xz_rect: public hitable  {
+        public:
+            xz_rect() {}
+            xz_rect(float _x0, float _x1, float _z0, float _z1, float _k, material *mat)
+                : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+            virtual bool hit(const ray& r, float t0, float t1, hit_record& rec) const;
+            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+                box =  aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
+                return true;
+            }
+            material *mp;
+            float x0, x1, z0, z1, k;
+    };
+
+    class yz_rect: public hitable  {
+        public:
+            yz_rect() {}
+            yz_rect(float _y0, float _y1, float _z0, float _z1, float _k, material *mat)
+                : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+            virtual bool hit(const ray& r, float t0, float t1, hit_record& rec) const;
+            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+                box =  aabb(vec3(k-0.0001, y0, z0), vec3(k+0.0001, y1, z1));
+                return true;
+            }
+            material  *mp;
+            float y0, y1, z0, z1, k;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With unsurprising hit functions:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool xz_rect::hit(const ray& r, float t0, float t1, hit_record& rec) const {
+        float t = (k-r.origin().y()) / r.direction().y();
+        if (t < t0 || t > t1)
+            return false;
+        float x = r.origin().x() + t*r.direction().x();
+        float z = r.origin().z() + t*r.direction().z();
+        if (x < x0 || x > x1 || z < z0 || z > z1)
+            return false;
+        rec.u = (x-x0)/(x1-x0);
+        rec.v = (z-z0)/(z1-z0);
+        rec.t = t;
+        rec.mat_ptr = mp;
+        rec.p = r.point_at_parameter(t);
+        rec.normal = vec3(0, 1, 0);
+        return true;
+    }
+
+    bool yz_rect::hit(const ray& r, float t0, float t1, hit_record& rec) const {
+        float t = (k-r.origin().x()) / r.direction().x();
+        if (t < t0 || t > t1)
+            return false;
+        float y = r.origin().y() + t*r.direction().y();
+        float z = r.origin().z() + t*r.direction().z();
+        if (y < y0 || y > y1 || z < z0 || z > z1)
+            return false;
+        rec.u = (y-y0)/(y1-y0);
+        rec.v = (z-z0)/(z1-z0);
+        rec.t = t;
+        rec.mat_ptr = mp;
+        rec.p = r.point_at_parameter(t);
+        rec.normal = vec3(1, 0, 0);
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Let’s make the 5 walls and the light of the box:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hitable *cornell_box() {
+        hitable **list = new hitable*[8];
+        int i = 0;
+        material *red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
+        material *white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
+        material *green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
+        material *light = new diffuse_light(new constant_texture(vec3(15, 15, 15)));
+
+        list[i++] = new yz_rect(0, 555, 0, 555, 555, green);
+        list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
+        list[i++] = new xz_rect(213, 343, 227, 332, 554, light);
+        list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
+        list[i++] = new xy_rect(0, 555, 0, 555, 555, white);
+
+        return new hitable_list(list,i);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And the view info:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 lookfrom(278, 278, -800);
+    vec3 lookat(278,278,0);
+    float dist_to_focus = 10.0;
+    float aperture = 0.0;
+    float vfov = 40.0;
+
+    camera cam(lookfrom, lookat, vec3(0,1,0), vfov, float(nx)/float(ny),
+        aperture, dist_to_focus, 0.0, 1.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We get:
+
+![Image 6-3](../assets/img6-03.jpg)
+
+This is very noisy because the light is small. But why are the other walls missing? They are facing
+the wrong way. We need outward facing normals. Let’s make a hitable that does nothing but hold
+another hitable, but reverses the normals:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class flip_normals : public hitable {
+        public:
+            flip_normals(hitable *p) : ptr(p) {}
+
+            virtual bool hit(
+                const ray& r, float t_min, float t_max, hit_record& rec) const {
+
+                if (ptr->hit(r, t_min, t_max, rec)) {
+                    rec.normal = -rec.normal;
+                    return true;
+                }
+                else
+                    return false;
+            }
+
+            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+                return ptr->bounding_box(t0, t1, box);
+            }
+
+            hitable *ptr;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This makes Cornell:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hitable *cornell_box() {
+        hitable **list = new hitable*[6];
+        int i = 0;
+        material *red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
+        material *white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
+        material *green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
+        material *light = new diffuse_light(new constant_texture(vec3(15, 15, 15)));
+
+        list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
+        list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
+        list[i++] = new xz_rect(213, 343, 227, 332, 554, light);
+        list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
+        list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
+        list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
+
+        return new hitable_list(list,i);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And voila:
+
+![Image 6-4](../assets/img6-04.jpg)
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

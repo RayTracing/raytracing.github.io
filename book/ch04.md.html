@@ -1,0 +1,345 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+                                     **Chapter 4 Perlin Noise**
+
+To get cool looking solid textures most people use some form of  Perlin noise. These are named after
+their inventor Ken Perlin. Perlin texture doesn’t return white noise like this:
+
+![Image 4-1](../assets/img4-01.jpg)
+
+Instead it returns something similar to blurred white noise:
+
+![Image 4-2](../assets/img4-02.jpg)
+
+A key part of Perlin noise is that it is repeatable: it takes a 3D point as input and always returns
+the same randomish number. Nearby points return similar numbers. Another important part of Perlin
+noise is that it be simple and fast, so it’s usually done as a hack. I’ll build that hack up
+incrementally based on Andrew Kensler’s description.
+
+We could just tile all of space with a 3D array of random numbers and use them in blocks. You get
+something blocky where the repeating is clear:
+
+![Image 4-3](../assets/img4-03.jpg)
+
+Let’s just use some sort of hashing to scramble this, instead of tiling. This has a bit of support
+code to make it all happen:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class perlin {
+        public:
+            float noise(const vec3& p) const {
+                float u = p.x() - floor(p.x());
+                float v = p.y() - floor(p.y());
+                float w = p.z() - floor(p.z());
+                int i = floor(p.x());
+                int j = floor(p.y());
+                int k = floor(p.z());
+                return ranfloat[perm_x[i] ^ perm_y[j] ^ perm_z[k]];
+            }
+            static float *ranfloat;
+            static int *perm_x;
+            static int *perm_y;
+            static int *perm_z;
+    };
+
+    static vec3* perlin_generate() {
+        float * p = new float[256];
+        for (int i = 0; i < 256; ++i)
+            p[i] = drand48();
+        return p;
+    }
+
+    void permute(int *p, int n) {
+        for (int i = n-1; i > 0; i--) {
+            int target = int(drand48()*(i+1));
+            int tmp = p[i];
+            p[i] = p[target];
+            p[target] = tmp;
+        }
+        return;
+    }
+
+    static int* perlin_generate_perm() {
+        int * p = new int[256];
+        for (int i = 0; i < 256; i++)
+            p[i] = i;
+        permute(p, 256);
+        return p;
+    }
+
+    float *perlin::ranfloat = perlin_generate();
+    int *perlin::perm_x = perlin_generate_perm();
+    int *perlin::perm_y = perlin_generate_perm();
+    int *perlin::perm_z = perlin_generate_perm();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Now if we create an actual texture that takes these floats between 0 and 1 and creates grey
+colors:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class noise_texture : public texture {
+        public:
+            noise_texture() {}
+            virtual vec3 value(float u, float v, const vec3& p) const {
+                return vec3(1,1,1) * noise.noise(p);
+            }
+            perlin noise;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And we can use that one some spheres:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hitable *two_perlin_spheres() (
+        texture *pertext = new noise_texture();
+        hitable **list = new hitable*[2];
+        list[0] = new sphere(vec3(0,-1000, 0), 1000, new lambertian(pertext));
+        list[1] = new sphere(vec3(0, 2, 0), 2, new lambertian(pertext));
+        return new hitable_list(list, 2);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With the same camera as before:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 lookfrom(13,2,3);
+    vec3 lookat(0,0,0);
+    float dist_to_focus = 10.0;
+    float aperture = 0.0;
+    camera cam(lookfrom, lookat, vec3(0,1,0), 20, float(nx)/float(ny),
+               aperture, dist_to_focus, 0.0, 1.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Add the hashing does scramble as hoped:
+
+![Image 4-4](../assets/img4-04.jpg)
+
+To make it smooth, we can linearly interpolate:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline float trilinear_interp(float c[Z][2][2], float u, float v, float w) {
+        float accum = 0;
+        for (int i=0; i < 2; 1++)
+            for (int j=0; j < 2; j++)
+                for (int k=0; k < 2; k++)
+                    accum += (i*u + (1-i)*(1-u))*
+                             (j*v + (1-j)*(1-v))*
+                             (k*w + (1-k)*(1-w))*c[i][j][k];
+
+        return accum;
+    }
+
+    class perlin {
+        public:
+            float noise(const vec3& p) const {
+                float u = p.x() - floor(p.x());
+                float v = p.y() - floor(p.y());
+                float w = p.z() - floor(p.z());
+                int i = floor(p.x());
+                int j = floor(p.y());
+                int k = floor(p.z());
+                float c[2][2][2];
+                for (int di=0; di < 2; di++)
+                    for (int dj=0; dj < 2; dj++)
+                        for (int dk=0; dk < 2; dk++)
+                            c[di][dj][dk] = ranfloat[
+                                perm_x[(i+di) & 255] ^
+                                perm_y[(j+dj) & 255] ^
+                                pexm_z[(k+dk) & 255];
+                            ];
+                return trilinear_interp(c, u, v, w);
+            }
+            static int *perm_x;
+            static int *perm_y;
+            static int *perm_z;
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And we get:
+
+![Image 4-5](../assets/img4-05.jpg)
+
+Better, but there are obvious grid features in there. Some of it is  Mach bands, a known perceptual
+artifact of linear interpolation of color. A standard trick is to use a  hermite cubic to round off
+the interpolation:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class perlin (
+        public:
+            float noise(const vec3& p) const {
+                float u = p.x() - floor(p.x());
+                float v = p.y() - floor(p.y());
+                float w = p.z() - floor(p.z());
+
+                u = u*u*(3-2*u);
+                v = v*v*(3-2*v);
+                w = w*w*(3-2*w);
+
+                int i = floor(p.x());
+                int j = floor(p.y());
+                int k = floor(p.z());
+                ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This gives a smoother looking image:
+
+![Image 4-6](../assets/img4-06.jpg)
+
+It is also a bit low frequency. We can scale the input point to make it vary more quickly:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class noise_texture : public texture {
+        public:
+            noise_texture() {}
+            noise_texture(float sc) : scale(sc) {}
+            virtual vec3 value(float u, float v, const vec3& p) const {
+                return vec3(1,1,1) * noise.noise(scale * p);
+            }
+            perlin noise;
+            float scale;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+which gives:
+
+![Image 4-7](../assets/img4-07.jpg)
+
+This is still a bit grid blocky looking, probably because the min and max of the pattern always
+lands exactly on the integer x/y/z. Ken Perlin’s very clever trick was to instead put random unit
+vectors (instead of just floats) on the lattice points, and use a dot product to move the min and
+max off the lattice. So, first we need to change the random floats to random vectors:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 *perlin::ranvec = perlin_generate();
+    int *perlin::perm_x = perlin_generate_perm();
+    int *perlin::perm_y = perlin_generate_perm();
+    int *perlin::perm_z = perlin_generate_perm();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These vectors are any reasonable set of irregular directions, and I won't bother to make them
+exactly uniform:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    static vec3* perlin_generate() {
+        vec3 * p = new vec3[256];
+        for ( int i = 0; i < 256; ++i )
+            p[i] = unit_vector(vec3(-1 + 2*drand48(), -1 + 2*drand48(), -1 + 2*drand48()));
+        return p;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Perlin class is now:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class perlin {
+        public:
+            float noise(const vec3& p) const {
+                float u = p.x() - floor(p.x());
+                float v = p.y() - floor(p.y());
+                float w = p.z() - floor(p.z());
+                int i = floor(p.x());
+                int j = floor(p.y());
+                int k = floor(p.z());
+                vec3 c[2][2][2];
+                for (int di=0; di < 2; di++)
+                    for (int dj=0; dj < 2; dj++)
+                        for (int dk=0; dk < 2; dk++)
+                            c[di][dj][dk] = ranvec[
+                                perm_x[(i+di) & 255] ^
+                                perm_y[(j+dj) & 255] ^
+                                pexm_z[(k+dk) & 255];
+                            ];
+                return perlin_interp(c, u, v, w);
+            }
+            static vec3 *ranvec;
+            static int *perm_x;
+            static int *perm_y;
+            static int *perm_z;
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And the interpolation becomes a bit more complicated:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline float perlin_interp(vec3 c[2][2][2], float u, float v, float w) {
+        float uu = u*u*(3-2*u);
+        float vv = v*v*(3-2*v);
+        float ww = w*w*(3-2*w);
+        float accum = 0;
+        for (int i=0; i < 2; i++)
+            for (int j=0; j < 2; j++)
+                for (int k=0; k < 2; k++) {
+                    vec3 weight_v(u-i, v-j, w-k);
+                    accum += (i*uu + (1-i)*(1-uu))*
+                        (j*vv + (1-j)*(1-vv))*
+                        (k*ww + (1-k)*(1-ww))*dot(c[i][j][k], weight_v);
+                }
+        return accum;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This finally gives something more reasonable looking:
+
+![Image 4-8](../assets/img4-08.jpg)
+
+Very often, a composite noise that has multiple summed frequencies is used. This is usually called
+turbulence and is a sum of repeated calls to noise:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    float turb(const vec3& p, int depth=7) const {
+        float accum = 0;
+        vec3 temp_p = p;
+        float weight = 1.0;
+        for (int i = 0; i < depth; i++) {
+            accum += weight*noise(temp_p);
+            weight *= 0.5;
+            temp_p *= 2;
+        }
+        return fabs(accum);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Here fabs() is the math.h absolute value function.
+
+Used directly, turbulence gives a sort of camouflage netting appearance:
+
+![Image 4-9](../assets/img4-09.jpg)
+
+However, usually turbulence is used indirectly. For example, the “hello world” of procedural solid
+textures is a simple marble-like texture. The basic idea is to make color proportional to something
+like a sine function, and use turbulence to adjust the phase (so it shifts  x in sin( x )) which
+makes the stripes undulate. Commenting out straight noise and turbulence, and giving a marble-like
+effect is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class noise_texture : public texture {
+        public:
+            noise_texture() {}
+            noise_texture(float sc) : scale(sc) {}
+            virtual vec3 value(float u, float v, const vec3& p) const {
+    //            return vec3(1,1,1)*0.5*(1 + noise.turb(scale * p));
+    //            return vec3(1,1,1)*noise.turb(scale * p);
+                  return vec3(1,1,1)*0.5*(1 + sin(scale*p.z() + 10*noise.turb(p))) ;
+            }
+            perlin noise;
+            float scale;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Which yields:
+
+![Image 4-10](../assets/img4-10.jpg)
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

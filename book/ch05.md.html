@@ -1,0 +1,132 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+                                **Chapter 5: Image Texture Mapping**
+
+We used the hitpoint p before to index a procedure solid texture like marble. We can also read in an
+image and use a 2D $(u,v)$ texture coordinate to index into the image.
+
+A direct way to use scaled $(u,v)$ in an image is to round the u and v to integers, and use that as
+$(i,j)$ pixels. This is awkward, because we don’t want to have to change the code when we change
+image resolution. So instead, one of the the most universal unofficial standards in graphics is to
+use texture coordinates instead of image pixel coordinates. These are just some form of fractional
+position in the image. For example, for pixel $(i,j)$ in an nx by ny image, the image texture
+position is:
+
+    $$ u = i/(nx-1) $$
+    $$ v = j/(nx-1) $$
+
+This is just a fractional position. For a hitable, we need to also return a u and v in the hit
+record. For spheres, this is usually based on some form of longitude and latitude, _i.e._, spherical
+coordinates. So if we have a $(\theta,\phi)$ in spherical coordinates we just need to scale $\theta$
+and $\phi$ to fractions. If $\theta$ is the angle down from the pole, and $\phi$ is the angle around
+the axis through the poles, the normalization to $[0,1]$ would be:
+
+    $$ u = \phi / (2\pi) $$
+    $$ v = \theta / \pi $$
+
+To compute $\theta$ and $\phi$, for a given hitpoint, the formula for spherical coordinates of a
+unit radius sphere on the origin is:
+
+    $$ x = cos(\phi) cos(\theta) $$
+    $$ y = sin(\phi) cos(\theta) $$
+    $$ z = sin(\theta) $$
+
+We need to invert that. Because of the lovely math.h function atan2() which takes any number
+proportional to sine and cosine and returns the angle, we can pass in x and y (the cos(theta)
+cancel):
+
+    $$ \phi = atan2(y, x) $$
+
+The atan2 returns in the range $-\pi$ to $\pi$ so we need to take a little care there. The $\theta$
+is more straightforward:
+
+    $$ \theta = asin(z) $$
+
+which returns numbers in the range $-\pi/2$ to $\pi/2$.
+
+So for a sphere, the $(u,v)$ coord computation is accomplished by a utility function that expects
+things on the unit sphere centered at the origin. The call inside sphere::hit should be:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The utility function is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    void get_sphere_uv(const vec3& p, float& u, float& v) {
+        float phi = atan2(p.z(), p.x());
+        float theta = asin(p.y());
+        u = 1-(phi + M_PI) / (2*M_PI);
+        v = (theta + M_PI/2) / M_PI;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Now we also need to create a texture class that holds an image. I am going to use my favorite image
+utility `stb_image`. It reads in an image into a big array of unsigned char. These are just packed
+RGBs that each range 0..255 for black to fully-on.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class image_texture : public texture {
+        public:
+            image_texture() {}
+            image_texture(unsigned char *pixels, int A, int B)
+                : data(pixels), nx(A), ny(B) {}
+            virtual vec3 value(float u, float v, const vec3& p) const;
+            unsigned char *data;
+            int nx, ny;
+    };
+
+    vec3 image_texture::value(float u, float v, const vec3& p) const {
+         int i = (  u) * nx;
+         int j = (1-v) * ny - 0.001;
+         if (i < 0) i = 0;
+         if (j < 0) j = 0;
+         if (i > nx-1) i = nx-1;
+         if (j > ny-1) j = ny-1;
+         float r = int(data[3*i + 3*nx*j]  ) / 255.0;
+         float g = int(data[3*i + 3*nx*j+1]) / 255.0;
+         float b = int(data[3*i + 3*nx*j+2]) / 255.0;
+         return vec3(r, g, b);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The representation of a packed array in that order is pretty standard. Thankfully, the `stb_image`
+package makes that super simple -- just include the header in main.h with a #define:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #define STB_IMAGE_IMPLEMENTATION
+    #include "stb_image.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To read an image from a file eathmap.jpg (I just grabbed a random earth map from the web -- any
+standard projection will do for our purposes), and then assign it to a diffuse material, the code
+is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int nx, ny, nn;
+    unsigned char *tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
+    material *mat = new lambertian(new image_texture(tex_data, nx, ny));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We start to see some of the power of all colors being textures -- we can assign any kind of texture
+to the lambertian material, and lambertian doesn’t need to be aware of it.
+
+To test this, assign it to a sphere, and then temporarily cripple the color() function in main to
+just return attenuation. You should get something like:
+
+![Image 5-1](../assets/img5-01.jpg)
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

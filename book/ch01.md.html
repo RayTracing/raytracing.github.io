@@ -1,0 +1,264 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+                                     **Chapter 1: Motion Blur**
+
+When you decided to ray trace, you decided visual quality was worth more run-time. In your fuzzy
+reflection and defocus blur you needed multiple samples per pixel. Once you have taken a step down
+that road, the good news is that almost all effects can be brute-forced. Motion blur is certainly
+one of those. In a real camera, the shutter opens and stays open for a time interval, and the camera
+and objects may move during that time. Its really an average of what the camera sees over that
+interval that we want. We can get a random estimate by sending each ray at some random time when the
+shutter is open. As long as the objects are where they should be at that time, we can get the right
+average answer with a ray that is at exactly a single time. This is fundamentally why random ray
+tracing tends to be simple.
+
+The basic idea is to generate rays at random times while the shutter is open and intersect the model
+at that one time. The way it is usually done is to have the camera move and the objects move, but
+have each ray exist at exactly one time. This way the “engine” of the ray tracer can just make sure
+the objects are where they need to be for the ray, and the intersection guts don’t change much.
+
+For this we will first need to have a ray store the time it exists at:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class ray
+    {
+        public:
+            ray() {}
+            ray(const vec3& a, const vec3& b, float ti = 0.0) { A = a; B = b; _time = ti;}
+            vec3 origin() const       { return A; }
+            vec3 direction() const    { return B; }
+            float time() const    { return _time; }
+            vec3 point_at_parameter(float t) const { return A + t*B; }
+
+            vec3 A;
+            vec3 B;
+            float _time;
+    };
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Now we need to modify the camera to generate rays at a random time between `time1` and `time2`.
+Should the camera keep track of `time1` and `time2` or should that be up to the user of camera when
+a ray is created? When in doubt, I like to make constructors complicated if it makes calls simple,
+so I will make the camera keep track, but that’s a personal preference. Not many changes are needed
+to camera because for now it is not allowed to move; it just sends out rays over a time period.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class camera {
+        public:
+            // new:  add t0 and t1
+            camera(
+                vec3 lookfrom,
+                vec3 lookat,
+                vec3 vup,
+                float vfov,      // vfov is top to bottom in degrees
+                float aspect,
+                float aperture,
+                float focus_dist,
+                float t0,
+                float t1) {
+
+                time0 = t0;
+                time1 = t1;
+                lens_radius = aperture / 2;
+                float theta = vfov*M_PI/180;
+                float half_height = tan(theta/2);
+                float half_width = aspect * half_height;
+                origin = lookfrom;
+                w = unit_vector(lookfrom - lookat);
+                u = unit_vector(cross(vup, w));
+                v = cross(w, u);
+                lower_left_corner = origin
+                                  - half_width*focus_dist*u
+                                  - half_height*focus_dist*v
+                                  - focus_dist*w;
+                horizontal = 2*half_width*focus_dist*u;
+                vertical = 2*half_height*focus_dist*v;
+            }
+
+            // new: add time to construct ray
+            ray get_ray(float s, float t) {
+                vec3 rd = lens_radius*random_in_unit_disk();
+                vec3 offset = u * rd.x() + v * rd.y();
+                float time = time0 + drand48()*(time1-time0);
+                return ray(
+                    origin + offset,
+                    lower_left_corner + s*horizontal + t*vertical - origin - offset,
+                    time);
+            }
+
+            vec3 origin;
+            vec3 lower_left_corner;
+            vec3 horizontal;
+            vec3 vertical;
+            vec3 u, v, w;
+            float time0, time1;  // new variables for shutter open/close times
+            float lens_radius;
+    };
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We also need a moving object. I’ll create a sphere class that has its center move linearly from
+`center0` at `time0` to `center1` at `time1`. Outside that time interval it continues on, so those
+times need not match up with the camera aperture open close.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class moving_sphere: public hitable  {
+        public:
+            moving_sphere() {}
+            moving_sphere(vec3 cen0, vec3 cen1, float t0, float t1, float r, material *m)
+                : center0(cen0), center1(cen1), time0(t0),time1(t1), radius(r), mat_ptr(m)
+                {};
+            virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
+            virtual bool bounding_box(float t0, float t1, aabb& box) const;
+            vec3 center(float time) const;
+            vec3 center0, center1;
+            float time0, time1;
+            float radius;
+            material *mat_ptr;
+    };
+
+    vec3 moving_sphere::center(float time) const{
+        return center0 + ((time - time0) / (time1 - time0))*(center1 - center0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An alternative to making a new moving sphere class is to just make them all move and have the
+stationary ones have the same begin and end point. I’m on the fence about that trade-off between
+fewer classes and more efficient stationary spheres, so let your design taste guide you. The
+intersection code barely needs a change: `center` just needs to become a function `center(time)`:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    // replace "center" with "center(r.time())"
+    bool moving_sphere::hit(
+        const ray& r, float t_min, float t_max, hit_record& rec) const {
+
+        vec3 oc = r.origin() - center(r.time());
+        float a = dot(r.direction(), r.direction());
+        float b = dot(oc, r.direction());
+        float c = dot(oc, oc) - radius*radius;
+        float discriminant = b*b - a*c;
+        if (discriminant > 0) {
+            float temp = (-b - sqrt(discriminant))/a;
+            if (temp < t_max && temp > t_min) {
+                rec.t = temp;
+                rec.p = r.point_at_parameter(rec.t);
+                rec.normal = (rec.p - center(r.time())) / radius;
+                rec.mat_ptr = mat_ptr;
+                return true;
+            }
+            temp = (-b + sqrt(discriminant))/a;
+            if (temp < t_max && temp > t_min) {
+                rec.t = temp;
+                rec.p = r.point_at_parameter(rec.t);
+                rec.normal = (rec.p - center(r.time())) / radius;
+                rec.mat_ptr = mat_ptr;
+                return true;
+            }
+        }
+        return false;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Be sure that in the materials you have the scattered rays be at the time of the incident ray.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class lambertian : public material {
+        public:
+            lambertian(const vec3& a) : albedo(a) {}
+
+            virtual bool scatter(const ray& r_in, const hit_record& rec,
+                vec3& attenuation, ray& scattered) const {
+
+                vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+                scattered = ray(rec.p, target-rec.p, r_in.time());
+                attenuation = albedo;
+                return true;
+            }
+
+        vec3 albedo;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If we take the example diffuse spheres from scene at the end of the last book and make them move
+from their centers at `time==0`, to `center + vec3(0, 0.5*drand48(), 0)` at `time==1`, with the
+camera aperture open over that frame.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hitable *random_scene() {
+        int n = 50000;
+        hitable **list = new hitable*[n+1];
+        list[0] =  new sphere(vec3(0,-1000,0), 1000, new lambertian(checker));
+        int i = 1;
+        for (int a = -10; a < 10; a++) {
+            for (int b = -10; b < 10; b++) {
+                float choose_mat = drand48();
+                vec3 center(a+0.9*drand48(),0.2,b+0.9*drand48());
+                if ((center-vec3(4,0.2,0)).length() > 0.9) {
+                    if (choose_mat < 0.8) {  // diffuse
+                        list[i++] = new moving_sphere(
+                            center,
+                            center+vec3(0, 0.5*drand48(), 0),
+                            0.0, 1.0, 0.2,
+                            new lambertian(
+                                vec3(drand48()*drand48(),
+                                     drand48()*drand48(),
+                                     drand48()*drand48())
+                            )
+                        );
+                    }
+                    else if (choose_mat < 0.95) { // metal
+                        list[i++] = new sphere(
+                            center, 0.2,
+                            new metal(
+                                vec3(0.5*(1 + drand48()),
+                                     0.5*(1 + drand48()),
+                                     0.5*(1 + drand48())),
+                                0.5*drand48()
+                            )
+                        );
+                    }
+                    else {  // glass
+                        list[i++] = new sphere(center, 0.2, new dielectric(1.5));
+                    }
+                }
+            }
+        }
+
+        list[i++] = new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5));
+        list[i++] = new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1)));
+        list[i++] = new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0));
+
+        return new hitable_list(list,i);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And with these viewing parameters gives:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 lookfrom(13,2,3);
+    vec3 lookat(0,0,0);
+    float dist_to_focus = 10.0;
+    float aperture = 0.0;
+
+    camera cam(
+        lookfrom, lookat, vec3(0,1,0), 20, float(nx)/float(ny), aperture,
+        dist_to_focus, 0.0, 1.0
+    );
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+![Image 1-1](../assets/img1-01.jpg)
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

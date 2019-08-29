@@ -1,0 +1,132 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+                                    **Chapter 3 Solid Textures**
+
+A texture in graphics usually means a function that makes the colors on a surface procedural. This
+procedure can be synthesis code, or it could be an image lookup, or a combination of both. We will
+first make all colors a texture. Most programs keep constant rgb colors and textures different
+classes so feel free to do something different, but I am a big believer in this architecture because
+being able to make any color a texture is great.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class texture (
+        public:
+            virtual vec3 value(float u, float v, const vec3& p) const = O;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class constant_texture : public texture {
+        public:
+            constant_texture() ( }
+            constant_texture(vec3 c) : color(c) { }
+            virtual vec3 value(float u, float v, const vec3& p) const {
+                return color;
+            }
+            vec3 color;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Now we can make textured materials by replacing the vec3 color with a texture pointer:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class lambertian : public material {
+        public:
+            lambertian(texture *a) : albedo(a) {}
+            virtual bool scatter(const ray& r_in, const hit_record& rec,
+                                 vec3& attenuation, ray& scattered) const (
+                vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+                scattered = ray(rec.p, target - rec.p);
+                attenuation = albedo->value(0, 0, rec.p);
+                return true;
+            }
+            texture *albedo;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+where you used to have new lambertian(vec3(0.5, 0.5, 0.5))) now you should replace the vec3(...)
+with  new constant_texture(vec3(...)) new lambertian(new constant_texture(vec3(0.5, 0.5, 0.5))))
+
+We can create a checker texture by noting that the sign of sine and cosine just alternates in a
+regular way and if we multiply trig functions in all three dimensions, the sign of that product
+forms a 3D checker pattern.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class checker_texture : public texture {
+        public:
+            checker_texture() { }
+            checker_texture(texture *t0, texture *tl): even(t0), odd(t1) { }
+            virtual vec3 value(float u, float v, const vec3& p) const {
+                float sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
+                if (sines < 0)
+                    return odd—>value(u, v, p);
+                else
+                    return even->value(u, v, p);
+            }
+            texture *odd;
+            texture *even;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Those checker odd/even pointers can be to a constant texture or to some other procedural texture.
+This is in the spirit of shader networks introduced by Pat Hanrahan back in the 1980s.
+
+If we add this to our random_scene() function’s base sphere:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    texture *checker = new checker_texture(
+        new constant_texture(vec3(0.2, 0.3, 0.1)),
+        new constant_texture(vec3(0.9, 0.9, 0.9))
+    );
+    list[0] = new sphere(vec3(0,-1000,0), 1000, new lambertian(checker));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We get:
+
+![Image 3-1](../assets/img3-01.jpg)
+
+If we add a new scene:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hitable *two_spheres() {
+        texture *checker = new checker_texture(
+            new constant_texture(vec3(0.2, 0.3, 0.1)),
+            new constant_texture(vec3(0.9, 0.9, 0.9))
+        );
+        int n = 50;
+        hitable **list = new hitable*[n+1];
+        list[0] = new sphere(vec3(0,-10, 0), 10, new lambertian(checker)
+        1ist[1] = new sphere(vec3(0, 10, 0), 10, new lambertian(checker)
+        return new hitable_list(list,2);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With camera:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 lookfrom(13,2,3);
+    vec3 lookat(0,0,0);
+    float dist_to_focus = 10.0;
+    float aperture = 0.0;
+
+    camera cam(lookfrom, lookat, vec3(0,1,0), 20, float(nx)/float(ny),
+               aperture, dist_to_focus, 0.0, 1.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We get:
+
+![Image 3-2](../assets/img3-02.jpg)
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

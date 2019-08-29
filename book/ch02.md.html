@@ -1,0 +1,436 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+                             **Chapter 2: Bounding Volume Hierarchies**
+
+This part is by far the most difficult and involved part of the ray tracer we are working on. I am
+sticking it in Chapter 2 so the code can run faster, and because it refactors `hitable` a little,
+and when I add rectangles and boxes we won't have to go back and refactor them.
+
+The ray-object intersection is the main time-bottleneck in a ray tracer, and the time is linear with
+the number of objects. But it’s a repeated search on the same model, so we ought to be able to make
+it a logarithmic search in the spirit of binary search. Because we are sending millions to billions
+of rays on the same model, we can do an analog of sorting the model and then each ray intersection
+can be a sublinear search. The two most common families of sorting are to 1) divide the space, and
+2) divide the objects. The latter is usually much easier to code up and just as fast to run for most
+models.
+
+The key idea of a bounding volume over a set of primitives is to find a volume that fully encloses
+(bounds) all the objects. For example, suppose you computed a bounding sphere of 10 objects. Any ray
+that misses the bounding sphere definitely misses all ten objects. If the ray hits the bounding
+sphere, then it might hit one of the ten objects. So the bounding code is always of the form:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if (ray hits bounding object)
+        return whether ray hits bounded objects
+    else
+        return false
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A key thing is we are dividing objects into subsets. We are not dividing the screen or the volume.
+Any object is in just one bounding volume, but bounding volumes can overlap.
+
+To make things sub-linear we need to make the bounding volumes hierarchical. For example, if we
+divided a set of objects into two groups, red and blue, and used rectangular bounding volumes, we’d
+have:
+
+![Figure 2-1](../assets/fig2-01.jpg)
+
+Note that the blue and red bounding volumes are contained in the purple one, but they might
+overlap, and they are not ordered -- they are just both inside. So the tree shown on the right has
+no concept of ordering in the left and right children; they are simply inside. The code would be:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if (hits purple)
+        hit0 = hits blue enclosed objects
+        hit1 = hits red enclosed objects
+        if (hit0 or hit1)
+            return true and info of closer hit
+    return false
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To get that all to work we need a way to make good divisions, rather than bad ones, and a way to
+intersect a ray with a bounding volume. A ray bounding volume intersection needs to be fast, and
+bounding volumes need to be pretty compact. In practice for most models, axis-aligned boxes work
+better than the alternatives, but this design choice is always something to keep in mind if you
+encounter unusual types of models.
+
+From now on we will call axis-aligned bounding rectangular parallelepiped (really, that is what they
+need to be called if precise) axis-aligned bounding boxes, or AABBs. Any method you want to use to
+intersect a ray with an AABB is fine. And all we need to know is whether or not we hit it; we don’t
+need hit points or normals or any of that stuff that we need for an object we want to display.
+
+Most people use the “slab” method. This is based on the observation that an n-dimensional AABB is
+just the intersection of n axis-aligned intervals, often called “slabs” An interval is just
+the points between two endpoints, _e.g._, $x$ such that $3 < x < 5$, or more succinctly $x$ in
+$(3,5)$. In 2D, two intervals overlapping makes a 2D AABB (a rectangle):
+
+![Figure 2-2](../assets/fig2-02.jpg)
+
+For a ray to hit one interval we first need to figure out whether the ray hits the boundaries. For
+example, again in 2D, this is the ray parameters $t_0$ and $t_1$. (If the ray is parallel to the
+plane those will be undefined.)
+
+![Figure 2-3](../assets/fig2-03.jpg)
+
+In 3D, those boundaries are planes. The equations for the planes are $x = x_0$, and $x = x_1$. Where
+does the ray hit that plane? Recall that the ray can be thought of as just a function that given a
+$t$ returns a location $p(t)$:
+
+    $$ p(t) = A + t \cdot B $$
+
+That equation applies to all three of the x/y/z coordinates. For example $x(t) = A_x + t \cdot B_x$.
+This ray hits the plane $x = x_0$ at the $t$ that satisfies this equation:
+
+    $$ x_0 = A_x + t_0 \cdot B_x $$
+
+Thus $t$ at that hitpoint is:
+
+    $$ t_0 = \frac{x_0 - A_x}{B_x} $$
+
+We get the similar expression for $x_1$:
+
+    $$ t_1 = \frac{x_1 - A_x}{B_x} $$
+
+The key observation to turn that 1D math into a hit test is that for a hit, the $t$-intervals need
+to overlap. For example, in 2D the green and blue overlapping only happens if there is a hit:
+
+![Figure 2-4](../assets/fig2-04.jpg)
+
+What “do the t intervals in the slabs overlap?” would like in code is something like:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    compute (tx0, tx1)
+    compute (ty0, ty1)
+    return overlap?( (tx0, tx1), (ty0, ty1))
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+That is awesomely simple, and the fact that the 3D version also works is why people love the
+slab method:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    compute (tx0, tx1)
+    compute (ty0, ty1)
+    compute (tz0, tz1)
+    return overlap?( (tx0, tx1), (ty0, ty1), (tz0, tz1))
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are some caveats that make this less pretty than it first appears. First, suppose the ray is
+travelling in the negative $x$ direction. The interval $(t_{x0}, t_{x1})$ as computed above might be
+reversed, _e.g._ something like $(7, 3)$. Second, the divide in there could give us infinities. And
+if the ray origin is on one of the slab boundaries, we can get a `NaN`. There are many ways these
+issues are dealt with in various ray tracers’ AABB. (There are also vectorization issues like SIMD
+which we will not discuss here. Ingo Wald’s papers are a great place to start if you want to go the
+extra mile in vectorization for speed.) For our purposes, this is unlikely to be a major bottleneck
+as long as we make it reasonably fast, so let’s go for simplest, which is often fastest anyway!
+First let’s look at computing the intervals:
+
+    $$ t_{x0} = \frac{x_0 - A_x}{B_x} $$
+    $$ t_{x1} = \frac{x_1 - A_x}{B_x} $$
+
+One troublesome thing is that perfectly valid rays will have $B_x = 0$, causing division by zero.
+Some of those rays are inside the slab, and some are not. Also, the zero will have a ± sign under
+IEEE floating point. The good news for $B_x = 0$ is that $t_{x0}$ and $t_{x1}$ will both be +∞ or
+both be -∞ if not between $x_0$ and $x_1$. So, using min and max should get us the right answers:
+
+    $$ t_{x0} = min(\frac{x_0 - A_x}{B_x}, \frac{x_1 - A_x}{B_x}) $$
+    $$ t_{x1} = max(\frac{x_0 - A_x}{B_x}, \frac{x_1 - A_x}{B_x}) $$
+
+The remaining troublesome case if we do that is if $B_x = 0$ and either $x_0 - A_x = 0$ or $x_1-A_x
+= 0$ so we get a `NaN`. In that case we can probably accept either hit or no hit answer, but we’ll
+revisit that later.
+
+Now, let’s look at that overlap function. Suppose we can assume the intervals are not reversed (so
+the first value is less than the second value in the interval) and we want to return true in that
+case. The boolean overlap that also computes the overlap interval $(f, F)$ of intervals $(d, D)$ and
+$(e, E)$ would be:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    bool overlap(d, D, e, E, f, F)
+        f = max(d, e)
+        F = min(D, E)
+        return (f < F)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If there are any `NaN`s running around there, the compare will return false so we need to be sure
+our bounding boxes have a little padding if we care about grazing cases (and we probably should
+because in a ray tracer all cases come up eventually). With all three dimensions in a loop and
+passing in the interval $t_{min}$, $t_{max}$ we get:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline float ffmin(float a, float b) { return a < b ? a : b; }
+    inline float ffmax(float a, float b) { return a > b ? a : b; }
+
+    class aabb {
+        public:
+            aabb() {}
+            aabb(const vec3& a, const vec3& b) { _min = a; _max = b;}
+
+            vec3 min() const {return _min; }
+            vec3 max() const {return _max; }
+
+            bool hit(const ray& r, float tmin, float tmax) const {
+                for (int a = 0; a < 3; a++) {
+                    float t0 = ffmin((_min[a] - r.origin()[a]) / r.direction()[a],
+                                     (_max[a] - r.origin()[a]) / r.direction()[a]);
+                    float t1 = ffmax((_min[a] - r.origin()[a]) / r.direction()[a],
+                                     (_max[a] - r.origin()[a]) / r.direction()[a]);
+                    tmin = ffmax(t0, tmin);
+                    tmax = ffmin(t1, tmax);
+                    if (tmax <= tmin)
+                        return false;
+                }
+                return true;
+            }
+
+            vec3 _min;
+            vec3 _max;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Note that the built-in `fmax()` is replaced by `ffmax()` which is quite a bit faster because it
+doesn’t worry about `NaN`s and other exceptions. In reviewing this intersection method, Andrew
+Kensler at Pixar tried some experiments and has proposed this version of the code which works
+extremely well on many compilers, and I have adopted it as my go-to method:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline bool aabb::hit(const ray& r, float tmin, float tmax) const {
+        for (int a = 0; a < 3; a++) {
+            float invD = 1.0f / r.direction()[a];
+            float t0 = (min()[a] - r.origin()[a]) * invD;
+            float t1 = (max()[a] - r.origin()[a]) * invD;
+            if (invD < 0.0f)
+                std::swap(t0, t1);
+            tmin = t0 > tmin ? t0 : tmin;
+            tmax = t1 < tmax ? t1 : tmax;
+            if (tmax <= tmin)
+                return false;
+        }
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We now need to add a function to compute bounding boxes to all of the hitables. Then we will make a
+hierarchy of boxes over all the primitives and the individual primitives, like spheres, will live at
+the leaves. That function returns a bool because not all primitives have bounding boxes (_e.g._,
+infinite planes). In addition, objects move so it takes `time1` and `time2` for the interval of the
+frame and the bounding box will bound the object moving through that interval.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class hitable  {
+        public:
+            virtual bool hit(
+                const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
+            virtual bool bounding_box(float t0, float t1, aabb& box) const = 0;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a sphere, that `bounding_box` function is easy:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool sphere::bounding_box(float t0, float t1, aabb& box) const {
+        box = aabb(center - vec3(radius, radius, radius),
+                   center + vec3(radius, radius, radius));
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For `moving sphere`, we can take the box of the sphere at $t_0$, and the box of the sphere at $t_1$,
+and compute the box of those two boxes:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool moving_sphere::bounding_box(float t0, float t1, aabb& box) const {
+        aabb box0(center(t0) - vec3(radius, radius, radius),
+                  center(t0) + vec3(radius, radius, radius));
+        aabb box1(center(t1) - vec3(radius, radius, radius),
+                  center(t1) + vec3(radius, radius, radius));
+        box = surrounding_box(box0, box1);
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For lists you can store the bounding box at construction, or compute it on the fly. I like doing it
+the fly because it is only usually called at BVH construction.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool hitable_list::bounding_box(float t0, float t1, aabb& box) const {
+        if (list_size < 1) return false;
+        aabb temp_box;
+        bool first_true = list[0]->bounding_box(t0, t1, temp_box);
+        if (!first_true)
+            return false;
+        else
+            box = temp_box;
+        for (int i = 1; i < list_size; i++) {
+            if(list[i]->bounding_box(t0, t1, temp_box)) {
+                box = surrounding_box(box, temp_box);
+            }
+            else
+                return false;
+        }
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This requires the `surrounding_box` function for `aabb` which computes the bounding box of two
+boxes:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    aabb surrounding_box(aabb box0, aabb box1) {
+        vec3 small( ffmin(box0.min().x(), box1.min().x()),
+                    ffmin(box0.min().y(), box1.min().y()),
+                    ffmin(box0.min().z(), box1.min().z()));
+        vec3 big  ( ffmax(box0.max().x(), box1.max().x()),
+                    ffmax(box0.max().y(), box1.max().y()),
+                    ffmax(box0.max().z(), box1.max().z()));
+        return aabb(small,big);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A BVH is also going to be a `hitable` -- just like lists of `hitable`s. It’s really a container, but
+it can respond to the query “does this ray hit you?”. One design question is whether we have two
+classes, one for the tree, and one for the nodes in the tree; or do we have just one class and have
+the root just be a node we point to. I am a fan of the one class design when feasible. Here is such
+a class:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class bvh_node : public hitable  {
+        public:
+            bvh_node() {}
+            bvh_node(hitable **l, int n, float time0, float time1);
+            virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
+            virtual bool bounding_box(float t0, float t1, aabb& box) const;
+            hitable *left;
+            hitable *right;
+            aabb box;
+    };
+
+
+    bool bvh_node::bounding_box(float t0, float t1, aabb& b) const {
+        b = box;
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Note that the children pointers are to generic hitables. They can be other `bvh_nodes`, or
+`spheres`, or any other `hitable`.
+
+The `hit` function is pretty straightforward: check whether the box for the node is hit, and if so,
+check the children and sort out any details:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool bvh_node::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+        if (box.hit(r, t_min, t_max)) {
+            hit_record left_rec, right_rec;
+            bool hit_left = left->hit(r, t_min, t_max, left_rec);
+            bool hit_right = right->hit(r, t_min, t_max, right_rec);
+            if (hit_left && hit_right) {
+                if (left_rec.t < right_rec.t)
+                    rec = left_rec;
+                else
+                    rec = right_rec;
+                return true;
+            }
+            else if (hit_left) {
+                rec = left_rec;
+                return true;
+            }
+            else if (hit_right) {
+                rec = right_rec;
+                return true;
+            }
+            else
+                return false;
+        }
+        else return false;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The most complicated part of any efficiency structure, including the BVH, is building it. We do this
+in the constructor. A cool thing about BVHs is that as long as the list of objects in a `bvh_node`
+gets divided into two sub-lists, the hit function will work. It will work best if the division is
+done well, so that the two children have smaller bounding boxes than their parent’s bounding box,
+but that is for speed not correctness. I’ll choose the middle ground, and at each node split the
+list along one axis. I’ll go for simplicity:
+
+1. randomly choose an axis
+2. sort the primitives using library qsort
+3. put half in each subtree
+
+I used the old-school C `qsort` rather than the C++ sort because I need a different compare operator
+depending on axis, and `qsort` takes a compare function rather than using the less-than operator. I
+pass in a pointer to pointer -- this is just C for “array of pointers” because a pointer in C can
+also just be a pointer to the first element of an array.
+
+When the list coming in is two elements, I put one in each subtree and end the recursion. The
+traverse algorithm should be smooth and not have to check for null pointers, so if I just have one
+element I duplicate it in each subtree. Checking explicitly for three elements and just following
+one recursion would probably help a little, but I figure the whole method will get optimized later.
+This yields:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bvh_node::bvh_node(hitable **l, int n, float time0, float time1) {
+        int axis = int(3*drand48());
+        if (axis == 0)
+           qsort(l, n, sizeof(hitable *), box_x_compare);
+        else if (axis == 1)
+           qsort(l, n, sizeof(hitable *), box_y_compare);
+        else
+           qsort(l, n, sizeof(hitable *), box_z_compare);
+        if (n == 1) {
+            left = right = l[0];
+        }
+        else if (n == 2) {
+            left = l[0];
+            right = l[1];
+        }
+        else {
+            left = new bvh_node(l, n/2, time0, time1);
+            right = new bvh_node(l + n/2, n - n/2, time0, time1);
+        }
+        aabb box_left, box_right;
+        if (!left->bounding_box(time0,time1, box_left) ||
+            !right->bounding_box(time0,time1, box_right)
+           ) {
+            std::cerr << "no bounding box in bvh_node constructor\n";
+        }
+        box = surrounding_box(box_left, box_right);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The check for whether there is a bounding box at all is in case you sent in something like an
+infinite plane that doesn’t have a bounding box. We don’t have any of those primitives, so it
+shouldn’t happen until you add such a thing.
+
+The compare function has to take void pointers which you cast. This is old-school C and reminded me
+why C++ was invented. I had to really mess with this to get all the pointer junk right. If you like
+this part, you have a future as a systems person!
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int box_x_compare (const void * a, const void * b) {
+        aabb box_left, box_right;
+        hitable *ah = *(hitable**)a;
+        hitable *bh = *(hitable**)b;
+
+        if (!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
+            std::cerr << "no bounding box in bvh_node constructor\n";
+
+        if (box_left.min().x() - box_right.min().x() < 0.0)
+            return -1;
+        else
+            return 1;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

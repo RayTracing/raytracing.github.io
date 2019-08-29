@@ -1,0 +1,173 @@
+<meta charset="utf-8">
+<div style="background:#fee; margin: 1em 4em 4em 4em; border:solid 4px red; padding: 0em 4ex 1em 4ex;">
+<p style="font-size:160%; font-weight:bold; color:red;">WARNING<br>Content Under Development</p>
+See <a href="https://github.com/RayTracing/raytracinginoneweekend/releases">release page</a> for
+latest official PDF version.</div>
+
+
+
+                                       **Chapter 8 Volumes**
+
+One thing it’s nice to add to a ray tracer is smoke/fog/mist. These are sometimes called _volumes_
+or _participating media_. Another feature that is nice to add is subsurface scattering, which is
+sort of like dense fog inside an object. This usually adds software architectural mayhem because
+volumes are a different animal than surfaces. But a cute technique is to make a volume a random
+surface. A bunch of smoke can be replaced with a surface that probabilistically might or might not
+be there at every point in the volume. This will make more sense when you see the code.
+
+First, let’s start with a volume of constant density. A ray going through there can either scatter
+inside the volume, or it can make it all the way through like the middle ray in the figure. More
+thin transparent volumes, like a light fog, are more likely to have rays like the middle one. How
+far the ray has to travel through the volume also determines how likely it is for the ray to make it
+through.
+
+![Figure 8-1](../assets/fig8-01.jpg)
+
+As the ray passes through the volume, it may scatter at any point. The denser the volume, the more
+likely that is. The probability that the ray scatters in any small distance $\delta L$ is:
+
+    $$ probability = C \cdot \delta L $$
+
+where $C$ is proportional to the optical density of the volume. If you go through all the differential
+equations, for a random number you get a distance where the scattering occurs. If that distance is
+outside the volume, then there is no “hit”. For a constant volume we just need the density $C$ and the
+boundary. I’ll use another hitable for the boundary. The resulting class is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class constant_medium : public hitable  {
+        public:
+            constant_medium(hitable *b, float d, texture *a)
+              : boundary(b), density(d) {
+
+                phase_function = new isotropic(a);
+            }
+            virtual bool hit(
+                const ray& r, float t_min, float t_max, hit_record& rec) const;
+            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+                return boundary->bounding_box(t0, t1, box);
+            }
+            hitable *boundary;
+            float density;
+            material *phase_function;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The scattering function of isotropic picks a uniform random direction:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class isotropic : public material {
+        public:
+            isotropic(texture *a) : albedo(a) {}
+            virtual bool scatter(
+                const ray& r_in,
+                const hit_record& rec,
+                vec3& attenuation,
+                ray& scattered) const {
+
+                scattered = ray(rec.p, random_in_unit_sphere());
+                attenuation = albedo->value(rec.u, rec.v, rec.p);
+                return true;
+            }
+            texture *albedo;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+And the hit function is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool constant_medium::hit(const ray& r, float t_min, float t_max, hit_record& rec)
+    const {
+
+        // Print occasional samples when debugging. To enable, set enableDebug true.
+        const enableDebug = false;
+        bool debugging = enableDebug && drand48() < 0.00001;
+
+        hit_record rec1, rec2;
+
+        if (boundary->hit(r, -FLT_MAX, FLT_MAX, rec1)) {
+            if (boundary->hit(r, rec1.t+0.0001, FLT_MAX, rec2)) {
+
+                if (debugging) std::cerr << "\nt0 t1 " << rec1.t << " " << rec2.t << '\n';
+
+                if (rec1.t < t_min) rec1.t = t_min;
+                if (rec2.t > t_max) rec2.t = t_max;
+
+                if (rec1.t >= rec2.t)
+                    return false;
+                if (rec1.t < 0)
+                    rec1.t = 0;
+
+                float distance_inside_boundary = (rec2.t - rec1.t)*r.direction().length();
+                float hit_distance = -(1/density) * log(drand48());
+
+                if (hit_distance < distance_inside_boundary) {
+
+                    rec.t = rec1.t + hit_distance / r.direction().length();
+                    rec.p = r.point_at_parameter(rec.t);
+
+                    if (debugging) {
+                        std::cerr << "hit_distance = " <<  hit_distance << '\n'
+                                  << "rec.t = " <<  rec.t << '\n'
+                                  << "rec.p = " <<  rec.p << '\n';
+                    }
+
+                    rec.normal = vec3(1,0,0);  // arbitrary
+                    rec.mat_ptr = phase_function;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The reason we have to be so careful about the logic around the boundary is we need to make sure this
+works for ray origins inside the volume. In clouds, things bounce around a lot so that is a common
+case.
+
+If we replace the two blocks with smoke and fog (dark and light particles) and make the light bigger
+(and dimmer so it doesn’t blow out the scene) for faster convergence:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hitable *cornell_smoke() {
+        hitable **list = new hitable*[8];
+        int i = 0;
+        material *red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
+        material *white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
+        material *green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
+        material *light = new diffuse_light(new constant_texture(vec3(7, 7, 7)));
+
+        list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
+        list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
+        list[i++] = new xz_rect(113, 443, 127, 432, 554, light);
+        list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
+        list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
+        list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
+
+        hitable *b1 = new translate(
+            new rotate_y(new box(vec3(0, 0, 0), vec3(165, 165, 165), white), -18),
+            vec3(130,0,65));
+        hitable *b2 = new translate(
+            new rotate_y(new box(vec3(0, 0, 0), vec3(165, 330, 165), white),  15),
+            vec3(265,0,295));
+
+        list[i++] = new constant_medium(
+            b1, 0.01, new constant_texture(vec3(1.0, 1.0, 1.0)));
+        list[i++] = new constant_medium(
+            b2, 0.01, new constant_texture(vec3(0.0, 0.0, 0.0)));
+
+        return new hitable_list(list,i);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We get:
+
+![Image 8-1](../assets/img8-01.jpg)
+
+
+
+<!-- Markdeep: -->
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
