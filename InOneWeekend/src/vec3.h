@@ -11,9 +11,9 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include <iostream>
 #include <math.h>
 #include <stdlib.h>
-#include <iostream>
 
 
 class vec3  {

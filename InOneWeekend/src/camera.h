@@ -11,8 +11,9 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include "ray.h"
 #include "random.h"
+#include "ray.h"
+
 
 vec3 random_in_unit_disk() {
     vec3 p;
