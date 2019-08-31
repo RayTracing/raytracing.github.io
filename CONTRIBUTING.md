@@ -19,7 +19,7 @@ Here are other ways you can help improve these books.
 
 Project Homes
 --------------
-There are currently three projects — one for each book:
+All books reside in their own directory in the `raytracing.github.io` repository.
 
   - [_Ray Tracing in One Weekend_][]
   - [_Ray Tracing: The Next Week_][]
@@ -29,29 +29,23 @@ There are currently three projects — one for each book:
 Issues
 -------
 The easiest way to help out is to log any issues you find in the books. Unclear passages, errors of
-all kinds, even better ways to present something — just go to the appropriate project on GitHub and
-locate the issues tab. This will take you to the current issues for that book. Here are the direct
-links:
-
-  - [_Ray Tracing in One Weekend_ - Issues](https://github.com/raytracing/raytracinginoneweekend/issues/)
-  - [_Ray Tracing: The Next Week_ - Issues](https://github.com/raytracing/raytracingthenextweek/issues/)
-  - [_Ray Tracing: The Rest of Your Life_ - Issues](https://github.com/raytracing/raytracingtherestofyourlife/issues/)
-
+all kinds, even better ways to present something -- just go to the [issues page][].
 
 _Before creating a new issue_, please review existing issues to see if someone has already submitted
 the same one. Odds are you're not the first to encounter something, so a little quick research can
 save everyone some hassle.
 
-When entering a new issue, please include all relevant information, particularly for issues with
-source code.
+When entering a new issue, please include all relevant information. For content issues, include the
+book or books this applies to, and specific locations that should be reviewed. Similarly for code:
+please include the file, function/class, and line number(s) if that applies.
 
 
 Pull Requests
 --------------
-If you have a change that you think would be worthwhile, start with creating an issue, and include
-the fact that you're willing to submit the change yourself (much appreciated!). We'll let you know
-if it sounds like a good idea. If so, create your own fork of the project, make the changes, and
-then create a standard GitHub pull request for us to review.
+If you have a change that you think would be worthwhile, start with creating an issue, and indicate
+whether you're willing to submit the change yourself. We'll let you know if it sounds like a good
+idea. If so, create your own fork of the project, make the changes, and then create a standard
+GitHub pull request for us to review.
 
 New to GitHub? We'll walk you through the process above. Just mention that you'd like a little
 guidance in the proposal issue.
@@ -63,7 +57,8 @@ If you have any questions, feel free to ping me at steve@hollasch.net.
 
 
 
-[Markdeep]: https://casual-effects.com/markdeep
-[_Ray Tracing in One Weekend_]:         https://github.com/raytracing/raytracinginoneweekend/
-[_Ray Tracing: The Next Week_]:         https://github.com/raytracing/raytracingthenextweek/
-[_Ray Tracing: The Rest of Your Life_]: https://github.com/raytracing/raytracingtherestofyourlife/
+[issues page]:                          https://github.com/RayTracing/raytracing.github.io/issues/
+[Markdeep]:                             https://casual-effects.com/markdeep
+[_Ray Tracing in One Weekend_]:         https://github.com/RayTracing/raytracing.github.io/tree/master/InOneWeekend
+[_Ray Tracing: The Next Week_]:         https://github.com/RayTracing/raytracing.github.io/tree/master/TheNextWeek
+[_Ray Tracing: The Rest of Your Life_]: https://github.com/RayTracing/raytracing.github.io/tree/master/TheRestOfYourLife
