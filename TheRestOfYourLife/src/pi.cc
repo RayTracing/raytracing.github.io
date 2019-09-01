@@ -12,6 +12,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <iostream>
+#include "random.h"
 
 int main() {
     int inside_circle = 0;
@@ -19,12 +20,12 @@ int main() {
     int sqrt_N = 30000;
     for (int i = 0; i < sqrt_N; i++) {
         for (int j = 0; j < sqrt_N; j++) {
-            float x = 2*drand48() - 1;
-            float y = 2*drand48() - 1;
+            float x = 2*random_double() - 1;
+            float y = 2*random_double() - 1;
             if (x*x + y*y < 1)
                 inside_circle++;
-            x = 2*((i + drand48()) / sqrt_N) - 1;
-            y = 2*((j + drand48()) / sqrt_N) - 1;
+            x = 2*((i + random_double()) / sqrt_N) - 1;
+            y = 2*((j + random_double()) / sqrt_N) - 1;
             if (x*x + y*y < 1)
                 inside_circle_stratified++;
         }

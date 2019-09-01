@@ -19,6 +19,7 @@ struct hit_record;
 #include "texture.h"
 #include "onb.h"
 #include "pdf.h"
+#include "random.h"
 
 
 
@@ -92,7 +93,7 @@ class dielectric : public material {
              else {
                 reflect_prob = 1.0;
              }
-             if (drand48() < reflect_prob) {
+             if (random_double() < reflect_prob) {
                 srec.specular_ray = ray(hrec.p, reflected);
              }
              else {
@@ -211,7 +212,7 @@ class dielectric : public material {
                 scattered = ray(rec.p, reflected);
                 reflect_prob = 1.0;
              }
-             if (drand48() < reflect_prob) {
+             if (random_double() < reflect_prob) {
                 scattered = ray(rec.p, reflected);
              }
              else {

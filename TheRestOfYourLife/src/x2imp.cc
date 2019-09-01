@@ -12,6 +12,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <iostream>
+#include "random.h"
 
 inline float pdf(float x) {
     return  3*x*x/8;
@@ -23,7 +24,7 @@ int main() {
     int N = 1;
     float sum;
     for (int i = 0; i < N; i++) {
-            float x = pow(8*drand48(), 1./3.);
+            float x = pow(8*random_double(), 1./3.);
             sum += x*x / pdf(x);
     }
     std::cout << "I =" << sum/N << "\n";
