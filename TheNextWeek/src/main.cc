@@ -22,6 +22,7 @@
 #include "aarect.h"
 #include "constant_medium.h"
 #include "texture.h"
+#include "random.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -74,7 +75,7 @@ hitable *final() {
             float z0 = -1000 + j*w;
             float y0 = 0;
             float x1 = x0 + w;
-            float y1 = 100*(drand48()+0.01);
+            float y1 = 100*(random_double()+0.01);
             float z1 = z0 + w;
             boxlist[b++] = new box(vec3(x0,y0,z0), vec3(x1,y1,z1), ground);
         }
@@ -100,7 +101,7 @@ hitable *final() {
     list[l++] =  new sphere(vec3(220,280, 300), 80, new lambertian( pertext ));
     int ns = 1000;
     for (int j = 0; j < ns; j++) {
-        boxlist2[j] = new sphere(vec3(165*drand48(), 165*drand48(), 165*drand48()), 10, white);
+        boxlist2[j] = new sphere(vec3(165*random_double(), 165*random_double(), 165*random_double()), 10, white);
     }
     list[l++] =   new translate(new rotate_y(new bvh_node(boxlist2,ns, 0.0, 1.0), 15), vec3(-100,270,395));
     return new hitable_list(list,l);
@@ -133,7 +134,7 @@ hitable *cornell_final() {
     list[i++] = new sphere(vec3(120, 50, 205), 50, new lambertian(pertext));
     int ns = 10000;
     for (int j = 0; j < ns; j++) {
-        boxlist[j] = new sphere(vec3(165*drand48(), 330*drand48(), 165*drand48()), 10, white);
+        boxlist[j] = new sphere(vec3(165*random_double(), 330*random_double(), 165*random_double()), 10, white);
     }
     list[i++] =   new translate(new rotate_y(new bvh_node(boxlist,ns, 0.0, 1.0), 15), vec3(265,0,295));
     */
@@ -227,15 +228,15 @@ hitable *random_scene() {
     int i = 1;
     for (int a = -10; a < 10; a++) {
         for (int b = -10; b < 10; b++) {
-            float choose_mat = drand48();
-            vec3 center(a+0.9*drand48(),0.2,b+0.9*drand48()); 
+            float choose_mat = random_double();
+            vec3 center(a+0.9*random_double(),0.2,b+0.9*random_double()); 
             if ((center-vec3(4,0.2,0)).length() > 0.9) { 
                 if (choose_mat < 0.8) {  // diffuse
-                    list[i++] = new moving_sphere(center, center+vec3(0,0.5*drand48(), 0), 0.0, 1.0, 0.2, new lambertian(new constant_texture(vec3(drand48()*drand48(), drand48()*drand48(), drand48()*drand48()))));
+                    list[i++] = new moving_sphere(center, center+vec3(0,0.5*random_double(), 0), 0.0, 1.0, 0.2, new lambertian(new constant_texture(vec3(random_double()*random_double(), random_double()*random_double(), random_double()*random_double()))));
                 }
                 else if (choose_mat < 0.95) { // metal
                     list[i++] = new sphere(center, 0.2,
-                            new metal(vec3(0.5*(1 + drand48()), 0.5*(1 + drand48()), 0.5*(1 + drand48())),  0.5*drand48()));
+                            new metal(vec3(0.5*(1 + random_double()), 0.5*(1 + random_double()), 0.5*(1 + random_double())),  0.5*random_double()));
                 }
                 else {  // glass
                     list[i++] = new sphere(center, 0.2, new dielectric(1.5));
@@ -285,8 +286,8 @@ int main() {
         for (int i = 0; i < nx; i++) {
             vec3 col(0, 0, 0);
             for (int s=0; s < ns; s++) {
-                float u = float(i+drand48())/ float(nx);
-                float v = float(j+drand48())/ float(ny);
+                float u = float(i+random_double())/ float(nx);
+                float v = float(j+random_double())/ float(ny);
                 ray r = cam.get_ray(u, v);
                 vec3 p = r.point_at_parameter(2.0);
                 col += color(r, world,0);

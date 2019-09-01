@@ -275,8 +275,8 @@ With the utility function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline vec3 random_to_sphere(float radius, float distance_squared) {
-        float r1 = drand48();
-        float r2 = drand48();
+        float r1 = random_double();
+        float r2 = random_double();
         float z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
         float phi = 2*M_PI*r1;
         float x = cos(phi)*sqrt(1-z*z);
@@ -295,8 +295,8 @@ We can first try just sampling the sphere rather than the light:
         for (int i = 0; i < nx; i++) {
             vec3 col(0, 0, 0);
             for (int s=0; s < ns; s++) {
-                float u = float(i+drand48())/ float(nx);
-                float v = float(j+drand48())/ float(ny);
+                float u = float(i+random_double())/ float(nx);
+                float v = float(j+random_double())/ float(ny);
                 ray r = cam->get_ray(u, v);
                 vec3 p = r.point_at_parameter(2.0);
                 col += color(r, world, glass_sphere, 0);
@@ -324,7 +324,7 @@ think both tactics would work fine, but I will go with instrumenting `hitable_li
     }
 
     vec3 hitable_list::random(const vec3& o) const {
-        int index = int(drand48() * list_size);
+        int index = int(random_double() * list_size);
         return list[ index ]->random(o);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -343,8 +343,8 @@ We assemble a list to pass in to `color`.
         for (int i = 0; i < nx; i++) {
             vec3 col(0, 0, 0);
             for (int s=0; s < ns; s++) {
-                float u = float(i+drand48())/ float(nx);
-                float v = float(j+drand48())/ float(ny);
+                float u = float(i+random_double())/ float(nx);
+                float v = float(j+random_double())/ float(ny);
                 ray r = cam->get_ray(u, v);
                 vec3 p = r.point_at_parameter(2.0);
                 col += color(r, world, &hlist, 0);
@@ -386,8 +386,8 @@ And we can insert that in the main loop:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     for (int s=0; s < ns; s++) {
-        float u = float(i+drand48())/ float(nx);
-        float v = float(j+drand48())/ float(ny);
+        float u = float(i+random_double())/ float(nx);
+        float v = float(j+random_double())/ float(ny);
         ray r = cam->get_ray(u, v);
         vec3 p = r.point_at_parameter(2.0);
         col += de_nan(color(r, world, &hlist, 0));

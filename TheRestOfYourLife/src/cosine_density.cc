@@ -9,6 +9,7 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "random.h"
 #include "vec3.h"
 
 #include <iostream>
@@ -16,8 +17,8 @@
 
 
 inline vec3 random_cosine_direction() {
-    float r1 = drand48();
-    float r2 = drand48();
+    float r1 = random_double();
+    float r2 = random_double();
     float z = sqrt(1-r2);
     float phi = 2*M_PI*r1;
     float x = cos(phi)*sqrt(r2);
