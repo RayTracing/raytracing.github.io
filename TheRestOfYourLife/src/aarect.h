@@ -1,3 +1,5 @@
+#ifndef AARECTH
+#define AARECTH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,11 +11,9 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef AARECTH
-#define AARECTH
-
-#include "random.h"
 #include "hitable.h"
+#include "random.h"
+
 
 class xy_rect: public hitable  {
     public:

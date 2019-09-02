@@ -1,3 +1,5 @@
+#ifndef MATERIALH
+#define MATERIALH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,13 +11,8 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef MATERIALH
-#define MATERIALH
-
-struct hit_record;
-
-#include "ray.h"
 #include "hitable.h"
+#include "ray.h"
 #include "texture.h"
 #include "random.h"
 

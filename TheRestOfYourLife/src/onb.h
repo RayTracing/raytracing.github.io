@@ -1,3 +1,5 @@
+#ifndef ONBH
+#define ONBH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,9 +11,8 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef ONBH
-#define ONBH
 #include "vec3.h"
+
 
 class onb
 {

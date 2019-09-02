@@ -1,3 +1,5 @@
+#ifndef BOXH
+#define BOXH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,11 +11,9 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef BOXH
-#define BOXH
-
 #include "aarect.h"
 #include "hitable_list.h"
+
 
 class box: public hitable  {
     public:

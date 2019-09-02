@@ -1,3 +1,5 @@
+#ifndef PDFH
+#define PDFH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,8 +11,6 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef PDFH
-#define PDFH
 #include "onb.h"
 #include "random.h"
 

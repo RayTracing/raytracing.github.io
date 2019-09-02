@@ -1,3 +1,5 @@
+#ifndef TEXTUREH
+#define TEXTUREH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,10 +11,8 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef TEXTUREH
-#define TEXTUREH
-
 #include "perlin.h"
+
 
 class texture  {
     public:

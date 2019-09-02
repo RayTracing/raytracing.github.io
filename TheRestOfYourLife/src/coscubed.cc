@@ -9,10 +9,11 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "random.h"
+
 #include <iostream>
 #include <math.h>
 
-#include "random.h"
 
 int main() {
     int N = 1000000;

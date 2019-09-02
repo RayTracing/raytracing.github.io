@@ -1,3 +1,5 @@
+#ifndef VEC3H
+#define VEC3H
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,12 +11,10 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef VEC3H
-#define VEC3H
-
+#include <iostream>
 #include <math.h>
 #include <stdlib.h>
-#include <iostream>
+
 
 class vec3  {
 

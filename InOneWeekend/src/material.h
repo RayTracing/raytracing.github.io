@@ -11,9 +11,10 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include "ray.h"
 #include "hitable.h"
 #include "random.h"
+#include "ray.h"
+
 
 struct hit_record;
 

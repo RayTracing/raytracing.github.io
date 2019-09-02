@@ -1,3 +1,5 @@
+#ifndef CMEDH
+#define CMEDH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,12 +11,11 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef CMEDH
-#define CMEDH
-
 #include "hitable.h"
 #include "random.h"
+
 #include <float.h>
+
 
 class constant_medium : public hitable  {
     public:

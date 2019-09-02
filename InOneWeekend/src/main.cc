@@ -9,13 +9,14 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include <iostream>
-#include "sphere.h"
-#include "hitable_list.h"
-#include "float.h"
 #include "camera.h"
+#include "hitable_list.h"
 #include "material.h"
 #include "random.h"
+#include "sphere.h"
+
+#include <float.h>
+#include <iostream>
 
 
 vec3 color(const ray& r, hitable *world, int depth) {

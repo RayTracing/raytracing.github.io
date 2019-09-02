@@ -8,25 +8,28 @@
 // You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication along
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
+
+#include "aarect.h"
+#include "box.h"
+#include "bvh.h"
+#include "camera.h"
+#include "hitable_list.h"
+#include "material.h"
+#include "moving_sphere.h"
 #ifdef _MSC_VER
 #include "msc.h"
 #endif
-#include <iostream>
-#include "sphere.h"
-#include "moving_sphere.h"
-#include "hitable_list.h"
-#include "float.h"
-#include "camera.h"
-#include "material.h"
-#include "bvh.h"
-#include "box.h"
-#include "surface_texture.h"
-#include "aarect.h"
-#include "texture.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 #include "pdf.h"
 #include "random.h"
+#include "sphere.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#include "surface_texture.h"
+#include "texture.h"
+
+#include <float.h>
+#include <iostream>
+
 
 inline vec3 de_nan(const vec3& c) {
     vec3 temp = c;

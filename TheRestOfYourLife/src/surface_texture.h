@@ -1,3 +1,5 @@
+#ifndef SURFTEXTH
+#define SURFTEXTH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,10 +11,8 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef SURFTEXTH
-#define SURFTEXTH
-
 #include "texture.h"
+
 
 class image_texture : public texture {
     public:

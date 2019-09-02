@@ -13,6 +13,7 @@
 
 #include "ray.h"
 
+
 class material;
 
 struct hit_record
