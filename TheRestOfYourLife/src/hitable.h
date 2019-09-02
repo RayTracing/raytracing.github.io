@@ -1,3 +1,5 @@
+#ifndef HITABLEH
+#define HITABLEH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,11 +11,10 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef HITABLEH
-#define HITABLEH
-
 #include "aabb.h"
+
 #include <float.h>
+
 
 class material;
 

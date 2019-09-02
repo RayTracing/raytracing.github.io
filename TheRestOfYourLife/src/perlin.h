@@ -1,3 +1,5 @@
+#ifndef PERLINH
+#define PERLINH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,11 +11,8 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef PERLINH
-#define PERLINH
-
-#include "vec3.h"
 #include "random.h"
+#include "vec3.h"
 
 
 inline float perlin_interp(vec3 c[2][2][2], float u, float v, float w) {

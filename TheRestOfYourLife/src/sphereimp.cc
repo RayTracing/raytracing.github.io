@@ -9,11 +9,13 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "random.h"
+#include "vec3.h"
+
+#include <iostream>
 #include <math.h>
 #include <stdlib.h>
-#include <iostream>
-#include "vec3.h"
-#include "random.h"
+
 
 vec3 random_on_unit_sphere() {
     vec3 p;
