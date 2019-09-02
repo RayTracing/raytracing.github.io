@@ -12,6 +12,7 @@
 #ifndef AARECTH
 #define AARECTH
 
+#include "random.h"
 #include "hitable.h"
 
 class xy_rect: public hitable  {
@@ -47,7 +48,7 @@ class xz_rect: public hitable  {
                 return 0;
         }
         virtual vec3 random(const vec3& o) const { 
-            vec3 random_point = vec3(x0 + drand48()*(x1-x0), k,  z0 + drand48()*(z1-z0)); 
+            vec3 random_point = vec3(x0 + random_double()*(x1-x0), k,  z0 + random_double()*(z1-z0)); 
             return random_point - o;
         }
         material  *mp;

@@ -12,11 +12,12 @@
 #ifndef PDFH
 #define PDFH
 #include "onb.h"
+#include "random.h"
 
 
 inline vec3 random_cosine_direction() {
-    float r1 = drand48();
-    float r2 = drand48();
+    float r1 = random_double();
+    float r2 = random_double();
     float z = sqrt(1-r2);
     float phi = 2*M_PI*r1;
     float x = cos(phi)*sqrt(r2);
@@ -25,8 +26,8 @@ inline vec3 random_cosine_direction() {
 }
 
 inline vec3 random_to_sphere(float radius, float distance_squared) {
-    float r1 = drand48();
-    float r2 = drand48();
+    float r1 = random_double();
+    float r2 = random_double();
     float z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
     float phi = 2*M_PI*r1;
     float x = cos(phi)*sqrt(1-z*z);
@@ -38,7 +39,7 @@ inline vec3 random_to_sphere(float radius, float distance_squared) {
 vec3 random_in_unit_sphere() {
     vec3 p;
     do {
-        p = 2.0*vec3(drand48(),drand48(),drand48()) - vec3(1,1,1);
+        p = 2.0*vec3(random_double(),random_double(),random_double()) - vec3(1,1,1);
     } while (dot(p,p) >= 1.0);
     return p;
 }
@@ -89,7 +90,7 @@ class mixture_pdf : public pdf {
             return 0.5 * p[0]->value(direction) + 0.5 *p[1]->value(direction);
         }
         virtual vec3 generate() const {
-            if (drand48() < 0.5)
+            if (random_double() < 0.5)
                 return p[0]->generate();
             else
                 return p[1]->generate();

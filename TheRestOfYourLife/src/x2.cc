@@ -12,6 +12,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <iostream>
+#include "random.h"
 
 int main() {
     int inside_circle = 0;
@@ -19,7 +20,7 @@ int main() {
     int N = 1000000;
     float sum;
     for (int i = 0; i < N; i++) {
-            float x = 2*drand48();
+            float x = 2*random_double();
             sum += x*x;
     }
     std::cout << "I =" << 2*sum/N << "\n";

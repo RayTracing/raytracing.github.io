@@ -13,6 +13,7 @@
 #define HITABLELISTH
 
 #include "hitable.h"
+#include "random.h"
 
 class hitable_list: public hitable  {
     public:
@@ -36,7 +37,7 @@ float hitable_list::pdf_value(const vec3& o, const vec3& v) const {
 }
 
 vec3 hitable_list::random(const vec3& o) const {
-        int index = int(drand48() * list_size);
+        int index = int(random_double() * list_size);
         return list[ index ]->random(o);
 }
 

@@ -26,6 +26,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "pdf.h"
+#include "random.h"
 
 inline vec3 de_nan(const vec3& c) {
     vec3 temp = c;
@@ -109,8 +110,8 @@ int main() {
         for (int i = 0; i < nx; i++) {
             vec3 col(0, 0, 0);
             for (int s=0; s < ns; s++) {
-                float u = float(i+drand48())/ float(nx);
-                float v = float(j+drand48())/ float(ny);
+                float u = float(i+random_double())/ float(nx);
+                float v = float(j+random_double())/ float(ny);
                 ray r = cam->get_ray(u, v);
                 vec3 p = r.point_at_parameter(2.0);
                 col += de_nan(color(r, world, &hlist, 0));

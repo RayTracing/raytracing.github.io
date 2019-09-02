@@ -12,6 +12,7 @@
 //==================================================================================================
 
 #include "hitable.h"
+#include "random.h"
 
 #include <float.h>
 
@@ -35,7 +36,7 @@ bool constant_medium::hit(const ray& r, float t_min, float t_max, hit_record& re
 
     // Print occasional samples when debugging. To enable, set enableDebug true.
     const bool enableDebug = false;
-    bool debugging = enableDebug && drand48() < 0.00001;
+    bool debugging = enableDebug && random_double() < 0.00001;
 
     hit_record rec1, rec2;
 
@@ -53,7 +54,7 @@ bool constant_medium::hit(const ray& r, float t_min, float t_max, hit_record& re
                 rec1.t = 0;
 
             float distance_inside_boundary = (rec2.t - rec1.t) * r.direction().length();
-            float hit_distance = -(1/density) * log(drand48());
+            float hit_distance = -(1/density) * log(random_double());
 
             if (hit_distance < distance_inside_boundary) {
 

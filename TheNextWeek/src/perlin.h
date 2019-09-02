@@ -12,7 +12,7 @@
 //==================================================================================================
 
 #include "vec3.h"
-
+#include "random.h"
 
 inline float perlin_interp(vec3 c[2][2][2], float u, float v, float w) {
     float uu = u*u*(3-2*u);
@@ -66,13 +66,13 @@ class perlin {
 static vec3* perlin_generate() {
     vec3 * p = new vec3[256];
     for ( int i = 0; i < 256; ++i )
-        p[i] = unit_vector(vec3(-1 + 2*drand48(), -1 + 2*drand48(), -1 + 2*drand48()));
+        p[i] = unit_vector(vec3(-1 + 2*random_double(), -1 + 2*random_double(), -1 + 2*random_double()));
     return p;
 }
 
 void permute(int *p, int n) {
     for (int i = n-1; i > 0; i--) {
-        int target = int(drand48()*(i+1));
+        int target = int(random_double()*(i+1));
         int tmp = p[i];
         p[i] = p[target];
         p[target] = tmp;
