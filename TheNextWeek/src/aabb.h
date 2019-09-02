@@ -1,3 +1,5 @@
+#ifndef AABBH
+#define AABBH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,10 +11,9 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef AABBH
-#define AABBH
-#include "ray.h"
 #include "hitable.h"
+#include "ray.h"
+
 
 inline float ffmin(float a, float b) { return a < b ? a : b; }
 inline float ffmax(float a, float b) { return a > b ? a : b; }

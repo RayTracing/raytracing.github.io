@@ -9,21 +9,22 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include <iostream>
-#include "sphere.h"
-#include "moving_sphere.h"
-#include "hitable_list.h"
-#include "float.h"
-#include "camera.h"
-#include "material.h"
-#include "bvh.h"
-#include "box.h"
-#include "surface_texture.h"
 #include "aarect.h"
+#include "box.h"
+#include "bvh.h"
+#include "camera.h"
 #include "constant_medium.h"
-#include "texture.h"
+#include "hitable_list.h"
+#include "material.h"
+#include "moving_sphere.h"
+#include "sphere.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "surface_texture.h"
+#include "texture.h"
+
+#include <float.h>
+#include <iostream>
 
 
 vec3 color(const ray& r, hitable *world, int depth) {

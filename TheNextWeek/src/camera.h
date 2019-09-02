@@ -1,3 +1,5 @@
+#ifndef CAMERAH
+#define CAMERAH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,9 +11,8 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef CAMERAH
-#define CAMERAH
 #include "ray.h"
+
 
 vec3 random_in_unit_disk() {
     vec3 p;

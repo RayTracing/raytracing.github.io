@@ -1,3 +1,5 @@
+#ifndef SPHEREH
+#define SPHEREH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,10 +11,8 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef SPHEREH
-#define SPHEREH
-
 #include "hitable.h"
+
 
 class sphere: public hitable  {
     public:

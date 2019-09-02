@@ -1,3 +1,5 @@
+#ifndef RAYH
+#define RAYH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -9,10 +11,8 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#ifndef RAYH
-#define RAYH
-
 #include "vec3.h"
+
 
 class ray
 {
