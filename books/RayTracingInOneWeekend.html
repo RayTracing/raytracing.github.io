@@ -47,7 +47,7 @@ https://github.com/RayTracing/raytracing.github.io/
 
 I assume a little bit of familiarity with vectors (like dot product and vector addition). If you
 don’t know that, do a little review. If you need that review, or to learn it for the first time,
-check out Marschner’s and my graphics text, Foley, Van Dam, et al., or McGuire’s graphics codex.
+check out Marschner’s and my graphics text, Foley, Van Dam, _et al._, or McGuire’s graphics codex.
 
 If you run into trouble, or do something cool you’d like to show somebody, send me some email at
 ptrshrl@gmail.com
@@ -417,7 +417,7 @@ of scaling that to $0.0 < t < 1.0$. When $t = 1.0$ I want blue. When $t = 0.0$ I
 between, I want a blend. This forms a “linear blend”, or “linear interpolation”, or “lerp” for
 short, between two things. A lerp is always of the form
 
-    $$ blendedValue = (1-t)*startValue + t*endValue, $$
+  $$ blendedValue = (1-t)*startValue + t*endValue, $$
 
 with $t$ going from zero to one. In our case this produces:
 
@@ -431,35 +431,36 @@ Adding a Sphere
 Let’s add a single object to our ray tracer. People often use spheres in ray tracers because
 calculating whether a ray hits a sphere is pretty straightforward. Recall that the equation for a
 sphere centered at the origin of radius $R$ is $x^2 + y^2 + z^2 = R^2$. The way you can read that
-equation is “for any $(x, y, z)$, if  $x^2 + y^2 + z^2 = R^2$ then $(x,y,z)$ is on the sphere, and
+equation is “for any $(x, y, z)$, if $x^2 + y^2 + z^2 = R^2$ then $(x,y,z)$ is on the sphere, and
 otherwise it is not”. It gets uglier if the sphere center is at $(C_x, C_y, C_z)$:
 
-    $$ (x-C_x)^2 + (y-C_y)^2 + (z-C_z)^2 = R^2 $$
+  $$ (x-C_x)^2 + (y-C_y)^2 + (z-C_z)^2 = R^2 $$
 
 In graphics, you almost always want your formulas to be in terms of vectors so all the x/y/z stuff
 is under the hood in the `vec3` class. You might note that the vector from center
-$ C = (C_x,C_y,C_z) $ to point $ P = (x,y,z) $ is $ (p - C) $, and therefore
+$C = (C_x,C_y,C_z)$ to point $P = (x,y,z)$ is $(p - C)$, and therefore
 
-    $$ dot((p - C),(p - C)) = (x-C_x)^2 + (y-C_y)^2 + (z-C_z)^2 $$
+  $$ dot((p - C),(p - C)) = (x-C_x)^2 + (y-C_y)^2 + (z-C_z)^2 $$
 
 So the equation of the sphere in vector form is:
 
-    $$ dot((p - C),(p - C)) = R^2 $$
+  $$ dot((p - C),(p - C)) = R^2 $$
 
-We can read this as “any point p that satisfies this equation is on the sphere”. We want to know if
-our ray $ p(t) = A + t*B $ ever hits the sphere anywhere. If it does hit the sphere, there is some
-$t$ for which $p(t)$ satisfies the sphere equation. So we are looking for any t where this is true:
+We can read this as “any point p that satisfies this equation is on the sphere”. We want to know 
+if our ray $p(t) = A + t*B$ ever hits the sphere anywhere. If it does hit the sphere, there is 
+some $t$ for which $p(t)$ satisfies the sphere equation. So we are looking for any $t$ where this 
+is true:
 
-    $$ dot((p(t) - C),(p(t) - C)) = R^2 $$
+  $$ dot((p(t) - C),(p(t) - C)) = R^2 $$
 
 or expanding the full form of the ray $p(t)$:
 
-    $$ dot((A + t*B - C), (A + t*B - C)) = R^2 $$
+  $$ dot((A + t*B - C), (A + t*B - C)) = R^2 $$
 
 The rules of vector algebra are all that we would want here, and if we expand that equation and
 move all the terms to the left hand side we get:
 
-    $$ t^2 \cdot dot(B,B) + 2t \cdot dot(B,A-C) + dot(A-C,A-C) - R^2 = 0 $$
+  $$ t^2 \cdot dot(B,B) + 2t \cdot dot(B,A-C) + dot(A-C,A-C) - R^2 = 0 $$
 
 The vectors and $R$ in that equation are all constant and known. The unknown is $t$, and the
 equation is a quadratic, like you probably saw in your high school math class. You can solve for $t$
@@ -743,8 +744,9 @@ writing doesn’t benefit very much from it and it makes the code uglier. We abs
 a bit so we can make a cooler camera later.
 
 One thing we need is a random number generator that returns real random numbers. We need a function
-that returns a canonical random number  which by convention returns random real in the range
-$0 ≤ ran < 1$. The “less than” before the 1 is  important as we will sometimes take advantage of that.
+that returns a canonical random number which by convention returns random real in the range
+$0 ≤ ran < 1$. The “less than” before the 1 is important as we will sometimes take advantage of 
+that.
 
 A simple approach to this is to use the `rand()` function that can be found in `<cstdlib>`. This
 function returns a random integer in the range 0 and RANDMAX. Hence we can get a real random number
@@ -1231,7 +1233,7 @@ of the image and it was clearly wrong. That often does the job.
 
 The refraction is described by Snell’s law:
 
-    $$ n \cdot sin(theta) = n' \cdot sin(theta') $$
+  $$ n \cdot sin(theta) = n' \cdot sin(theta') $$
 
 Where $n$ and $n'$ are the refractive indices (typically air = 1, glass = 1.3–1.7, diamond = 2.4)
 and the geometry is:
