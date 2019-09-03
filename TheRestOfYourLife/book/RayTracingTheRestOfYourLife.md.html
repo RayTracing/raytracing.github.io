@@ -222,7 +222,7 @@ the concept of a _probability density function_.
 First, what is a _density function_? It’s just a continuous form of a histogram. Here’s an example
 from the histogram Wikipedia page:
 
-![Figure 2-1][fig-3-02-1]
+  ![Figure 2-1][fig-3-02-1]
 
 If we added data for more trees, the histogram would get taller. If we divided the data into more
 bins, it would get shorter. A discrete density function differs from a histogram in that it
@@ -246,7 +246,7 @@ Let’s make a _pdf_ and use it a bit to understand it more. Suppose I want a ra
 between 0 and 2 whose probability is proportional to itself: $r$. We would expect the pdf $p(r)$
 to look something like the figure below. But how high should it be?
 
-![Figure 2-2][fig-3-02-2]
+  ![Figure 2-2][fig-3-02-2]
 
 The height is just $p(2)$. What should that be? We could reasonably make it anything by
 convention, and we should pick something that is convenient. Just as with histograms we can sum up
@@ -513,7 +513,7 @@ area-- it’s all the same thing. Solid angle is the term usually used. If you a
 that, great! If not, do what I do and imagine the area on the unit sphere that a set of directions
 goes through. The solid angle $\omega$ and the projected area $A$ on the unit sphere are the same thing.
 
-![Figure 3-1](../assets/fig-3-03-1.jpg)
+  ![Figure 3-1](../assets/fig-3-03-1.jpg)
 
 Now let’s go on to the light transport equation we are solving.
 
@@ -654,7 +654,7 @@ our Cornell Box scene again, and let’s generate the camera in the function tha
 
 At 500x500 my code produces this image in 10min on 1 core of my Macbook:
 
-![Figure 5-1](../assets/img-3-05-1.jpg)
+  ![Figure 5-1](../assets/img-3-05-1.jpg)
 
 Reducing that noise is our goal. We’ll do that by constructing a pdf that sends more rays to the
 light.
@@ -751,7 +751,7 @@ hemisphere that is above the surface. This would be $p(direction) = 1/(2* \pi)$ 
 
 And again I __should__ get the same picture except with different variance, but I don’t!
 
-![Figure 5-2](../assets/img-3-05-2.jpg)
+  ![Figure 5-2](../assets/img-3-05-2.jpg)
 
 It’s pretty close to our old picture, but there are differences that are not noise. The front of the
 tall box is much more uniform in color. So I have the most difficult kind of bug to find in a Monte
@@ -1030,7 +1030,7 @@ We can rewrite our Lambertian material using this to get:
 
 Which produces:
 
-![Image 7-1](../assets/img-3-07-1.jpg)
+  ![Image 7-1](../assets/img-3-07-1.jpg)
 
 Is that right? We still don’t know for sure. Tracking down bugs is hard in the absence of reliable
 reference solutions. Let’s table that for now and move on to get rid of some of that noise.
@@ -1051,7 +1051,7 @@ light of area $A$, if we sample uniformly on that light, the _pdf_ on the surfac
 $1/A$. But what is it on the area of the unit sphere that defines directions? Fortunately, there is
 a simple correspondence, as outlined in the diagram:
 
-![Figure 8-1][fig-3-08-1]
+  ![Figure 8-1][fig-3-08-1]
 
 If we look at a small area $dA$ on the light, the probability of sampling it is $p_q(q) \cdot dA$.
 On the sphere, the probability of sampling the small area $dw$ on the sphere is $p(direction) \cdot
@@ -1113,7 +1113,7 @@ math and get the concept, we can add it (see the highlighted region):
 
 With 10 samples per pixel this yields:
 
-![Image 8-1][img-3-08-1]
+  ![Image 8-1][img-3-08-1]
 
 This is about what we would expect from something that samples only the light sources, so this
 appears to work. The noisy pops around the light on the ceiling are because the light is two-sided
@@ -1133,7 +1133,7 @@ down. We can do that by letting the emitted member function of hitable take extr
 
 We also need to flip the light so its normals point in the -y direction and we get:
 
-![Image 8-2][img-3-08-2]
+  ![Image 8-2][img-3-08-2]
 
 [fig-3-08-1]: ../assets/fig-3-08-1.jpg
 [img-3-08-1]: ../assets/img-3-08-1.jpg
@@ -1242,7 +1242,7 @@ variable `pdf` to some other variable name to avoid a name conflict with the new
 This yields an apparently matching result so all we’ve done so far is refactor where `pdf` is
 computed:
 
-![Image 9-1](../assets/img-3-09-1.jpg)
+  ![Image 9-1](../assets/img-3-09-1.jpg)
 
 Now we can try sampling directions toward a `hitable` like the light.
 
@@ -1341,7 +1341,7 @@ And then change `color()`:
 
 At 10 samples per pixel we get:
 
-![Image 9-2](../assets/img-3-09-2.jpg)
+  ![Image 9-2](../assets/img-3-09-2.jpg)
 
 Now we would like to do a mixture density of the cosine and light sampling. The mixture density
 class is straightforward:
@@ -1394,7 +1394,7 @@ And plugging it into `color()`:
 
 1000 samples per pixel yields:
 
-![Image 9-3](../assets/img-3-09-3.jpg)
+  ![Image 9-3](../assets/img-3-09-3.jpg)
 
 We’ve basically gotten this same picture (with different levels of noise) with several different
 sampling patterns. It looks like the original picture was slightly wrong! Note by “wrong” here I
@@ -1632,7 +1632,7 @@ We also need to change the block to metal.
 The resulting image has a noisy reflection on the ceiling because the directions toward the box are
 not sampled with more density.
 
-![Image 11-1](../assets/img-3-11-1.jpg)
+  ![Image 11-1](../assets/img-3-11-1.jpg)
 
 We could make the pdf include the block. Let’s do that instead with a glass sphere because it’s
 
@@ -1666,7 +1666,7 @@ $\phi$ we sample like before, so:
 
 Now what is $\theta_{max}$?
 
-![Figure 11-1](../assets/fig-3-11-1.jpg)
+  ![Figure 11-1](../assets/fig-3-11-1.jpg)
 
 We can see from the figure that $sin(\theta_{max}) = R / length( c - p )$. So:
 
@@ -1743,7 +1743,7 @@ This yields a noisy box, but the caustic under the sphere is good. It took five 
 sampling the light did for my code. This is probably because those rays that hit the glass are
 expensive!
 
-![Image 11-2](../assets/img-3-11-2.jpg)
+  ![Image 11-2](../assets/img-3-11-2.jpg)
 
 We should probably just sample both the sphere and the light. We can do that by creating a mixture
 density of their two densities. We could do that in the `color` function by passing a list of
@@ -1789,7 +1789,7 @@ We assemble a list to pass in to `color`.
 
 And we get a decent image with 1000 samples as before:
 
-![Image 11-3](../assets/img-3-11-3.jpg)
+  ![Image 11-3](../assets/img-3-11-3.jpg)
 
 An astute reader pointed out there are some black specks in the image above. All Monte Carlo Ray
 Tracers have this as a main loop:
@@ -1832,7 +1832,7 @@ And we can insert that in the main loop:
 
 Happily, the black specks are gone:
 
-![Image 11-4](../assets/img-3-11-4.jpg)
+  ![Image 11-4](../assets/img-3-11-4.jpg)
 
 
 
