@@ -1,9 +1,9 @@
 Ray Tracing In One Weekend Book Series
 ====================================================================================================
 
-| ![Ray Tracing in One Weekend][cover1] | ![Ray Tracing: The Next Week][cover2] | ![Ray Tracing: The Rest Of Your Life][cover3]
-|:------------------:|:-----------------:|:-------------------------:|
-| [In One Weekend][] | [The Next Week][] | [The Rest Of Your Life][] |
+| ![RT in One Weekend][cover1] | ![RT The Next Week][cover2] | ![RT The Rest Of Your Life][cover3] |
+|:----------------------------:|:---------------------------:|:-----------------------------------:|
+|     [In One Weekend][]       |      [The Next Week][]      |      [The Rest Of Your Life][]      |
 
 
 Getting the Books
@@ -32,10 +32,10 @@ review the [CONTRIBUTING][] document for the most effective way to proceed.
 [cover1]:                   images/RTOneWeekend-small.jpg
 [cover2]:                   images/RTNextWeek-small.jpg
 [cover3]:                   images/RTRestOfYourLife-small.jpg
-[In One Weekend]:           InOneWeekend
+[In One Weekend]:           books/RayTracingInOneWeekend.html
 [releases]:                 https://github.com/RayTracing/raytracing.github.io/releases/
 [Hack the Hood]:            https://hackthehood.org/
 [Real-Time Rendering]:      https://realtimerendering.com/#books-small-table
 [submit issues via GitHub]: https://github.com/raytracing/raytracing.github.io/issues/
-[The Next Week]:            TheNextWeek
-[The Rest Of Your Life]:    TheRestOfYourLife
+[The Next Week]:            books/RayTracingTheNextWeek.html
+[The Rest Of Your Life]:    books/RayTracingTheRestOfYourLife.html
