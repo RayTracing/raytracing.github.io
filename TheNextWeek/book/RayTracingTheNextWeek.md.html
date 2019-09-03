@@ -291,7 +291,7 @@ And with these viewing parameters gives:
     );
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  ![Image 1-1](../assets/img-2-1-01.jpg)
+  ![Image 1-1](../images/img-2-1-01.jpg)
 
 
 
@@ -329,7 +329,7 @@ To make things sub-linear we need to make the bounding volumes hierarchical. For
 divided a set of objects into two groups, red and blue, and used rectangular bounding volumes, we’d
 have:
 
-  ![Figure 2-1](../assets/fig-2-2-01.jpg)
+  ![Figure 2-1](../images/fig-2-2-01.jpg)
 
 Note that the blue and red bounding volumes are contained in the purple one, but they might
 overlap, and they are not ordered -- they are just both inside. So the tree shown on the right has
@@ -360,13 +360,13 @@ just the intersection of n axis-aligned intervals, often called “slabs” An i
 the points between two endpoints, _e.g._, $x$ such that $3 < x < 5$, or more succinctly $x$ in
 $(3,5)$. In 2D, two intervals overlapping makes a 2D AABB (a rectangle):
 
-  ![Figure 2-2](../assets/fig-2-2-02.jpg)
+  ![Figure 2-2](../images/fig-2-2-02.jpg)
 
 For a ray to hit one interval we first need to figure out whether the ray hits the boundaries. For
 example, again in 2D, this is the ray parameters $t_0$ and $t_1$. (If the ray is parallel to the
 plane those will be undefined.)
 
-  ![Figure 2-3](../assets/fig-2-2-03.jpg)
+  ![Figure 2-3](../images/fig-2-2-03.jpg)
 
 In 3D, those boundaries are planes. The equations for the planes are $x = x_0$, and $x = x_1$. Where
 does the ray hit that plane? Recall that the ray can be thought of as just a function that given a
@@ -390,7 +390,7 @@ We get the similar expression for $x_1$:
 The key observation to turn that 1D math into a hit test is that for a hit, the $t$-intervals need
 to overlap. For example, in 2D the green and blue overlapping only happens if there is a hit:
 
-  ![Figure 2-4](../assets/fig-2-2-04.jpg)
+  ![Figure 2-4](../images/fig-2-2-04.jpg)
 
 What “do the t intervals in the slabs overlap?” would like in code is something like:
 
@@ -803,7 +803,7 @@ If we add this to our random_scene() function’s base sphere:
 
 We get:
 
-  ![Image 3-1](../assets/img-2-3-01.jpg)
+  ![Image 3-1](../images/img-2-3-01.jpg)
 
 If we add a new scene:
 
@@ -835,7 +835,7 @@ With camera:
 
 We get:
 
-  ![Image 3-2](../assets/img-2-3-02.jpg)
+  ![Image 3-2](../images/img-2-3-02.jpg)
 
 
 
@@ -845,11 +845,11 @@ Perlin Noise
 To get cool looking solid textures most people use some form of  Perlin noise. These are named after
 their inventor Ken Perlin. Perlin texture doesn’t return white noise like this:
 
-  ![Image 4-1](../assets/img-2-4-01.jpg)
+  ![Image 4-1](../images/img-2-4-01.jpg)
 
 Instead it returns something similar to blurred white noise:
 
-  ![Image 4-2](../assets/img-2-4-02.jpg)
+  ![Image 4-2](../images/img-2-4-02.jpg)
 
 A key part of Perlin noise is that it is repeatable: it takes a 3D point as input and always returns
 the same randomish number. Nearby points return similar numbers. Another important part of Perlin
@@ -859,7 +859,7 @@ incrementally based on Andrew Kensler’s description.
 We could just tile all of space with a 3D array of random numbers and use them in blocks. You get
 something blocky where the repeating is clear:
 
-  ![Image 4-3](../assets/img-2-4-03.jpg)
+  ![Image 4-3](../images/img-2-4-03.jpg)
 
 Let’s just use some sort of hashing to scramble this, instead of tiling. This has a bit of support
 code to make it all happen:
@@ -952,7 +952,7 @@ With the same camera as before:
 
 Add the hashing does scramble as hoped:
 
-  ![Image 4-4](../assets/img-2-4-04.jpg)
+  ![Image 4-4](../images/img-2-4-04.jpg)
 
 To make it smooth, we can linearly interpolate:
 
@@ -997,7 +997,7 @@ To make it smooth, we can linearly interpolate:
 
 And we get:
 
-  ![Image 4-5](../assets/img-2-4-05.jpg)
+  ![Image 4-5](../images/img-2-4-05.jpg)
 
 Better, but there are obvious grid features in there. Some of it is  Mach bands, a known perceptual
 artifact of linear interpolation of color. A standard trick is to use a  hermite cubic to round off
@@ -1023,7 +1023,7 @@ the interpolation:
 
 This gives a smoother looking image:
 
-  ![Image 4-6](../assets/img-2-4-06.jpg)
+  ![Image 4-6](../images/img-2-4-06.jpg)
 
 It is also a bit low frequency. We can scale the input point to make it vary more quickly:
 
@@ -1042,7 +1042,7 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
 
 which gives:
 
-  ![Image 4-7](../assets/img-2-4-07.jpg)
+  ![Image 4-7](../images/img-2-4-07.jpg)
 
 This is still a bit grid blocky looking, probably because the min and max of the pattern always
 lands exactly on the integer x/y/z. Ken Perlin’s very clever trick was to instead put random unit
@@ -1120,7 +1120,7 @@ And the interpolation becomes a bit more complicated:
 
 This finally gives something more reasonable looking:
 
-  ![Image 4-8](../assets/img-2-4-08.jpg)
+  ![Image 4-8](../images/img-2-4-08.jpg)
 
 Very often, a composite noise that has multiple summed frequencies is used. This is usually called
 turbulence and is a sum of repeated calls to noise:
@@ -1143,7 +1143,7 @@ Here fabs() is the math.h absolute value function.
 
 Used directly, turbulence gives a sort of camouflage netting appearance:
 
-  ![Image 4-9](../assets/img-2-4-09.jpg)
+  ![Image 4-9](../images/img-2-4-09.jpg)
 
 However, usually turbulence is used indirectly. For example, the “hello world” of procedural solid
 textures is a simple marble-like texture. The basic idea is to make color proportional to something
@@ -1168,7 +1168,7 @@ effect is:
 
 Which yields:
 
-  ![Image 4-10](../assets/img-2-4-10.jpg)
+  ![Image 4-10](../images/img-2-4-10.jpg)
 
 
 
@@ -1272,7 +1272,7 @@ package makes that super simple -- just include the header in main.h with a #def
     #include "stb_image.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  ![Image 5-1](../assets/earthmap.jpg)
+  ![Image 5-1](../images/earthmap.jpg)
 
 
 To read an image from a file eathmap.jpg (I just grabbed a random earth map from the web -- any
@@ -1291,7 +1291,7 @@ to the lambertian material, and lambertian doesn’t need to be aware of it.
 To test this, assign it to a sphere, and then temporarily cripple the color() function in main to
 just return attenuation. You should get something like:
 
-  ![Image 5-2](../assets/img-2-5-02.jpg)
+  ![Image 5-2](../images/img-2-5-02.jpg)
 
 
 
@@ -1355,7 +1355,7 @@ instancing so we can rotate them later.)
 First, here is a rectangle in an xy plane. Such a plane is defined by its z value. For example, $z =
 k$. An axis-aligned rectangle is defined by lines $x=x_0$ , $x=x_1$ , $y=y_0$ , $y=y_1$.
 
-  ![Figure 6-1](../assets/fig-2-6-01.jpg)
+  ![Figure 6-1](../images/fig-2-6-01.jpg)
 
 To determine whether a ray hits such a rectangle, we first determine where the ray hits the plane.
 Recall that a ray $p(t) = a + t \cdot b$ has its z component defined by $z(t) = a_z + t \cdot b_z$.
@@ -1427,13 +1427,13 @@ If we set up a rectangle as a light:
 
 We get:
 
-  ![Image 6-1](../assets/img-2-6-01.jpg)
+  ![Image 6-1](../images/img-2-6-01.jpg)
 
 Note that the light is brighter than $(1,1,1)$. This allows it to be bright enough to light things.
 
 Fool around with making some spheres lights too.
 
-  ![Image 6-2](../assets/img-2-6-02.jpg)
+  ![Image 6-2](../images/img-2-6-02.jpg)
 
 Now let’s add the other two axes and the famous Cornell Box.
 
@@ -1543,7 +1543,7 @@ And the view info:
 
 We get:
 
-  ![Image 6-3](../assets/img-2-6-03.jpg)
+  ![Image 6-3](../images/img-2-6-03.jpg)
 
 This is very noisy because the light is small. But why are the other walls missing? They are facing
 the wrong way. We need outward facing normals. Let’s make a hitable that does nothing but hold
@@ -1597,7 +1597,7 @@ This makes Cornell:
 
 And voila:
 
-  ![Image 6-4](../assets/img-2-6-04.jpg)
+  ![Image 6-4](../images/img-2-6-04.jpg)
 
 
 
@@ -1651,7 +1651,7 @@ Now we can add two blocks (but not rotated)
 
 This gives:
 
-  ![Image 7-1](../assets/img-2-7-01.jpg)
+  ![Image 7-1](../images/img-2-7-01.jpg)
 
 Now that we have boxes, we need to rotate them a bit to have them match the _real_ Cornell box. In
 ray tracing, this is usually done with an _instance_. An instance is a geometric primitive that has
@@ -1661,7 +1661,7 @@ anything; instead we move the rays in the opposite direction. For example, consi
 or (as we almost always do in ray tracing) leave the box where it is, but in its hit routine
 subtract 2 off the x-component of the ray origin.
 
-  ![Figure 7-1](../assets/fig-2-7-01.jpg)
+  ![Figure 7-1](../images/fig-2-7-01.jpg)
 
 Whether you think of this as a move or a change of coordinates is up to you. The code for this, to
 move any underlying hitable is a _translate_ instance.
@@ -1703,7 +1703,7 @@ to apply all rotations about the x, y, and z axes. These rotations are in some s
 First, let’s rotate by theta about the z-axis. That will be changing only x and y, and in ways that
 don’t depend on z.
 
-  ![Figure 7-2](../assets/fig-2-7-02.jpg)
+  ![Figure 7-2](../images/fig-2-7-02.jpg)
 
 This involves some basic trigonometry that uses formulas that I will not cover here. That gives you
 the correct impression it’s a little involved, but it is straightforward, and you can find it in any
@@ -1825,7 +1825,7 @@ And the changes to Cornell is:
 
 Which yields:
 
-  ![Image 7-2](../assets/img-2-7-02.jpg)
+  ![Image 7-2](../images/img-2-7-02.jpg)
 
 
 
@@ -1845,7 +1845,7 @@ thin transparent volumes, like a light fog, are more likely to have rays like th
 far the ray has to travel through the volume also determines how likely it is for the ray to make it
 through.
 
-  ![Figure 8-1](../assets/fig-2-8-01.jpg)
+  ![Figure 8-1](../images/fig-2-8-01.jpg)
 
 As the ray passes through the volume, it may scatter at any point. The denser the volume, the more
 likely that is. The probability that the ray scatters in any small distance $\delta L$ is:
@@ -1986,7 +1986,7 @@ If we replace the two blocks with smoke and fog (dark and light particles) and m
 
 We get:
 
-  ![Image 8-1](../assets/img-2-8-01.jpg)
+  ![Image 8-1](../images/img-2-8-01.jpg)
 
 
 
@@ -2056,7 +2056,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 
 Running it with 10,000 rays per pixel yields:
 
-  ![Image 9-1](../assets/img-2-9-01.jpg)
+  ![Image 9-1](../images/img-2-9-01.jpg)
 
 Now go off and make a really cool image of your own! See https://in1weekend.blogspot.com/ for
 pointers to further reading and features, and feel free to email questions, comments, and cool
