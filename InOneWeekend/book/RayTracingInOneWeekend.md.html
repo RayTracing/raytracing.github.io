@@ -64,7 +64,7 @@ Whenever you start a renderer, you need a way to see an image. The most straight
 write it to a file. The catch is, there are so many formats and many of those are complex. I always
 start with a plain text ppm file. Here’s a nice description from Wikipedia:
 
-![Image 1-1: PPM Example](../assets/img01-1.jpg)
+![Image 1-1: PPM Example](../assets/img-1-01-1.jpg)
 
 Let’s make some C++ code to output such a thing:
 
@@ -106,7 +106,7 @@ There are some things to note in that code:
 Opening the output file (in ToyViewer on my mac, but try it in your favorite viewer and google “ppm
 viewer” if your viewer doesn’t support it) shows:
 
-![Image 1-2](../assets/img01-2.jpg)
+![Image 1-2](../assets/img-1-01-2.jpg)
 
 Hooray! This is the graphics “hello world”. If your image doesn’t look like that, open the output
 file in a text editor and see what it looks like. It should start something like this:
@@ -330,7 +330,7 @@ negative $t$ and you can go anywhere on the 3D line. For positive $t$, you get o
 front of $A$, and this is what is often called a half-line or ray. The example $C = p(2)$ is shown
 here:
 
-![Figure 3-1](../assets/fig03-1.jpg)
+![Figure 3-1](../assets/fig-1-03-1.jpg)
 
 The function $p(t)$ in more verbose code form I call “point_at_parameter(t)”:
 
@@ -370,7 +370,7 @@ traverse the screen from the lower left hand corner and use two offset vectors a
 sides to move the ray endpoint across the screen. Note that I do not make the ray direction a unit
 length vector because I think not doing that makes for simpler and slightly faster code.
 
-![Figure 3-2](../assets/fig03-2.jpg)
+![Figure 3-2](../assets/fig-1-03-2.jpg)
 
 Below in code, the ray $r$ goes to approximately the pixel centers (I won’t worry about exactness
 for now because we’ll add antialiasing later):
@@ -419,7 +419,7 @@ short, between two things. A lerp is always of the form
 
 with $t$ going from zero to one. In our case this produces:
 
-![Image 3-1](../assets/img03-1.jpg)
+![Image 3-1](../assets/img-1-03-1.jpg)
 
 
 
@@ -465,7 +465,7 @@ and there is a square root part that is either positive (meaning two real soluti
 (meaning no real solutions), or zero (meaning one real solution). In graphics, the algebra almost
 always relates very directly to the geometry. What we have is:
 
-![Figure 4-1][fig04-1]
+![Figure 4-1][fig-1-04-1]
 
 If we take that math and hard-code it into our program, we can test it by coloring red any pixel
 that hits a small sphere we place at -1 on the z-axis:
@@ -491,7 +491,7 @@ that hits a small sphere we place at -1 on the z-axis:
 
 What we get is this:
 
-![Image 4-1][img04-1]
+![Image 4-1][img-1-04-1]
 
 Now this lacks all sorts of things -- like shading and reflection rays and more than one object --
 but we are closer to halfway done than we are to our start! One thing to be aware of is that we
@@ -501,8 +501,8 @@ you. This is not a feature! We’ll fix those issues next.
 
 
 
-[fig04-1]: ../assets/fig04-1.jpg
-[img04-1]: ../assets/img04-1.jpg
+[fig-1-04-1]: ../assets/fig-1-04-1.jpg
+[img-1-04-1]: ../assets/img-1-04-1.jpg
 
 
 
@@ -516,7 +516,7 @@ enforce that in the code. This could allow subtle bugs, so be aware this is pers
 as are most design decisions like that. For a sphere, the normal is in the direction of the hitpoint
 minus the center:
 
-![Figure 5-1](../assets/fig05-1.jpg)
+![Figure 5-1](../assets/fig-1-05-1.jpg)
 
 On the earth, this implies that the vector from the earth’s center to you points straight up. Let’s
 throw that into the code now, and shade it. We don’t have any lights or anything yet, so let’s just
@@ -555,7 +555,7 @@ normal, we need the hit point, not just whether we hit or not. Let’s assume th
 
 And that yields this picture:
 
-![Image 5-1](../assets/img05-1.jpg)
+![Image 5-1](../assets/img-1-05-1.jpg)
 
 Now, how about several spheres? While it is tempting to have an array of spheres, a very clean
 solution is the make an “abstract class” for anything a ray might hit and make both a sphere and a
@@ -731,7 +731,7 @@ And the new main:
 This yields a picture that is really just a visualization of where the spheres are along with their
 surface normal. This is often a great way to look at your model for flaws and characteristics.
 
-![Image 5-2](../assets/img05-2.jpg)
+![Image 5-2](../assets/img-1-05-2.jpg)
 
 
 
@@ -789,7 +789,7 @@ If you want to use this, you can obtain a random number with the conditions we n
 For a given pixel we have several samples within that pixel and send rays through each of the
 samples. The colors of these rays are then averaged:
 
-![Figure 6-1](../assets/fig06-1.jpg)
+![Figure 6-1](../assets/fig-1-06-1.jpg)
 
 Putting that all together yields a camera class encapsulating our simple axis-aligned camera from
 before:
@@ -856,7 +856,7 @@ Main is also changed:
 Zooming into the image that is produced, the big change is in edge pixels that are part background
 and part foreground:
 
-![Image 6-1](../assets/img06-1.jpg)
+![Image 6-1](../assets/img-1-06-1.jpg)
 
 
 
@@ -875,7 +875,7 @@ modulate that with their own intrinsic color. Light that reflects off a diffuse 
 direction randomized. So, if we send three rays into a crack between two diffuse surfaces they will
 each have different random behavior:
 
-![Figure 7-1](../assets/fig07-1.jpg)
+![Figure 7-1](../assets/fig-1-07-1.jpg)
 
 They also might be absorbed rather than reflected. The darker the surface, the more likely
 absorption is. (That’s why it is dark!) Really any algorithm that randomizes direction will produce
@@ -886,7 +886,7 @@ Lambertian.)
 Pick a random point s from the unit radius sphere that is tangent to the hitpoint, and send a ray
 from the hitpoint $p$ to the random point $s$. That sphere has center $(p + N)$:
 
-![Figure 7-2](../assets/fig07-2.jpg)
+![Figure 7-2](../assets/fig-1-07-2.jpg)
 
 We also need a way to pick a random point in a unit radius sphere centered at the origin. We’ll use
 what is usually the easiest algorithm: a rejection method. First, we pick a random point in the unit
@@ -920,7 +920,7 @@ outside the sphere. A do/while construct is perfect for that:
 
 This gives us:
 
-![Image 7-1](../assets/img07-1.jpg)
+![Image 7-1](../assets/img-1-07-1.jpg)
 
 Note the shadowing under the sphere. This picture is very dark, but our spheres only absorb half the
 energy on each bounce, so they are 50% reflectors. If you can’t see the shadow, don’t worry, we will
@@ -942,7 +942,7 @@ square-root:
 
 That yields light grey, as we desire:
 
-![Image 7-2](../assets/img07-2.jpg)
+![Image 7-2](../assets/img-1-07-2.jpg)
 
 There’s also a subtle bug in there. Some of the reflected rays hit the object they are reflecting
 off of not at exactly $t=0$, but instead at $t=-0.0000001$ or $t=0.00000001$ or whatever floating
@@ -1085,7 +1085,7 @@ $albedo/p$. Your choice.
 For smooth metals the ray won’t be randomly scattered. The key math is: how does a ray get
 reflected from a metal mirror? Vector math is our friend here:
 
-![Figure 8-1](../assets/fig08-1.jpg)
+![Figure 8-1](../assets/fig-1-08-1.jpg)
 
 The reflected ray direction in red is just $(v + 2B)$. In our design, $N$ is a unit vector, but $v$
 may not be. The length of $B$ should be $dot(v,N)$. Because $v$ points in, we will need a minus
@@ -1177,12 +1177,12 @@ metal spheres:
 
 Which gives:
 
-![Image 8-1](../assets/img08-1.jpg)
+![Image 8-1](../assets/img-1-08-1.jpg)
 
 We can also randomize the reflected direction by using a small sphere and choosing a new endpoint
 for the ray:
 
-![Figure 8-2](../assets/fig08-2.jpg)
+![Figure 8-2](../assets/fig-1-08-2.jpg)
 
 The bigger the sphere, the fuzzier the reflections will be. This suggests adding a fuzziness
 parameter that is just the radius of the sphere (so zero is no perturbation). The catch is that for
@@ -1211,7 +1211,7 @@ absorb those. We’ll put a maximum of 1 on the radius of the sphere which yield
 
 We can try that out by adding fuzziness 0.3 and 1.0 to the metals:
 
-![Image 8-2](../assets/img08-2.jpg)
+![Image 8-2](../assets/img-1-08-2.jpg)
 
 
 
@@ -1226,7 +1226,7 @@ The hardest part to debug is the refracted ray. I usually first just have all th
 there is a refraction ray at all. For this project, I tried to put two glass balls in our scene, and
 I got this (I have not told you how to do this right or wrong yet, but soon!):
 
-![Image 9-1](../assets/img09-1.jpg)
+![Image 9-1](../assets/img-1-09-1.jpg)
 
 Is that right? Glass balls look odd in real life. But no, it isn’t right. The world should be
 flipped upside down and no weird black stuff. I just printed out the ray straight through the middle
@@ -1239,7 +1239,7 @@ The refraction is described by Snell’s law:
 Where $n$ and $n'$ are the refractive indices (typically air = 1, glass = 1.3–1.7, diamond = 2.4)
 and the geometry is:
 
-![Figure 9-1](../assets/fig09-1.jpg)
+![Figure 9-1](../assets/fig-1-09-1.jpg)
 
 One troublesome practical issue is that when the ray is in the material with the higher refractive
 index, there is no real solution to Snell’s law and thus there is no refraction possible. Here all
@@ -1312,7 +1312,7 @@ If we try that out with these parameters:
 
 We get:
 
-![Image 9-2](../assets/img09-2.jpg)
+![Image 9-2](../assets/img-1-09-2.jpg)
 
 (The reader Becker has pointed out that when there is a reflection ray the function returns `false`
 so there are no reflections. He is right, and that is why there are none in the image above. I
@@ -1394,7 +1394,7 @@ to make a hollow glass sphere:
 
 This gives:
 
-![Image 9-3](../assets/img09-3.jpg)
+![Image 9-3](../assets/img-1-09-3.jpg)
 
 
 
@@ -1410,7 +1410,7 @@ personal taste.
 I first keep the rays coming from the origin and heading to the $z = -1$ plane. We could make it the
 $z = -2$ plane, or whatever, as long as we made $h$ a ratio to that distance. Here is our setup:
 
-![Figure 10-1](../assets/fig10-1.jpg)
+![Figure 10-1](../assets/fig-1-10-1.jpg)
 
 This implies $h = tan(\theta/2)$. Our camera now becomes:
 
@@ -1455,7 +1455,7 @@ When calling it with camera `cam(90, float(nx)/float(ny))` and these spheres:
 
 gives:
 
-![Image 10-1](../assets/img10-1.jpg)
+![Image 10-1](../assets/img-1-10-1.jpg)
 
 To get an arbitrary viewpoint, let’s first name the points we care about. We’ll call the position
 where we place the camera _lookfrom_, and the point we look at _lookat_. (Later, if you want, you
@@ -1467,13 +1467,13 @@ constant, you can still rotate your head around your nose. What we need is a way
 vector for the camera. Notice we already we already have a plane that the up vector should be in,
 the plane orthogonal to the view direction.
 
-![Figure 10-2](../assets/fig10-2.jpg)
+![Figure 10-2](../assets/fig-1-10-2.jpg)
 
 We can actually use any up vector we want, and simply project it onto this plane to get an up vector
 for the camera. I use the common convention of naming a “view up” (_vup_) vector. A couple of cross
 products, and we now have a complete orthonormal basis (u,v,w) to describe our camera’s orientation.
 
-![Figure 10-3](../assets/fig10-3.jpg)
+![Figure 10-3](../assets/fig-1-10-3.jpg)
 
 Remember that `vup`, `v`, and `w` are all in the same plane. Note that, like before when our fixed
 camera faced -Z, our arbitrary view camera faces -w. And keep in mind that we can -- but we don’t
@@ -1523,11 +1523,11 @@ This allows us to change the viewpoint:
 
 to get:
 
-![Image 10-2](../assets/img10-2.jpg)
+![Image 10-2](../assets/img-1-10-2.jpg)
 
 And we can change field of view to get:
 
-![Image 10-3](../assets/img10-3.jpg)
+![Image 10-3](../assets/img-1-10-3.jpg)
 
 
 
@@ -1552,14 +1552,14 @@ sensor, then lens, then aperture, and figure out where to send the rays and flip
 computed (the image is projected upside down on the film). Graphics people usually use a thin lens
 approximation.
 
-![Figure 11-1](../assets/fig11-1.jpg)
+![Figure 11-1](../assets/fig-1-11-1.jpg)
 
 We also don’t need to simulate any of the inside of the camera. For the purposes of rendering an
 image outside the camera, that would be unnecessary complexity. Instead I usually start rays from
 the surface of the lens, and send them toward a virtual film plane, by finding the projection of the
 film on the plane that is in focus (at the distance `focus_dist`).
 
-![Figure 11-2](../assets/fig11-2.jpg)
+![Figure 11-2](../assets/fig-1-11-2.jpg)
 
 For that we just need to have the ray origins be on a disk around `lookfrom` rather than from a
 point:
@@ -1631,7 +1631,7 @@ Using a big aperture:
 
 We get:
 
-![Image 11-1](../assets/img11-1.jpg)
+![Image 11-1](../assets/img-1-11-1.jpg)
 
 
 
@@ -1683,7 +1683,7 @@ First let’s make the image on the cover of this book -- lots of random spheres
 
 This gives:
 
-![Image 12-1](../assets/img12-1.jpg)
+![Image 12-1](../assets/img-1-12-1.jpg)
 
 An interesting thing you might note is the glass balls don’t really have shadows which makes them
 look like they are floating. This is not a bug (you don’t see glass balls much in real life, where
