@@ -1,9 +1,11 @@
 Ray Tracing in One Weekend
 ====================================================================================================
 
-![Ray Tracing in One Weekend](assets/RTOneWeekend.jpg)
+![Ray Tracing in One Weekend](../images/RTOneWeekend.jpg)
 
-## Getting the Book
+
+Getting the Book
+-----------------
 The _Ray Tracing in One Weekend_ series of books are now available to the public for free in PDF
 form, along with the accompanying source code.
 
@@ -12,7 +14,9 @@ Releases are available [directly from GitHub][releases], or from Eric Haines's
 [Amazon.com][]. Half of the proceeds of these sales go to [Hack the Hood][], a really neat
 organization.
 
-## Overview
+
+Overview
+---------
 I’ve taught many graphics classes over the years. Often I do them in ray tracing, because you
 are forced to write all the code but you can still get cool images with no API. I decided to adapt
 my course notes into a how-to, to get you to a cool program as quickly as possible. It will not be
@@ -39,13 +43,17 @@ I have left that last part in because it is funny what a 180 I have done. Severa
 up with subtle errors that were helped when we compared code. So please do type in the
 code, but if you want to look at mine, here it is.
 
-## Corrections
-If you spot errors or have suggested corrections, please [submit issues via GitHub][].
+
+Corrections & Contributions
+----------------------------
+If you spot errors, have suggested corrections, or would like to help out with the project, please
+review the [CONTRIBUTING][] document for the most effective way to proceed.
 
 
 
 [Amazon.com]:               https://amazon.com/dp/B01B5AODD8
-[releases]:                 https://github.com/raytracing/InOneWeekend/releases/
+[CONTRIBUTING]:             ../CONTRIBUTING.md
+[releases]:                 https://github.com/raytracing/raytracing.github.io/releases/
 [Hack the Hood]:            https://hackthehood.org/
 [Real-Time Rendering]:      https://realtimerendering.com/#books-small-table
-[submit issues via GitHub]: https://github.com/raytracing/InOneWeekend/issues/
+[submit issues via GitHub]: https://github.com/raytracing/raytracing.github.io/issues/

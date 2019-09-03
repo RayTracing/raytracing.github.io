@@ -1,15 +1,17 @@
 Ray Tracing: The Rest Of Your Life
 ====================================================================================================
 
-![Ray Tracing: The Rest Of Your Life](assets/RTRestOfYourLife.jpg)
+![Ray Tracing: The Rest Of Your Life](../images/RTRestOfYourLife.jpg)
+
 
 Getting the Book
 -----------------
 The _Ray Tracing in One Weekend_ series of books are now available to the public for free in PDF
-form, along with the accompanying source code. Releases are available [directly from GitHub][], or
-from Eric Haines's [Real-Time Rendering][] site. Alternatively, you can purchase the Kindle version
-of this series from [Amazon.com][]. Half of the proceeds of these sales go to [Hack the Hood][], a
-really neat organization.
+form, along with the accompanying source code.
+
+Releases are available [directly from GitHub][], or from Eric Haines's [Real-Time Rendering][] site.
+Alternatively, you can purchase the Kindle version of this series from [Amazon.com][]. Half of the
+proceeds of these sales go to [Hack the Hood][], a really neat organization.
 
 
 Overview
@@ -26,10 +28,16 @@ is speak in the language of the field that studies those methods. I think of thi
 exposure that can be your first of many, and it will equip you with some of the concepts, math, and
 terms you will need to study the others.
 
-As before, www.in1weekend.com will have further readings and references.
+As before, https://in1weekend.blogspot.com/ will have further readings and references.
 
-## Corrections
-If you spot errors or have suggested corrections, please [submit issues via GitHub][].
+
+Corrections & Contributions
+----------------------------
+If you spot errors, have suggested corrections, or would like to help out with the project, please
+review the [CONTRIBUTING][] document for the most effective way to proceed.
+
+
+
 
 
 Acknowledgements
@@ -47,9 +55,10 @@ book to Markdeep and moving it to the web.
 
 
 [Amazon.com]:                 https://amazon.com/dp/B01DN58P8C
-[directly from GitHub]:       https://github.com/raytracing/TheRestOfYourLife/releases/
+[CONTRIBUTING]:               ../CONTRIBUTING.md
+[directly from GitHub]:       https://github.com/raytracing/raytracing.github.io/releases/
 [Hack the Hood]:              http://www.hackthehood.org/
-[Ray Tracing In One Weekend]: https://github.com/raytracing/InOneWeekend/
-[Ray Tracing: The Next Week]: https://github.com/raytracing/TheNextWeek/
+[Ray Tracing In One Weekend]: ../InOneWeekend/
+[Ray Tracing: The Next Week]: ../TheNextWeek/
 [Real-Time Rendering]:        http://www.realtimerendering.com/#books-small-table
-[submit issues via GitHub]:   https://github.com/raytracing/TheRestOfYourLife/issues/
+[submit issues via GitHub]:   https://github.com/raytracing/raytracing.github.io/issues/
