@@ -38,7 +38,7 @@ without BVH and Perlin texture you will still get a Cornell Box!
 
 
 Acknowledgments
-----------------
+---------------
 Thanks to Becker for his many helpful comments on the draft and to Matthew Heimlich for spotting a
 critical motion blur error. Thanks to Andrew Kensler, Thiago Ize, and Ingo Wald for advice on
 ray-AABB tests. Thanks to David Hart and Grue Debry for help with a bunch of the details. Thanks to
@@ -229,8 +229,8 @@ Be sure that in the materials you have the scattered rays be at the time of the 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If we take the example diffuse spheres from scene at the end of the last book and make them move
-from their centers at `time==0`, to `center + vec3(0, 0.5*random_double(), 0)` at `time==1`, with the
-camera aperture open over that frame.
+from their centers at `time==0`, to `center + vec3(0, 0.5*random_double(), 0)` at `time==1`, with 
+the camera aperture open over that frame.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hitable *random_scene() {
@@ -376,20 +376,20 @@ In 3D, those boundaries are planes. The equations for the planes are $x = x_0$, 
 does the ray hit that plane? Recall that the ray can be thought of as just a function that given a
 $t$ returns a location $p(t)$:
 
-    $$ p(t) = A + t \cdot B $$
+  $$ p(t) = A + t \cdot B $$
 
 That equation applies to all three of the x/y/z coordinates. For example $x(t) = A_x + t \cdot B_x$.
 This ray hits the plane $x = x_0$ at the $t$ that satisfies this equation:
 
-    $$ x_0 = A_x + t_0 \cdot B_x $$
+  $$ x_0 = A_x + t_0 \cdot B_x $$
 
 Thus $t$ at that hitpoint is:
 
-    $$ t_0 = \frac{x_0 - A_x}{B_x} $$
+  $$ t_0 = \frac{x_0 - A_x}{B_x} $$
 
 We get the similar expression for $x_1$:
 
-    $$ t_1 = \frac{x_1 - A_x}{B_x} $$
+  $$ t_1 = \frac{x_1 - A_x}{B_x} $$
 
 The key observation to turn that 1D math into a hit test is that for a hit, the $t$-intervals need
 to overlap. For example, in 2D the green and blue overlapping only happens if there is a hit:
@@ -424,16 +424,16 @@ extra mile in vectorization for speed.) For our purposes, this is unlikely to be
 as long as we make it reasonably fast, so let’s go for simplest, which is often fastest anyway!
 First let’s look at computing the intervals:
 
-    $$ t_{x0} = \frac{x_0 - A_x}{B_x} $$
-    $$ t_{x1} = \frac{x_1 - A_x}{B_x} $$
+  $$ t_{x0} = \frac{x_0 - A_x}{B_x} $$
+  $$ t_{x1} = \frac{x_1 - A_x}{B_x} $$
 
 One troublesome thing is that perfectly valid rays will have $B_x = 0$, causing division by zero.
 Some of those rays are inside the slab, and some are not. Also, the zero will have a ± sign under
 IEEE floating point. The good news for $B_x = 0$ is that $t_{x0}$ and $t_{x1}$ will both be +∞ or
 both be -∞ if not between $x_0$ and $x_1$. So, using min and max should get us the right answers:
 
-    $$ t_{x0} = min(\frac{x_0 - A_x}{B_x}, \frac{x_1 - A_x}{B_x}) $$
-    $$ t_{x1} = max(\frac{x_0 - A_x}{B_x}, \frac{x_1 - A_x}{B_x}) $$
+  $$ t_{x0} = min(\frac{x_0 - A_x}{B_x}, \frac{x_1 - A_x}{B_x}) $$
+  $$ t_{x1} = max(\frac{x_0 - A_x}{B_x}, \frac{x_1 - A_x}{B_x}) $$
 
 The remaining troublesome case if we do that is if $B_x = 0$ and either $x_0 - A_x = 0$ or $x_1-A_x
 = 0$ so we get a `NaN`. In that case we can probably accept either hit or no hit answer, but we’ll
@@ -768,8 +768,13 @@ Now we can make textured materials by replacing the vec3 color with a texture po
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-where you used to have new lambertian(vec3(0.5, 0.5, 0.5))) now you should replace the vec3(...)
-with  new constant_texture(vec3(...)) new lambertian(new constant_texture(vec3(0.5, 0.5, 0.5))))
+where you used to have
+
+`new lambertian(vec3(0.5, 0.5, 0.5)))`
+ 
+now you should replace the vec3(...) with `new constant_texture(vec3(...))`
+
+`new lambertian(new constant_texture(vec3(0.5, 0.5, 0.5))))`
 
 We can create a checker texture by noting that the sign of sine and cosine just alternates in a
 regular way and if we multiply trig functions in all three dimensions, the sign of that product
@@ -846,7 +851,7 @@ We get:
 Perlin Noise
 ====================================================================================================
 
-To get cool looking solid textures most people use some form of  Perlin noise. These are named after
+To get cool looking solid textures most people use some form of Perlin noise. These are named after
 their inventor Ken Perlin. Perlin texture doesn’t return white noise like this:
 
   ![Image 5-1](../images/img-2-5-01.jpg)
@@ -1003,8 +1008,8 @@ And we get:
 
   ![Image 5-5](../images/img-2-5-05.jpg)
 
-Better, but there are obvious grid features in there. Some of it is  Mach bands, a known perceptual
-artifact of linear interpolation of color. A standard trick is to use a  hermite cubic to round off
+Better, but there are obvious grid features in there. Some of it is Mach bands, a known perceptual
+artifact of linear interpolation of color. A standard trick is to use a hermite cubic to round off
 the interpolation:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1067,7 +1072,11 @@ exactly uniform:
     static vec3* perlin_generate() {
         vec3 * p = new vec3[256];
         for ( int i = 0; i < 256; ++i )
-            p[i] = unit_vector(vec3(-1 + 2*random_double(), -1 + 2*random_double(), -1 + 2*random_double()));
+            p[i] = unit_vector(vec3(
+                -1 + 2*random_double(), 
+                -1 + 2*random_double(), 
+                -1 + 2*random_double()
+            ));
         return p;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1151,7 +1160,7 @@ Used directly, turbulence gives a sort of camouflage netting appearance:
 
 However, usually turbulence is used indirectly. For example, the “hello world” of procedural solid
 textures is a simple marble-like texture. The basic idea is to make color proportional to something
-like a sine function, and use turbulence to adjust the phase (so it shifts  x in sin( x )) which
+like a sine function, and use turbulence to adjust the phase (so it shifts $x$ in $sin( x )$) which
 makes the stripes undulate. Commenting out straight noise and turbulence, and giving a marble-like
 effect is:
 
@@ -1189,8 +1198,8 @@ use texture coordinates instead of image pixel coordinates. These are just some 
 position in the image. For example, for pixel $(i,j)$ in an nx by ny image, the image texture
 position is:
 
-    $$ u = i/(nx-1) $$
-    $$ v = j/(nx-1) $$
+  $$ u = i/(nx-1) $$
+  $$ v = j/(nx-1) $$
 
 This is just a fractional position. For a hitable, we need to also return a u and v in the hit
 record. For spheres, this is usually based on some form of longitude and latitude, _i.e._, spherical
@@ -1198,26 +1207,26 @@ coordinates. So if we have a $(\theta,\phi)$ in spherical coordinates we just ne
 and $\phi$ to fractions. If $\theta$ is the angle down from the pole, and $\phi$ is the angle around
 the axis through the poles, the normalization to $[0,1]$ would be:
 
-    $$ u = \phi / (2\pi) $$
-    $$ v = \theta / \pi $$
+  $$ u = \phi / (2\pi) $$
+  $$ v = \theta / \pi $$
 
 To compute $\theta$ and $\phi$, for a given hitpoint, the formula for spherical coordinates of a
 unit radius sphere on the origin is:
 
-    $$ x = cos(\phi) cos(\theta) $$
-    $$ y = sin(\phi) cos(\theta) $$
-    $$ z = sin(\theta) $$
+  $$ x = cos(\phi) cos(\theta) $$
+  $$ y = sin(\phi) cos(\theta) $$
+  $$ z = sin(\theta) $$
 
-We need to invert that. Because of the lovely math.h function atan2() which takes any number
-proportional to sine and cosine and returns the angle, we can pass in x and y (the cos(theta)
+We need to invert that. Because of the lovely `math.h` function `atan2()` which takes any number
+proportional to sine and cosine and returns the angle, we can pass in $x$ and $y$ (the $cos(\theta)$
 cancel):
 
-    $$ \phi = atan2(y, x) $$
+  $$ \phi = atan2(y, x) $$
 
-The atan2 returns in the range $-\pi$ to $\pi$ so we need to take a little care there. The $\theta$
-is more straightforward:
+The $atan2$ returns in the range $-\pi$ to $\pi$ so we need to take a little care there. 
+The $\theta$ is more straightforward:
 
-    $$ \theta = asin(z) $$
+  $$ \theta = asin(z) $$
 
 which returns numbers in the range $-\pi/2$ to $\pi/2$.
 
@@ -1226,7 +1235,7 @@ things on the unit sphere centered at the origin. The call inside sphere::hit sh
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The utility function is:
 
@@ -1269,7 +1278,7 @@ RGBs that each range 0..255 for black to fully-on.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The representation of a packed array in that order is pretty standard. Thankfully, the `stb_image`
-package makes that super simple -- just include the header in main.h with a #define:
+package makes that super simple -- just include the header in `main.h` with a `#define`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #define STB_IMAGE_IMPLEMENTATION
@@ -1279,7 +1288,7 @@ package makes that super simple -- just include the header in main.h with a #def
   ![Image 6-1](../images/earthmap.jpg)
 
 
-To read an image from a file eathmap.jpg (I just grabbed a random earth map from the web -- any
+To read an image from a file earthmap.jpg (I just grabbed a random earth map from the web -- any
 standard projection will do for our purposes), and then assign it to a diffuse material, the code
 is:
 
@@ -1319,7 +1328,7 @@ ray what color it is and performs no reflection. It’s very simple:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-So that I don’t have to make all the non-emitting materials implement emitted(), I have the base
+So that I don’t have to make all the non-emitting materials implement `emitted()`, I have the base
 class return black:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1365,16 +1374,16 @@ To determine whether a ray hits such a rectangle, we first determine where the r
 Recall that a ray $p(t) = a + t \cdot b$ has its z component defined by $z(t) = a_z + t \cdot b_z$.
 Rearranging those terms we can solve for what the t is where $z=k$.
 
-    $$ t = (k-a_z) / b_z $$
+  $$ t = (k-a_z) / b_z $$
 
 Once we have t, we can plug that into the equations for x and y:
 
-    $$ x = a_x + t*b_x $$
-    $$ y = a_y + t*b_y $$
+  $$ x = a_x + t*b_x $$
+  $$ y = a_y + t*b_y $$
 
 It is a hit if $x_0 < x < x_1$ and $y_0 < y < y_1$.
 
-The actual xy_rect class is thus:
+The actual `xy_rect` class is thus:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class xy_rect: public hitable  {
@@ -1713,22 +1722,23 @@ This involves some basic trigonometry that uses formulas that I will not cover h
 the correct impression it’s a little involved, but it is straightforward, and you can find it in any
 graphics text and in many lecture notes. The result for rotating counter-clockwise about z is:
 
-    $$ x\prime = cos(\theta) \cdot x - sin(\theta) \cdot y $$
-    $$ y\prime = sin(\theta) \cdot x + cos(\theta) \cdot y $$
+  $$ x\prime = cos(\theta) \cdot x - sin(\theta) \cdot y $$
+  $$ y\prime = sin(\theta) \cdot x + cos(\theta) \cdot y $$
 
-The great thing is that it works for any theta and doesn’t need any cases for quadrants or anything
-like that. The inverse transform is the opposite geometric operation: rotate by -theta. Here, recall
-that cos(theta) = cos(-theta) and sin(-theta) = -sin(theta), so the formulas are very simple.
+The great thing is that it works for any $\theta$ and doesn’t need any cases for quadrants or 
+anything like that. The inverse transform is the opposite geometric operation: rotate by $-\theta$. 
+Here, recall that $cos(\theta) = cos(-\theta)$ and $sin(-\theta) = -sin(\theta)$, so the formulas 
+are very simple.
 
 Similarly, for rotating about y (as we want to do for the blocks in the box) the formulas are:
 
-    $$ x\prime =  cos(\theta) \cdot x + sin(\theta) \cdot z $$
-    $$ z\prime = -sin(\theta) \cdot x + cos(\theta) \cdot z $$
+  $$ x\prime =  cos(\theta) \cdot x + sin(\theta) \cdot z $$
+  $$ z\prime = -sin(\theta) \cdot x + cos(\theta) \cdot z $$
 
 And about the x-axis:
 
-    $$ y\prime = cos(\theta) \cdot y - sin(\theta) \cdot z $$
-    $$ z\prime = sin(\theta) \cdot y + cos(\theta) \cdot z $$
+  $$ y\prime = cos(\theta) \cdot y - sin(\theta) \cdot z $$
+  $$ z\prime = sin(\theta) \cdot y + cos(\theta) \cdot z $$
 
 Unlike the situation with translations, the surface normal vector also changes, so we need to
 transform directions too if we get a hit. Fortunately for rotations, the same formulas apply. If you
@@ -1854,12 +1864,12 @@ through.
 As the ray passes through the volume, it may scatter at any point. The denser the volume, the more
 likely that is. The probability that the ray scatters in any small distance $\delta L$ is:
 
-    $$ probability = C \cdot \delta L $$
+  $$ probability = C \cdot \delta L $$
 
-where $C$ is proportional to the optical density of the volume. If you go through all the differential
-equations, for a random number you get a distance where the scattering occurs. If that distance is
-outside the volume, then there is no “hit”. For a constant volume we just need the density $C$ and the
-boundary. I’ll use another hitable for the boundary. The resulting class is:
+where $C$ is proportional to the optical density of the volume. If you go through all the 
+differential equations, for a random number you get a distance where the scattering occurs. If 
+that distance is outside the volume, then there is no “hit”. For a constant volume we just need 
+the density $C$ and the boundary. I’ll use another hitable for the boundary. The resulting class is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class constant_medium : public hitable  {
@@ -2049,7 +2059,8 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         int ns = 1000;
         for (int j = 0; j < ns; j++) {
             boxlist2[j] = new sphere(
-                vec3(165*random_double(), 165*random_double(), 165*random_double()), 10, white);
+                vec3(165*random_double(), 165*random_double(), 165*random_double()),
+                10, white);
         }
         list[l++] =   new translate(new rotate_y(
             new bvh_node(boxlist2,ns, 0.0, 1.0), 15), vec3(-100,270,395));
