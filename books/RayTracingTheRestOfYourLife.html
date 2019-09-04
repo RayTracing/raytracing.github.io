@@ -57,8 +57,8 @@ estimate of an answer, and this estimate gets more and more accurate the longer 
 basic characteristic of simple programs producing noisy but ever-better answers is what MC is all
 about, and it is especially good for applications like graphics where great accuracy is not needed.
 
-As an example, let’s estimate $ \pi $. There are many ways to do this, with the Buffon Needle problem
-being a classic case study. We’ll do a variation inspired by that. Suppose you have a circle
+As an example, let’s estimate $\pi$. There are many ways to do this, with the Buffon Needle 
+problem being a classic case study. We’ll do a variation inspired by that. Suppose you have a circle
 inscribed inside a square:
 
   ![Figure 2-1](../images/fig-3-02-1.jpg)
@@ -67,7 +67,7 @@ Now, suppose you pick random points inside the square. The fraction of those ran
 up inside the circle should be proportional to the area of the circle. The exact fraction should in
 fact be the ratio of the circle area to the square area. Fraction:
 
-    $$ \frac{Pi \cdot R^2}{(2R)^2} = \frac{Pi}{4} $$
+  $$ \frac{Pi \cdot R^2}{(2R)^2} = \frac{Pi}{4} $$
 
 Since the *R* cancels out, we can pick whatever is computationally convenient. Let’s go with R=1
 centered at the origin:
@@ -272,8 +272,8 @@ So $p(r) = r/2$.
 How do we generate a random number with that pdf $p(r)$? For that we will need some more machinery.
 Don’t worry this doesn’t go on forever!
 
-Given a random number from `d = random_double()` that is uniform and between 0 and 1, we should be able
-to find some function $f(d)$ that gives us what we want. Suppose $e = f(d) = d^2$. That is no
+Given a random number from `d = random_double()` that is uniform and between 0 and 1, we should be 
+able to find some function $f(d)$ that gives us what we want. Suppose $e = f(d) = d^2$. That is no
 longer a uniform _pdf_ . The _pdf_ of $e$ will be bigger near 0 than it is near 1 (squaring a
 number between 0 and 1 makes it smaller). To take this general observation to a function, we need
 the cumulative probability distribution function $P(x)$:
@@ -294,8 +294,8 @@ function arguments in a program. If we evaluate $P$ at $x = 0.5$ , we get:
 
 This says _the probability that a random variable with our pdf is less than one is 25%_ . This
 gives rise to a clever observation that underlies many methods to generate non-uniform random
-numbers. We want a function `f()` that when we call it as `f(random_double())` we get a return value with
-a pdf $\frac{x^2}{4}$ . We don’t know what that is, but we do know that 25% of what it returns
+numbers. We want a function `f()` that when we call it as `f(random_double())` we get a return value
+with a pdf $\frac{x^2}{4}$ . We don’t know what that is, but we do know that 25% of what it returns
 should be less than 1, and 75% should be above one. If $f()$ is increasing, then we would expect
 $f(0.25) = 1.0$. This can be generalized to figure out $f()$ for every possible input:
 
@@ -324,7 +324,8 @@ Thus our random number with density $p$ we get by:
 
   $$ e = \sqrt{4*random_double()} $$
 
-Note that does range 0 to 2 as hoped, and if we send in $1/4$ for `random_double()` we get 1 as desired.
+Note that does range 0 to 2 as hoped, and if we send in $1/4$ for `random_double()` we get 1 as 
+desired.
 
 We can now sample our old integral
 
@@ -448,7 +449,7 @@ In our ray tracer we pick random directions, and directions can be represented a
 unit-sphere. The same methodology as before applies. But now we need to have a pdf defined over 2D.
 Suppose we have this integral over all directions:
 
-    $$ \int cos^2(\theta) $$
+  $$ \int cos^2(\theta) $$
 
 By MC integration, we should just be able to sample $cos^2(\theta) / p(direction)$. But what is
 direction in that context? We could make it based on polar coordinates, so $p$ would be in terms of
@@ -498,14 +499,15 @@ sphere or $1/(4\pi)$. If the integrand is $cos^2(\theta)$ and $\theta$ is the an
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The analytic answer (if you remember enough advanced calc, check me!) is $\frac{4}{3} \pi$, and the code
-above produces that. Next, we are ready to apply that in ray tracing!
+The analytic answer (if you remember enough advanced calc, check me!) is $\frac{4}{3} \pi$, and the 
+code above produces that. Next, we are ready to apply that in ray tracing!
 
 The key point here is that all the integrals and probability and all that are over the unit sphere.
 The area on the unit sphere is how you measure the directions. Call it direction, solid angle, or
-area-- it’s all the same thing. Solid angle is the term usually used. If you are comfortable with
+area -- it’s all the same thing. Solid angle is the term usually used. If you are comfortable with
 that, great! If not, do what I do and imagine the area on the unit sphere that a set of directions
-goes through. The solid angle $\omega$ and the projected area $A$ on the unit sphere are the same thing.
+goes through. The solid angle $\omega$ and the projected area $A$ on the unit sphere are the same 
+thing.
 
   ![Figure 4-1](../images/fig-3-04-1.jpg)
 
@@ -524,6 +526,7 @@ used model for light interacting with a surface. One natural way to model this i
 First, is the light absorbed?
 
 Probability of light scattering: $A$
+  
 Probability of light being absorbed: $1-A$
 
 Here $A$ stands for _albedo_ (latin for _whiteness_). Albedo is a precise technical term in some
@@ -535,19 +538,19 @@ wavelengths.
 
 If the light does scatter, it will have a directional distribution that we can describe as a pdf
 over solid angle. I will refer to this as its _scattering pdf_: $s(direction)$. The scattering pdf
-can also vary with incident direction, as you will notice when you look at reflections off a road--
+can also vary with incident direction, as you will notice when you look at reflections off a road --
 they become mirror-like as your viewing angle approaches grazing.
 
 The color of a surface in terms of these quantities is:
 
-    $$ Color = \int A \cdot s(direction) \cdot color(direction) $$
+  $$ Color = \int A \cdot s(direction) \cdot color(direction) $$
 
 Note that $A$ and $s()$ might depend on the view direction, so of course color can vary with view
 direction. Also $A$ and $s()$ may vary with position on the surface or within the volume.
 
 If we apply the MC basic formula we get the following statistical estimate:
 
-    $$ Color = (A \cdot s(direction) \cdot color(direction)) / p(direction) $$
+  $$ Color = (A \cdot s(direction) \cdot color(direction)) / p(direction) $$
 
 Where $p(direction)$ is the pdf of whatever direction we randomly generate.
 
@@ -559,21 +562,21 @@ is $\pi$.
 
 To see that remember that in spherical coordinates remember that:
 
-    $$ \delta A = sin(\theta) \delta \theta \delta \phi $$
+  $$ \delta A = sin(\theta) \delta \theta \delta \phi $$
 
 So:
 
-    $$ Area = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} cos(\theta)sin(\theta) \delta \theta \delta \phi =
+  $$ Area = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} cos(\theta)sin(\theta) \delta \theta \delta \phi =
     2 \pi \cdot \frac{1}{2} = \pi $$
 
 So for a Lambertian surface the scattering pdf is:
 
-    $$ s(direction) = cos(\theta) / \pi $$
+  $$ s(direction) = cos(\theta) / \pi $$
 
 If we sample using the same pdf, so $p(direction) = cos(\theta) / \pi$, the numerator and
 denominator cancel out and we get:
 
-    $$ Color = A * s(direction) $$
+  $$ Color = A * s(direction) $$
 
 This is exactly what we had in our original color() function! But we need to generalize now so we
 can send extra rays in important directions such as toward the lights.
@@ -584,7 +587,7 @@ volumes. To do otherwise will make some ugly code.
 If you read the literature, you’ll see reflection described by the bidirectional reflectance
 distribution function (BRDF). It relates pretty simply to our terms:
 
-    $$ BRDF = A * s(direction) / cos(\theta) $$
+  $$ BRDF = A * s(direction) / cos(\theta) $$
 
 So for a Lambertian surface for example, $BRDF = A / \pi$. Translation between our terms and BRDF is
 easy.
@@ -604,15 +607,15 @@ $s$, and let’s call that $pSurface(direction)$ . A great thing about pdfs is t
 linear mixtures of them to form mixture densities that are also pdfs. For example, the simplest
 would be:
 
-    $$ p(direction) = 0.5 \cdot pLight(direction) + 0.5* \cdot pSurface(direction) $$
+  $$ p(direction) = 0.5 \cdot pLight(direction) + 0.5* \cdot pSurface(direction) $$
 
 As long as the weights are positive and add up to one, any such mixture of pdfs is a pdf. And
-remember, we can use any pdf-- it doesn’t change the answer we converge to! So, the game is to
-figure out how to make the pdf larger where the product $s(direction)*color(direction)$ is large. For
-diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is high.
+remember, we can use any pdf -- it doesn’t change the answer we converge to! So, the game is to
+figure out how to make the pdf larger where the product $s(direction)*color(direction)$ is large. 
+For diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is high.
 
 For a mirror, $s()$ is huge only near one direction, so it matters a lot more. Most renderers in
-fact make mirrors a special case and just make the $s/p$ implicit-- our code currently does that.
+fact make mirrors a special case and just make the $s/p$ implicit -- our code currently does that.
 
 Let’s do simple refactoring and temporarily remove all materials that aren’t Lambertian. We can use
 our Cornell Box scene again, and let’s generate the camera in the function that generates the model:
@@ -654,7 +657,7 @@ Reducing that noise is our goal. We’ll do that by constructing a pdf that send
 light.
 
 First, let’s instrument the code so that it explicitly samples some pdf and then normalizes for
-that. Remember MC basics: $\int f(x) \approx f(r)/p(r)$ . For the Lambertian material,
+that. Remember MC basics: $\int f(x) \approx f(r)/p(r)$. For the Lambertian material,
 let’s sample like we do now: $p(direction) = cos(\theta) / \pi$.
 
 We modify the base-class _material_ to enable this importance sampling:
@@ -749,7 +752,7 @@ And again I __should__ get the same picture except with different variance, but 
 
 It’s pretty close to our old picture, but there are differences that are not noise. The front of the
 tall box is much more uniform in color. So I have the most difficult kind of bug to find in a Monte
-Carlo program-- a bug that produces a reasonable looking image. And I don’t know if the bug is the
+Carlo program -- a bug that produces a reasonable looking image. And I don’t know if the bug is the
 first version of the program or the second, or even in both!
 
 Let’s build some infrastructure to address this.
@@ -783,7 +786,7 @@ Solving for $\phi$ we get:
 
   $$ \phi = 2 \pi \cdot r_1 $$
 
-For theta we have:
+For $\theta$ we have:
 
   $$ r_2 = \int_{0}^{\theta} 2 \pi f(t) \sin(t) $$
 
@@ -841,7 +844,7 @@ And plot them for free on plot.ly (a great site with 3D scatterplot support):
 
 On the plot.ly website you can rotate that around and see that it appears uniform.
 
-Now let’s derive uniform on the hemisphere . The density being uniform on the hemisphere means
+Now let’s derive uniform on the hemisphere. The density being uniform on the hemisphere means
 $p(direction) = 1 / (2 \pi)$ and just changing the constant in the theta equations yields:
 
   $$ \cos(\theta) = 1 - r_2 $$
@@ -1139,9 +1142,9 @@ would like a _pdf_ that combines these. A common tool in probability is to mix t
 form a mixture density. Any weighted average of _pdf_ s is a _pdf_. For example, we could just
 average the two densities:
 
-    $$ pdf\_mixture(direction) = \frac{1}{2} pdf\_reflection(direction) +
+  $$ pdf\_mixture(direction) = \frac{1}{2} pdf\_reflection(direction) +
         \frac{1}{2}pdf\_light(direction)
-    $$
+  $$
 
 How would we instrument our code to do that? There is a very important detail that makes this not
 quite as easy as one might expect. Choosing the random direction is simple:
@@ -1630,29 +1633,29 @@ easier. When we sample a sphere’s solid angle uniformly from a point outside t
 really just sampling a cone uniformly (the cone is tangent to the sphere). Let’s say the code has
 `theta_max`. Recall from Chapter 9, that to sample $\theta$ we have:
 
-    $$ r2 = \int_{0}^{\theta} 2 \pi \cdot f(t) \cdot sin(t) dt $$
+  $$ r2 = \int_{0}^{\theta} 2 \pi \cdot f(t) \cdot sin(t) dt $$
 
 Here $f(t)$ is an as yet uncalculated constant $C$, so:
 
-    $$ r2 = \int_{0}^{\theta} 2 \pi \cdot C \cdot sin(t) dt $$
+  $$ r2 = \int_{0}^{\theta} 2 \pi \cdot C \cdot sin(t) dt $$
 
 Doing some algebra/calculus this yields:
 
-    $$ r2 = 2 \pi \cdot C \cdot (1-cos(\theta)) $$
+  $$ r2 = 2 \pi \cdot C \cdot (1-cos(\theta)) $$
 
 So
 
-    $$ cos(\theta) = 1 - r2/(2 \pi \cdot C) $$
+  $$ cos(\theta) = 1 - r2/(2 \pi \cdot C) $$
 
 We know that for $r2 = 1$ we should get $\theta_{max}$, so we can solve for $C$:
 
-    $$ cos(\theta) = 1 + r2 \cdot (cos(\theta_{max})-1) $$
+  $$ cos(\theta) = 1 + r2 \cdot (cos(\theta_{max})-1) $$
 
 $\phi$ we sample like before, so:
 
-    $$ z = cos(\theta) = 1 + r2 \cdot (cos(\theta_{max})-1) $$
-    $$ x = cos(\phi) \cdot sin(\theta) = cos(2 \pi \cdot r1) \cdot \sqrt{1-z^2} $$
-    $$ y = sin(\phi) \cdot sin(\theta) = sin(2 \pi \cdot r1) \cdot \sqrt{1-z^2} $$
+  $$ z = cos(\theta) = 1 + r2 \cdot (cos(\theta_{max})-1) $$
+  $$ x = cos(\phi) \cdot sin(\theta) = cos(2 \pi \cdot r1) \cdot \sqrt{1-z^2} $$
+  $$ y = sin(\phi) \cdot sin(\theta) = sin(2 \pi \cdot r1) \cdot \sqrt{1-z^2} $$
 
 Now what is $\theta_{max}$?
 
@@ -1660,17 +1663,17 @@ Now what is $\theta_{max}$?
 
 We can see from the figure that $sin(\theta_{max}) = R / length( c - p )$. So:
 
-    $$ cos(\theta_{max}) = \sqrt{1- (R / length( c - p ))^2} $$
+  $$ cos(\theta_{max}) = \sqrt{1- (R / length( c - p ))^2} $$
 
 We also need to evaluate the _pdf_ of directions. For directions toward the sphere this is
 $1/solid\_angle$. What is the solid angle of the sphere? It has something to do with the $C$ above.
 It, by definition, is the area on the unit sphere, so the integral is
 
-    $$ solid\_angle = \int_{0}^{2 \pi} \int_{0}^{\theta_{max}} sin(\theta) d \theta d \phi
+  $$ solid\_angle = \int_{0}^{2 \pi} \int_{0}^{\theta_{max}} sin(\theta) d \theta d \phi
        = 2 \pi \cdot (1-cos(\theta_{max})) $$
 
 It’s good to check the math on all such calculations. I usually plug in the extreme cases (thank you
-for that concept, Mr. Horton--my high school physics teacher). For a zero radius sphere
+for that concept, Mr. Horton -- my high school physics teacher). For a zero radius sphere
 $cos(\theta_{max}) = 0$, and that works. For a sphere tangent at $p$, $cos(\theta_{max}) = 0$, and
 $2 \pi$ is the area of a hemisphere, so that works too.
 
