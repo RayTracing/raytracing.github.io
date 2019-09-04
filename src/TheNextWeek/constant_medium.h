@@ -12,7 +12,9 @@
 //==================================================================================================
 
 #include "hitable.h"
+#include "material.h"
 #include "random.h"
+#include "texture.h"
 
 #include <float.h>
 
