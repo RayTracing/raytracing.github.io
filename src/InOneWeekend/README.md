@@ -3,34 +3,46 @@ Ray Tracing in One Weekend - Source
 
 Content
 --------
-This folder ([InOneWeekend][]) contains the finished code of the [_Ray Tracing in One Weekend_][] book.
+This folder contains the finished code for _Ray Tracing in One Weekend_ ([local][] / [online][]).
+
 
 Intent
 -------
-This folder is not meant to act as it's own tutorial. The source presented here is provided so that you can compare your work when going along with the book. We strongly recommend reading and following along with the book if you want to understand the source.
+This folder is not meant to act as its own tutorial. The source presented here is provided so you
+can compare your work when progressing through the book. We strongly recommend reading and following
+along with the book to understand the source.
+
 
 Programming Language
 ---------------------
-This book is written in c++ with some modern features of c++11. The code as written is designed to be readable by the largest collection of potential programmers. The code is not meant to illustrate idealized c++ code.
+This book is written in C++, and uses some modern features of C++11. The language and features were
+chosen to be broadly understood by the largest collection of programmers. It is not meant to
+represent ideal C++ code.
+
 
 Building
 ---------
-No mechanism for building is included with this project.
+As the source is intended for illustration & comparison only, it does not include any mechanism for
+building a final program. As far as possible, the code is privately tested on multiple platforms to
+ensure that it is generally usable on any OS (primarily Windows, OSX, and Linux), compiler, or build
+environment.
 
-The _Ray Tracing in One Weekend_ series has a long history of being written in other programming languages ([Implementations in Other Languages][]) and across all three primary operating systems.
+It is therefore necessary for you to create your own build tooling. However, the source begins as a
+single main file, and uses only a small collection of additional header files.
 
-It is necessary for you to create your own build tooling. However, the source begins as a single main file and builds to only a small collection of additional header files.
+The _Ray Tracing in One Weekend_ series has a long history of implementations in other programming
+languages (see [_Implementations in Other Languages_][implementations]), and across all three
+primary operating systems. Feel free to add your own implementation to the list!
 
-The c++ code as written should compile across all three platforms (Win, OSX, Linux).
 
 Corrections & Contributions
 ----------------------------
 If you spot errors, have suggested corrections, or would like to help out with the project, please
-review the [CONTRIBUTING][] document for the most effective way to proceed.
+review the [CONTRIBUTING][] guidelines for the most effective way to proceed.
 
 
 
-[InOneWeekend]:                         https://github.com/RayTracing/raytracing.github.io/tree/master/src/InOneWeekend
-[_Ray Tracing in One Weekend_]:         https://github.com/RayTracing/raytracing.github.io/tree/master/books/RayTracingInOneWeekend.html
-[Implementations in Other Languages]:   https://github.com/RayTracing/InOneWeekend/wiki/Implementations-in-Other-Languages
-[CONTRIBUTING]:                         ../../CONTRIBUTING.md
+[online]:          https://raytracing.github.com/books/RayTracingInOneWeekend.html
+[local]:           ../../books/RayTracingInOneWeekend.html
+[implementations]: https://github.com/RayTracing/raytracing.github.io/wiki/Implementations-in-Other-Languages
+[CONTRIBUTING]:    ../../CONTRIBUTING.md
