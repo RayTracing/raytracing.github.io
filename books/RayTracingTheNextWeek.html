@@ -15,10 +15,11 @@
 Overview
 ====================================================================================================
 
-<div class='warning'>
-  <p class='title'>WARNING<br>Content Under Development</h1>
-  <p class='text'>See <a href='https://github.com/RayTracing/raytracing.github.io/releases/'>release page</a> for latest official PDF version.
-</div>
+
+!!! ERROR: Content Under Development
+    See [the official release page](https://github.com/RayTracing/raytracing.github.io/releases/)
+    for latest official PDF version.
+
 
 In Ray Tracing In One Weekend, you built a simple brute force path tracer. In this installment we’ll
 add textures, volumes (like fog), rectangles, instances, lights, and support for lots of objects
@@ -65,6 +66,7 @@ at that one time. The way it is usually done is to have the camera move and the 
 have each ray exist at exactly one time. This way the “engine” of the ray tracer can just make sure
 the objects are where they need to be for the ray, and the intersection guts don’t change much.
 
+<div class='together'>
 For this we will first need to have a ray store the time it exists at:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -84,6 +86,7 @@ For this we will first need to have a ray store the time it exists at:
     };
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 Now we need to modify the camera to generate rays at a random time between `time1` and `time2`.
 Should the camera keep track of `time1` and `time2` or should that be up to the user of camera when
@@ -171,6 +174,7 @@ times need not match up with the camera aperture open close.
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+<div class='together'>
 An alternative to making a new moving sphere class is to just make them all move and have the
 stationary ones have the same begin and end point. I’m on the fence about that trade-off between
 fewer classes and more efficient stationary spheres, so let your design taste guide you. The
@@ -207,7 +211,9 @@ intersection code barely needs a change: `center` just needs to become a functio
         return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Be sure that in the materials you have the scattered rays be at the time of the incident ray.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -227,9 +233,11 @@ Be sure that in the materials you have the scattered rays be at the time of the 
         vec3 albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 If we take the example diffuse spheres from scene at the end of the last book and make them move
-from their centers at `time==0`, to `center + vec3(0, 0.5*random_double(), 0)` at `time==1`, with 
+from their centers at `time==0`, to `center + vec3(0, 0.5*random_double(), 0)` at `time==1`, with
 the camera aperture open over that frame.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -280,7 +288,9 @@ the camera aperture open over that frame.
         return new hitable_list(list,i);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And with these viewing parameters gives:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -296,6 +306,8 @@ And with these viewing parameters gives:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   ![Image 2-1](../images/img-2-2-01.jpg)
+
+</div>
 
 
 
@@ -314,6 +326,7 @@ can be a sublinear search. The two most common families of sorting are to 1) div
 2) divide the objects. The latter is usually much easier to code up and just as fast to run for most
 models.
 
+<div class='together'>
 The key idea of a bounding volume over a set of primitives is to find a volume that fully encloses
 (bounds) all the objects. For example, suppose you computed a bounding sphere of 10 objects. Any ray
 that misses the bounding sphere definitely misses all ten objects. If the ray hits the bounding
@@ -325,16 +338,21 @@ sphere, then it might hit one of the ten objects. So the bounding code is always
     else
         return false
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 A key thing is we are dividing objects into subsets. We are not dividing the screen or the volume.
 Any object is in just one bounding volume, but bounding volumes can overlap.
 
+<div class='together'>
 To make things sub-linear we need to make the bounding volumes hierarchical. For example, if we
 divided a set of objects into two groups, red and blue, and used rectangular bounding volumes, we’d
 have:
 
   ![Figure 3-1](../images/fig-2-3-01.jpg)
 
+</div>
+
+<div class='together'>
 Note that the blue and red bounding volumes are contained in the purple one, but they might
 overlap, and they are not ordered -- they are just both inside. So the tree shown on the right has
 no concept of ordering in the left and right children; they are simply inside. The code would be:
@@ -347,6 +365,7 @@ no concept of ordering in the left and right children; they are simply inside. T
             return true and info of closer hit
     return false
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 To get that all to work we need a way to make good divisions, rather than bad ones, and a way to
 intersect a ray with a bounding volume. A ray bounding volume intersection needs to be fast, and
@@ -359,6 +378,7 @@ need to be called if precise) axis-aligned bounding boxes, or AABBs. Any method 
 intersect a ray with an AABB is fine. And all we need to know is whether or not we hit it; we don’t
 need hit points or normals or any of that stuff that we need for an object we want to display.
 
+<div class='together'>
 Most people use the “slab” method. This is based on the observation that an n-dimensional AABB is
 just the intersection of n axis-aligned intervals, often called “slabs” An interval is just
 the points between two endpoints, _e.g._, $x$ such that $3 < x < 5$, or more succinctly $x$ in
@@ -366,36 +386,53 @@ $(3,5)$. In 2D, two intervals overlapping makes a 2D AABB (a rectangle):
 
   ![Figure 3-2](../images/fig-2-3-02.jpg)
 
+</div>
+
+<div class='together'>
 For a ray to hit one interval we first need to figure out whether the ray hits the boundaries. For
 example, again in 2D, this is the ray parameters $t_0$ and $t_1$. (If the ray is parallel to the
 plane those will be undefined.)
 
   ![Figure 3-3](../images/fig-2-3-03.jpg)
 
+</div>
+
+<div class='together'>
 In 3D, those boundaries are planes. The equations for the planes are $x = x_0$, and $x = x_1$. Where
 does the ray hit that plane? Recall that the ray can be thought of as just a function that given a
 $t$ returns a location $p(t)$:
 
   $$ p(t) = A + t \cdot B $$
+</div>
 
+<div class='together'>
 That equation applies to all three of the x/y/z coordinates. For example $x(t) = A_x + t \cdot B_x$.
 This ray hits the plane $x = x_0$ at the $t$ that satisfies this equation:
 
   $$ x_0 = A_x + t_0 \cdot B_x $$
+</div>
 
+<div class='together'>
 Thus $t$ at that hitpoint is:
 
   $$ t_0 = \frac{x_0 - A_x}{B_x} $$
+</div>
 
+<div class='together'>
 We get the similar expression for $x_1$:
 
   $$ t_1 = \frac{x_1 - A_x}{B_x} $$
+</div>
 
+<div class='together'>
 The key observation to turn that 1D math into a hit test is that for a hit, the $t$-intervals need
 to overlap. For example, in 2D the green and blue overlapping only happens if there is a hit:
 
   ![Figure 3-4](../images/fig-2-3-04.jpg)
 
+</div>
+
+<div class='together'>
 What “do the t intervals in the slabs overlap?” would like in code is something like:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -413,7 +450,9 @@ slab method:
     compute (tz0, tz1)
     return overlap?( (tx0, tx1), (ty0, ty1), (tz0, tz1))
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 There are some caveats that make this less pretty than it first appears. First, suppose the ray is
 travelling in the negative $x$ direction. The interval $(t_{x0}, t_{x1})$ as computed above might be
 reversed, _e.g._ something like $(7, 3)$. Second, the divide in there could give us infinities. And
@@ -426,7 +465,9 @@ First let’s look at computing the intervals:
 
   $$ t_{x0} = \frac{x_0 - A_x}{B_x} $$
   $$ t_{x1} = \frac{x_1 - A_x}{B_x} $$
+</div>
 
+<div class='together'>
 One troublesome thing is that perfectly valid rays will have $B_x = 0$, causing division by zero.
 Some of those rays are inside the slab, and some are not. Also, the zero will have a ± sign under
 IEEE floating point. The good news for $B_x = 0$ is that $t_{x0}$ and $t_{x1}$ will both be +∞ or
@@ -434,11 +475,13 @@ both be -∞ if not between $x_0$ and $x_1$. So, using min and max should get us
 
   $$ t_{x0} = min(\frac{x_0 - A_x}{B_x}, \frac{x_1 - A_x}{B_x}) $$
   $$ t_{x1} = max(\frac{x_0 - A_x}{B_x}, \frac{x_1 - A_x}{B_x}) $$
+</div>
 
 The remaining troublesome case if we do that is if $B_x = 0$ and either $x_0 - A_x = 0$ or $x_1-A_x
 = 0$ so we get a `NaN`. In that case we can probably accept either hit or no hit answer, but we’ll
 revisit that later.
 
+<div class='together'>
 Now, let’s look at that overlap function. Suppose we can assume the intervals are not reversed (so
 the first value is less than the second value in the interval) and we want to return true in that
 case. The boolean overlap that also computes the overlap interval $(f, F)$ of intervals $(d, D)$ and
@@ -450,7 +493,9 @@ $(e, E)$ would be:
         F = min(D, E)
         return (f < F)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 If there are any `NaN`s running around there, the compare will return false so we need to be sure
 our bounding boxes have a little padding if we care about grazing cases (and we probably should
 because in a ray tracer all cases come up eventually). With all three dimensions in a loop and
@@ -486,7 +531,9 @@ passing in the interval $t_{min}$, $t_{max}$ we get:
             vec3 _max;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Note that the built-in `fmax()` is replaced by `ffmax()` which is quite a bit faster because it
 doesn’t worry about `NaN`s and other exceptions. In reviewing this intersection method, Andrew
 Kensler at Pixar tried some experiments and has proposed this version of the code which works
@@ -508,7 +555,9 @@ extremely well on many compilers, and I have adopted it as my go-to method:
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 We now need to add a function to compute bounding boxes to all of the hitables. Then we will make a
 hierarchy of boxes over all the primitives and the individual primitives, like spheres, will live at
 the leaves. That function returns a bool because not all primitives have bounding boxes (_e.g._,
@@ -523,7 +572,9 @@ frame and the bounding box will bound the object moving through that interval.
             virtual bool bounding_box(float t0, float t1, aabb& box) const = 0;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 For a sphere, that `bounding_box` function is easy:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -533,7 +584,9 @@ For a sphere, that `bounding_box` function is easy:
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 For `moving sphere`, we can take the box of the sphere at $t_0$, and the box of the sphere at $t_1$,
 and compute the box of those two boxes:
 
@@ -547,7 +600,9 @@ and compute the box of those two boxes:
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 For lists you can store the bounding box at construction, or compute it on the fly. I like doing it
 the fly because it is only usually called at BVH construction.
 
@@ -570,7 +625,9 @@ the fly because it is only usually called at BVH construction.
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 This requires the `surrounding_box` function for `aabb` which computes the bounding box of two
 boxes:
 
@@ -585,7 +642,9 @@ boxes:
         return aabb(small,big);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 A BVH is also going to be a `hitable` -- just like lists of `hitable`s. It’s really a container, but
 it can respond to the query “does this ray hit you?”. One design question is whether we have two
 classes, one for the tree, and one for the nodes in the tree; or do we have just one class and have
@@ -610,10 +669,12 @@ a class:
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 Note that the children pointers are to generic hitables. They can be other `bvh_nodes`, or
 `spheres`, or any other `hitable`.
 
+<div class='together'>
 The `hit` function is pretty straightforward: check whether the box for the node is hit, and if so,
 check the children and sort out any details:
 
@@ -644,7 +705,9 @@ check the children and sort out any details:
         else return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 The most complicated part of any efficiency structure, including the BVH, is building it. We do this
 in the constructor. A cool thing about BVHs is that as long as the list of objects in a `bvh_node`
 gets divided into two sub-lists, the hit function will work. It will work best if the division is
@@ -656,11 +719,14 @@ list along one axis. I’ll go for simplicity:
 2. sort the primitives using library qsort
 3. put half in each subtree
 
+</div>
+
 I used the old-school C `qsort` rather than the C++ sort because I need a different compare operator
 depending on axis, and `qsort` takes a compare function rather than using the less-than operator. I
 pass in a pointer to pointer -- this is just C for “array of pointers” because a pointer in C can
 also just be a pointer to the first element of an array.
 
+<div class='together'>
 When the list coming in is two elements, I put one in each subtree and end the recursion. The
 traverse algorithm should be smooth and not have to check for null pointers, so if I just have one
 element I duplicate it in each subtree. Checking explicitly for three elements and just following
@@ -696,6 +762,7 @@ This yields:
         box = surrounding_box(box_left, box_right);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 The check for whether there is a bounding box at all is in case you sent in something like an
 infinite plane that doesn’t have a bounding box. We don’t have any of those primitives, so it
@@ -749,6 +816,7 @@ being able to make any color a texture is great.
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+<div class='together'>
 Now we can make textured materials by replacing the vec3 color with a texture pointer:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -765,15 +833,23 @@ Now we can make textured materials by replacing the vec3 color with a texture po
             texture *albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 where you used to have
 
-`new lambertian(vec3(0.5, 0.5, 0.5)))`
- 
-now you should replace the vec3(...) with `new constant_texture(vec3(...))`
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    new lambertian(vec3(0.5, 0.5, 0.5)))
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`new lambertian(new constant_texture(vec3(0.5, 0.5, 0.5))))`
+now you should replace the `vec3(...)` with `new constant_texture(vec3(...))`
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    new lambertian(new constant_texture(vec3(0.5, 0.5, 0.5))))
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
+
+<div class='together'>
 We can create a checker texture by noting that the sign of sine and cosine just alternates in a
 regular way and if we multiply trig functions in all three dimensions, the sign of that product
 forms a 3D checker pattern.
@@ -794,10 +870,12 @@ forms a 3D checker pattern.
             texture *even;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 Those checker odd/even pointers can be to a constant texture or to some other procedural texture.
 This is in the spirit of shader networks introduced by Pat Hanrahan back in the 1980s.
 
+<div class='together'>
 If we add this to our random_scene() function’s base sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -812,6 +890,9 @@ We get:
 
   ![Image 4-1](../images/img-2-4-01.jpg)
 
+</div>
+
+<div class='together'>
 If we add a new scene:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -844,11 +925,14 @@ We get:
 
   ![Image 4-2](../images/img-2-4-02.jpg)
 
+</div>
+
 
 
 Perlin Noise
 ====================================================================================================
 
+<div class='together'>
 To get cool looking solid textures most people use some form of Perlin noise. These are named after
 their inventor Ken Perlin. Perlin texture doesn’t return white noise like this:
 
@@ -858,16 +942,22 @@ Instead it returns something similar to blurred white noise:
 
   ![Image 5-2](../images/img-2-5-02.jpg)
 
+</div>
+
 A key part of Perlin noise is that it is repeatable: it takes a 3D point as input and always returns
 the same randomish number. Nearby points return similar numbers. Another important part of Perlin
 noise is that it be simple and fast, so it’s usually done as a hack. I’ll build that hack up
 incrementally based on Andrew Kensler’s description.
 
+<div class='together'>
 We could just tile all of space with a 3D array of random numbers and use them in blocks. You get
 something blocky where the repeating is clear:
 
   ![Image 5-3](../images/img-2-5-03.jpg)
 
+</div>
+
+<div class='together'>
 Let’s just use some sort of hashing to scramble this, instead of tiling. This has a bit of support
 code to make it all happen:
 
@@ -919,7 +1009,9 @@ code to make it all happen:
     int *perlin::perm_y = perlin_generate_perm();
     int *perlin::perm_z = perlin_generate_perm();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Now if we create an actual texture that takes these floats between 0 and 1 and creates grey
 colors:
 
@@ -933,7 +1025,9 @@ colors:
             perlin noise;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And we can use that one some spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -945,7 +1039,9 @@ And we can use that one some spheres:
         return new hitable_list(list, 2);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 With the same camera as before:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -956,11 +1052,16 @@ With the same camera as before:
     camera cam(lookfrom, lookat, vec3(0,1,0), 20, float(nx)/float(ny),
                aperture, dist_to_focus, 0.0, 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Add the hashing does scramble as hoped:
 
   ![Image 5-4](../images/img-2-5-04.jpg)
 
+</div>
+
+<div class='together'>
 To make it smooth, we can linearly interpolate:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1001,11 +1102,16 @@ To make it smooth, we can linearly interpolate:
             static int *perm_z;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And we get:
 
   ![Image 5-5](../images/img-2-5-05.jpg)
 
+</div>
+
+<div class='together'>
 Better, but there are obvious grid features in there. Some of it is Mach bands, a known perceptual
 artifact of linear interpolation of color. A standard trick is to use a hermite cubic to round off
 the interpolation:
@@ -1027,11 +1133,16 @@ the interpolation:
                 int k = floor(p.z());
                 ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 This gives a smoother looking image:
 
   ![Image 5-6](../images/img-2-5-06.jpg)
 
+</div>
+
+<div class='together'>
 It is also a bit low frequency. We can scale the input point to make it vary more quickly:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1051,6 +1162,9 @@ which gives:
 
   ![Image 5-7](../images/img-2-5-07.jpg)
 
+</div>
+
+<div class='together'>
 This is still a bit grid blocky looking, probably because the min and max of the pattern always
 lands exactly on the integer x/y/z. Ken Perlin’s very clever trick was to instead put random unit
 vectors (instead of just floats) on the lattice points, and use a dot product to move the min and
@@ -1062,7 +1176,9 @@ max off the lattice. So, first we need to change the random floats to random vec
     int *perlin::perm_y = perlin_generate_perm();
     int *perlin::perm_z = perlin_generate_perm();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 These vectors are any reasonable set of irregular directions, and I won't bother to make them
 exactly uniform:
 
@@ -1078,7 +1194,9 @@ exactly uniform:
         return p;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 The Perlin class is now:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1108,7 +1226,9 @@ The Perlin class is now:
             static int *perm_z;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And the interpolation becomes a bit more complicated:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1128,11 +1248,16 @@ And the interpolation becomes a bit more complicated:
         return accum;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 This finally gives something more reasonable looking:
 
   ![Image 5-8](../images/img-2-5-08.jpg)
 
+</div>
+
+<div class='together'>
 Very often, a composite noise that has multiple summed frequencies is used. This is usually called
 turbulence and is a sum of repeated calls to noise:
 
@@ -1149,13 +1274,18 @@ turbulence and is a sum of repeated calls to noise:
         return fabs(accum);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
-Here fabs() is the math.h absolute value function.
+Here `fabs()` is the `math.h` absolute value function.
 
+<div class='together'>
 Used directly, turbulence gives a sort of camouflage netting appearance:
 
   ![Image 5-9](../images/img-2-5-09.jpg)
 
+</div>
+
+<div class='together'>
 However, usually turbulence is used indirectly. For example, the “hello world” of procedural solid
 textures is a simple marble-like texture. The basic idea is to make color proportional to something
 like a sine function, and use turbulence to adjust the phase (so it shifts $x$ in $sin( x )$) which
@@ -1181,6 +1311,8 @@ Which yields:
 
   ![Image 5-10](../images/img-2-5-10.jpg)
 
+</div>
+
 
 
 Image Texture Mapping
@@ -1189,6 +1321,7 @@ Image Texture Mapping
 We used the hitpoint p before to index a procedure solid texture like marble. We can also read in an
 image and use a 2D $(u,v)$ texture coordinate to index into the image.
 
+<div class='together'>
 A direct way to use scaled $(u,v)$ in an image is to round the u and v to integers, and use that as
 $(i,j)$ pixels. This is awkward, because we don’t want to have to change the code when we change
 image resolution. So instead, one of the the most universal unofficial standards in graphics is to
@@ -1198,7 +1331,9 @@ position is:
 
   $$ u = i/(nx-1) $$
   $$ v = j/(nx-1) $$
+</div>
 
+<div class='together'>
 This is just a fractional position. For a hitable, we need to also return a u and v in the hit
 record. For spheres, this is usually based on some form of longitude and latitude, _i.e._, spherical
 coordinates. So if we have a $(\theta,\phi)$ in spherical coordinates we just need to scale $\theta$
@@ -1207,34 +1342,44 @@ the axis through the poles, the normalization to $[0,1]$ would be:
 
   $$ u = \phi / (2\pi) $$
   $$ v = \theta / \pi $$
+</div>
 
+<div class='together'>
 To compute $\theta$ and $\phi$, for a given hitpoint, the formula for spherical coordinates of a
 unit radius sphere on the origin is:
 
   $$ x = cos(\phi) cos(\theta) $$
   $$ y = sin(\phi) cos(\theta) $$
   $$ z = sin(\theta) $$
+</div>
 
+<div class='together'>
 We need to invert that. Because of the lovely `math.h` function `atan2()` which takes any number
 proportional to sine and cosine and returns the angle, we can pass in $x$ and $y$ (the $cos(\theta)$
 cancel):
 
   $$ \phi = atan2(y, x) $$
+</div>
 
-The $atan2$ returns in the range $-\pi$ to $\pi$ so we need to take a little care there. 
+<div class='together'>
+The $atan2$ returns in the range $-\pi$ to $\pi$ so we need to take a little care there.
 The $\theta$ is more straightforward:
 
   $$ \theta = asin(z) $$
 
 which returns numbers in the range $-\pi/2$ to $\pi/2$.
+</div>
 
+<div class='together'>
 So for a sphere, the $(u,v)$ coord computation is accomplished by a utility function that expects
 things on the unit sphere centered at the origin. The call inside sphere::hit should be:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 The utility function is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1245,6 +1390,7 @@ The utility function is:
         v = (theta + M_PI/2) / M_PI;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 Now we also need to create a texture class that holds an image. I am going to use my favorite image
 utility `stb_image`. It reads in an image into a big array of unsigned char. These are just packed
@@ -1275,6 +1421,7 @@ RGBs that each range 0..255 for black to fully-on.
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+<div class='together'>
 The representation of a packed array in that order is pretty standard. Thankfully, the `stb_image`
 package makes that super simple -- just include the header in `main.h` with a `#define`:
 
@@ -1282,9 +1429,11 @@ package makes that super simple -- just include the header in `main.h` with a `#
     #define STB_IMAGE_IMPLEMENTATION
     #include "stb_image.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
-  ![Image 6-1](../images/earthmap.jpg)
+<div class='together'>
 
+  ![Image 6-1: earthmap.jpg](../images/earthmap.jpg)
 
 To read an image from a file earthmap.jpg (I just grabbed a random earth map from the web -- any
 standard projection will do for our purposes), and then assign it to a diffuse material, the code
@@ -1295,20 +1444,25 @@ is:
     unsigned char *tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
     material *mat = new lambertian(new image_texture(tex_data, nx, ny));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 We start to see some of the power of all colors being textures -- we can assign any kind of texture
 to the lambertian material, and lambertian doesn’t need to be aware of it.
 
+<div class='together'>
 To test this, assign it to a sphere, and then temporarily cripple the color() function in main to
 just return attenuation. You should get something like:
 
   ![Image 6-2](../images/img-2-6-02.jpg)
+
+</div>
 
 
 
 Rectangles and Lights
 ====================================================================================================
 
+<div class='together'>
 First, let’s make a light emitting material. We need to add an emitted function (we could also add
 it to hit_record instead -- that’s a matter of design taste). Like the background, it just tells the
 ray what color it is and performs no reflection. It’s very simple:
@@ -1325,7 +1479,9 @@ ray what color it is and performs no reflection. It’s very simple:
             texture *emit;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 So that I don’t have to make all the non-emitting materials implement `emitted()`, I have the base
 class return black:
 
@@ -1339,7 +1495,9 @@ class return black:
             }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Next, let’s make the background black in our color function, and pay attention to emitted:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1358,29 +1516,38 @@ Next, let’s make the background black in our color function, and pay attention
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 Now, let’s make some rectangles. Rectangles are often convenient for modelling man-made
 environments. I’m a fan of doing axis-aligned rectangles because they are easy. (We’ll get to
 instancing so we can rotate them later.)
 
+<div class='together'>
 First, here is a rectangle in an xy plane. Such a plane is defined by its z value. For example, $z =
 k$. An axis-aligned rectangle is defined by lines $x=x_0$ , $x=x_1$ , $y=y_0$ , $y=y_1$.
 
   ![Figure 7-1](../images/fig-2-7-01.jpg)
 
+</div>
+
+<div class='together'>
 To determine whether a ray hits such a rectangle, we first determine where the ray hits the plane.
 Recall that a ray $p(t) = a + t \cdot b$ has its z component defined by $z(t) = a_z + t \cdot b_z$.
 Rearranging those terms we can solve for what the t is where $z=k$.
 
   $$ t = (k-a_z) / b_z $$
+</div>
 
+<div class='together'>
 Once we have t, we can plug that into the equations for x and y:
 
   $$ x = a_x + t*b_x $$
   $$ y = a_y + t*b_y $$
+</div>
 
 It is a hit if $x_0 < x < x_1$ and $y_0 < y < y_1$.
 
+<div class='together'>
 The actual `xy_rect` class is thus:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1398,7 +1565,9 @@ The actual `xy_rect` class is thus:
             float x0, x1, y0, y1, k;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And the hit function is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1419,7 +1588,9 @@ And the hit function is:
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 If we set up a rectangle as a light:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1435,19 +1606,27 @@ If we set up a rectangle as a light:
         return new hitable_list(list,4);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 We get:
 
   ![Image 7-1](../images/img-2-7-01.jpg)
 
+</div>
+
 Note that the light is brighter than $(1,1,1)$. This allows it to be bright enough to light things.
 
+<div class='together'>
 Fool around with making some spheres lights too.
 
   ![Image 7-2](../images/img-2-7-02.jpg)
 
+</div>
+
 Now let’s add the other two axes and the famous Cornell Box.
 
+<div class='together'>
 This is yz and xz.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1479,7 +1658,9 @@ This is yz and xz.
             float y0, y1, z0, z1, k;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 With unsurprising hit functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1517,7 +1698,9 @@ With unsurprising hit functions:
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Let’s make the 5 walls and the light of the box:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1538,7 +1721,9 @@ Let’s make the 5 walls and the light of the box:
         return new hitable_list(list,i);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And the view info:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1551,11 +1736,16 @@ And the view info:
     camera cam(lookfrom, lookat, vec3(0,1,0), vfov, float(nx)/float(ny),
         aperture, dist_to_focus, 0.0, 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 We get:
 
   ![Image 7-3](../images/img-2-7-03.jpg)
 
+</div>
+
+<div class='together'>
 This is very noisy because the light is small. But why are the other walls missing? They are facing
 the wrong way. We need outward facing normals. Let’s make a hitable that does nothing but hold
 another hitable, but reverses the normals:
@@ -1583,7 +1773,9 @@ another hitable, but reverses the normals:
             hitable *ptr;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 This makes Cornell:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1605,10 +1797,14 @@ This makes Cornell:
         return new hitable_list(list,i);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And voila:
 
   ![Image 7-4](../images/img-2-7-04.jpg)
+
+</div>
 
 
 
@@ -1653,6 +1849,7 @@ make an axis-aligned block primitive that holds 6 rectangles:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+<div class='together'>
 Now we can add two blocks (but not rotated)
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1660,10 +1857,16 @@ Now we can add two blocks (but not rotated)
     list[i++] = new box(vec3(265, 0, 295), vec3(430, 330, 460), white);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+</div>
+
+<div class='together'>
 This gives:
 
   ![Image 8-1](../images/img-2-8-01.jpg)
 
+</div>
+
+<div class='together'>
 Now that we have boxes, we need to rotate them a bit to have them match the _real_ Cornell box. In
 ray tracing, this is usually done with an _instance_. An instance is a geometric primitive that has
 been moved or rotated somehow. This is especially easy in ray tracing because we don’t move
@@ -1674,6 +1877,9 @@ subtract 2 off the x-component of the ray origin.
 
   ![Figure 8-1](../images/fig-2-8-01.jpg)
 
+</div>
+
+<div class='together'>
 Whether you think of this as a move or a change of coordinates is up to you. The code for this, to
 move any underlying hitable is a _translate_ instance.
 
@@ -1708,7 +1914,9 @@ move any underlying hitable is a _translate_ instance.
             return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Rotation isn’t quite as easy to understand or generate the formulas for. A common graphics tactic is
 to apply all rotations about the x, y, and z axes. These rotations are in some sense axis-aligned.
 First, let’s rotate by theta about the z-axis. That will be changing only x and y, and in ways that
@@ -1716,33 +1924,40 @@ don’t depend on z.
 
   ![Figure 8-2](../images/fig-2-8-02.jpg)
 
+</div>
+
+<div class='together'>
 This involves some basic trigonometry that uses formulas that I will not cover here. That gives you
 the correct impression it’s a little involved, but it is straightforward, and you can find it in any
 graphics text and in many lecture notes. The result for rotating counter-clockwise about z is:
 
-  $$ x\prime = cos(\theta) \cdot x - sin(\theta) \cdot y $$
-  $$ y\prime = sin(\theta) \cdot x + cos(\theta) \cdot y $$
+  $$ x' = cos(\theta) \cdot x - sin(\theta) \cdot y $$
+  $$ y' = sin(\theta) \cdot x + cos(\theta) \cdot y $$
+</div>
 
-The great thing is that it works for any $\theta$ and doesn’t need any cases for quadrants or 
-anything like that. The inverse transform is the opposite geometric operation: rotate by $-\theta$. 
-Here, recall that $cos(\theta) = cos(-\theta)$ and $sin(-\theta) = -sin(\theta)$, so the formulas 
+The great thing is that it works for any $\theta$ and doesn’t need any cases for quadrants or
+anything like that. The inverse transform is the opposite geometric operation: rotate by $-\theta$.
+Here, recall that $cos(\theta) = cos(-\theta)$ and $sin(-\theta) = -sin(\theta)$, so the formulas
 are very simple.
 
+<div class='together'>
 Similarly, for rotating about y (as we want to do for the blocks in the box) the formulas are:
 
-  $$ x\prime =  cos(\theta) \cdot x + sin(\theta) \cdot z $$
-  $$ z\prime = -sin(\theta) \cdot x + cos(\theta) \cdot z $$
+  $$ x' =  cos(\theta) \cdot x + sin(\theta) \cdot z $$
+  $$ z' = -sin(\theta) \cdot x + cos(\theta) \cdot z $$
 
 And about the x-axis:
 
-  $$ y\prime = cos(\theta) \cdot y - sin(\theta) \cdot z $$
-  $$ z\prime = sin(\theta) \cdot y + cos(\theta) \cdot z $$
+  $$ y' = cos(\theta) \cdot y - sin(\theta) \cdot z $$
+  $$ z' = sin(\theta) \cdot y + cos(\theta) \cdot z $$
+</div>
 
 Unlike the situation with translations, the surface normal vector also changes, so we need to
 transform directions too if we get a hit. Fortunately for rotations, the same formulas apply. If you
 add scales, things get more complicated. See the web page https://in1weekend.blogspot.com/ for links
 to that.
 
+<div class='together'>
 For a y-rotation class we have:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1761,7 +1976,9 @@ For a y-rotation class we have:
             aabb bbox;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 With constructor:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1794,7 +2011,9 @@ With constructor:
         bbox = aabb(min, max);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And the hit function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1821,7 +2040,9 @@ And the hit function:
             return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And the changes to Cornell is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1834,10 +2055,14 @@ And the changes to Cornell is:
                     vec3(265,,0,295)
                 );
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Which yields:
 
   ![Image 8-2](../images/img-2-8-02.jpg)
+
+</div>
 
 
 
@@ -1859,14 +2084,17 @@ through.
 
   ![Figure 9-1](../images/fig-2-9-01.jpg)
 
+<div class='together'>
 As the ray passes through the volume, it may scatter at any point. The denser the volume, the more
 likely that is. The probability that the ray scatters in any small distance $\delta L$ is:
 
   $$ probability = C \cdot \delta L $$
+</div>
 
-where $C$ is proportional to the optical density of the volume. If you go through all the 
-differential equations, for a random number you get a distance where the scattering occurs. If 
-that distance is outside the volume, then there is no “hit”. For a constant volume we just need 
+<div class='together'>
+where $C$ is proportional to the optical density of the volume. If you go through all the
+differential equations, for a random number you get a distance where the scattering occurs. If
+that distance is outside the volume, then there is no “hit”. For a constant volume we just need
 the density $C$ and the boundary. I’ll use another hitable for the boundary. The resulting class is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1887,7 +2115,9 @@ the density $C$ and the boundary. I’ll use another hitable for the boundary. T
             material *phase_function;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 The scattering function of isotropic picks a uniform random direction:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1907,7 +2137,9 @@ The scattering function of isotropic picks a uniform random direction:
             texture *albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And the hit function is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1956,11 +2188,13 @@ And the hit function is:
         return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 The reason we have to be so careful about the logic around the boundary is we need to make sure this
 works for ray origins inside the volume. In clouds, things bounce around a lot so that is a common
 case.
 
+<div class='together'>
 If we replace the two blocks with smoke and fog (dark and light particles) and make the light bigger
 (and dimmer so it doesn’t blow out the scene) for faster convergence:
 
@@ -1995,10 +2229,14 @@ If we replace the two blocks with smoke and fog (dark and light particles) and m
         return new hitable_list(list,i);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 We get:
 
   ![Image 9-1](../images/img-2-9-01.jpg)
+
+</div>
 
 
 
@@ -2067,9 +2305,12 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+<div class='together'>
 Running it with 10,000 rays per pixel yields:
 
   ![Image 10-1](../images/img-2-10-01.jpg)
+
+</div>
 
 Now go off and make a really cool image of your own! See https://in1weekend.blogspot.com/ for
 pointers to further reading and features, and feel free to email questions, comments, and cool

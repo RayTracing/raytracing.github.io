@@ -13,10 +13,11 @@
 Overview
 ====================================================================================================
 
-<div class='warning'>
-  <p class='title'>WARNING<br>Content Under Development</h1>
-  <p class='text'>See <a href='https://github.com/RayTracing/raytracing.github.io/releases/'>release page</a> for latest official PDF version.
-</div>
+
+!!! ERROR: Content Under Development
+    See [the official release page](https://github.com/RayTracing/raytracing.github.io/releases/)
+    for latest official PDF version.
+
 
 I’ve taught many graphics classes over the years. Often I do them in ray tracing, because you are
 forced to write all the code but you can still get cool images with no API. I decided to adapt my
@@ -68,6 +69,7 @@ start with a plain text ppm file. Here’s a nice description from Wikipedia:
 
   ![Image 2-1: PPM Example](../images/img-1-02-1.jpg)
 
+<div class='together'>
 Let’s make some C++ code to output such a thing:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -90,6 +92,7 @@ Let’s make some C++ code to output such a thing:
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 There are some things to note in that code:
 
@@ -105,11 +108,15 @@ There are some things to note in that code:
      fully on at the top. Red and green together make yellow so we should expect the upper right
      corner to be yellow.
 
+<div class='together'>
 Opening the output file (in ToyViewer on my mac, but try it in your favorite viewer and google “ppm
 viewer” if your viewer doesn’t support it) shows:
 
   ![Image 2-2](../images/img-1-02-2.jpg)
 
+</div>
+
+<div class='together'>
 Hooray! This is the graphics “hello world”. If your image doesn’t look like that, open the output
 file in a text editor and see what it looks like. It should start something like this:
 
@@ -134,6 +141,7 @@ file in a text editor and see what it looks like. It should start something like
     14 253 51
     15 253 51
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 If it doesn’t, then you probably just have some newlines or something similar that is confusing the
 image reader.
@@ -152,6 +160,7 @@ class `vec3` for colors, locations, directions, offsets, whatever. Some people d
 because it doesn’t prevent you from doing something silly, like adding a color to a location. They
 have a good point, but we’re going to always take the “less code” route when not obviously wrong.
 
+<div class='together'>
 Here’s the top part of my vec3 class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -189,6 +198,7 @@ Here’s the top part of my vec3 class:
         float e[3];
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 I use floats here, but in some ray tracers I have used doubles. Neither is correct -- follow your
 own tastes. Everything is in the header file, and later on in the file are lots of vector
@@ -297,6 +307,7 @@ operations:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+<div class='together'>
 Now we can change our main to use this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -318,6 +329,7 @@ Now we can change our main to use this:
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 
 
@@ -334,6 +346,7 @@ here:
 
   ![Figure 4-1](../images/fig-1-04-1.jpg)
 
+<div class='together'>
 The function $p(t)$ in more verbose code form I call “point_at_parameter(t)”:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -356,6 +369,7 @@ The function $p(t)$ in more verbose code form I call “point_at_parameter(t)”
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 Now we are ready to turn the corner and make a ray tracer. At the core of a ray tracer is to send
 rays through pixels and compute what color is seen in the direction of those rays. This is of the
@@ -374,6 +388,7 @@ length vector because I think not doing that makes for simpler and slightly fast
 
   ![Figure 4-2](../images/fig-1-04-2.jpg)
 
+<div class='together'>
 Below in code, the ray $r$ goes to approximately the pixel centers (I won’t worry about exactness
 for now because we’ll add antialiasing later):
 
@@ -410,7 +425,9 @@ for now because we’ll add antialiasing later):
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 The `color(ray)` function linearly blends white and blue depending on the up/downess of the $y$
 coordinate. I first made it a unit vector so $-1.0 < y < 1.0$. I then did a standard graphics trick
 of scaling that to $0.0 < t < 1.0$. When $t = 1.0$ I want blue. When $t = 0.0$ I want white. In
@@ -423,11 +440,14 @@ with $t$ going from zero to one. In our case this produces:
 
   ![Image 4-1](../images/img-1-04-1.jpg)
 
+</div>
+
 
 
 Adding a Sphere
 ====================================================================================================
 
+<div class='together'>
 Let’s add a single object to our ray tracer. People often use spheres in ray tracers because
 calculating whether a ray hits a sphere is pretty straightforward. Recall that the equation for a
 sphere centered at the origin of radius $R$ is $x^2 + y^2 + z^2 = R^2$. The way you can read that
@@ -435,20 +455,26 @@ equation is “for any $(x, y, z)$, if $x^2 + y^2 + z^2 = R^2$ then $(x,y,z)$ is
 otherwise it is not”. It gets uglier if the sphere center is at $(C_x, C_y, C_z)$:
 
   $$ (x-C_x)^2 + (y-C_y)^2 + (z-C_z)^2 = R^2 $$
+</div>
 
+<div class='together'>
 In graphics, you almost always want your formulas to be in terms of vectors so all the x/y/z stuff
 is under the hood in the `vec3` class. You might note that the vector from center
 $C = (C_x,C_y,C_z)$ to point $P = (x,y,z)$ is $(p - C)$, and therefore
 
   $$ dot((p - C),(p - C)) = (x-C_x)^2 + (y-C_y)^2 + (z-C_z)^2 $$
+</div>
 
+<div class='together'>
 So the equation of the sphere in vector form is:
 
   $$ dot((p - C),(p - C)) = R^2 $$
+</div>
 
-We can read this as “any point p that satisfies this equation is on the sphere”. We want to know 
-if our ray $p(t) = A + t*B$ ever hits the sphere anywhere. If it does hit the sphere, there is 
-some $t$ for which $p(t)$ satisfies the sphere equation. So we are looking for any $t$ where this 
+<div class='together'>
+We can read this as “any point p that satisfies this equation is on the sphere”. We want to know
+if our ray $p(t) = A + t*B$ ever hits the sphere anywhere. If it does hit the sphere, there is
+some $t$ for which $p(t)$ satisfies the sphere equation. So we are looking for any $t$ where this
 is true:
 
   $$ dot((p(t) - C),(p(t) - C)) = R^2 $$
@@ -456,12 +482,16 @@ is true:
 or expanding the full form of the ray $p(t)$:
 
   $$ dot((A + t*B - C), (A + t*B - C)) = R^2 $$
+</div>
 
+<div class='together'>
 The rules of vector algebra are all that we would want here, and if we expand that equation and
 move all the terms to the left hand side we get:
 
   $$ t^2 \cdot dot(B,B) + 2t \cdot dot(B,A-C) + dot(A-C,A-C) - R^2 = 0 $$
+</div>
 
+<div class='together'>
 The vectors and $R$ in that equation are all constant and known. The unknown is $t$, and the
 equation is a quadratic, like you probably saw in your high school math class. You can solve for $t$
 and there is a square root part that is either positive (meaning two real solutions), negative
@@ -470,6 +500,9 @@ always relates very directly to the geometry. What we have is:
 
   ![Figure 5-1](../images/fig-1-05-1.jpg)
 
+</div>
+
+<div class='together'>
 If we take that math and hard-code it into our program, we can test it by coloring red any pixel
 that hits a small sphere we place at -1 on the z-axis:
 
@@ -491,10 +524,14 @@ that hits a small sphere we place at -1 on the z-axis:
         return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 What we get is this:
 
   ![Image 5-1](../images/img-1-05-1.jpg)
+
+</div>
 
 Now this lacks all sorts of things -- like shading and reflection rays and more than one object --
 but we are closer to halfway done than we are to our start! One thing to be aware of is that we
@@ -516,6 +553,7 @@ minus the center:
 
   ![Figure 6-1](../images/fig-1-06-1.jpg)
 
+<div class='together'>
 On the earth, this implies that the vector from the earth’s center to you points straight up. Let’s
 throw that into the code now, and shade it. We don’t have any lights or anything yet, so let’s just
 visualize the normals with a color map. A common trick used for visualizing normals (because it’s
@@ -550,10 +588,14 @@ normal, we need the hit point, not just whether we hit or not. Let’s assume th
         return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And that yields this picture:
 
   ![Image 6-1](../images/img-1-06-1.jpg)
+
+</div>
 
 Now, how about several spheres? While it is tempting to have an array of spheres, a very clean
 solution is the make an “abstract class” for anything a ray might hit and make both a sphere and a
@@ -562,6 +604,7 @@ quandary -- calling it an “object” would be good if not for “object orient
 is often used, with the weakness being maybe we will want volumes. “Hitable” emphasizes the member
 function that unites them. I don’t love any of these but I will go with “hitable”.
 
+<div class='together'>
 This `hitable` abstract class will have a hit function that takes in a ray. Most ray tracers have
 found it convenient to add a valid interval for hits $t_{min}$ to $t_{max}$, so the hit only
 “counts” if $t_{min} < t < t_{max}$. For the initial rays this is positive $t$, but as we will see,
@@ -592,7 +635,9 @@ we’ll want motion blur at some point, so I’ll add a time input variable. Her
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And here’s the sphere (note that I eliminated a bunch of redundant 2’s that cancel each other out):
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -639,6 +684,9 @@ And here’s the sphere (note that I eliminated a bunch of redundant 2’s that 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+</div>
+
+<div class='together'>
 And a list of objects:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -675,7 +723,9 @@ And a list of objects:
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And the new main:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -725,11 +775,15 @@ And the new main:
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 This yields a picture that is really just a visualization of where the spheres are along with their
 surface normal. This is often a great way to look at your model for flaws and characteristics.
 
   ![Image 6-2](../images/img-1-06-2.jpg)
+
+</div>
 
 
 
@@ -745,9 +799,10 @@ a bit so we can make a cooler camera later.
 
 One thing we need is a random number generator that returns real random numbers. We need a function
 that returns a canonical random number which by convention returns random real in the range
-$0 ≤ ran < 1$. The “less than” before the 1 is important as we will sometimes take advantage of 
+$0 ≤ ran < 1$. The “less than” before the 1 is important as we will sometimes take advantage of
 that.
 
+<div class='together'>
 A simple approach to this is to use the `rand()` function that can be found in `<cstdlib>`. This
 function returns a random integer in the range 0 and RANDMAX. Hence we can get a real random number
 as desired with the following code snippet:
@@ -763,7 +818,9 @@ as desired with the following code snippet:
     }
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 C++ did not traditionally have a standard random number generator, but newer versions of C++ have
 addressed this issue with the `<random>` header (if imperfectly according to some experts).
 If you want to use this, you can obtain a random number with the conditions we need as follows:
@@ -784,12 +841,17 @@ If you want to use this, you can obtain a random number with the conditions we n
       }
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 For a given pixel we have several samples within that pixel and send rays through each of the
 samples. The colors of these rays are then averaged:
 
   ![Figure 7-1](../images/fig-1-07-1.jpg)
 
+</div>
+
+<div class='together'>
 Putting that all together yields a camera class encapsulating our simple axis-aligned camera from
 before:
 
@@ -819,7 +881,9 @@ before:
     };
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Main is also changed:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -851,11 +915,15 @@ Main is also changed:
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Zooming into the image that is produced, the big change is in edge pixels that are part background
 and part foreground:
 
   ![Image 7-1](../images/img-1-07-1.jpg)
+
+</div>
 
 
 
@@ -869,6 +937,7 @@ are tightly bound (that could be useful for procedural objects where the geometr
 linked). We’ll go with separate -- which is usual in most renderers -- but do be aware of the
 limitation.
 
+<div class='together'>
 Diffuse objects that don’t emit light merely take on the color of their surroundings, but they
 modulate that with their own intrinsic color. Light that reflects off a diffuse surface has its
 direction randomized. So, if we send three rays into a crack between two diffuse surfaces they will
@@ -876,17 +945,23 @@ each have different random behavior:
 
   ![Figure 8-1](../images/fig-1-08-1.jpg)
 
+</div>
+
 They also might be absorbed rather than reflected. The darker the surface, the more likely
 absorption is. (That’s why it is dark!) Really any algorithm that randomizes direction will produce
 surfaces that look matte. One of the simplest ways to do this turns out to be exactly correct for
 ideal diffuse surfaces. (I used to do it as a lazy hack that approximates mathematically ideal
 Lambertian.)
 
+<div class='together'>
 Pick a random point s from the unit radius sphere that is tangent to the hitpoint, and send a ray
 from the hitpoint $p$ to the random point $s$. That sphere has center $(p + N)$:
 
   ![Figure 8-2](../images/fig-1-08-2.jpg)
 
+</div>
+
+<div class='together'>
 We also need a way to pick a random point in a unit radius sphere centered at the origin. We’ll use
 what is usually the easiest algorithm: a rejection method. First, we pick a random point in the unit
 cube where x, y, and z all range from -1 to +1. We reject this point and try again if the point is
@@ -901,7 +976,9 @@ outside the sphere. A do/while construct is perfect for that:
         return p;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Then update the `color()` function to use the new random direction generator:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -918,11 +995,16 @@ Then update the `color()` function to use the new random direction generator:
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 This gives us:
 
   ![Image 8-1](../images/img-1-08-1.jpg)
 
+</div>
+
+<div class='together'>
 Note the shadowing under the sphere. This picture is very dark, but our spheres only absorb half the
 energy on each bounce, so they are 50% reflectors. If you can’t see the shadow, don’t worry, we will
 fix that now. These spheres should look pretty light (in real life, a light grey). The reason for
@@ -940,11 +1022,16 @@ square-root:
     int ib = int(255.99*col[2]);
     std::cout << ir << " " << ig << " " << ib << "\n";
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 That yields light grey, as we desire:
 
   ![Image 8-2](../images/img-1-08-2.jpg)
 
+</div>
+
+<div class='together'>
 There’s also a subtle bug in there. Some of the reflected rays hit the object they are reflecting
 off of not at exactly $t=0$, but instead at $t=-0.0000001$ or $t=0.00000001$ or whatever floating
 point approximation the sphere intersector gives us. So we need to ignore hits very near zero:
@@ -954,6 +1041,7 @@ point approximation the sphere intersector gives us. So we need to ignore hits v
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This gets rid of the shadow acne problem. Yes it is really called that.
+</div>
 
 
 
@@ -969,6 +1057,7 @@ two things:
   1. Produce a scattered ray (or say it absorbed the incident ray).
   2. If scattered, say how much the ray should be attenuated.
 
+<div class='together'>
 This suggests the abstract class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -979,7 +1068,9 @@ This suggests the abstract class:
                 ray& scattered) const = 0;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 The `hit_record` is to avoid a bunch of arguments so we can stuff whatever info we want in there.
 You can use arguments instead; it’s a matter of taste. Hitables and materials need to know each
 other so there is some circularity of the references. In C++ you just need to alert the compiler
@@ -1008,6 +1099,7 @@ that the pointer is to a class, which the “class material” in the hitable cl
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 What we have set up here is that material will tell us how rays interact with the surface.
 `hit_record` is just a way to stuff a bunch of arguments into a struct so we can send them as a
@@ -1016,6 +1108,7 @@ group. When a ray hits a surface (a particular sphere for example), the material
 `main()` when we start. When the `color()` routine gets the `hit_record` it can call member
 functions of the material pointer to find out what ray, if any, is scattered.
 
+<div class='together'>
 To achieve this, we must have a reference to the material for our sphere class to returned
 within `hit_record`. See the lines below marked with **`/* NEW */`**.
 
@@ -1058,7 +1151,9 @@ within `hit_record`. See the lines below marked with **`/* NEW */`**.
         return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 For the Lambertian (diffuse) case we already have, it can either scatter always and attenuate by its
 reflectance $R$, or it can scatter with no attenuation but absorb the fraction $1-R$ of the rays. Or
 it could be a mixture of those strategies. For Lambertian materials we get this simple class:
@@ -1079,15 +1174,20 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
             vec3 albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 Note we could just as well only scatter with some probability $p$ and have attenuation be
 $albedo/p$. Your choice.
 
+<div class='together'>
 For smooth metals the ray won’t be randomly scattered. The key math is: how does a ray get
 reflected from a metal mirror? Vector math is our friend here:
 
   ![Figure 9-1](../images/fig-1-09-1.jpg)
 
+</div>
+
+<div class='together'>
 The reflected ray direction in red is just $(v + 2B)$. In our design, $N$ is a unit vector, but $v$
 may not be. The length of $B$ should be $dot(v,N)$. Because $v$ points in, we will need a minus
 sign, yielding:
@@ -1097,7 +1197,9 @@ sign, yielding:
         return v - 2*dot(v,n)*n;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 The metal material just reflects rays using that formula:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1115,7 +1217,9 @@ The metal material just reflects rays using that formula:
             vec3 albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 We need to modify the color function to use this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1138,7 +1242,9 @@ We need to modify the color function to use this:
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 You will also need to modify the sphere class to have a material pointer to it. And add some
 metal spheres:
 
@@ -1175,16 +1281,24 @@ metal spheres:
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Which gives:
 
   ![Image 9-1](../images/img-1-09-1.jpg)
 
+</div>
+
+<div class='together'>
 We can also randomize the reflected direction by using a small sphere and choosing a new endpoint
 for the ray:
 
   ![Figure 9-2](../images/fig-1-09-2.jpg)
 
+</div>
+
+<div class='together'>
 The bigger the sphere, the fuzzier the reflections will be. This suggests adding a fuzziness
 parameter that is just the radius of the sphere (so zero is no perturbation). The catch is that for
 big spheres or grazing rays, we may scatter below the surface. We can just have the surface
@@ -1210,9 +1324,14 @@ absorb those. We’ll put a maximum of 1 on the radius of the sphere which yield
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+</div>
+
+<div class='together'>
 We can try that out by adding fuzziness 0.3 and 1.0 to the metals:
 
   ![Image 9-2](../images/img-1-09-2.jpg)
+
+</div>
 
 
 
@@ -1223,16 +1342,20 @@ Clear materials such as water, glass, and diamonds are dielectrics. When a light
 splits into a reflected ray and a refracted (transmitted) ray. We’ll handle that by randomly
 choosing between reflection or refraction and only generating one scattered ray per interaction.
 
+<div class='together'>
 The hardest part to debug is the refracted ray. I usually first just have all the light refract if
 there is a refraction ray at all. For this project, I tried to put two glass balls in our scene, and
 I got this (I have not told you how to do this right or wrong yet, but soon!):
 
   ![Image 10-1](../images/img-1-10-1.jpg)
 
+</div>
+
 Is that right? Glass balls look odd in real life. But no, it isn’t right. The world should be
 flipped upside down and no weird black stuff. I just printed out the ray straight through the middle
 of the image and it was clearly wrong. That often does the job.
 
+<div class='together'>
 The refraction is described by Snell’s law:
 
   $$ n \cdot sin(theta) = n' \cdot sin(theta') $$
@@ -1242,6 +1365,9 @@ and the geometry is:
 
   ![Figure 10-1](../images/fig-1-10-1.jpg)
 
+</div>
+
+<div class='together'>
 One troublesome practical issue is that when the ray is in the material with the higher refractive
 index, there is no real solution to Snell’s law and thus there is no refraction possible. Here all
 the light is reflected, and because in practice that is usually inside solid objects, it is called
@@ -1261,7 +1387,9 @@ when you are submerged. The code for refraction is thus a bit more complicated t
             return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And the dielectric material that always refracts when possible is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1296,12 +1424,14 @@ And the dielectric material that always refracts when possible is:
             float ref_idx;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 Attenuation is always 1 -- the glass surface absorbs nothing. The `attenuation = vec3(1.0, 1.0,
 0.0)` above will also kill the blue channel which is the type of color bug that can be hard to find
 -- it will give a color shift only. Try it the way it is and then change it to
 `attenuation = vec3(1.0, 1.0, 1.0)` to see the difference.
 
+<div class='together'>
 If we try that out with these parameters:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1315,12 +1445,15 @@ We get:
 
   ![Image 10-2](../images/img-1-10-2.jpg)
 
+</div>
+
 (The reader Becker has pointed out that when there is a reflection ray the function returns `false`
 so there are no reflections. He is right, and that is why there are none in the image above. I
 am leaving this in rather than correcting this because it is a very interesting example of a major
 bug that still leaves a reasonably plausible image. These sleeper bugs are the hardest bugs to
 find because we humans are not designed to find fault with what we see.)
 
+<div class='together'>
 Now real glass has reflectivity that varies with angle -- look at a window at a steep angle and it
 becomes a mirror. There is a big ugly equation for that, but almost everybody uses a simple and
 surprisingly simple polynomial approximation by Christophe Schlick:
@@ -1332,7 +1465,9 @@ surprisingly simple polynomial approximation by Christophe Schlick:
         return r0 + (1-r0)*pow((1 - cosine),5);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 This yields our full glass material:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1380,7 +1515,9 @@ This yields our full glass material:
             float ref_idx;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 An interesting and easy trick with dielectric spheres is to note that if you use a negative radius,
 the geometry is unaffected but the surface normal points inward, so it can be used as a bubble
 to make a hollow glass sphere:
@@ -1392,10 +1529,14 @@ to make a hollow glass sphere:
     list[3] = new sphere(vec3(-1,0,-1), 0.5, new dielectric(1.5));
     list[4] = new sphere(vec3(-1,0,-1), -0.45, new dielectric(1.5));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 This gives:
 
   ![Image 10-3](../images/img-1-10-3.jpg)
+
+</div>
 
 
 
@@ -1408,11 +1549,15 @@ image is not square, the fov is different horizontally and vertically. I always 
 also usually specify it in degrees and change to radians inside a constructor -- a matter of
 personal taste.
 
+<div class='together'>
 I first keep the rays coming from the origin and heading to the $z = -1$ plane. We could make it the
 $z = -2$ plane, or whatever, as long as we made $h$ a ratio to that distance. Here is our setup:
 
   ![Figure 11-1](../images/fig-1-11-1.jpg)
 
+</div>
+
+<div class='together'>
 This implies $h = tan(\theta/2)$. Our camera now becomes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1444,7 +1589,9 @@ This implies $h = tan(\theta/2)$. Our camera now becomes:
     };
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 When calling it with camera `cam(90, float(nx)/float(ny))` and these spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1457,6 +1604,8 @@ When calling it with camera `cam(90, float(nx)/float(ny))` and these spheres:
 gives:
 
   ![Image 11-1](../images/img-1-11-1.jpg)
+
+</div>
 
 To get an arbitrary viewpoint, let’s first name the points we care about. We’ll call the position
 where we place the camera _lookfrom_, and the point we look at _lookat_. (Later, if you want, you
@@ -1516,6 +1665,7 @@ camera horizontally level until you decide to experiment with crazy camera angle
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+<div class='together'>
 This allows us to change the viewpoint:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1529,6 +1679,8 @@ to get:
 And we can change field of view to get:
 
   ![Image 11-3](../images/img-1-11-3.jpg)
+
+</div>
 
 
 
@@ -1562,6 +1714,7 @@ film on the plane that is in focus (at the distance `focus_dist`).
 
   ![Figure 12-2](../images/fig-1-12-2.jpg)
 
+<div class='together'>
 For that we just need to have the ray origins be on a disk around `lookfrom` rather than from a
 point:
 
@@ -1617,7 +1770,9 @@ point:
     };
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Using a big aperture:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1634,11 +1789,14 @@ We get:
 
   ![Image 12-1](../images/img-1-12-1.jpg)
 
+</div>
+
 
 
 Where Next?
 ====================================================================================================
 
+<div class='together'>
 First let’s make the image on the cover of this book -- lots of random spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1681,10 +1839,14 @@ First let’s make the image on the cover of this book -- lots of random spheres
         return new hitable_list(list,i);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 This gives:
 
   ![Image 13-1](../images/img-1-13-1.jpg)
+
+</div>
 
 An interesting thing you might note is the glass balls don’t really have shadows which makes them
 look like they are floating. This is not a bug (you don’t see glass balls much in real life, where
