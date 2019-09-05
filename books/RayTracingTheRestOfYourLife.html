@@ -15,10 +15,11 @@
 Overview
 ====================================================================================================
 
-<div class='warning'>
-  <p class='title'>WARNING<br>Content Under Development</h1>
-  <p class='text'>See <a href='https://github.com/RayTracing/raytracing.github.io/releases/'>release page</a> for latest official PDF version.
-</div>
+
+!!! ERROR: Content Under Development
+    See [the official release page](https://github.com/RayTracing/raytracing.github.io/releases/)
+    for latest official PDF version.
+
 
 In _Ray Tracing In One Weekend_ and _Ray Tracing: the Next Week_, you built a “real” ray tracer.
 
@@ -57,18 +58,24 @@ estimate of an answer, and this estimate gets more and more accurate the longer 
 basic characteristic of simple programs producing noisy but ever-better answers is what MC is all
 about, and it is especially good for applications like graphics where great accuracy is not needed.
 
-As an example, let’s estimate $\pi$. There are many ways to do this, with the Buffon Needle 
+<div class='together'>
+As an example, let’s estimate $\pi$. There are many ways to do this, with the Buffon Needle
 problem being a classic case study. We’ll do a variation inspired by that. Suppose you have a circle
 inscribed inside a square:
 
   ![Figure 2-1](../images/fig-3-02-1.jpg)
 
+</div>
+
+<div class='together'>
 Now, suppose you pick random points inside the square. The fraction of those random points that end
 up inside the circle should be proportional to the area of the circle. The exact fraction should in
 fact be the ratio of the circle area to the square area. Fraction:
 
   $$ \frac{Pi \cdot R^2}{(2R)^2} = \frac{Pi}{4} $$
+</div>
 
+<div class='together'>
 Since the *R* cancels out, we can pick whatever is computationally convenient. Let’s go with R=1
 centered at the origin:
 
@@ -90,9 +97,11 @@ centered at the origin:
         std::cout << "Estimate of Pi = " << 4*float(inside_circle) / N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 This gives me the answer `Estimate of Pi = 3.196`
 
+<div class='together'>
 If we change the program to run forever and just print out a running estimate:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -117,7 +126,9 @@ If we change the program to run forever and just print out a running estimate:
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 We get very quickly near $\pi$, and then more slowly zero in on it. This is an example of the *Law
 of Diminishing Returns*, where each sample helps less than the last. This is the worst part of MC.
 We can mitigate this diminishing return by *stratifying* the samples (often called *jittering*),
@@ -125,6 +136,9 @@ where instead of taking random samples, we take a grid and take one sample withi
 
   ![Figure 2-2](../images/fig-3-02-2.jpg)
 
+</div>
+
+<div class='together'>
 This changes the sample generation, but we need to know how many samples we are taking in advance
 because we need to know the grid. Let’s take a hundred million and try it both ways:
 
@@ -161,6 +175,7 @@ I get:
     Regular Estimate of Pi = 3.1415
     Stratified Estimate of Pi = 3.14159
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 Interestingly, the stratified method is not only better, it converges with a better asymptotic rate!
 Unfortunately, this advantage decreases with the dimension of the problem (so for example, with the
@@ -181,6 +196,7 @@ classic integral:
 
 $$ I = \int_{0}^{2} x^2 dx $$
 
+<div class='together'>
 In computer sciency notation, we might write this as:
 
 $$ I = area( x^2, 0, 2 ) $$
@@ -188,7 +204,9 @@ $$ I = area( x^2, 0, 2 ) $$
 We could also write it as:
 
 $$ I = 2 \cdot average(x^2, 0, 2) $$
+</div>
 
+<div class='together'>
 This suggests a MC approach:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -204,6 +222,7 @@ This suggests a MC approach:
         std::cout << "I =" << 2*sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 This, as expected, produces approximately the exact answer we get with algebra, $I = 8/3$. But we
 could also do it for functions that we can’t analytically integrate like $log(sin(x))$. In graphics,
@@ -218,11 +237,15 @@ that problem if we sent more random samples toward the light, but then we would 
 those samples to adjust for the over-sampling. How we do that adjustment? To do that we will need
 the concept of a _probability density function_.
 
+<div class='together'>
 First, what is a _density function_? It’s just a continuous form of a histogram. Here’s an example
 from the histogram Wikipedia page:
 
   ![Figure 3-1](../images/fig-3-03-1.jpg)
 
+</div>
+
+<div class='together'>
 If we added data for more trees, the histogram would get taller. If we divided the data into more
 bins, it would get shorter. A discrete density function differs from a histogram in that it
 normalizes the frequency y-axis to a fraction or percentage (just a fraction times 100). A
@@ -232,10 +255,13 @@ adjust them so they don’t get shorter as we add more bins. For the case of the
 we might try:
 
   $$ \text{Bin-height} = \frac{(\text{Fraction of trees between height }H\text{ and }H’)}{(H-H’)} $$
+</div>
 
+<div class='together'>
 That would work! We could interpret that as a statistical predictor of a tree’s height:
 
   $$ \text{Probability a random tree is between } H \text{ and } H’ = \text{Bin-height}\cdot(H-H’)$$
+</div>
 
 If we wanted to know about the chances of being in a span of multiple bins, we would sum.
 
@@ -247,18 +273,23 @@ to look something like the figure below. But how high should it be?
 
   ![Figure 3-2](../images/fig-3-03-2.jpg)
 
+<div class='together'>
 The height is just $p(2)$. What should that be? We could reasonably make it anything by
 convention, and we should pick something that is convenient. Just as with histograms we can sum up
 (integrate) the region to figure out the probability that $r$ is in some interval $(x0,x1)$:
 
   $$ \text{Probability } x0 < r < x1 = C \cdot area(p(r), x0, x1) $$
+</div>
 
+<div class='together'>
 where $C$ is a scaling constant. We may as well make $C = 1$ for cleanliness, and that is exactly
 what is done in probability. And we know the probability $r$ has the value 1 somewhere, so for
 this case
 
   $$ area(p(r), 0, 2) = 1 $$
+</div>
 
+<div class='together'>
 Since $p(r)$ is proportional to $r$ , _i.e._, $p = C’ \cdot r$ for some other constant $C’$
 
   $$
@@ -268,30 +299,38 @@ Since $p(r)$ is proportional to $r$ , _i.e._, $p = C’ \cdot r$ for some other 
   $$
 
 So $p(r) = r/2$.
+</div>
 
 How do we generate a random number with that pdf $p(r)$? For that we will need some more machinery.
 Don’t worry this doesn’t go on forever!
 
-Given a random number from `d = random_double()` that is uniform and between 0 and 1, we should be 
+<div class='together'>
+Given a random number from `d = random_double()` that is uniform and between 0 and 1, we should be
 able to find some function $f(d)$ that gives us what we want. Suppose $e = f(d) = d^2$. That is no
 longer a uniform _pdf_ . The _pdf_ of $e$ will be bigger near 0 than it is near 1 (squaring a
 number between 0 and 1 makes it smaller). To take this general observation to a function, we need
 the cumulative probability distribution function $P(x)$:
 
   $$ P(x) = area(p, -\infty, x) $$
+</div>
 
+<div class='together'>
 Note that for x where we didn’t define $p(x)$, $p(x) = 0$, _i.e._, the probability of an $x$ there
 is zero. For our example _pdf_ $p(r) = r/2$ , the $P(x)$ is:
 
   $$ P(x) = 0 : x < 0                 $$
   $$ P(x) = \frac{x^2}{4} : 0 < x < 2 $$
   $$ P(x) = 1 : x > 2                 $$
+</div>
 
+<div class='together'>
 One question is, what’s up with $x$ versus $r$? They are dummy variables -- analogous to the
 function arguments in a program. If we evaluate $P$ at $x = 0.5$ , we get:
 
   $$ P(1.0) = \frac{1}{4} $$
+</div>
 
+<div class='together'>
 This says _the probability that a random variable with our pdf is less than one is 25%_ . This
 gives rise to a clever observation that underlies many methods to generate non-uniform random
 numbers. We want a function `f()` that when we call it as `f(random_double())` we get a return value
@@ -300,17 +339,23 @@ should be less than 1, and 75% should be above one. If $f()$ is increasing, then
 $f(0.25) = 1.0$. This can be generalized to figure out $f()$ for every possible input:
 
   $$ f(P(x)) = x $$
+</div>
 
+<div class='together'>
 That means $f$ just undoes whatever $P$ does. So,
 
   $$ f(x) = P^-1 (x) $$
+</div>
 
+<div class='together'>
 The -1 means “inverse function”. Ugly notation, but standard. For our purposes what this means is,
 if we have pdf $p()$ and its cumulative distribution function $P()$ , then if we do this to a random
 number we’ll get what we want:
 
-  $$ e = P^-1 (random_double()) $$
+  $$ e = P^-1 (\text{random_double}()) $$
+</div>
 
+<div class='together'>
 For our _pdf_ $p(x) = x/2$ , and corresponding $P(x)$ , we need to compute the inverse of $P$. If
 we have
 
@@ -322,15 +367,19 @@ we get the inverse by solving for $x$ in terms of $y$:
 
 Thus our random number with density $p$ we get by:
 
-  $$ e = \sqrt{4*random_double()} $$
+  $$ e = \sqrt{4*\text{random_double}()} $$
+</div>
 
-Note that does range 0 to 2 as hoped, and if we send in $1/4$ for `random_double()` we get 1 as 
+Note that does range 0 to 2 as hoped, and if we send in $1/4$ for `random_double()` we get 1 as
 desired.
 
+<div class='together'>
 We can now sample our old integral
 
   $$ I = \int_{0}^{2} x^2 $$
+</div>
 
+<div class='together'>
 We need to account for the non-uniformity of the _pdf_ of $x$. Where we sample too much we should
 down-weight. The _pdf_ is a perfect measure of how much or little sampling is being done. So the
 weighting function should be proportional to $1/pdf$ . In fact it is exactly $1/pdf$ :
@@ -357,11 +406,13 @@ weighting function should be proportional to $1/pdf$ . In fact it is exactly $1/
         std::cout << "I =" << sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 Since we are sampling more where the integrand is big, we might expect less noise and thus faster
 convergence. This is why using a carefully chosen non-uniform pdf is usually called _importance
 sampling_.
 
+<div class='together'>
 If we take that same code with uniform samples so the pdf = $1/2$ over the range [0,2] we can use
 the machinery to get `x = 2*random_double()` and the code is:
 
@@ -387,12 +438,14 @@ the machinery to get `x = 2*random_double()` and the code is:
         std::cout << "I =" << sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Note that we don’t need that 2 in the `2*sum/N` anymore -- that is handled by the _pdf_ , which is
 2 when you divide by it. You’ll note that importance sampling helps a little, but not a ton. We
 could make the pdf follow the integrand exactly:
 
-  $$ p(x) = (3/8)x^2 $$
+  $$ p(x) = \frac{3}{8}x^2 $$
 
 And we get the corresponding
 
@@ -400,8 +453,10 @@ And we get the corresponding
 
 and
 
-  $$ P^-1(x) = 8x^{1/3} $$
+  $$ P^{-1}(x) = 8x^\frac{1}{3} $$
+</div>
 
+<div class='together'>
 This perfect importance sampling is only possible when we already know the answer (we got $P$ by
 integrating $p$ analytically), but it’s a good exercise to make sure our code works. For just 1
 sample we get:
@@ -428,9 +483,11 @@ sample we get:
         std::cout << "I =" << sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 Which always returns the exact answer.
 
+<div class='together'>
 Let’s review now because that was most of the concepts that underlie MC ray tracers.
 
   1. You have an integral of $f(x)$ over some domain $[a,b]$
@@ -438,12 +495,12 @@ Let’s review now because that was most of the concepts that underlie MC ray tr
   3. You average a whole ton of $f(r)/p(r)$ where $r$ is a random number $r$ with pdf $p$ .
 
 This will always converge to the right answer. The more $p$ follows $f$, the faster it converges.
+</div>
 
 
 
 MC Integration on the Sphere of Directions
 ====================================================================================================
-
 
 In our ray tracer we pick random directions, and directions can be represented as points on the
 unit-sphere. The same methodology as before applies. But now we need to have a pdf defined over 2D.
@@ -451,6 +508,7 @@ Suppose we have this integral over all directions:
 
   $$ \int cos^2(\theta) $$
 
+<div class='together'>
 By MC integration, we should just be able to sample $cos^2(\theta) / p(direction)$. But what is
 direction in that context? We could make it based on polar coordinates, so $p$ would be in terms of
 $(\theta, \phi)$ . However you do it, remember that a pdf has to integrate to 1 and represent the
@@ -466,7 +524,9 @@ uniform random samples in a unit sphere:
         return p;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 To get points on a unit sphere we can just normalize the vector to those points:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -478,7 +538,9 @@ To get points on a unit sphere we can just normalize the vector to those points:
         return unit_vector(p);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Now what is the pdf of these uniform points? As a density on the unit sphere, it is $1/area$ of the
 sphere or $1/(4\pi)$. If the integrand is $cos^2(\theta)$ and $\theta$ is the angle with the z axis:
 
@@ -498,15 +560,16 @@ sphere or $1/(4\pi)$. If the integrand is $cos^2(\theta)$ and $\theta$ is the an
         std::cout << "I =" << sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
-The analytic answer (if you remember enough advanced calc, check me!) is $\frac{4}{3} \pi$, and the 
+The analytic answer (if you remember enough advanced calc, check me!) is $\frac{4}{3} \pi$, and the
 code above produces that. Next, we are ready to apply that in ray tracing!
 
 The key point here is that all the integrals and probability and all that are over the unit sphere.
 The area on the unit sphere is how you measure the directions. Call it direction, solid angle, or
 area -- it’s all the same thing. Solid angle is the term usually used. If you are comfortable with
 that, great! If not, do what I do and imagine the area on the unit sphere that a set of directions
-goes through. The solid angle $\omega$ and the projected area $A$ on the unit sphere are the same 
+goes through. The solid angle $\omega$ and the projected area $A$ on the unit sphere are the same
 thing.
 
   ![Figure 4-1](../images/fig-3-04-1.jpg)
@@ -526,7 +589,7 @@ used model for light interacting with a surface. One natural way to model this i
 First, is the light absorbed?
 
 Probability of light scattering: $A$
-  
+
 Probability of light being absorbed: $1-A$
 
 Here $A$ stands for _albedo_ (latin for _whiteness_). Albedo is a precise technical term in some
@@ -541,18 +604,22 @@ over solid angle. I will refer to this as its _scattering pdf_: $s(direction)$. 
 can also vary with incident direction, as you will notice when you look at reflections off a road --
 they become mirror-like as your viewing angle approaches grazing.
 
+<div class='together'>
 The color of a surface in terms of these quantities is:
 
   $$ Color = \int A \cdot s(direction) \cdot color(direction) $$
+</div>
 
 Note that $A$ and $s()$ might depend on the view direction, so of course color can vary with view
 direction. Also $A$ and $s()$ may vary with position on the surface or within the volume.
 
+<div class='together'>
 If we apply the MC basic formula we get the following statistical estimate:
 
   $$ Color = (A \cdot s(direction) \cdot color(direction)) / p(direction) $$
 
-Where $p(direction)$ is the pdf of whatever direction we randomly generate.
+where $p(direction)$ is the pdf of whatever direction we randomly generate.
+</div>
 
 For a Lambertian surface we already implicitly implemented this formula for the special case where
 $p()$ is a cosine density. The $s()$ of a Lambertian surface is proportional to $cos(\theta)$, where
@@ -560,6 +627,7 @@ $\theta$ is the angle relative to the surface normal. Remember that all pdf need
 one. For $cos(\theta) < 0$ we have $s(direction) = 0$, and the integral of cos over the hemisphere
 is $\pi$.
 
+<div class='together'>
 To see that remember that in spherical coordinates remember that:
 
   $$ \delta A = sin(\theta) \delta \theta \delta \phi $$
@@ -568,11 +636,15 @@ So:
 
   $$ Area = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} cos(\theta)sin(\theta) \delta \theta \delta \phi =
     2 \pi \cdot \frac{1}{2} = \pi $$
+</div>
 
+<div class='together'>
 So for a Lambertian surface the scattering pdf is:
 
   $$ s(direction) = cos(\theta) / \pi $$
+</div>
 
+<div class='together'>
 If we sample using the same pdf, so $p(direction) = cos(\theta) / \pi$, the numerator and
 denominator cancel out and we get:
 
@@ -583,7 +655,9 @@ can send extra rays in important directions such as toward the lights.
 
 The treatment above is slightly non-standard because I want the same math to work for surfaces and
 volumes. To do otherwise will make some ugly code.
+</div>
 
+<div class='together'>
 If you read the literature, you’ll see reflection described by the bidirectional reflectance
 distribution function (BRDF). It relates pretty simply to our terms:
 
@@ -592,14 +666,16 @@ distribution function (BRDF). It relates pretty simply to our terms:
 So for a Lambertian surface for example, $BRDF = A / \pi$. Translation between our terms and BRDF is
 easy.
 
-For participation media (volumes), our albedo is usually called scattering albedo, and our
-scattering pdf is usually called phase function.
+For participation media (volumes), our albedo is usually called _scattering albedo_, and our
+scattering pdf is usually called _phase function_.
+</div>
 
 
 
 Importance Sampling Materials
 ====================================================================================================
 
+<div class='together'>
 Our goal over the next two chapters is to instrument our program to send a bunch of extra rays
 toward light sources so that our picture is less noisy. Let’s assume we can send a bunch of rays
 toward the light source using a pdf $pLight(direction)$ . Let’s also assume we have a pdf related to
@@ -608,15 +684,17 @@ linear mixtures of them to form mixture densities that are also pdfs. For exampl
 would be:
 
   $$ p(direction) = 0.5 \cdot pLight(direction) + 0.5* \cdot pSurface(direction) $$
+</div>
 
 As long as the weights are positive and add up to one, any such mixture of pdfs is a pdf. And
 remember, we can use any pdf -- it doesn’t change the answer we converge to! So, the game is to
-figure out how to make the pdf larger where the product $s(direction)*color(direction)$ is large. 
+figure out how to make the pdf larger where the product $s(direction)*color(direction)$ is large.
 For diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is high.
 
 For a mirror, $s()$ is huge only near one direction, so it matters a lot more. Most renderers in
 fact make mirrors a special case and just make the $s/p$ implicit -- our code currently does that.
 
+<div class='together'>
 Let’s do simple refactoring and temporarily remove all materials that aren’t Lambertian. We can use
 our Cornell Box scene again, and let’s generate the camera in the function that generates the model:
 
@@ -648,18 +726,22 @@ our Cornell Box scene again, and let’s generate the camera in the function tha
                           vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 At 500x500 my code produces this image in 10min on 1 core of my Macbook:
 
   ![Figure 6-1](../images/img-3-06-1.jpg)
 
 Reducing that noise is our goal. We’ll do that by constructing a pdf that sends more rays to the
 light.
+</div>
 
 First, let’s instrument the code so that it explicitly samples some pdf and then normalizes for
 that. Remember MC basics: $\int f(x) \approx f(r)/p(r)$. For the Lambertian material,
 let’s sample like we do now: $p(direction) = cos(\theta) / \pi$.
 
+<div class='together'>
 We modify the base-class _material_ to enable this importance sampling:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -678,7 +760,9 @@ We modify the base-class _material_ to enable this importance sampling:
             }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And _Lambertian_ material becomes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -703,8 +787,10 @@ And _Lambertian_ material becomes:
             texture *albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
-And the color function gets a minor modification.
+<div class='together'>
+And the color function gets a minor modification:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hitable *world, int depth) {
@@ -726,9 +812,11 @@ And the color function gets a minor modification.
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 You should get exactly the same picture.
 
+<div class='together'>
 Now, just for the experience, try a different sampling strategy. Let’s choose randomly from the
 hemisphere that is above the surface. This would be $p(direction) = 1/(2* \pi)$ .
 
@@ -745,10 +833,14 @@ hemisphere that is above the surface. This would be $p(direction) = 1/(2* \pi)$ 
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
-And again I __should__ get the same picture except with different variance, but I don’t!
+<div class='together'>
+And again I _should_ get the same picture except with different variance, but I don’t!
 
   ![Figure 6-2](../images/img-3-06-2.jpg)
+
+</div>
 
 It’s pretty close to our old picture, but there are differences that are not noise. The front of the
 tall box is much more uniform in color. So I have the most difficult kind of bug to find in a Monte
@@ -771,13 +863,16 @@ have had advanced calculus, you may recall that on the sphere in spherical coord
 $dA = \sin(\theta) \cdot d\theta \cdot d\phi$. If you haven’t, you’ll have to take my word for the
 next step, but you’ll get it when you take advanced calc.
 
+<div class='together'>
 Given a directional pdf, $p(direction) = f(\theta)$ on the sphere, the 1D pdfs on $\theta$ and
 $\phi$ are:
 
   $$ a(\phi) = \frac{1}{2\pi} $$
 (uniform)
   $$ b(\theta) = 2*\pi*f(\theta)\sin(\theta) $$
+</div>
 
+<div class='together'>
 For uniform random numbers $r_1$ and $r_2$, the material presented in Chapter 3 leads to:
 
   $$ r_1 = \int_{0}^{\phi} \frac{1}{2\pi} = \frac{\phi}{2\pi} $$
@@ -789,7 +884,9 @@ Solving for $\phi$ we get:
 For $\theta$ we have:
 
   $$ r_2 = \int_{0}^{\theta} 2 \pi f(t) \sin(t) $$
+</div>
 
+<div class='together'>
 Here, $t$ is a dummy variable. Let’s try some different functions for $f()$. Let’s first try a
 uniform density on the sphere. The area of the unit sphere is $4\pi$ , so a uniform $p(direction) =
 \frac{1}{4\pi}$ on the unit sphere.
@@ -802,7 +899,9 @@ Solving for $\cos(\theta)$ gives:
 
 We don’t solve for theta because we probably only need to know $\cos(\theta)$ anyway and don’t want
 needless $\arccos()$ calls running around.
+</div>
 
+<div class='together'>
 To generate a unit vector direction toward $(\theta,\phi)$ we convert to Cartesian coordinates:
 
   $$ x = \cos(\phi) \cdot \sin(\theta) $$
@@ -821,7 +920,9 @@ Simplifying a little, $(1 - 2 r_2)^2 = 1 - 4r_2 + 4r_2^2$, so:
   $$ x = \cos(2 \pi r_1) \cdot 2 \sqrt{r_2(1 - r_2)} $$
   $$ y = \sin(2 \pi r_1) \cdot 2 \sqrt{r_2(1 - r_2)} $$
   $$ z = 1 - 2 r_2 $$
+</div>
 
+<div class='together'>
 We can output some of these:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -837,25 +938,34 @@ We can output some of these:
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And plot them for free on plot.ly (a great site with 3D scatterplot support):
 
   ![Image 7-1](../images/fig-3-07-1.jpg)
 
+</div>
+
 On the plot.ly website you can rotate that around and see that it appears uniform.
 
+<div class='together'>
 Now let’s derive uniform on the hemisphere. The density being uniform on the hemisphere means
 $p(direction) = 1 / (2 \pi)$ and just changing the constant in the theta equations yields:
 
   $$ \cos(\theta) = 1 - r_2 $$
+</div>
 
+<div class='together'>
 It is comforting that $\cos(\theta)$ will vary from 1 to 0, and thus theta will vary from 0 to
 $\pi/2$. Rather than plot it, let’s do a 2D integral with a known solution. Let’s integrate cosine
 cubed over the hemisphere (just picking something arbitrary with a known solution). First let’s do
 it by hand:
 
   $$ \int \cos^3 = 2 \pi \int_{0}^{\pi/2} \cos^3 \sin = \frac{\pi}{2} $$
+</div>
 
+<div class='together'>
 Now for integration with importance sampling. $p(direction) = 1/(2 \pi)$, so we average $f/p$
 which is $\cos^3 / (1/(2 \pi))$, and we can test this:
 
@@ -875,7 +985,9 @@ which is $\cos^3 / (1/(2 \pi))$, and we can test this:
         std::cout << "Estimate = " << sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Now let’s generate directions with $p(directions) = \cos(\theta) / \pi$.
 
   $$ r_2 = \int_{0}^{\theta} 2 \pi \frac{\cos(t)}{\pi} \sin(t) = 1 - \cos^2(\theta) $$
@@ -889,7 +1001,9 @@ We can save a little algebra on specific cases by noting
   $$ z = \cos(\theta) = \sqrt{1 - r_2} $$
   $$ x = \cos(\phi) \sin(\theta) = \cos(2 \pi r_1) \sqrt{1 - z^2} = \cos(2 \pi r_1) \sqrt{r_2} $$
   $$ y = \sin(\phi) \sin(\theta) = \sin(2 \pi r_1) \sqrt{1 - z^2} = \sin(2 \pi r_1) \sqrt{r_2} $$
+</div>
 
+<div class='together'>
 Let’s also start generating them as random vectors:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -914,6 +1028,7 @@ Let’s also start generating them as random vectors:
         std::cout << "Estimate = " << sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 We can generate other densities later as we need them. In the next chapter we’ll get them aligned to
 the surface normal vector.
@@ -931,15 +1046,19 @@ world, and some virtual place and orientation in the virtual world. A picture is
 relative positions/orientations of the camera and scene, so as long as the camera and scene are
 described in the same coordinate system, all is well.
 
+<div class='together'>
 Suppose we have an origin $\mathbf{O}$ and cartesian unit vectors $\vec{x}$, $\vec{y}$, and
 $\vec{z}$. When we say a location is (3, -2, 7), we really are saying:
 
   $$ \text{Location is } \mathbf{O} + 3\vec{x} - 2\vec{y} + 7\vec{z} $$
+</div>
 
+<div class='together'>
 If we want to measure coordinates in another coordinate system with origin $\mathbf{O}’$ and basis
 vectors $\vec{U}$, $\vec{V}$, and $\vec{W}$, we can just find the numbers $(u, v, w)$ such that:
 
   $$ \text{Location is } \mathbf{O}’ + u\vec{U} + v\vec{V} + w\vec{W} $$
+</div>
 
 If you take an intro graphics course, there will be a lot of time spent on coordinate systems and
 4×4 coordinate transformation matrices. Pay attention, it’s important stuff in graphics! But we
@@ -947,6 +1066,7 @@ won’t need it. What we need to is generate random directions with a set distri
 $\vec{n}$. We don’t need an origin because a direction is relative to no specified origin. We do
 need two cotangent vectors that are mutually perpendicular to $\vec{n}$ and each other.
 
+<div class='together'>
 Some models will come with at least one cotangent vector. The hard case of making an ONB is when we
 just have one vector. Suppose we have any vector $\vec{a}$ that is not zero length or parallel to
 $\vec{n}$. We can get to vectors $\vec{s}$ and $\vec{t}$ parallel to $\vec{n}$ by using the property
@@ -955,7 +1075,9 @@ of the cross product that $\vec{c} \times \vec{d}$ is perpendicular to both $\ve
   $$ \vec{t} = \text{unit_vector}(\vec{a} \times \vec{n}) $$
 
   $$ \vec{s} = \vec{t} \times \vec{n} $$
+</div>
 
+<div class='together'>
 The catch is, we don’t have an $\vec{a}$ and if we pick a particular one at some point we will get
 an $\vec{n}$ parallel to $\vec{a}$. A common method is to use an if-statement to determine whether
 $\vec{n}$ is a particular axis, and if not, use that axis.
@@ -966,12 +1088,18 @@ $\vec{n}$ is a particular axis, and if not, use that axis.
     else
         a = (1, 0, 0)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Once we have an ONB and we have a $random(x,y,z)$ relative the the Z-axis we can get the vector
 relative to $\vec{n}$ as:
 
-  $$ \text{Random vector} = \vec{x} \cdot \vec{s} + \vec{y} \cdot \vec{t} + \vec{z} \cdot \vec{n} $$
+  $$
+  \text{Random vector} = (\vec{x} \cdot \vec{s}) + (\vec{y} \cdot \vec{t}) + (\vec{z} \cdot \vec{n})
+  $$
+</div>
 
+<div class='together'>
 You may notice we used similar math to get rays from a camera. That could be viewed as a change to
 the camera’s natural coordinate system. Should we make a class for ONBs or are utility functions
 enough? I’m not sure, but let’s make a class because it won't really be more complicated than
@@ -1004,7 +1132,9 @@ utility functions:
         axis[0] = cross(w(), v());
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 We can rewrite our Lambertian material using this to get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1024,14 +1154,16 @@ We can rewrite our Lambertian material using this to get:
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Which produces:
 
   ![Image 8-1](../images/img-3-08-1.jpg)
 
 Is that right? We still don’t know for sure. Tracking down bugs is hard in the absence of reliable
 reference solutions. Let’s table that for now and move on to get rid of some of that noise.
-
+</div>
 
 
 Sampling Lights Directly
@@ -1042,6 +1174,7 @@ than unimportant directions. We could use shadow rays and separate out direct li
 I’ll just send more rays to the light. We can then use that later to send more rays in whatever
 direction we want.
 
+<div class='together'>
 It’s really easy to pick a random direction toward the light; just pick a random point on the light
 and send a ray in that direction. But we also need to know the _pdf(direction)_. What is that? For a
 light of area $A$, if we sample uniformly on that light, the _pdf_ on the surface of the light is
@@ -1050,6 +1183,9 @@ a simple correspondence, as outlined in the diagram:
 
   ![Figure 9-1](../images/fig-3-09-1.jpg)
 
+</div>
+
+<div class='together'>
 If we look at a small area $dA$ on the light, the probability of sampling it is $p_q(q) \cdot dA$.
 On the sphere, the probability of sampling the small area $dw$ on the sphere is $p(direction) \cdot
 dw$. There is a geometric relationship between $dw$ and $dA$:
@@ -1066,7 +1202,9 @@ Since the probability of sampling dw and dA must be the same, we have
 So
 
   $$ p(direction) = \frac{distance(p,q)^2}{cos(alpha) \cdot A} $$
+</div>
 
+<div class='together'>
 If we hack our color function to sample the light in a very hard-coded fashion just to check that
 math and get the concept, we can add it (see the highlighted region):
 
@@ -1106,12 +1244,16 @@ math and get the concept, we can add it (see the highlighted region):
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
-
+<div class='together'>
 With 10 samples per pixel this yields:
 
   ![Image 9-1](../images/img-3-09-1.jpg)
 
+</div>
+
+<div class='together'>
 This is about what we would expect from something that samples only the light sources, so this
 appears to work. The noisy pops around the light on the ceiling are because the light is two-sided
 and there is a small space between light and ceiling. We probably want to have the light just emit
@@ -1127,16 +1269,21 @@ down. We can do that by letting the emitted member function of hitable take extr
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 We also need to flip the light so its normals point in the -y direction and we get:
 
   ![Image 9-2](../images/img-3-09-2.jpg)
+
+</div>
 
 
 
 Mixture Densities
 ====================================================================================================
 
+<div class='together'>
 We have used a _pdf_ related to $cosine(\theta)$, and a _pdf_ related to sampling the light. We
 would like a _pdf_ that combines these. A common tool in probability is to mix the densities to
 form a mixture density. Any weighted average of _pdf_ s is a _pdf_. For example, we could just
@@ -1145,7 +1292,9 @@ average the two densities:
   $$ pdf\_mixture(direction) = \frac{1}{2} pdf\_reflection(direction) +
         \frac{1}{2}pdf\_light(direction)
   $$
+</div>
 
+<div class='together'>
 How would we instrument our code to do that? There is a very important detail that makes this not
 quite as easy as one might expect. Choosing the random direction is simple:
 
@@ -1155,16 +1304,21 @@ quite as easy as one might expect. Choosing the random direction is simple:
     else
         Pick direction according to pdf_light
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 But evaluating $pdf\_mixture$ is slightly more subtle. We need to evaluate both $pdf\_reflection$
 and $pdf\_light$ because there are some directions where either _pdf_ could have generated the
 direction. For example, we might generate a direction toward the light using $pdf\_reflection$.
 
+<div class='together'>
 If we step back a bit, we see that there are two functions a _pdf_ needs to support:
 
 1. What is your value at this location?
 2. Return a random number that is distributed appropriately.
 
+</div>
+
+<div class='together'>
 The details of how this is done under the hood varies for the $pdf\_reflection$ and the $pdf\_light$
 and the mixture density of the two of them, but that is exactly what class hierarchies were invented
 for! It’s never obvious what goes in an abstract class, so my approach is to be greedy and hope a
@@ -1177,12 +1331,14 @@ minimal interface works, and for the _pdf_ this implies:
             virtual vec3 generate() const = 0;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 We’ll see if that works by fleshing out the subclasses. For sampling the light, we will need
 `hitable` to answer some queries that it doesn’t have an interface for. We’ll probably need to mess
 with it too, but we can start by seeing if we can put something in `hitable` involving sampling the
 bounding box that works with all its subclasses.
 
+<div class='together'>
 First, let’s try a cosine density:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1202,7 +1358,9 @@ First, let’s try a cosine density:
             onb uvw;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 We can try this in the `color()` function, with the main changes highlighted. We also need to change
 variable `pdf` to some other variable name to avoid a name conflict with the new `pdf` class.
 
@@ -1231,12 +1389,17 @@ variable `pdf` to some other variable name to avoid a name conflict with the new
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 This yields an apparently matching result so all we’ve done so far is refactor where `pdf` is
+</div>
 computed:
 
   ![Image 10-1](../images/img-3-10-1.jpg)
 
+</div>
+
+<div class='together'>
 Now we can try sampling directions toward a `hitable` like the light.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1253,7 +1416,9 @@ Now we can try sampling directions toward a `hitable` like the light.
             hitable *ptr;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 This assumes two as-yet not implemented functions in the `hitable` class. To avoid having to add
 instrumentation to all of `hitable` subclasses, we’ll add two dummy functions to the `hitable`
 class:
@@ -1268,7 +1433,9 @@ class:
             virtual vec3 random(const vec3& o) const {return vec3(1, 0, 0);}
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And we change `xz_rect` to implement those functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1302,7 +1469,9 @@ And we change `xz_rect` to implement those functions:
             float x0, x1, z0, z1, k;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And then change `color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1331,11 +1500,16 @@ And then change `color()`:
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 At 10 samples per pixel we get:
 
   ![Image 10-2](../images/img-3-10-2.jpg)
 
+</div>
+
+<div class='together'>
 Now we would like to do a mixture density of the cosine and light sampling. The mixture density
 class is straightforward:
 
@@ -1355,7 +1529,9 @@ class is straightforward:
             pdf *p[2];
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And plugging it into `color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1384,10 +1560,14 @@ And plugging it into `color()`:
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 1000 samples per pixel yields:
 
   ![Image 10-3](../images/img-3-10-3.jpg)
+
+</div>
 
 We’ve basically gotten this same picture (with different levels of noise) with several different
 sampling patterns. It looks like the original picture was slightly wrong! Note by “wrong” here I
@@ -1438,10 +1618,13 @@ book.
 Cleaning Up pdf Management.
 ====================================================================================================
 
+<div class='together'>
 So far I have the color function create two hard-coded `pdf`s :
 
 1. `p0()` related to the shape of the light
 2. `p1()` related to the normal vector and type of surface
+
+</div>
 
 We can pass information about the light (or whatever `hitable` we want to sample) into the `color`
 function, and we can ask the `material` function for a `pdf` (we would have to instrument it to do
@@ -1456,6 +1639,7 @@ need to be careful when we ask for the `pdf` value and be aware of whether for t
 `color()` it is diffuse or specular. Fortunately, we know that we should only call the `pdf value()`
 if it is diffuse so we can handle that implicitly.
 
+<div class='together'>
 We can redesign `material` and stuff all the new arguments into a `struct` like we did for
 `hitable`:
 
@@ -1478,7 +1662,9 @@ We can redesign `material` and stuff all the new arguments into a `struct` like 
                 float u, float v, const vec3& p) const { return vec3(0,0,0); }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 The Lambertian material becomes simpler:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1502,7 +1688,9 @@ The Lambertian material becomes simpler:
             texture *albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And `color()` changes are small:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1528,7 +1716,9 @@ And `color()` changes are small:
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 We have not yet dealt with specular surfaces, nor instances that mess with the surface normal, and
 we have added a memory leak by calling `new` in Lambertian material. But this design is clean
 overall, and those are all fixable. For now, I will just fix `specular`. Metal is easy to fix.
@@ -1551,10 +1741,12 @@ overall, and those are all fixable. For now, I will just fix `specular`. Metal i
             float fuzz;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 Note that if fuzziness is high, this surface isn’t ideally specular, but the implicit sampling works
 just like it did before.
 
+<div class='together'>
 `Color` just needs a new case to generate an implicitly sampled ray:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1587,7 +1779,9 @@ just like it did before.
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 We also need to change the block to metal.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1621,14 +1815,18 @@ We also need to change the block to metal.
                           vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 The resulting image has a noisy reflection on the ceiling because the directions toward the box are
 not sampled with more density.
 
   ![Image 12-1](../images/img-3-12-1.jpg)
 
-We could make the pdf include the block. Let’s do that instead with a glass sphere because it’s
+</div>
 
+<div class='together'>
+We could make the pdf include the block. Let’s do that instead with a glass sphere because it’s
 easier. When we sample a sphere’s solid angle uniformly from a point outside the sphere, we are
 really just sampling a cone uniformly (the cone is tangent to the sphere). Let’s say the code has
 `theta_max`. Recall from Chapter 9, that to sample $\theta$ we have:
@@ -1642,41 +1840,56 @@ Here $f(t)$ is an as yet uncalculated constant $C$, so:
 Doing some algebra/calculus this yields:
 
   $$ r2 = 2 \pi \cdot C \cdot (1-cos(\theta)) $$
+</div>
 
+<div class='together'>
 So
 
   $$ cos(\theta) = 1 - r2/(2 \pi \cdot C) $$
+</div>
 
+<div class='together'>
 We know that for $r2 = 1$ we should get $\theta_{max}$, so we can solve for $C$:
 
   $$ cos(\theta) = 1 + r2 \cdot (cos(\theta_{max})-1) $$
+</div>
 
+<div class='together'>
 $\phi$ we sample like before, so:
 
   $$ z = cos(\theta) = 1 + r2 \cdot (cos(\theta_{max})-1) $$
   $$ x = cos(\phi) \cdot sin(\theta) = cos(2 \pi \cdot r1) \cdot \sqrt{1-z^2} $$
   $$ y = sin(\phi) \cdot sin(\theta) = sin(2 \pi \cdot r1) \cdot \sqrt{1-z^2} $$
+</div>
 
+<div class='together'>
 Now what is $\theta_{max}$?
 
   ![Figure 12-1](../images/fig-3-12-1.jpg)
 
+</div>
+
+<div class='together'>
 We can see from the figure that $sin(\theta_{max}) = R / length( c - p )$. So:
 
   $$ cos(\theta_{max}) = \sqrt{1- (R / length( c - p ))^2} $$
+</div>
 
+<div class='together'>
 We also need to evaluate the _pdf_ of directions. For directions toward the sphere this is
 $1/solid\_angle$. What is the solid angle of the sphere? It has something to do with the $C$ above.
 It, by definition, is the area on the unit sphere, so the integral is
 
   $$ solid\_angle = \int_{0}^{2 \pi} \int_{0}^{\theta_{max}} sin(\theta) d \theta d \phi
        = 2 \pi \cdot (1-cos(\theta_{max})) $$
+</div>
 
 It’s good to check the math on all such calculations. I usually plug in the extreme cases (thank you
 for that concept, Mr. Horton -- my high school physics teacher). For a zero radius sphere
 $cos(\theta_{max}) = 0$, and that works. For a sphere tangent at $p$, $cos(\theta_{max}) = 0$, and
 $2 \pi$ is the area of a hemisphere, so that works too.
 
+<div class='together'>
 The sphere class needs the two `pdf`-related functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1699,7 +1912,9 @@ The sphere class needs the two `pdf`-related functions:
         return uvw.local(random_to_sphere(radius, distance_squared));
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 With the utility function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1713,7 +1928,9 @@ With the utility function:
         return vec3(x, y, z);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 We can first try just sampling the sphere rather than the light:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1731,13 +1948,18 @@ We can first try just sampling the sphere rather than the light:
                 col += color(r, world, glass_sphere, 0);
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 This yields a noisy box, but the caustic under the sphere is good. It took five times as long as
 sampling the light did for my code. This is probably because those rays that hit the glass are
 expensive!
 
   ![Image 12-2](../images/img-3-12-2.jpg)
 
+</div>
+
+<div class='together'>
 We should probably just sample both the sphere and the light. We can do that by creating a mixture
 density of their two densities. We could do that in the `color` function by passing a list of
 hitables in and building a mixture `pdf`, or we could add `pdf` functions to `hitable_list`. I
@@ -1757,7 +1979,9 @@ think both tactics would work fine, but I will go with instrumenting `hitable_li
         return list[ index ]->random(o);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 We assemble a list to pass in to `color`.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1779,23 +2003,30 @@ We assemble a list to pass in to `color`.
                 col += color(r, world, &hlist, 0);
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And we get a decent image with 1000 samples as before:
 
   ![Image 12-3](../images/img-3-12-3.jpg)
 
+</div>
+
+<div class='together'>
 An astute reader pointed out there are some black specks in the image above. All Monte Carlo Ray
 Tracers have this as a main loop:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     pixel_color = average(many many samples)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
 If you find yourself getting some form of acne in the images, and this acne is white or black, so
 one "bad" sample seems to kill the whole pixel, that sample is probably a huge number or a `NaN`.
 This particular acne is probably a `NaN`. Mine seems to come up once in every 10-100 million rays
 or so.
 
+<div class='together'>
 So big decision: sweep this bug under the rug and check for `NaN`s, or just kill `NaN`s and hope
 this doesn't come back to bite us later. I will always opt for the lazy strategy, especially when I
 know floating point is hard. First, how do we check for a `NaN`? The one thing I always remember
@@ -1810,7 +2041,9 @@ for `NaN`s is that any `if` test with a `NaN` in it is false. This leads to the 
         return temp;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 And we can insert that in the main loop:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1822,10 +2055,14 @@ And we can insert that in the main loop:
         col += de_nan(color(r, world, &hlist, 0));
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
 
+<div class='together'>
 Happily, the black specks are gone:
 
   ![Image 12-4](../images/img-3-12-4.jpg)
+
+</div>
 
 
 
