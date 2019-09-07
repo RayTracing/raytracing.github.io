@@ -25,6 +25,7 @@ v2.0.0 (In Progress)
   - Removed bug in Chapter 2 of _Ray Tracing: The Rest Of Your life_
     - The `lambertian` class definition in Chapter 2 previously used `texture`s
     - This has been changed to `vec3`
+  - Replaced drand48() with portable random number generation across all three books
 
 
 v1.123.0  (2018-08-26)
