@@ -43,6 +43,12 @@ vec3 reflect(const vec3& v, const vec3& n) {
      return v - 2*dot(v,n)*n;
 }
 
+vec3 random_unit_vector() {
+    float a = random_double() * 2.0f * M_PI;
+    float z = random_double() * 2.0f - 1.0f;
+    float r = sqrtf(1.0f - z * z);
+    return vec3(r * cosf(a), r * sinf(a), z);
+}
 
 vec3 random_in_unit_sphere() {
     vec3 p;
@@ -63,7 +69,7 @@ class lambertian : public material {
     public:
         lambertian(const vec3& a) : albedo(a) {}
         virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const  {
-             vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+             vec3 target = rec.p + rec.normal + random_unit_vector();
              scattered = ray(rec.p, target-rec.p);
              attenuation = albedo;
              return true;
