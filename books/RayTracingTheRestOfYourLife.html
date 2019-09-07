@@ -778,7 +778,7 @@ And _Lambertian_ material becomes:
             }
             bool scatter(const ray& r_in,
                 const hit_record& rec, vec3& alb, ray& scattered, float& pdf) const {
-                vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+                vec3 target = rec.p + rec.normal + random_unit_vector();
                 scattered = ray(rec.p, unit_vector(target-rec.p), r_in.time());
                 alb = albedo->value(rec.u, rec.v, rec.p);
                 pdf = dot(rec.normal, scattered.direction()) / M_PI;
