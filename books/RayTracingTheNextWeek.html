@@ -97,7 +97,6 @@ to camera because for now it is not allowed to move; it just sends out rays over
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
         public:
-            // new:  add t0 and t1
             camera(
                 vec3 lookfrom,
                 vec3 lookat,
@@ -106,8 +105,10 @@ to camera because for now it is not allowed to move; it just sends out rays over
                 float aspect,
                 float aperture,
                 float focus_dist,
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 float t0,
                 float t1) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
                 time0 = t0;
                 time1 = t1;
@@ -127,11 +128,12 @@ to camera because for now it is not allowed to move; it just sends out rays over
                 vertical = 2*half_height*focus_dist*v;
             }
 
-            // new: add time to construct ray
             ray get_ray(float s, float t) {
                 vec3 rd = lens_radius*random_in_unit_disk();
                 vec3 offset = u * rd.x() + v * rd.y();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 float time = time0 + random_double()*(time1-time0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return ray(
                     origin + offset,
                     lower_left_corner + s*horizontal + t*vertical - origin - offset,
@@ -143,7 +145,9 @@ to camera because for now it is not allowed to move; it just sends out rays over
             vec3 horizontal;
             vec3 vertical;
             vec3 u, v, w;
-            float time0, time1;  // new variables for shutter open/close times
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            float time0, time1;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             float lens_radius;
     };
 
@@ -181,11 +185,12 @@ fewer classes and more efficient stationary spheres, so let your design taste gu
 intersection code barely needs a change: `center` just needs to become a function `center(time)`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    // replace "center" with "center(r.time())"
     bool moving_sphere::hit(
         const ray& r, float t_min, float t_max, hit_record& rec) const {
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         vec3 oc = r.origin() - center(r.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         float a = dot(r.direction(), r.direction());
         float b = dot(oc, r.direction());
         float c = dot(oc, oc) - radius*radius;
@@ -195,7 +200,9 @@ intersection code barely needs a change: `center` just needs to become a functio
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 rec.normal = (rec.p - center(r.time())) / radius;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 rec.mat_ptr = mat_ptr;
                 return true;
             }
@@ -203,7 +210,9 @@ intersection code barely needs a change: `center` just needs to become a functio
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 rec.normal = (rec.p - center(r.time())) / radius;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 rec.mat_ptr = mat_ptr;
                 return true;
             }
@@ -225,7 +234,9 @@ Be sure that in the materials you have the scattered rays be at the time of the 
                 vec3& attenuation, ray& scattered) const {
 
                 vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 scattered = ray(rec.p, target-rec.p, r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 attenuation = albedo;
                 return true;
             }
@@ -1124,9 +1135,11 @@ the interpolation:
                 float v = p.y() - floor(p.y());
                 float w = p.z() - floor(p.z());
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 u = u*u*(3-2*u);
                 v = v*v*(3-2*v);
                 w = w*w*(3-2*w);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
                 int i = floor(p.x());
                 int j = floor(p.y());
@@ -1151,7 +1164,11 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
             noise_texture() {}
             noise_texture(float sc) : scale(sc) {}
             virtual vec3 value(float u, float v, const vec3& p) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none delete
+                return vec3(1,1,1) * noise.noise(p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 return vec3(1,1,1) * noise.noise(scale * p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
             perlin noise;
             float scale;
@@ -1298,9 +1315,11 @@ effect is:
             noise_texture() {}
             noise_texture(float sc) : scale(sc) {}
             virtual vec3 value(float u, float v, const vec3& p) const {
-    //            return vec3(1,1,1)*0.5*(1 + noise.turb(scale * p));
-    //            return vec3(1,1,1)*noise.turb(scale * p);
-                  return vec3(1,1,1)*0.5*(1 + sin(scale*p.z() + 10*noise.turb(p))) ;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none delete
+                return vec3(1,1,1) * noise.noise(scale * p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                return vec3(1,1,1) * 0.5 * (1 + sin(scale*p.z() + 10*noise.turb(p)));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
             perlin noise;
             float scale;
