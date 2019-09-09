@@ -70,9 +70,9 @@ class cosine_pdf : public pdf {
         onb uvw;
 };
 
-class hitable_pdf : public pdf {
+class hittable_pdf : public pdf {
     public:
-        hitable_pdf(hitable *p, const vec3& origin) : ptr(p), o(origin) {}
+        hittable_pdf(hittable *p, const vec3& origin) : ptr(p), o(origin) {}
         virtual float value(const vec3& direction) const {
             return ptr->pdf_value(o, direction);
         }
@@ -80,7 +80,7 @@ class hitable_pdf : public pdf {
             return ptr->random(o);
         }
         vec3 o;
-        hitable *ptr;
+        hittable *ptr;
 };
 
 class mixture_pdf : public pdf {

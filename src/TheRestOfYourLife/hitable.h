@@ -1,5 +1,5 @@
-#ifndef HITABLEH
-#define HITABLEH
+#ifndef HITTABLEH
+#define HITTABLEH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -36,7 +36,7 @@ struct hit_record
     material *mat_ptr;
 };
 
-class hitable  {
+class hittable  {
     public:
         virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
         virtual bool bounding_box(float t0, float t1, aabb& box) const = 0;
@@ -44,9 +44,9 @@ class hitable  {
         virtual vec3 random(const vec3& o) const {return vec3(1, 0, 0);}
 };
 
-class flip_normals : public hitable {
+class flip_normals : public hittable {
     public:
-        flip_normals(hitable *p) : ptr(p) {}
+        flip_normals(hittable *p) : ptr(p) {}
         virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
             if (ptr->hit(r, t_min, t_max, rec)) {
                 rec.normal = -rec.normal;
@@ -58,15 +58,15 @@ class flip_normals : public hitable {
         virtual bool bounding_box(float t0, float t1, aabb& box) const {
             return ptr->bounding_box(t0, t1, box);
         }
-        hitable *ptr;
+        hittable *ptr;
 };
 
-class translate : public hitable {
+class translate : public hittable {
     public:
-        translate(hitable *p, const vec3& displacement) : ptr(p), offset(displacement) {}
+        translate(hittable *p, const vec3& displacement) : ptr(p), offset(displacement) {}
         virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
         virtual bool bounding_box(float t0, float t1, aabb& box) const;
-        hitable *ptr;
+        hittable *ptr;
         vec3 offset;
 };
 
@@ -89,20 +89,20 @@ bool translate::bounding_box(float t0, float t1, aabb& box) const {
         return false;
 }
 
-class rotate_y : public hitable {
+class rotate_y : public hittable {
     public:
-        rotate_y(hitable *p, float angle);
+        rotate_y(hittable *p, float angle);
         virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
         virtual bool bounding_box(float t0, float t1, aabb& box) const {
             box = bbox; return hasbox;}
-        hitable *ptr;
+        hittable *ptr;
         float sin_theta;
         float cos_theta;
         bool hasbox;
         aabb bbox;
 };
 
-rotate_y::rotate_y(hitable *p, float angle) : ptr(p) {
+rotate_y::rotate_y(hittable *p, float angle) : ptr(p) {
     float radians = (M_PI / 180.) * angle;
     sin_theta = sin(radians);
     cos_theta = cos(radians);

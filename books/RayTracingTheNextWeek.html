@@ -154,7 +154,7 @@ We also need a moving object. I’ll create a sphere class that has its center m
 times need not match up with the camera aperture open close.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class moving_sphere: public hitable  {
+    class moving_sphere: public hittable  {
         public:
             moving_sphere() {}
             moving_sphere(vec3 cen0, vec3 cen1, float t0, float t1, float r, material *m)
@@ -241,9 +241,9 @@ from their centers at `time==0`, to `center + vec3(0, 0.5*random_double(), 0)` a
 the camera aperture open over that frame.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hitable *random_scene() {
+    hittable *random_scene() {
         int n = 50000;
-        hitable **list = new hitable*[n+1];
+        hittable **list = new hittable*[n+1];
         list[0] =  new sphere(vec3(0,-1000,0), 1000, new lambertian(checker));
         int i = 1;
         for (int a = -10; a < 10; a++) {
@@ -285,7 +285,7 @@ the camera aperture open over that frame.
         list[i++] = new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1)));
         list[i++] = new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0));
 
-        return new hitable_list(list,i);
+        return new hittable_list(list,i);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -315,8 +315,8 @@ Bounding Volume Hierarchies
 ====================================================================================================
 
 This part is by far the most difficult and involved part of the ray tracer we are working on. I am
-sticking it in this chapter so the code can run faster, and because it refactors `hitable` a little,
-and when I add rectangles and boxes we won't have to go back and refactor them.
+sticking it in this chapter so the code can run faster, and because it refactors `hittable` a
+little, and when I add rectangles and boxes we won't have to go back and refactor them.
 
 The ray-object intersection is the main time-bottleneck in a ray tracer, and the time is linear with
 the number of objects. But it’s a repeated search on the same model, so we ought to be able to make
@@ -558,14 +558,14 @@ extremely well on many compilers, and I have adopted it as my go-to method:
 </div>
 
 <div class='together'>
-We now need to add a function to compute bounding boxes to all of the hitables. Then we will make a
+We now need to add a function to compute bounding boxes to all of the hittables. Then we will make a
 hierarchy of boxes over all the primitives and the individual primitives, like spheres, will live at
 the leaves. That function returns a bool because not all primitives have bounding boxes (_e.g._,
 infinite planes). In addition, objects move so it takes `time1` and `time2` for the interval of the
 frame and the bounding box will bound the object moving through that interval.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class hitable  {
+    class hitabble  {
         public:
             virtual bool hit(
                 const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
@@ -607,7 +607,7 @@ For lists you can store the bounding box at construction, or compute it on the f
 the fly because it is only usually called at BVH construction.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool hitable_list::bounding_box(float t0, float t1, aabb& box) const {
+    bool hittable_list::bounding_box(float t0, float t1, aabb& box) const {
         if (list_size < 1) return false;
         aabb temp_box;
         bool first_true = list[0]->bounding_box(t0, t1, temp_box);
@@ -645,21 +645,21 @@ boxes:
 </div>
 
 <div class='together'>
-A BVH is also going to be a `hitable` -- just like lists of `hitable`s. It’s really a container, but
-it can respond to the query “does this ray hit you?”. One design question is whether we have two
+A BVH is also going to be a `hittable` -- just like lists of `hittable`s. It’s really a container,
+but it can respond to the query “does this ray hit you?”. One design question is whether we have two
 classes, one for the tree, and one for the nodes in the tree; or do we have just one class and have
 the root just be a node we point to. I am a fan of the one class design when feasible. Here is such
 a class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class bvh_node : public hitable  {
+    class bvh_node : public hittable  {
         public:
             bvh_node() {}
-            bvh_node(hitable **l, int n, float time0, float time1);
+            bvh_node(hittable **l, int n, float time0, float time1);
             virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
             virtual bool bounding_box(float t0, float t1, aabb& box) const;
-            hitable *left;
-            hitable *right;
+            hittable *left;
+            hittable *right;
             aabb box;
     };
 
@@ -671,8 +671,8 @@ a class:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
-Note that the children pointers are to generic hitables. They can be other `bvh_nodes`, or
-`spheres`, or any other `hitable`.
+Note that the children pointers are to generic hittables. They can be other `bvh_nodes`, or
+`spheres`, or any other `hittable`.
 
 <div class='together'>
 The `hit` function is pretty straightforward: check whether the box for the node is hit, and if so,
@@ -734,14 +734,14 @@ one recursion would probably help a little, but I figure the whole method will g
 This yields:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bvh_node::bvh_node(hitable **l, int n, float time0, float time1) {
+    bvh_node::bvh_node(hittable **l, int n, float time0, float time1) {
         int axis = int(3*random_double());
         if (axis == 0)
-           qsort(l, n, sizeof(hitable *), box_x_compare);
+           qsort(l, n, sizeof(hittable *), box_x_compare);
         else if (axis == 1)
-           qsort(l, n, sizeof(hitable *), box_y_compare);
+           qsort(l, n, sizeof(hittable *), box_y_compare);
         else
-           qsort(l, n, sizeof(hitable *), box_z_compare);
+           qsort(l, n, sizeof(hittable *), box_z_compare);
         if (n == 1) {
             left = right = l[0];
         }
@@ -775,8 +775,8 @@ this part, you have a future as a systems person!
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int box_x_compare (const void * a, const void * b) {
         aabb box_left, box_right;
-        hitable *ah = *(hitable**)a;
-        hitable *bh = *(hitable**)b;
+        hittable *ah = *(hittable**)a;
+        hittable *bh = *(hittable**)b;
 
         if (!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
             std::cerr << "no bounding box in bvh_node constructor\n";
@@ -896,16 +896,16 @@ We get:
 If we add a new scene:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hitable *two_spheres() {
+    hittable *two_spheres() {
         texture *checker = new checker_texture(
             new constant_texture(vec3(0.2, 0.3, 0.1)),
             new constant_texture(vec3(0.9, 0.9, 0.9))
         );
         int n = 50;
-        hitable **list = new hitable*[n+1];
+        hittable **list = new hittable*[n+1];
         list[0] = new sphere(vec3(0,-10, 0), 10, new lambertian(checker)
         1ist[1] = new sphere(vec3(0, 10, 0), 10, new lambertian(checker)
-        return new hitable_list(list,2);
+        return new hittable_list(list,2);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1031,12 +1031,12 @@ colors:
 And we can use that one some spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hitable *two_perlin_spheres() (
+    hittable *two_perlin_spheres() (
         texture *pertext = new noise_texture();
-        hitable **list = new hitable*[2];
+        hittable **list = new hittable*[2];
         list[0] = new sphere(vec3(0,-1000, 0), 1000, new lambertian(pertext));
         list[1] = new sphere(vec3(0, 2, 0), 2, new lambertian(pertext));
-        return new hitable_list(list, 2);
+        return new hittable_list(list, 2);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -1334,7 +1334,7 @@ position is:
 </div>
 
 <div class='together'>
-This is just a fractional position. For a hitable, we need to also return a u and v in the hit
+This is just a fractional position. For a hittable, we need to also return a u and v in the hit
 record. For spheres, this is usually based on some form of longitude and latitude, _i.e._, spherical
 coordinates. So if we have a $(\theta,\phi)$ in spherical coordinates we just need to scale $\theta$
 and $\phi$ to fractions. If $\theta$ is the angle down from the pole, and $\phi$ is the angle around
@@ -1501,7 +1501,7 @@ class return black:
 Next, let’s make the background black in our color function, and pay attention to emitted:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hitable *world, int depth) {
+    vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
         if (world->hit(r, 0.001, MAXFLOAT, rec)) {
             ray scattered;
@@ -1551,7 +1551,7 @@ It is a hit if $x_0 < x < x_1$ and $y_0 < y < y_1$.
 The actual `xy_rect` class is thus:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class xy_rect: public hitable  {
+    class xy_rect: public hittable  {
         public:
             xy_rect() {}
             xy_rect(float _x0, float _x1, float _y0, float _y1, float _k, material *mat)
@@ -1594,16 +1594,16 @@ And the hit function is:
 If we set up a rectangle as a light:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hitable *simple_light() {
+    hittable *simple_light() {
         texture *pertext = new noise_texture(4);
-        hitable **list = new hitable*[4];
+        hittable **list = new hittable*[4];
         list[0] = new sphere(vec3(0,-1000, 0), 1000, new lambertian(pertext));
         list[1] = new sphere(vec3(0, 2, 0), 2, new lambertian(pertext));
         list[2] = new sphere(vec3(0, 7, 0), 2,
             new diffuse_light(new constant_texture(vec3(4,4,4))));
         list[3] = new xy_rect(3, 5, 1, 3, -2,
             new diffuse_light(new constant_texture(vec3(4,4,4))));
-        return new hitable_list(list,4);
+        return new hittable_list(list,4);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -1630,7 +1630,7 @@ Now let’s add the other two axes and the famous Cornell Box.
 This is yz and xz.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class xz_rect: public hitable  {
+    class xz_rect: public hittable  {
         public:
             xz_rect() {}
             xz_rect(float _x0, float _x1, float _z0, float _z1, float _k, material *mat)
@@ -1644,7 +1644,7 @@ This is yz and xz.
             float x0, x1, z0, z1, k;
     };
 
-    class yz_rect: public hitable  {
+    class yz_rect: public hittable  {
         public:
             yz_rect() {}
             yz_rect(float _y0, float _y1, float _z0, float _z1, float _k, material *mat)
@@ -1704,8 +1704,8 @@ With unsurprising hit functions:
 Let’s make the 5 walls and the light of the box:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hitable *cornell_box() {
-        hitable **list = new hitable*[8];
+    hittable *cornell_box() {
+        hittable **list = new hittable*[8];
         int i = 0;
         material *red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
         material *white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
@@ -1718,7 +1718,7 @@ Let’s make the 5 walls and the light of the box:
         list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
         list[i++] = new xy_rect(0, 555, 0, 555, 555, white);
 
-        return new hitable_list(list,i);
+        return new hittable_list(list,i);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -1747,13 +1747,13 @@ We get:
 
 <div class='together'>
 This is very noisy because the light is small. But why are the other walls missing? They are facing
-the wrong way. We need outward facing normals. Let’s make a hitable that does nothing but hold
-another hitable, but reverses the normals:
+the wrong way. We need outward facing normals. Let’s make a hittable that does nothing but hold
+another hittable, but reverses the normals:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class flip_normals : public hitable {
+    class flip_normals : public hittable {
         public:
-            flip_normals(hitable *p) : ptr(p) {}
+            flip_normals(hittable *p) : ptr(p) {}
 
             virtual bool hit(
                 const ray& r, float t_min, float t_max, hit_record& rec) const {
@@ -1770,7 +1770,7 @@ another hitable, but reverses the normals:
                 return ptr->bounding_box(t0, t1, box);
             }
 
-            hitable *ptr;
+            hittable *ptr;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -1779,8 +1779,8 @@ another hitable, but reverses the normals:
 This makes Cornell:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hitable *cornell_box() {
-        hitable **list = new hitable*[6];
+    hittable *cornell_box() {
+        hittable **list = new hittable*[6];
         int i = 0;
         material *red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
         material *white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
@@ -1794,7 +1794,7 @@ This makes Cornell:
         list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
         list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
 
-        return new hitable_list(list,i);
+        return new hittable_list(list,i);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -1815,7 +1815,7 @@ The Cornell Box usually has two blocks in it. These are rotated relative to the 
 make an axis-aligned block primitive that holds 6 rectangles:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class box: public hitable  {
+    class box: public hittable  {
         public:
             box() {}
             box(const vec3& p0, const vec3& p1, material *ptr);
@@ -1825,13 +1825,13 @@ make an axis-aligned block primitive that holds 6 rectangles:
                 return true;
             }
             vec3 pmin, pmax;
-            hitable *list_ptr;
+            hittable *list_ptr;
     };
 
     box::box(const vec3& p0, const vec3& p1, material *ptr) {
         pmin = p0;
         pmax = p1;
-        hitable **list = new hitable*[6];
+        hittable **list = new hittable*[6];
         list[0] = new xy_rect(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr);
         list[1] = new flip_normals(
             new xy_rect(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr));
@@ -1841,7 +1841,7 @@ make an axis-aligned block primitive that holds 6 rectangles:
         list[4] = new yz_rect(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr);
         list[5] = new flip_normals(
             new yz_rect(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
-        list_ptr = new hitable_list(list,6);
+        list_ptr = new hittable_list(list,6);
     }
 
     bool box::hit(const ray& r, float t0, float t1, hit_record& rec) const {
@@ -1881,17 +1881,17 @@ subtract 2 off the x-component of the ray origin.
 
 <div class='together'>
 Whether you think of this as a move or a change of coordinates is up to you. The code for this, to
-move any underlying hitable is a _translate_ instance.
+move any underlying hittable is a _translate_ instance.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class translate : public hitable {
+    class translate : public hittable {
         public:
-            translate(hitable *p, const vec3& displacement)
+            translate(hittable *p, const vec3& displacement)
                 : ptr(p), offset(displacement) {}
             virtual bool hit(
                 const ray& r, float t_min, float t_max, hit_record& rec) const;
             virtual bool bounding_box(float t0, float t1, aabb& box) const;
-            hitable *ptr;
+            hittable *ptr;
             vec3 offset;
     };
 
@@ -1961,15 +1961,15 @@ to that.
 For a y-rotation class we have:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class rotate_y : public hitable {
+    class rotate_y : public hittable {
         public:
-            rotate_y(hitable *p, float angle);
+            rotate_y(hittable *p, float angle);
             virtual bool hit(
                 const ray& r, float t_min, float t_max, hit_record& rec) const;
             virtual bool bounding_box(float t0, float t1, aabb& box) const {
                 box = bbox; return hasbox;
             }
-            hitable *ptr;
+            hittable *ptr;
             float sin_theta;
             float cos_theta;
             bool hasbox;
@@ -1982,7 +1982,7 @@ For a y-rotation class we have:
 With constructor:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    rotate_y::rotate_y(hitable *p, float angle) : ptr(p) {
+    rotate_y::rotate_y(hittable *p, float angle) : ptr(p) {
         float radians = (M_PI / 180.) * angle;
         sin_theta = sin(radians);
         cos_theta = cos(radians);
@@ -2093,14 +2093,14 @@ likely that is. The probability that the ray scatters in any small distance $\de
 
 <div class='together'>
 where $C$ is proportional to the optical density of the volume. If you go through all the
-differential equations, for a random number you get a distance where the scattering occurs. If
-that distance is outside the volume, then there is no “hit”. For a constant volume we just need
-the density $C$ and the boundary. I’ll use another hitable for the boundary. The resulting class is:
+differential equations, for a random number you get a distance where the scattering occurs. If that
+distance is outside the volume, then there is no “hit”. For a constant volume we just need the
+density $C$ and the boundary. I’ll use another hittable for the boundary. The resulting class is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class constant_medium : public hitable  {
+    class constant_medium : public hittable  {
         public:
-            constant_medium(hitable *b, float d, texture *a)
+            constant_medium(hittable *b, float d, texture *a)
               : boundary(b), density(d) {
 
                 phase_function = new isotropic(a);
@@ -2110,7 +2110,7 @@ the density $C$ and the boundary. I’ll use another hitable for the boundary. T
             virtual bool bounding_box(float t0, float t1, aabb& box) const {
                 return boundary->bounding_box(t0, t1, box);
             }
-            hitable *boundary;
+            hittable *boundary;
             float density;
             material *phase_function;
     };
@@ -2199,8 +2199,8 @@ If we replace the two blocks with smoke and fog (dark and light particles) and m
 (and dimmer so it doesn’t blow out the scene) for faster convergence:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hitable *cornell_smoke() {
-        hitable **list = new hitable*[8];
+    hittable *cornell_smoke() {
+        hittable **list = new hittable*[8];
         int i = 0;
         material *red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
         material *white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
@@ -2214,10 +2214,10 @@ If we replace the two blocks with smoke and fog (dark and light particles) and m
         list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
         list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
 
-        hitable *b1 = new translate(
+        hittable *b1 = new translate(
             new rotate_y(new box(vec3(0, 0, 0), vec3(165, 165, 165), white), -18),
             vec3(130,0,65));
-        hitable *b2 = new translate(
+        hittable *b2 = new translate(
             new rotate_y(new box(vec3(0, 0, 0), vec3(165, 330, 165), white),  15),
             vec3(265,0,295));
 
@@ -2226,7 +2226,7 @@ If we replace the two blocks with smoke and fog (dark and light particles) and m
         list[i++] = new constant_medium(
             b2, 0.01, new constant_texture(vec3(0.0, 0.0, 0.0)));
 
-        return new hitable_list(list,i);
+        return new hittable_list(list,i);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -2249,11 +2249,11 @@ subsurface material is). The biggest limitation left in the renderer is no shado
 why we get caustics and subsurface for free. It’s a double-edged design decision.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hitable *final() {
+    hittable *final() {
         int nb = 20;
-        hitable **list = new hitable*[30];
-        hitable **boxlist = new hitable*[10000];
-        hitable **boxlist2 = new hitable*[10000];
+        hittable **list = new hittable*[30];
+        hittable **boxlist = new hittable*[10000];
+        hittable **boxlist2 = new hittable*[10000];
         material *white = new lambertian( new constant_texture(vec3(0.73, 0.73, 0.73)));
         material *ground = new lambertian( new constant_texture(vec3(0.48, 0.83, 0.53)));
         int b = 0;
@@ -2279,7 +2279,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         list[l++] = new sphere(vec3(260, 150, 45), 50, new dielectric(1.5));
         list[l++] = new sphere(vec3(0, 150, 145), 50,
             new metal(vec3(0.8, 0.8, 0.9), 10.0));
-        hitable *boundary = new sphere(vec3(360, 150, 145), 70, new dielectric(1.5));
+        hittable *boundary = new sphere(vec3(360, 150, 145), 70, new dielectric(1.5));
         list[l++] = boundary;
         list[l++] = new constant_medium(boundary, 0.2,
             new constant_texture(vec3(0.2, 0.4, 0.9)));
@@ -2300,7 +2300,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         }
         list[l++] =   new translate(new rotate_y(
             new bvh_node(boxlist2,ns, 0.0, 1.0), 15), vec3(-100,270,395));
-        return new hitable_list(list,l);
+        return new hittable_list(list,l);
     }
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
