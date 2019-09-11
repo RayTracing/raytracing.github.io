@@ -398,7 +398,7 @@ for now because we’ll add antialiasing later):
     #include <iostream>
     #include "ray.h"
 
-    vec3 color(const ray& r, hitable *world, int depth) {
+    vec3 color(const ray& r, hittable *world, int depth) {
         vec3 unit_direction = unit_vector(r.direction());
         float t = 0.5*(unit_direction.y() + 1.0);
         return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
@@ -617,11 +617,11 @@ Now, how about several spheres? While it is tempting to have an array of spheres
 solution is the make an “abstract class” for anything a ray might hit and make both a sphere and a
 list of spheres just something you can hit. What that class should be called is something of a
 quandary -- calling it an “object” would be good if not for “object oriented” programming. “Surface”
-is often used, with the weakness being maybe we will want volumes. “Hitable” emphasizes the member
-function that unites them. I don’t love any of these but I will go with “hitable”.
+is often used, with the weakness being maybe we will want volumes. “hittable” emphasizes the member
+function that unites them. I don’t love any of these but I will go with “hittable”.
 
 <div class='together'>
-This `hitable` abstract class will have a hit function that takes in a ray. Most ray tracers have
+This `hittable` abstract class will have a hit function that takes in a ray. Most ray tracers have
 found it convenient to add a valid interval for hits $t_{min}$ to $t_{max}$, so the hit only
 “counts” if $t_{min} < t < t_{max}$. For the initial rays this is positive $t$, but as we will see,
 it can help some details in the code to have an interval $t_{min}$ to $t_{max}$. One design question
@@ -631,8 +631,8 @@ go with the simple solution and compute a bundle of stuff I will store in some s
 we’ll want motion blur at some point, so I’ll add a time input variable. Here’s the abstract class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef HITABLEH
-    #define HITABLEH
+    #ifndef HITTABLEH
+    #define HITTABLEH
 
     #include "ray.h"
 
@@ -643,7 +643,7 @@ we’ll want motion blur at some point, so I’ll add a time input variable. Her
         vec3 normal;
     };
 
-    class hitable  {
+    class hittable  {
         public:
             virtual bool hit(
                 const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
@@ -660,9 +660,9 @@ And here’s the sphere (note that I eliminated a bunch of redundant 2’s that 
     #ifndef SPHEREH
     #define SPHEREH
 
-    #include "hitable.h"
+    #include "hittable.h"
 
-    class sphere: public hitable  {
+    class sphere: public hittable  {
         public:
             sphere() {}
             sphere(vec3 cen, float r) : center(cen), radius(r)  {};
@@ -706,22 +706,22 @@ And here’s the sphere (note that I eliminated a bunch of redundant 2’s that 
 And a list of objects:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef HITABLELISTH
-    #define HITABLELISTH
+    #ifndef HITTABLELISTH
+    #define HITTABLELISTH
 
-    #include "hitable.h"
+    #include "hittable.h"
 
-    class hitable_list: public hitable  {
+    class hittable_list: public hittable  {
         public:
-            hitable_list() {}
-            hitable_list(hitable **l, int n) {list = l; list_size = n; }
+            hittable_list() {}
+            hittable_list(hittable **l, int n) {list = l; list_size = n; }
             virtual bool hit(
                 const ray& r, float tmin, float tmax, hit_record& rec) const;
-            hitable **list;
+            hittable **list;
             int list_size;
     };
 
-    bool hitable_list::hit(
+    bool hittable_list::hit(
         const ray& r, float t_min, float t_max, hit_record& rec) const {
 
         hit_record temp_rec;
@@ -747,12 +747,12 @@ And the new main:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include <iostream>
     #include "sphere.h"
-    #include "hitable_list.h"
+    #include "hittable_list.h"
     #include "float.h"
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    vec3 color(const ray& r, hitable *world) {
+    vec3 color(const ray& r, hittable *world) {
         hit_record rec;
         if (world->hit(r, 0.0, MAXFLOAT, rec)) {
             return 0.5*vec3(rec.normal.x()+1, rec.normal.y()+1, rec.normal.z()+1);
@@ -778,10 +778,10 @@ And the new main:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        hitable *list[2];
+        hittable *list[2];
         list[0] = new sphere(vec3(0,0,-1), 0.5);
         list[1] = new sphere(vec3(0,-100.5,-1), 100);
-        hitable *world = new hitable_list(list,2);
+        hittable *world = new hittable_list(list,2);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         for (int j = ny-1; j >= 0; j--) {
@@ -925,10 +925,10 @@ Main is also changed:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
-        hitable *list[2];
+        hittable *list[2];
         list[0] = new sphere(vec3(0,0,-1), 0.5);
         list[1] = new sphere(vec3(0,-100.5,-1), 100);
-        hitable *world = new hitable_list(list,2);
+        hittable *world = new hittable_list(list,2);
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         camera cam;
@@ -1022,7 +1022,7 @@ outside the sphere. A do/while construct is perfect for that:
 Then update the `color()` function to use the new random direction generator:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hitable *world, int depth) {
+    vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
         if (world->hit(r, 0.0, MAXFLOAT, rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1114,13 +1114,13 @@ This suggests the abstract class:
 
 <div class='together'>
 The `hit_record` is to avoid a bunch of arguments so we can stuff whatever info we want in there.
-You can use arguments instead; it’s a matter of taste. Hitables and materials need to know each
+You can use arguments instead; it’s a matter of taste. Hittables and materials need to know each
 other so there is some circularity of the references. In C++ you just need to alert the compiler
-that the pointer is to a class, which the “class material” in the hitable class below does:
+that the pointer is to a class, which the “class material” in the hittable class below does:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef HITABLEH
-    #define HITABLEH
+    #ifndef HITTABLEH
+    #define HITTABLEH
     #include "ray.h"
 
     class material;
@@ -1133,7 +1133,7 @@ that the pointer is to a class, which the “class material” in the hitable cl
         material *mat_ptr;
     };
 
-    class hitable  {
+    class hittable  {
         public:
             virtual bool hit(
                 const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
@@ -1155,7 +1155,7 @@ To achieve this, we must have a reference to the material for our sphere class t
 within `hit_record`. See the lines below marked with **`/* NEW */`**.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class sphere: public hitable  {
+    class sphere: public hittable  {
         public:
             sphere() {}
             sphere(vec3 cen, float r, material *m)
@@ -1265,7 +1265,7 @@ The metal material just reflects rays using that formula:
 We need to modify the color function to use this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hitable *world, int depth) {
+    vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (world->hit(r, 0.001, MAXFLOAT, rec)) {
@@ -1301,12 +1301,12 @@ metal spheres:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        hitable *list[4];
+        hittable *list[4];
         list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
         list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
         list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2), 0.0));
         list[3] = new sphere(vec3(-1,0,-1), 0.5, new metal(vec3(0.8, 0.8, 0.8)));
-        hitable *world = new hitable_list(list,4);
+        hittable *world = new hittable_list(list,4);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         camera cam;
@@ -1677,7 +1677,7 @@ When calling it with camera `cam(90, float(nx)/float(ny))` and these spheres:
     float R = cos(M_PI/4);
     list[0] = new sphere(vec3(-R,0,-1), R, new lambertian(vec3(0, 0, 1)));
     list[1] = new sphere(vec3( R,0,-1), R, new lambertian(vec3(1, 0, 0)));
-    hitable *world = new hitable_list(list,2);
+    hittable *world = new hittable_list(list,2);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 gives:
@@ -1893,9 +1893,9 @@ Where Next?
 First let’s make the image on the cover of this book -- lots of random spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hitable *random_scene() {
+    hittable *random_scene() {
         int n = 500;
-        hitable **list = new hitable*[n+1];
+        hittable **list = new hittable*[n+1];
         list[0] =  new sphere(vec3(0,-1000,0), 1000, new lambertian(vec3(0.5, 0.5, 0.5)));
         int i = 1;
         for (int a = -11; a < 11; a++) {
@@ -1929,7 +1929,7 @@ First let’s make the image on the cover of this book -- lots of random spheres
         list[i++] = new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1)));
         list[i++] = new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0));
 
-        return new hitable_list(list,i);
+        return new hittable_list(list,i);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -1965,7 +1965,7 @@ You now have a cool ray tracer! What next?
      blog.
 
   6. Volumes and media. Cool stuff and will challenge your software architecture. I favor making
-     volumes have the hitable interface and probabilistically have intersections based on density.
+     volumes have the hittable interface and probabilistically have intersections based on density.
      Your rendering code doesn’t even have to know it has volumes with that method.
 
   7. Parallelism. Run $N$ copies of your code on $N$ cores with different random seeds. Average the
