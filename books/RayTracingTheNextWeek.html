@@ -107,8 +107,8 @@ to camera because for now it is not allowed to move; it just sends out rays over
                 float aperture,
                 float focus_dist,
                 float t0,
-                float t1) {
-
+                float t1
+            ) {
                 time0 = t0;
                 time1 = t1;
                 lens_radius = aperture / 2;
@@ -154,11 +154,11 @@ We also need a moving object. I’ll create a sphere class that has its center m
 times need not match up with the camera aperture open close.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class moving_sphere: public hitable  {
+    class moving_sphere: public hitable {
         public:
             moving_sphere() {}
             moving_sphere(vec3 cen0, vec3 cen1, float t0, float t1, float r, material *m)
-                : center0(cen0), center1(cen1), time0(t0),time1(t1), radius(r), mat_ptr(m)
+              : center0(cen0), center1(cen1), time0(t0), time1(t1), radius(r), mat_ptr(m)
                 {};
             virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
             virtual bool bounding_box(float t0, float t1, aabb& box) const;
@@ -565,7 +565,7 @@ infinite planes). In addition, objects move so it takes `time1` and `time2` for 
 frame and the bounding box will bound the object moving through that interval.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class hitable  {
+    class hitable {
         public:
             virtual bool hit(
                 const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
@@ -652,17 +652,18 @@ the root just be a node we point to. I am a fan of the one class design when fea
 a class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class bvh_node : public hitable  {
+    class bvh_node : public hitable {
         public:
             bvh_node() {}
             bvh_node(hitable **l, int n, float time0, float time1);
+
             virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
             virtual bool bounding_box(float t0, float t1, aabb& box) const;
+
             hitable *left;
             hitable *right;
             aabb box;
     };
-
 
     bool bvh_node::bounding_box(float t0, float t1, aabb& b) const {
         b = box;
@@ -736,12 +737,14 @@ This yields:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bvh_node::bvh_node(hitable **l, int n, float time0, float time1) {
         int axis = int(3*random_double());
+
         if (axis == 0)
            qsort(l, n, sizeof(hitable *), box_x_compare);
         else if (axis == 1)
            qsort(l, n, sizeof(hitable *), box_y_compare);
         else
            qsort(l, n, sizeof(hitable *), box_z_compare);
+
         if (n == 1) {
             left = right = l[0];
         }
@@ -753,12 +756,15 @@ This yields:
             left = new bvh_node(l, n/2, time0, time1);
             right = new bvh_node(l + n/2, n - n/2, time0, time1);
         }
+
         aabb box_left, box_right;
-        if (!left->bounding_box(time0,time1, box_left) ||
-            !right->bounding_box(time0,time1, box_right)
-           ) {
+
+        if (!left->bounding_box(time0, time1, box_left) ||
+            !right->bounding_box(time0, time1, box_right)) {
+
             std::cerr << "no bounding box in bvh_node constructor\n";
         }
+
         box = surrounding_box(box_left, box_right);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -807,8 +813,8 @@ being able to make any color a texture is great.
 
     class constant_texture : public texture {
         public:
-            constant_texture() ( }
-            constant_texture(vec3 c) : color(c) { }
+            constant_texture() {}
+            constant_texture(vec3 c) : color(c) {}
             virtual vec3 value(float u, float v, const vec3& p) const {
                 return color;
             }
@@ -824,7 +830,8 @@ Now we can make textured materials by replacing the vec3 color with a texture po
         public:
             lambertian(texture *a) : albedo(a) {}
             virtual bool scatter(const ray& r_in, const hit_record& rec,
-                                 vec3& attenuation, ray& scattered) const (
+                                 vec3& attenuation, ray& scattered
+            ) const {
                 vec3 target = rec.p + rec.normal + random_in_unit_sphere();
                 scattered = ray(rec.p, target - rec.p);
                 attenuation = albedo->value(0, 0, rec.p);
@@ -857,8 +864,8 @@ forms a 3D checker pattern.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class checker_texture : public texture {
         public:
-            checker_texture() { }
-            checker_texture(texture *t0, texture *tl): even(t0), odd(t1) { }
+            checker_texture() {}
+            checker_texture(texture *t0, texture *tl): even(t0), odd(t1) {}
             virtual vec3 value(float u, float v, const vec3& p) const {
                 float sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
                 if (sines < 0)
@@ -903,8 +910,8 @@ If we add a new scene:
         );
         int n = 50;
         hitable **list = new hitable*[n+1];
-        list[0] = new sphere(vec3(0,-10, 0), 10, new lambertian(checker)
-        1ist[1] = new sphere(vec3(0, 10, 0), 10, new lambertian(checker)
+        list[0] = new sphere(vec3(0,-10, 0), 10, new lambertian(checker));
+        1ist[1] = new sphere(vec3(0, 10, 0), 10, new lambertian(checker));
         return new hitable_list(list,2);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1028,10 +1035,10 @@ colors:
 </div>
 
 <div class='together'>
-And we can use that one some spheres:
+We can use that texture on some spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hitable *two_perlin_spheres() (
+    hitable *two_perlin_spheres() {
         texture *pertext = new noise_texture();
         hitable **list = new hitable*[2];
         list[0] = new sphere(vec3(0,-1000, 0), 1000, new lambertian(pertext));
@@ -1065,7 +1072,7 @@ Add the hashing does scramble as hoped:
 To make it smooth, we can linearly interpolate:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline float trilinear_interp(float c[Z][2][2], float u, float v, float w) {
+    inline float trilinear_interp(float c[2][2][2], float u, float v, float w) {
         float accum = 0;
         for (int i=0; i < 2; 1++)
             for (int j=0; j < 2; j++)
@@ -1093,7 +1100,7 @@ To make it smooth, we can linearly interpolate:
                             c[di][dj][dk] = ranfloat[
                                 perm_x[(i+di) & 255] ^
                                 perm_y[(j+dj) & 255] ^
-                                pexm_z[(k+dk) & 255];
+                                pexm_z[(k+dk) & 255]
                             ];
                 return trilinear_interp(c, u, v, w);
             }
@@ -1216,7 +1223,7 @@ The Perlin class is now:
                             c[di][dj][dk] = ranvec[
                                 perm_x[(i+di) & 255] ^
                                 perm_y[(j+dj) & 255] ^
-                                pexm_z[(k+dk) & 255];
+                                pexm_z[(k+dk) & 255]
                             ];
                 return perlin_interp(c, u, v, w);
             }
@@ -1300,7 +1307,7 @@ effect is:
             virtual vec3 value(float u, float v, const vec3& p) const {
     //            return vec3(1,1,1)*0.5*(1 + noise.turb(scale * p));
     //            return vec3(1,1,1)*noise.turb(scale * p);
-                  return vec3(1,1,1)*0.5*(1 + sin(scale*p.z() + 10*noise.turb(p))) ;
+                  return vec3(1,1,1)*0.5*(1 + sin(scale*p.z() + 10*noise.turb(p)));
             }
             perlin noise;
             float scale;
@@ -1468,7 +1475,7 @@ it to hit_record instead -- that’s a matter of design taste). Like the backgro
 ray what color it is and performs no reflection. It’s very simple:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class diffuse_light : public material  {
+    class diffuse_light : public material {
         public:
             diffuse_light(texture *a) : emit(a) {}
             virtual bool scatter(const ray& r_in, const hit_record& rec,
@@ -1551,7 +1558,7 @@ It is a hit if $x_0 < x < x_1$ and $y_0 < y < y_1$.
 The actual `xy_rect` class is thus:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class xy_rect: public hitable  {
+    class xy_rect: public hitable {
         public:
             xy_rect() {}
             xy_rect(float _x0, float _x1, float _y0, float _y1, float _k, material *mat)
@@ -1627,10 +1634,10 @@ Fool around with making some spheres lights too.
 Now let’s add the other two axes and the famous Cornell Box.
 
 <div class='together'>
-This is yz and xz.
+This is xz and yz:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class xz_rect: public hitable  {
+    class xz_rect: public hitable {
         public:
             xz_rect() {}
             xz_rect(float _x0, float _x1, float _z0, float _z1, float _k, material *mat)
@@ -1644,7 +1651,7 @@ This is yz and xz.
             float x0, x1, z0, z1, k;
     };
 
-    class yz_rect: public hitable  {
+    class yz_rect: public hitable {
         public:
             yz_rect() {}
             yz_rect(float _y0, float _y1, float _z0, float _z1, float _k, material *mat)
@@ -1705,7 +1712,7 @@ Let’s make the 5 walls and the light of the box:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hitable *cornell_box() {
-        hitable **list = new hitable*[8];
+        hitable **list = new hitable*[5];
         int i = 0;
         material *red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
         material *white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
@@ -1815,7 +1822,7 @@ The Cornell Box usually has two blocks in it. These are rotated relative to the 
 make an axis-aligned block primitive that holds 6 rectangles:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class box: public hitable  {
+    class box: public hitable {
         public:
             box() {}
             box(const vec3& p0, const vec3& p1, material *ptr);
@@ -2043,7 +2050,7 @@ And the hit function:
 </div>
 
 <div class='together'>
-And the changes to Cornell is:
+And the changes to Cornell are:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     list[i++] = new translate(
@@ -2052,7 +2059,7 @@ And the changes to Cornell is:
                 );
     list[i++] = new translate(
                     new rotate_y(new box(vec3(0,0,0), vec3(165,330,165), white), 15),
-                    vec3(265,,0,295)
+                    vec3(265,0,295)
                 );
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -2098,11 +2105,9 @@ that distance is outside the volume, then there is no “hit”. For a constant 
 the density $C$ and the boundary. I’ll use another hitable for the boundary. The resulting class is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class constant_medium : public hitable  {
+    class constant_medium : public hitable {
         public:
-            constant_medium(hitable *b, float d, texture *a)
-              : boundary(b), density(d) {
-
+            constant_medium(hitable *b, float d, texture *a) : boundary(b), density(d) {
                 phase_function = new isotropic(a);
             }
             virtual bool hit(
@@ -2157,11 +2162,15 @@ And the hit function is:
 
                 if (debugging) std::cerr << "\nt0 t1 " << rec1.t << " " << rec2.t << '\n';
 
-                if (rec1.t < t_min) rec1.t = t_min;
-                if (rec2.t > t_max) rec2.t = t_max;
+                if (rec1.t < t_min)
+                    rec1.t = t_min;
+
+                if (rec2.t > t_max)
+                    rec2.t = t_max;
 
                 if (rec1.t >= rec2.t)
                     return false;
+
                 if (rec1.t < 0)
                     rec1.t = 0;
 
@@ -2271,7 +2280,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         }
         int l = 0;
         list[l++] = new bvh_node(boxlist, b, 0, 1);
-        material *light = new diffuse_light( new constant_texture(vec3(7, 7, 7)) );
+        material *light = new diffuse_light( new constant_texture(vec3(7, 7, 7)));
         list[l++] = new xz_rect(123, 423, 147, 412, 554, light);
         vec3 center(400, 400, 200);
         list[l++] = new moving_sphere(center, center+vec3(30, 0, 0),
@@ -2289,20 +2298,19 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         int nx, ny, nn;
         unsigned char *tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
         material *emat =  new lambertian(new image_texture(tex_data, nx, ny));
-        list[l++] = new sphere(vec3(400,200, 400), 100, emat);
+        list[l++] = new sphere(vec3(400, 200, 400), 100, emat);
         texture *pertext = new noise_texture(0.1);
-        list[l++] =  new sphere(vec3(220,280, 300), 80, new lambertian( pertext ));
+        list[l++] =  new sphere(vec3(220, 280, 300), 80, new lambertian( pertext ));
         int ns = 1000;
         for (int j = 0; j < ns; j++) {
             boxlist2[j] = new sphere(
                 vec3(165*random_double(), 165*random_double(), 165*random_double()),
                 10, white);
         }
-        list[l++] =   new translate(new rotate_y(
-            new bvh_node(boxlist2,ns, 0.0, 1.0), 15), vec3(-100,270,395));
+        list[l++] = new translate(new rotate_y(
+            new bvh_node(boxlist2, ns, 0.0, 1.0), 15), vec3(-100,270,395));
         return new hitable_list(list,l);
     }
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 <div class='together'>

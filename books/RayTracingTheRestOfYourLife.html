@@ -80,15 +80,16 @@ Since the *R* cancels out, we can pick whatever is computationally convenient. L
 centered at the origin:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "random.h"
+
+    #include <iostream>
     #include <math.h>
     #include <stdlib.h>
-    #include <iostream>
-    #include "random.h"
 
     int main() {
         int N = 1000;
         int inside_circle = 0;
-        for (int i = 0; i < nx; i++) {
+        for (int i = 0; i < N; i++) {
             float x = 2*random_double() - 1;
             float y = 2*random_double() - 1;
             if(x*x + y*y < 1)
@@ -105,10 +106,11 @@ This gives me the answer `Estimate of Pi = 3.196`
 If we change the program to run forever and just print out a running estimate:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "random.h"
+
+    #include <iostream>
     #include <math.h>
     #include <stdlib.h>
-    #include <iostream>
-    #include "random.h"
 
     int main() {
         int inside_circle = 0;
@@ -143,8 +145,9 @@ This changes the sample generation, but we need to know how many samples we are 
 because we need to know the grid. Let’s take a hundred million and try it both ways:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include <iostream>
     #include "random.h"
+
+    #include <iostream>
 
     int main() {
         int inside_circle = 0;
@@ -385,10 +388,11 @@ down-weight. The _pdf_ is a perfect measure of how much or little sampling is be
 weighting function should be proportional to $1/pdf$ . In fact it is exactly $1/pdf$ :
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "random.h"
+
+    #include <iostream>
     #include <math.h>
     #include <stdlib.h>
-    #include <iostream>
-    #include "random.h"
 
     inline float pdf(float x) {
         return 0.5*x;
@@ -417,10 +421,11 @@ If we take that same code with uniform samples so the pdf = $1/2$ over the range
 the machinery to get `x = 2*random_double()` and the code is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "random.h"
+
+    #include <iostream>
     #include <math.h>
     #include <stdlib.h>
-    #include <iostream>
-    #include "random.h"
 
     inline float pdf(float x) {
         return 0.5;
@@ -462,10 +467,11 @@ integrating $p$ analytically), but it’s a good exercise to make sure our code 
 sample we get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "random.h"
+
+    #include <iostream>
     #include <math.h>
     #include <stdlib.h>
-    #include <iostream>
-    #include "random.h"
 
     inline float pdf(float x) {
         return 3*x*x/8;
@@ -708,7 +714,7 @@ our Cornell Box scene again, and let’s generate the camera in the function tha
         material *light = new diffuse_light( new constant_texture(vec3(15, 15, 15)) );
         list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
         list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
-        list[i++] = new flip_normals(new xz_rect(213, 343, 227, 332, 554, light));
+        list[i++] = new xz_rect(213, 343, 227, 332, 554, light);
         list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
         list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
         list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
@@ -718,7 +724,7 @@ our Cornell Box scene again, and let’s generate the camera in the function tha
             new box(vec3(0, 0, 0), vec3(165, 330, 165), white),  15), vec3(265,0,295));
         *scene = new hitable_list(list,i);
         vec3 lookfrom(278, 278, -800);
-        vec3 lookat(278,278,0);
+        vec3 lookat(278, 278, 0);
         float dist_to_focus = 10.0;
         float aperture = 0.0;
         float vfov = 40.0;
@@ -795,7 +801,7 @@ And the color function gets a minor modification:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hitable *world, int depth) {
         hit_record rec;
-        if (world->hit(r, 0.001, MAXFLOAT, hrec)) {
+        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
@@ -1083,10 +1089,10 @@ an $\vec{n}$ parallel to $\vec{a}$. A common method is to use an if-statement to
 $\vec{n}$ is a particular axis, and if not, use that axis.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    if (fabs(n.x()) > 0.9)
-        a = (0, 1, 0)
+    if absolute(n.x > 0.9)
+        a ← (0, 1, 0)
     else
-        a = (1, 0, 0)
+        a ← (1, 0, 0)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
@@ -1128,7 +1134,7 @@ utility functions:
             a = vec3(0, 1, 0);
         else
             a = vec3(1, 0, 0);
-        axis[1] = unit_vector( cross( w(), a ) );
+        axis[1] = unit_vector(cross(w(), a));
         axis[0] = cross(w(), v());
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1147,7 +1153,7 @@ We can rewrite our Lambertian material using this to get:
     {
         onb uvw;
         uvw.build_from_w(rec.normal);
-        vec3 direction = uvw.local(random_cosine_direction() );
+        vec3 direction = uvw.local(random_cosine_direction());
         scattered = ray(rec.p, unit_vector(direction), r_in.time());
         alb = albedo->value(rec.u, rec.v, rec.p);
         pdf = dot(uvw.w(), scattered.direction()) / M_PI;
@@ -1483,7 +1489,7 @@ And then change `color()`:
             vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
             float pdf_val;
             vec3 albedo;
-            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
+            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val)) {
                 hitable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
                 hitable_pdf p(light_shape, rec.p);
                 scattered = ray(rec.p, p.generate(), r.time());
@@ -1991,17 +1997,6 @@ We assemble a list to pass in to `color`.
     a[0] = light_shape;
     a[1] = glass_sphere;
     hitable_list hlist(a,2);
-
-    for (int j = ny-1; j >= 0; j--) {
-        for (int i = 0; i < nx; i++) {
-            vec3 col(0, 0, 0);
-            for (int s=0; s < ns; s++) {
-                float u = float(i+random_double())/ float(nx);
-                float v = float(j+random_double())/ float(ny);
-                ray r = cam->get_ray(u, v);
-                vec3 p = r.point_at_parameter(2.0);
-                col += color(r, world, &hlist, 0);
-            }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
