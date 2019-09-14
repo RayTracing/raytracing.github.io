@@ -753,14 +753,17 @@ We modify the base-class _material_ to enable this importance sampling:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material  {
         public:
+
             virtual bool scatter(const ray& r_in,
                 const hit_record& rec, vec3& albedo, ray& scattered, float& pdf) const {
                 return false;
             }
-            virtual float scattering_pdf(const ray& r_in,
-                const hit_record& rec, const ray& scattered) const {
-                return false;
+
+            virtual float scattering_pdf(const ray& r_in, const hit_record& rec,
+                                         const ray& scattered) const {
+                return 0;
             }
+
             virtual vec3 emitted(float u, float v, const vec3& p) const {
                 return vec3(0,0,0);
             }
@@ -775,6 +778,7 @@ And _Lambertian_ material becomes:
     class lambertian : public material {
         public:
             lambertian(texture *a) : albedo(a) {}
+
             float scattering_pdf(const ray& r_in,
                 const hit_record& rec, const ray& scattered) const {
                 float cosine = dot(rec.normal, unit_vector(scattered.direction()));
@@ -782,6 +786,7 @@ And _Lambertian_ material becomes:
                     return 0;
                 return cosine / M_PI;
             }
+
             bool scatter(const ray& r_in,
                 const hit_record& rec, vec3& alb, ray& scattered, float& pdf) const {
                 vec3 target = rec.p + rec.normal + random_in_unit_sphere();
@@ -790,6 +795,7 @@ And _Lambertian_ material becomes:
                 pdf = dot(rec.normal, scattered.direction()) / M_PI;
                 return true;
             }
+
             texture *albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1671,9 +1677,15 @@ We can redesign `material` and stuff all the new arguments into a `struct` like 
     class material  {
         public:
             virtual bool scatter(const ray& r_in, const hit_record& hrec,
-                scatter_record& srec) const { return false; }
+                                 scatter_record& srec) const {
+                return false;
+            }
+
             virtual float scattering_pdf(const ray& r_in, const hit_record& rec,
-                const ray& scattered) const { return false; }
+                                         const ray& scattered) const {
+                return 0;
+            }
+
             virtual vec3 emitted(const ray& r_in, const hit_record& rec,
                 float u, float v, const vec3& p) const { return vec3(0,0,0); }
     };
@@ -1686,14 +1698,18 @@ The Lambertian material becomes simpler:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
         public:
+
             lambertian(texture *a) : albedo(a) {}
+
             float scattering_pdf(const ray& r_in, const hit_record& rec,
-                const ray& scattered) const {
+                                 const ray& scattered) const {
                 float cosine = dot(rec.normal, unit_vector(scattered.direction()));
                 if (cosine < 0)
                     return 0;
                 return cosine / M_PI;
             }
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             bool scatter(const ray& r_in, const hit_record& hrec,
                 scatter_record& srec) const {
@@ -1703,6 +1719,7 @@ The Lambertian material becomes simpler:
                 return true;
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
             texture *albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

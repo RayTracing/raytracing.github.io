@@ -56,7 +56,10 @@ vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
                 ray scattered = ray(hrec.p, p.generate(), r.time());
                 float pdf_val = p.value(scattered.direction());
                 delete srec.pdf_ptr;
-                return emitted + srec.attenuation*hrec.mat_ptr->scattering_pdf(r, hrec, scattered)*color(scattered, world, light_shape, depth+1) / pdf_val;
+                return emitted
+                     + srec.attenuation * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+                                        * color(scattered, world, light_shape, depth+1)
+                                        / pdf_val;
             }
         }
         else
