@@ -11,12 +11,12 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include "hitable.h"
+#include "hittable.h"
 #include "onb.h"
 #include "pdf.h"
 
 
-class sphere: public hitable  {
+class sphere: public hittable  {
     public:
         sphere() {}
         sphere(vec3 cen, float r, material *m) : center(cen), radius(r), mat_ptr(m)  {};

@@ -11,7 +11,7 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include "hitable.h"
+#include "hittable.h"
 #include "onb.h"
 #include "pdf.h"
 #include "random.h"
@@ -54,10 +54,14 @@ struct scatter_record
 class material  {
     public:
         virtual bool scatter(const ray& r_in, const hit_record& hrec, scatter_record& srec) const {
-              return false;}
+            return false;
+        }
         virtual float scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
-              return false;}
-        virtual vec3 emitted(const ray& r_in, const hit_record& rec, float u, float v, const vec3& p) const { return vec3(0,0,0); }
+            return 0;
+        }
+        virtual vec3 emitted(const ray& r_in, const hit_record& rec, float u, float v, const vec3& p) const {
+            return vec3(0,0,0);
+        }
 };
 
 class dielectric : public material {

@@ -10,7 +10,7 @@
 //==================================================================================================
 
 #include "camera.h"
-#include "hitable_list.h"
+#include "hittable_list.h"
 #include "material.h"
 #include "random.h"
 #include "sphere.h"
@@ -19,7 +19,7 @@
 #include <iostream>
 
 
-vec3 color(const ray& r, hitable *world, int depth) {
+vec3 color(const ray& r, hittable *world, int depth) {
     hit_record rec;
     if (world->hit(r, 0.001, MAXFLOAT, rec)) {
         ray scattered;
@@ -39,9 +39,9 @@ vec3 color(const ray& r, hitable *world, int depth) {
 }
 
 
-hitable *random_scene() {
+hittable *random_scene() {
     int n = 500;
-    hitable **list = new hitable*[n+1];
+    hittable **list = new hittable*[n+1];
     list[0] =  new sphere(vec3(0,-1000,0), 1000, new lambertian(vec3(0.5, 0.5, 0.5)));
     int i = 1;
     for (int a = -11; a < 11; a++) {
@@ -77,7 +77,7 @@ hitable *random_scene() {
     list[i++] = new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1)));
     list[i++] = new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0));
 
-    return new hitable_list(list,i);
+    return new hittable_list(list,i);
 }
 
 
@@ -86,7 +86,7 @@ int main() {
     int ny = 800;
     int ns = 10;
     std::cout << "P3\n" << nx << " " << ny << "\n255\n";
-    hitable *world = random_scene();
+    hittable *world = random_scene();
 
     vec3 lookfrom(13,2,3);
     vec3 lookat(0,0,0);

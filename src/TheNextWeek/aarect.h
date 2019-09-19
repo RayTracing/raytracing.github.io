@@ -11,10 +11,10 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include "hitable.h"
+#include "hittable.h"
 
 
-class xy_rect: public hitable  {
+class xy_rect: public hittable  {
     public:
         xy_rect() {}
         xy_rect(float _x0, float _x1, float _y0, float _y1, float _k, material *mat) : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
@@ -26,7 +26,7 @@ class xy_rect: public hitable  {
         float x0, x1, y0, y1, k;
 };
 
-class xz_rect: public hitable  {
+class xz_rect: public hittable  {
     public:
         xz_rect() {}
         xz_rect(float _x0, float _x1, float _z0, float _z1, float _k, material *mat) : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
@@ -38,7 +38,7 @@ class xz_rect: public hitable  {
         float x0, x1, z0, z1, k;
 };
 
-class yz_rect: public hitable  {
+class yz_rect: public hittable  {
     public:
         yz_rect() {}
         yz_rect(float _y0, float _y1, float _z0, float _z1, float _k, material *mat) : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
