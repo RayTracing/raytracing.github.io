@@ -9,15 +9,16 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include <functional>
+#include <iostream>
+#include <thread>
+#include <vector>
+#include <float.h>
 #include "camera.h"
-#include "hittable_list.h"
+#include "hitable_list.h"
 #include "material.h"
 #include "random.h"
 #include "sphere.h"
-
-#include <float.h>
-#include <iostream>
-
 
 vec3 color(const ray& r, hittable *world, int depth) {
     hit_record rec;
@@ -81,11 +82,22 @@ hittable *random_scene() {
 }
 
 
+void write_image(uint8_t *image, int nx, int ny) {
+    std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+    for (int j = ny-1; j >= 0; j--) {
+        for (int i = 0; i < nx; ++i) {
+            std::cout << static_cast<int>(image[3*(j*nx+i)+0]) << " ";
+            std::cout << static_cast<int>(image[3*(j*nx+i)+1]) << " ";
+            std::cout << static_cast<int>(image[3*(j*nx+i)+2]) << std::endl;
+        }
+    }
+}
+
+
 int main() {
     int nx = 1200;
     int ny = 800;
     int ns = 10;
-    std::cout << "P3\n" << nx << " " << ny << "\n255\n";
     hittable *world = random_scene();
 
     vec3 lookfrom(13,2,3);
@@ -95,21 +107,32 @@ int main() {
 
     camera cam(lookfrom, lookat, vec3(0,1,0), 20, float(nx)/float(ny), aperture, dist_to_focus);
 
-    for (int j = ny-1; j >= 0; j--) {
-        for (int i = 0; i < nx; i++) {
-            vec3 col(0, 0, 0);
-            for (int s=0; s < ns; s++) {
-                float u = float(i + random_double()) / float(nx);
-                float v = float(j + random_double()) / float(ny);
-                ray r = cam.get_ray(u, v);
-                col += color(r, world,0);
+    std::vector<uint8_t> image(nx * ny * 3);
+    const int k_threads = std::thread::hardware_concurrency();
+    std::vector<std::thread> threads(k_threads);
+    for (int t = 0; t < k_threads; ++t) {
+        threads[t] = std::thread(std::bind([&](int start, int end, int t) {
+            for (int j = start; j < end; j++) {
+                for (int i = 0; i < nx; i++) {
+                    vec3 col(0, 0, 0);
+                    for (int s=0; s < ns; s++) {
+                        float u = float(i + random_double()) / float(nx);
+                        float v = float(j + random_double()) / float(ny);
+                        ray r = cam.get_ray(u, v);
+                        col += color(r, world,0);
+                    }
+                    col /= float(ns);
+                    col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
+                  
+                    image[3*(j*nx+i)+0] = int(255.99*col[0]);
+                    image[3*(j*nx+i)+1] = int(255.99*col[1]);
+                    image[3*(j*nx+i)+2] = int(255.99*col[2]);
+                }
             }
-            col /= float(ns);
-            col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
-            int ir = int(255.99*col[0]);
-            int ig = int(255.99*col[1]);
-            int ib = int(255.99*col[2]);
-            std::cout << ir << " " << ig << " " << ib << "\n";
-        }
+        }, t*ny/k_threads, (t+1)==k_threads ? ny : (t+1)*ny/k_threads, t));
     }
+    for (int t = 0; t < k_threads; ++t) {
+        threads[t].join();
+    }
+    write_image(&image[0], nx, ny);
 }
