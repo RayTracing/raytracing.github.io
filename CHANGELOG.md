@@ -1,6 +1,11 @@
 Change Log
 ================================================================================
 
+Future (version TBD)
+---------------------
+Common
+- Change: Replace MAXFLOAT with (portable) infinity. Fixes #195.
+
 v2.0.0 (2019-09-26)
 ---------------------
 Common
