@@ -29,6 +29,7 @@
 
 #include <float.h>
 #include <iostream>
+#include <limits>
 
 
 inline vec3 de_nan(const vec3& c) {
@@ -43,7 +44,7 @@ inline vec3 de_nan(const vec3& c) {
 
 vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
     hit_record hrec;
-    if (world->hit(r, 0.001, MAXFLOAT, hrec)) {
+    if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), hrec)) {
         scatter_record srec;
         vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
         if (depth < 50 && hrec.mat_ptr->scatter(r, hrec, srec)) {

@@ -754,12 +754,13 @@ And the new main:
     #include "sphere.h"
 
     #include <iostream>
+    #include <limits>
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     vec3 color(const ray& r, hittable *world) {
         hit_record rec;
-        if (world->hit(r, 0.0, MAXFLOAT, rec)) {
+        if (world->hit(r, 0.0, std::numeric_limits<float>::infinity(), rec)) {
             return 0.5*vec3(rec.normal.x()+1, rec.normal.y()+1, rec.normal.z()+1);
         }
         else {
@@ -1029,7 +1030,7 @@ Then update the `color()` function to use the new random direction generator:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world) {
         hit_record rec;
-        if (world->hit(r, 0.0, MAXFLOAT, rec)) {
+        if (world->hit(r, 0.0, std::numeric_limits<float>::infinity(), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 target = rec.p + rec.normal + random_in_unit_sphere();
             return 0.5 * color(ray(rec.p, target - rec.p), world);
@@ -1084,7 +1085,7 @@ off of not at exactly $t=0$, but instead at $t=-0.0000001$ or $t=0.00000001$ or 
 point approximation the sphere intersector gives us. So we need to ignore hits very near zero:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+    if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This gets rid of the shadow acne problem. Yes it is really called that.
@@ -1270,7 +1271,7 @@ We need to modify the color function to use this:
     vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+        if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), rec)) {
             ray scattered;
             vec3 attenuation;
             if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {

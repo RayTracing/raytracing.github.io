@@ -17,11 +17,12 @@
 
 #include <float.h>
 #include <iostream>
+#include <limits>
 
 
 vec3 color(const ray& r, hittable *world, int depth) {
     hit_record rec;
-    if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+    if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), rec)) {
         ray scattered;
         vec3 attenuation;
         if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {

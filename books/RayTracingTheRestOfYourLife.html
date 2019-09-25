@@ -807,7 +807,7 @@ And the color function gets a minor modification:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
-        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+        if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), rec)) {
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
@@ -1223,7 +1223,7 @@ math and get the concept, we can add it (see the highlighted region):
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
-        if (world->hit(r, 0,001, MAXFLOAT, rec)) {
+        if (world->hit(r, 0,001, std::numeric_limits<float>::infinity(), rec)) {
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
@@ -1381,7 +1381,7 @@ variable `pdf` to some other variable name to avoid a name conflict with the new
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
-        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+        if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), rec)) {
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
@@ -1495,7 +1495,7 @@ And then change `color()`:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
-        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+        if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), rec)) {
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
@@ -1557,7 +1557,7 @@ And plugging it into `color()`:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
         hit_record rec;
-        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+        if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), rec)) {
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
@@ -1731,7 +1731,7 @@ And `color()` changes are small:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
         hit_record hrec;
-        if (world->hit(r, 0.001, MAXFLOAT, hrec)) {
+        if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), hrec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             scatter_record srec;
             vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
@@ -1791,7 +1791,7 @@ just like it did before.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
         hit_record hrec;
-        if (world->hit(r, 0.001, MAXFLOAT, hrec)) {
+        if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), hrec)) {
             scatter_record srec;
             vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
             if (depth < 50 && hrec.mat_ptr->scatter(r, hrec, srec)) {
