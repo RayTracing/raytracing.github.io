@@ -1462,19 +1462,20 @@ And the dielectric material that always refracts when possible is:
                 vec3 refracted;
 
                 if (dot(r_in.direction(), rec.normal) > 0) {
-                     outward_normal = -rec.normal;
-                     ni_over_nt = ref_idx;
+                    outward_normal = -rec.normal;
+                    ni_over_nt = ref_idx;
                 }
                 else {
-                     outward_normal = rec.normal;
-                     ni_over_nt = 1.0 / ref_idx;
+                    outward_normal = rec.normal;
+                    ni_over_nt = 1.0 / ref_idx;
                 }
 
-                if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted))
-                   scattered = ray(rec.p, refracted);
+                if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
+                    scattered = ray(rec.p, refracted);
+                }
                 else {
-                   scattered = ray(rec.p, reflected);
-                   return false;
+                    scattered = ray(rec.p, reflected);
+                    return false;
                 }
 
                 return true;
@@ -1496,7 +1497,7 @@ If we try that out with these parameters:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
     list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
-    list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2)));
+    list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2), 0.0));
     list[3] = new sphere(vec3(-1,0,-1), 0.5, new dielectric(1.5));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1596,7 +1597,7 @@ to make a hollow glass sphere:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
     list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
-    list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2)));
+    list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2), 0.3));
     list[3] = new sphere(vec3(-1,0,-1), 0.5, new dielectric(1.5));
     list[4] = new sphere(vec3(-1,0,-1), -0.45, new dielectric(1.5));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
