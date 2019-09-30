@@ -11,6 +11,7 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "constants.h"
 #include "hittable.h"
 #include "onb.h"
 #include "pdf.h"
@@ -33,7 +34,7 @@ float sphere::pdf_value(const vec3& o, const vec3& v) const {
     hit_record rec;
     if (this->hit(ray(o, v), 0.001, FLT_MAX, rec)) {
         float cos_theta_max = sqrt(1 - radius*radius/(center-o).squared_length());
-        float solid_angle = 2*M_PI*(1-cos_theta_max);
+        float solid_angle = 2*pi*(1-cos_theta_max);
         return  1 / solid_angle;
     }
     else

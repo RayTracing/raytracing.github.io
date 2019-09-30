@@ -11,6 +11,7 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "constants.h"
 #include "hittable.h"
 #include "onb.h"
 #include "pdf.h"
@@ -130,7 +131,7 @@ class lambertian : public material {
             float cosine = dot(rec.normal, unit_vector(scattered.direction()));
             if (cosine < 0)
                 return 0;
-            return cosine / M_PI;
+            return cosine / pi;
         }
         bool scatter(const ray& r_in, const hit_record& hrec, scatter_record& srec) const {
             srec.is_specular = false;

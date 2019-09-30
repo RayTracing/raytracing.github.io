@@ -552,7 +552,7 @@ sphere or $1/(4\pi)$. If the integrand is $cos^2(\theta)$ and $\theta$ is the an
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline float pdf(const vec3& p) {
-        return 1 / (4*M_PI);
+        return 1 / (4*pi);
     }
 
     int main() {
@@ -784,7 +784,7 @@ And _Lambertian_ material becomes:
                 float cosine = dot(rec.normal, unit_vector(scattered.direction()));
                 if (cosine < 0)
                     return 0;
-                return cosine / M_PI;
+                return cosine / pi;
             }
 
             bool scatter(const ray& r_in,
@@ -792,7 +792,7 @@ And _Lambertian_ material becomes:
                 vec3 target = rec.p + rec.normal + random_in_unit_sphere();
                 scattered = ray(rec.p, unit_vector(target-rec.p), r_in.time());
                 alb = albedo->value(rec.u, rec.v, rec.p);
-                pdf = dot(rec.normal, scattered.direction()) / M_PI;
+                pdf = dot(rec.normal, scattered.direction()) / pi;
                 return true;
             }
 
@@ -807,7 +807,7 @@ And the color function gets a minor modification:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
-        if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), rec)) {
+        if (world->hit(r, 0.001, infinity, rec)) {
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
@@ -841,7 +841,7 @@ hemisphere that is above the surface. This would be $p(direction) = 1/(2* \pi)$ 
         } while (dot(direction, rec.normal) < 0);
         scattered = ray(rec.p, unit_vector(direction), r_in.time());
         alb = albedo->value(rec.u, rec.v, rec.p);
-        pdf = 0.5 / M_PI;
+        pdf = 0.5 / pi;
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -942,8 +942,8 @@ We can output some of these:
         for (int i = 0; i < 200; i++) {
             float r1 = random_double();
             float r2 = random_double();
-            float x = cos(2*M_PI*r1)*2*sqrt(r2*(1-r2));
-            float y = sin(2*M_PI*r1)*2*sqrt(r2*(1-r2));
+            float x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
+            float y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
             float z = 1 - 2*r2;
 
             std::cout << x << " " << y << " " << z << "\n";
@@ -988,12 +988,12 @@ which is $\cos^3 / (1/(2 \pi))$, and we can test this:
         for (int i = 0; i < N; i++) {
             float r1 = random_double();
             float r2 = random_double();
-            float x = cos(2*M_PI*r1)*2*sqrt(r2*(1-r2));
-            float y = sin(2*M_PI*r1)*2*sqrt(r2*(1-r2));
+            float x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
+            float y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
             float z = 1 - r2;
-            sum += z*z*z / (1.0/(2.0*M_PI));
+            sum += z*z*z / (1.0/(2.0*pi));
         }
-        std::cout << "PI/2 = " << M_PI/2 << "\n";
+        std::cout << "PI/2 = " << pi/2 << "\n";
         std::cout << "Estimate = " << sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1023,7 +1023,7 @@ Let’s also start generating them as random vectors:
         float r1 = random_double();
         float r2 = random_double();
         float z = sqrt(1-r2);
-        float phi = 2*M_PI*r1;
+        float phi = 2*pi*r1;
         float x = cos(phi)*sqrt(r2);
         float y = sin(phi)*sqrt(r2);
         return vec3(x, y, z);
@@ -1034,9 +1034,9 @@ Let’s also start generating them as random vectors:
         float sum = 0.0;
         for (int i = 0; i < N; i++) {
             vec3 v = random_cosine_direction();
-            sum += v.z()*v.z()*v.z() / (v.z()/(M_PI));
+            sum += v.z()*v.z()*v.z() / (v.z()/(pi));
         }
-        std::cout << "PI/2 = " << M_PI/2 << "\n";
+        std::cout << "PI/2 = " << pi/2 << "\n";
         std::cout << "Estimate = " << sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1162,7 +1162,7 @@ We can rewrite our Lambertian material using this to get:
         vec3 direction = uvw.local(random_cosine_direction());
         scattered = ray(rec.p, unit_vector(direction), r_in.time());
         alb = albedo->value(rec.u, rec.v, rec.p);
-        pdf = dot(uvw.w(), scattered.direction()) / M_PI;
+        pdf = dot(uvw.w(), scattered.direction()) / pi;
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1223,7 +1223,7 @@ math and get the concept, we can add it (see the highlighted region):
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
-        if (world->hit(r, 0,001, std::numeric_limits<float>::infinity(), rec)) {
+        if (world->hit(r, 0,001, infinity, rec)) {
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
@@ -1362,7 +1362,7 @@ First, let’s try a cosine density:
             virtual float value(const vec3& direction) const {
                 float cosine = dot(unit_vector(direction), uvw.w());
                 if (cosine > 0)
-                    return cosine/M_PI;
+                    return cosine/pi;
                 else
                     return 0;
             }
@@ -1381,7 +1381,7 @@ variable `pdf` to some other variable name to avoid a name conflict with the new
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
-        if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), rec)) {
+        if (world->hit(r, 0.001, infinity, rec)) {
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
@@ -1495,7 +1495,7 @@ And then change `color()`:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
-        if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), rec)) {
+        if (world->hit(r, 0.001, infinity, rec)) {
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
@@ -1557,7 +1557,7 @@ And plugging it into `color()`:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
         hit_record rec;
-        if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), rec)) {
+        if (world->hit(r, 0.001, infinity, rec)) {
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
@@ -1706,7 +1706,7 @@ The Lambertian material becomes simpler:
                 float cosine = dot(rec.normal, unit_vector(scattered.direction()));
                 if (cosine < 0)
                     return 0;
-                return cosine / M_PI;
+                return cosine / pi;
             }
 
 
@@ -1731,7 +1731,7 @@ And `color()` changes are small:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
         hit_record hrec;
-        if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), hrec)) {
+        if (world->hit(r, 0.001, infinity, hrec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             scatter_record srec;
             vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
@@ -1791,7 +1791,7 @@ just like it did before.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
         hit_record hrec;
-        if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), hrec)) {
+        if (world->hit(r, 0.001, infinity, hrec)) {
             scatter_record srec;
             vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
             if (depth < 50 && hrec.mat_ptr->scatter(r, hrec, srec)) {
@@ -1940,7 +1940,7 @@ The sphere class needs the two `pdf`-related functions:
         hit_record rec;
         if (this->hit(ray(o, v), 0.001, FLT_MAX, rec)) {
             float cos_theta_max = sqrt(1 - radius*radius/(center-o).squared_length());
-            float solid_angle = 2*M_PI*(1-cos_theta_max);
+            float solid_angle = 2*pi*(1-cos_theta_max);
             return  1 / solid_angle;
         }
         else
@@ -1965,7 +1965,7 @@ With the utility function:
         float r1 = random_double();
         float r2 = random_double();
         float z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
-        float phi = 2*M_PI*r1;
+        float phi = 2*pi*r1;
         float x = cos(phi)*sqrt(1-z*z);
         float y = sin(phi)*sqrt(1-z*z);
         return vec3(x, y, z);

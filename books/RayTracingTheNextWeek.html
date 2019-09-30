@@ -107,7 +107,7 @@ to camera because for now it is not allowed to move; it just sends out rays over
                 time0 = t0;
                 time1 = t1;
                 lens_radius = aperture / 2;
-                float theta = vfov*M_PI/180;
+                float theta = vfov*pi/180;
                 float half_height = tan(theta/2);
                 float half_width = aspect * half_height;
                 origin = lookfrom;
@@ -1405,8 +1405,8 @@ The utility function is:
     void get_sphere_uv(const vec3& p, float& u, float& v) {
         float phi = atan2(p.z(), p.x());
         float theta = asin(p.y());
-        u = 1-(phi + M_PI) / (2*M_PI);
-        v = (theta + M_PI/2) / M_PI;
+        u = 1-(phi + pi) / (2*pi);
+        v = (theta + pi/2) / pi;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -1522,7 +1522,7 @@ Next, let’s make the background black in our color function, and pay attention
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
-        if (world->hit(r, 0.001, std::numeric_limits<float>::infinity(), rec)) {
+        if (world->hit(r, 0.001, infinity, rec)) {
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
@@ -2002,7 +2002,7 @@ With constructor:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     rotate_y::rotate_y(hittable *p, float angle) : ptr(p) {
-        float radians = (M_PI / 180.) * angle;
+        float radians = (pi / 180.) * angle;
         sin_theta = sin(radians);
         cos_theta = cos(radians);
         hasbox = ptr->bounding_box(0, 1, bbox);

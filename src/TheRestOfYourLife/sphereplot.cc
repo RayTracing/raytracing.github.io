@@ -9,6 +9,7 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "constants.h"
 #include "random.h"
 
 #include <iostream>
@@ -19,8 +20,8 @@ int main() {
     for (int i = 0; i < 2000; i++) {
         float r1 = random_double();
         float r2 = random_double();
-        float x = cos(2*M_PI*r1)*2*sqrt(r2*(1-r2));
-        float y = sin(2*M_PI*r1)*2*sqrt(r2*(1-r2));
+        float x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
+        float y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
         float z = 1 - 2*r2;
         std::cout << x << " " << y << " " << z << "\n";
     }

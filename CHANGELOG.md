@@ -4,6 +4,8 @@ Change Log
 Future (version TBD)
 ---------------------
 Common
+- Add: File constants.h with portable math constants. Fixes #151.
+- Change: Replace pi with portable version. Fixes #207.
 - Change: Replace MAXFLOAT with (portable) infinity. Fixes #195.
 
 v2.0.0 (2019-09-26)

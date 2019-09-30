@@ -11,6 +11,7 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "constants.h"
 #include "random.h"
 #include "ray.h"
 
@@ -30,7 +31,7 @@ class camera {
             time0 = t0;
             time1 = t1;
             lens_radius = aperture / 2;
-            float theta = vfov*M_PI/180;
+            float theta = vfov*pi/180;
             float half_height = tan(theta/2);
             float half_width = aspect * half_height;
             origin = lookfrom;
