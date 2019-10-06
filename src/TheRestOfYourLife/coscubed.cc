@@ -10,6 +10,7 @@
 //==================================================================================================
 
 #include "random.h"
+#include "constants.h"
 
 #include <iostream>
 #include <math.h>
@@ -21,12 +22,12 @@ int main() {
     for (int i = 0; i < N; i++) {
         float r1 = random_double();
         float r2 = random_double();
-        float x = cos(2*M_PI*r1)*2*sqrt(r2*(1-r2));
-        float y = sin(2*M_PI*r1)*2*sqrt(r2*(1-r2));
+        float x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
+        float y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
         float z = 1 - r2;
-        sum += z*z*z / (1.0/(2.0*M_PI));
+        sum += z*z*z / (1.0/(2.0*pi));
     }
-    std::cout << "PI/2 = " << M_PI/2 << "\n";
+    std::cout << "PI/2 = " << pi/2 << "\n";
     std::cout << "Estimate = " << sum/N << "\n";
 }
 

@@ -12,6 +12,7 @@
 //==================================================================================================
 
 #include "aabb.h"
+#include "constants.h"
 
 #include <float.h>
 
@@ -21,8 +22,8 @@ class material;
 void get_sphere_uv(const vec3& p, float& u, float& v) {
     float phi = atan2(p.z(), p.x());
     float theta = asin(p.y());
-    u = 1-(phi + M_PI) / (2*M_PI);
-    v = (theta + M_PI/2) / M_PI;
+    u = 1-(phi + pi) / (2*pi);
+    v = (theta + pi/2) / pi;
 }
 
 
@@ -103,7 +104,7 @@ class rotate_y : public hittable {
 };
 
 rotate_y::rotate_y(hittable *p, float angle) : ptr(p) {
-    float radians = (M_PI / 180.) * angle;
+    float radians = (pi / 180.) * angle;
     sin_theta = sin(radians);
     cos_theta = cos(radians);
     hasbox = ptr->bounding_box(0, 1, bbox);
