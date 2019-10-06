@@ -11,6 +11,7 @@ set ( CMAKE_CXX_STANDARD 11 )
 # Source
 set ( IN_ONE_WEEKEND_SOURCE
   src/InOneWeekend/camera.h
+  src/InOneWeekend/constants.h
   src/InOneWeekend/hittable.h
   src/InOneWeekend/hittable_list.h
   src/InOneWeekend/material.h
@@ -28,6 +29,7 @@ set ( THE_NEXT_WEEK_SOURCE
   src/TheNextWeek/bvh.h
   src/TheNextWeek/camera.h
   src/TheNextWeek/constant_medium.h
+  src/TheNextWeek/constants.h
   src/TheNextWeek/hittable.h
   src/TheNextWeek/hittable_list.h
   src/TheNextWeek/material.h
@@ -37,6 +39,7 @@ set ( THE_NEXT_WEEK_SOURCE
   src/TheNextWeek/ray.h
   src/TheNextWeek/sphere.h
   src/TheNextWeek/stb_image.h
+  src/TheNextWeek/stb_image_write.h
   src/TheNextWeek/surface_texture.h
   src/TheNextWeek/texture.h
   src/TheNextWeek/vec3.h
@@ -51,6 +54,7 @@ set ( THE_REST_OF_YOUR_LIFE_SOURCE
   src/TheRestOfYourLife/bvh.h
   src/TheRestOfYourLife/camera.h
   src/TheRestOfYourLife/constant_medium.h
+  src/TheRestOfYourLife/constants.h
   src/TheRestOfYourLife/foomaterial.h
   src/TheRestOfYourLife/hittable.h
   src/TheRestOfYourLife/hittable_list.h
@@ -71,5 +75,5 @@ set ( THE_REST_OF_YOUR_LIFE_SOURCE
 )
 
 add_executable(inOneWeekend      ${IN_ONE_WEEKEND_SOURCE})
-#add_executable(theNextWeek       ${THE_NEXT_WEEK_SOURCE})
-#add_executable(theRestOfYourLife ${THE_REST_OF_YOUR_LIFE_SOURCE})
+add_executable(theNextWeek       ${THE_NEXT_WEEK_SOURCE})
+add_executable(theRestOfYourLife ${THE_REST_OF_YOUR_LIFE_SOURCE})
