@@ -44,6 +44,9 @@ set ( THE_NEXT_WEEK_SOURCE
 )
 
 set ( THE_REST_OF_YOUR_LIFE_SOURCE
+  src/TheRestOfYourLife/aabb.h
+  src/TheRestOfYourLife/aarect.h
+  src/TheRestOfYourLife/box.h
   src/TheRestOfYourLife/bucamera.h
   src/TheRestOfYourLife/bvh.h
   src/TheRestOfYourLife/camera.h
@@ -53,7 +56,6 @@ set ( THE_REST_OF_YOUR_LIFE_SOURCE
   src/TheRestOfYourLife/hittable_list.h
   src/TheRestOfYourLife/material.h
   src/TheRestOfYourLife/moving_sphere.h
-  src/TheRestOfYourLife/msc.h
   src/TheRestOfYourLife/onb.h
   src/TheRestOfYourLife/pdf.h
   src/TheRestOfYourLife/perlin.h
@@ -69,5 +71,5 @@ set ( THE_REST_OF_YOUR_LIFE_SOURCE
 )
 
 add_executable(inOneWeekend      ${IN_ONE_WEEKEND_SOURCE})
-add_executable(theNextWeek       ${THE_NEXT_WEEK_SOURCE})
-add_executable(theRestOfYourLife ${THE_REST_OF_YOUR_LIFE_SOURCE})
+#add_executable(theNextWeek       ${THE_NEXT_WEEK_SOURCE})
+#add_executable(theRestOfYourLife ${THE_REST_OF_YOUR_LIFE_SOURCE})
