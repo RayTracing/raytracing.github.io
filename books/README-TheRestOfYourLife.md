@@ -1,7 +1,7 @@
-Ray Tracing: The Rest Of Your Life
+Ray Tracing: The Rest of Your Life
 ====================================================================================================
 
-![Ray Tracing: The Rest Of Your Life](../images/RTRestOfYourLife.jpg)
+![Ray Tracing: The Rest of Your Life](../images/RTRestOfYourLife.jpg)
 
 
 Getting the Book
@@ -16,7 +16,7 @@ proceeds of these sales go to [Hack the Hood][], a really neat organization.
 
 Overview
 ---------
-In [Ray Tracing In One Weekend][] and [Ray Tracing: the Next Week][], you built a “real” ray tracer.
+In [Ray Tracing in One Weekend][] and [Ray Tracing: the Next Week][], you built a “real” ray tracer.
 
 In this volume, I assume you will be pursuing a career related to ray tracing and we will dive into
 the math of creating a very serious ray tracer. When you are done you should be ready to start
@@ -58,7 +58,7 @@ book to Markdeep and moving it to the web.
 [CONTRIBUTING]:               ../CONTRIBUTING.md
 [directly from GitHub]:       https://github.com/raytracing/raytracing.github.io/releases/
 [Hack the Hood]:              http://www.hackthehood.org/
-[Ray Tracing In One Weekend]: ../InOneWeekend/
+[Ray Tracing in One Weekend]: ../InOneWeekend/
 [Ray Tracing: The Next Week]: ../TheNextWeek/
 [Real-Time Rendering]:        http://www.realtimerendering.com/#books-small-table
 [submit issues via GitHub]:   https://github.com/raytracing/raytracing.github.io/issues/

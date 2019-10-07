@@ -26,7 +26,7 @@ Common
 - Change: Rewrote vec3.h `cross` function for clarity
 
 
-_Ray Tracing In One Weekend_
+_Ray Tracing in One Weekend_
 - Add: README.md
 - Add: Source README.md
 - Add: Markdeep page created for entire body of text
@@ -82,7 +82,7 @@ _Ray Tracing: The Next Week_
 - Fix: Code, Add missing headers to constant_medium.h to fix g++ compiler error
 
 
-_Ray Tracing: The Rest Of Your Life_
+_Ray Tracing: The Rest of Your Life_
 - Add: README.md
 - Add: Source README.md
 - Add: Markdeep page created for entire body of text
@@ -105,13 +105,13 @@ _Ray Tracing: The Rest Of Your Life_
 
 v1.123.0  (2018-08-26)
 -----------------------
-_Ray Tracing: The Rest Of Your Life_
+_Ray Tracing: The Rest of Your Life_
 - Add: First GitHub release.
 
 
 v1.54.0  (2018-08-26)
 ----------------------
-_Ray Tracing In One Weekend_
+_Ray Tracing in One Weekend_
 - Add: First GitHub release.
 
 

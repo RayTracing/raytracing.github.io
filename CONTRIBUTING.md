@@ -20,9 +20,9 @@ raytracing.github.io/      # Repository root
     images/                # All figures, renderings and other images used throughout the project
     src/                   # Source code
         common/            # Source code that is common to two or more books
-        InOneWeekend/      # The final form of source code for Ray Tracing In One Weekend
+        InOneWeekend/      # The final form of source code for Ray Tracing in One Weekend
         TheNextWeek/       # The final form of source code for Ray Tracing: The Next Week
-        TheRestOfYourLife/ # The final form of source code for Ray Tracing: The Rest Of Your Life
+        TheRestOfYourLife/ # The final form of source code for Ray Tracing: The Rest of Your Life
     style/                 # CSS for books and web site
 ```
 
