@@ -50,7 +50,6 @@ review the [CONTRIBUTING][] document for the most effective way to proceed.
 
 
 
-[Amazon.com]:               https://amazon.com/dp/B01B5AODD8
 [CONTRIBUTING]:             ../CONTRIBUTING.md
 [releases]:                 https://github.com/raytracing/raytracing.github.io/releases/
 [Hack the Hood]:            https://hackthehood.org/

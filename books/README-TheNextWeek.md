@@ -48,7 +48,6 @@ Jean Buckley for editing.
 
 
 
-[Amazon.com]:                 https://amazon.com/dp/B01CO7PQ8C
 [CONTRIBUTING]:               ../CONTRIBUTING.md
 [directly from GitHub]:       https://github.com/raytracing/raytracing.github.io/releases/
 [Hack the Hood]:              http://www.hackthehood.org
