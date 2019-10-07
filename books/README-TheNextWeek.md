@@ -16,7 +16,7 @@ proceeds of these sales go to [Hack the Hood][], a really neat organization.
 
 Overview
 ---------
-In [Ray Tracing In One Weekend][], you built a simple brute force path tracer. In this installment
+In [Ray Tracing in One Weekend][], you built a simple brute force path tracer. In this installment
 we’ll add textures, volumes (like fog), rectangles, instances, lights, and support for lots of
 objects using a BVH. When done, you’ll have a “real” ray tracer.
 
@@ -52,6 +52,6 @@ Jean Buckley for editing.
 [CONTRIBUTING]:               ../CONTRIBUTING.md
 [directly from GitHub]:       https://github.com/raytracing/raytracing.github.io/releases/
 [Hack the Hood]:              http://www.hackthehood.org
-[Ray Tracing In One Weekend]: ../InOneWeekend/
+[Ray Tracing in One Weekend]: ../InOneWeekend/
 [Real-Time Rendering]:        http://www.realtimerendering.com/#books-small-table
 [submit issues via GitHub]:   https://github.com/raytracing/raytracing.github.io/issues/
