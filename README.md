@@ -3,19 +3,20 @@ Ray Tracing in One Weekend Book Series
 
 | ![RT in One Weekend][cover1] | ![RT The Next Week][cover2] | ![RT The Rest of Your Life][cover3] |
 |:----------------------------:|:---------------------------:|:-----------------------------------:|
-|     [In One Weekend][]       |      [The Next Week][]      |      [The Rest Of Your Life][]      |
+|   [In One Weekend][book1]    |   [The Next Week][book2]    |   [The Rest of Your Life][book3]    |
 
 
 Getting the Books
 ------------------
-The _Ray Tracing in One Weekend_ series of books are now available to the public for free in PDF
-form, along with the accompanying source code. Currently, we are also readying the first web release
-of these books, for even easier access.
+The _Ray Tracing in One Weekend_ series of books are now available to the public for free directly
+from the web:
 
-Releases are available [directly from GitHub][releases], or from Eric Haines's
-[Real-Time Rendering][] site. Alternatively, you can purchase the Kindle version of this series from
-Amazon.com ([in One Weekend][Amazon1], [The Next Week][Amazon2], [The Rest Of Your Life][Amazon3]).
-Half of the proceeds of these sales go to [Hack the Hood][], a really neat organization.
+  - [Ray Tracing in One Weekend][web1]
+  - [Ray Tracing: The Next Week][web2]
+  - [Ray Tracing: The Rest of Your Life][web3]
+
+For printed copies, or to create PDF versions, use the print function in your browser. These books
+have been properly formatted for print versions as well.
 
 
 Corrections & Contributions
@@ -25,17 +26,15 @@ review the [CONTRIBUTING][] document for the most effective way to proceed.
 
 
 
-[Amazon1]:                  https://amazon.com/dp/B01B5AODD8
-[Amazon2]:                  https://amazon.com/dp/B01CO7PQ8C
-[Amazon3]:                  https://amazon.com/dp/B01DN58P8C
+[book1]:                    books/RayTracingInOneWeekend.html
+[book2]:                    books/RayTracingTheNextWeek.html
+[book3]:                    books/RayTracingTheRestOfYourLife.html
 [CONTRIBUTING]:             ./CONTRIBUTING.md
 [cover1]:                   images/RTOneWeekend-small.jpg
 [cover2]:                   images/RTNextWeek-small.jpg
 [cover3]:                   images/RTRestOfYourLife-small.jpg
-[in One Weekend]:           books/RayTracingInOneWeekend.html
 [releases]:                 https://github.com/RayTracing/raytracing.github.io/releases/
-[Hack the Hood]:            https://hackthehood.org/
-[Real-Time Rendering]:      https://realtimerendering.com/#books-small-table
 [submit issues via GitHub]: https://github.com/raytracing/raytracing.github.io/issues/
-[The Next Week]:            books/RayTracingTheNextWeek.html
-[The Rest Of Your Life]:    books/RayTracingTheRestOfYourLife.html
+[web1]:                     https://raytracing.github.io/books/RayTracingInOneWeekend.html
+[web2]:                     https://raytracing.github.io/books/RayTracingTheNextWeek.html
+[web3]:                     https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html
