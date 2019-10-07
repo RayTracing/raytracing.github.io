@@ -9,10 +9,9 @@ Getting the Book
 The _Ray Tracing in One Weekend_ series of books are now available to the public for free in PDF
 form, along with the accompanying source code.
 
-Releases are available [directly from GitHub][releases], or from Eric Haines's
-[Real-Time Rendering][] site. Alternatively, you can purchase the Kindle version of this series from
-[Amazon.com][]. Half of the proceeds of these sales go to [Hack the Hood][], a really neat
-organization.
+You can view the book at https://raytracing.github.io/books/RayTracingInOneWeekend.html. If you
+would like a printed or PDF version, print it directly from your browser (it has been styled to
+support a printed layout).
 
 
 Overview
