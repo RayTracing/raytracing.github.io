@@ -54,7 +54,6 @@ book to Markdeep and moving it to the web.
 
 
 
-[Amazon.com]:                 https://amazon.com/dp/B01DN58P8C
 [CONTRIBUTING]:               ../CONTRIBUTING.md
 [directly from GitHub]:       https://github.com/raytracing/raytracing.github.io/releases/
 [Hack the Hood]:              http://www.hackthehood.org/
