@@ -9,6 +9,7 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "constants.h"
 #include "random.h"
 #include "vec3.h"
 
@@ -28,7 +29,7 @@ vec3 random_on_unit_sphere() {
 
 
 inline float pdf(const vec3& p) {
-    return  1 / (4*M_PI);
+    return  1 / (4*pi);
 }
 
 int main() {

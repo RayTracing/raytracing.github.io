@@ -10,6 +10,7 @@
 //==================================================================================================
 
 #include "camera.h"
+#include "constants.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "random.h"
@@ -17,11 +18,12 @@
 
 #include <float.h>
 #include <iostream>
+#include <limits>
 
 
 vec3 color(const ray& r, hittable *world, int depth) {
     hit_record rec;
-    if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+    if (world->hit(r, 0.001, infinity, rec)) {
         ray scattered;
         vec3 attenuation;
         if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {

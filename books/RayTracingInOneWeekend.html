@@ -739,6 +739,25 @@ And a list of objects:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
+<div class='together'></div>
+We need some math constants that we conveniently define in their own header file. For now
+we only need infinity, but we will also throw our own definition of pi in there, which we
+will need later. There is no standard portable definition of pi, so we just define our own 
+constant for it.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef CONSTANTSH
+    #define CONSTANTSH
+
+    #include <limits>
+
+    const double pi = 3.1415926535897932385;
+    const double infinity = std::numeric_limits<double>::infinity(); 
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
+
 <div class='together'>
 And the new main:
 
@@ -747,13 +766,15 @@ And the new main:
     #include "hittable_list.h"
     #include "sphere.h"
 
+    #include "constants.h"
     #include <iostream>
+    #include <limits>
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     vec3 color(const ray& r, hittable *world) {
         hit_record rec;
-        if (world->hit(r, 0.0, MAXFLOAT, rec)) {
+        if (world->hit(r, 0.0, infinity, rec)) {
             return 0.5*vec3(rec.normal.x()+1, rec.normal.y()+1, rec.normal.z()+1);
         }
         else {
@@ -1023,7 +1044,7 @@ Then update the `color()` function to use the new random direction generator:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 color(const ray& r, hittable *world) {
         hit_record rec;
-        if (world->hit(r, 0.0, MAXFLOAT, rec)) {
+        if (world->hit(r, 0.0, infinity, rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 target = rec.p + rec.normal + random_in_unit_sphere();
             return 0.5 * color(ray(rec.p, target - rec.p), world);
@@ -1078,7 +1099,7 @@ off of not at exactly $t=0$, but instead at $t=-0.0000001$ or $t=0.00000001$ or 
 point approximation the sphere intersector gives us. So we need to ignore hits very near zero:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+    if (world->hit(r, 0.001, infinity, rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This gets rid of the shadow acne problem. Yes it is really called that.
@@ -1264,7 +1285,7 @@ We need to modify the color function to use this:
     vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+        if (world->hit(r, 0.001, infinity, rec)) {
             ray scattered;
             vec3 attenuation;
             if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
@@ -1630,12 +1651,13 @@ This implies $h = tan(\theta/2)$. Our camera now becomes:
     #ifndef CAMERAH
     #define CAMERAH
 
+    #include "constants.h"
     #include "ray.h"
 
     class camera {
         public:
             camera(float vfov, float aspect) { // vfov is top to bottom in degrees
-                float theta = vfov*M_PI/180;
+                float theta = vfov*pi/180;
                 float half_height = tan(theta/2);
                 float half_width = aspect * half_height;
                 lower_left_corner = vec3(-half_width, -half_height, -1.0);
@@ -1662,7 +1684,7 @@ This implies $h = tan(\theta/2)$. Our camera now becomes:
 When calling it with camera `cam(90, float(nx)/float(ny))` and these spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    float R = cos(M_PI/4);
+    float R = cos(pi/4);
     list[0] = new sphere(vec3(-R,0,-1), R, new lambertian(vec3(0, 0, 1)));
     list[1] = new sphere(vec3( R,0,-1), R, new lambertian(vec3(1, 0, 0)));
     hittable *world = new hittable_list(list,2);
@@ -1710,7 +1732,7 @@ camera horizontally level until you decide to experiment with crazy camera angle
                 // vfov is top to bottom in degrees
                 vec3 u, v, w;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                float theta = vfov*M_PI/180;
+                float theta = vfov*pi/180;
                 float half_height = tan(theta/2);
                 float half_width = aspect * half_height;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1812,7 +1834,7 @@ point:
                    float aperture, float focus_dist) {
                 lens_radius = aperture / 2;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                float theta = vfov*M_PI/180;
+                float theta = vfov*pi/180;
                 float half_height = tan(theta/2);
                 float half_width = aspect * half_height;
                 origin = lookfrom;

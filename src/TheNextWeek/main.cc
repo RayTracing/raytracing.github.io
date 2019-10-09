@@ -14,6 +14,7 @@
 #include "bvh.h"
 #include "camera.h"
 #include "constant_medium.h"
+#include "constants.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "moving_sphere.h"
@@ -26,11 +27,12 @@
 
 #include <float.h>
 #include <iostream>
+#include <limits>
 
 
 vec3 color(const ray& r, hittable *world, int depth) {
     hit_record rec;
-    if (world->hit(r, 0.001, MAXFLOAT, rec)) { 
+    if (world->hit(r, 0.001, infinity, rec)) { 
         ray scattered;
         vec3 attenuation;
         vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
@@ -260,7 +262,7 @@ int main() {
     int ns = 100;
     std::cout << "P3\n" << nx << " " << ny << "\n255\n";
     hittable *list[5];
-    float R = cos(M_PI/4);
+    float R = cos(pi/4);
     //hittable *world = random_scene();
     //hittable *world = two_spheres();
     //hittable *world = two_perlin_spheres();

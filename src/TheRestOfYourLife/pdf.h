@@ -11,6 +11,7 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "constants.h"
 #include "onb.h"
 #include "random.h"
 
@@ -19,7 +20,7 @@ inline vec3 random_cosine_direction() {
     float r1 = random_double();
     float r2 = random_double();
     float z = sqrt(1-r2);
-    float phi = 2*M_PI*r1;
+    float phi = 2*pi*r1;
     float x = cos(phi)*sqrt(r2);
     float y = sin(phi)*sqrt(r2);
     return vec3(x, y, z);
@@ -29,7 +30,7 @@ inline vec3 random_to_sphere(float radius, float distance_squared) {
     float r1 = random_double();
     float r2 = random_double();
     float z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
-    float phi = 2*M_PI*r1;
+    float phi = 2*pi*r1;
     float x = cos(phi)*sqrt(1-z*z);
     float y = sin(phi)*sqrt(1-z*z);
     return vec3(x, y, z);
@@ -60,7 +61,7 @@ class cosine_pdf : public pdf {
         virtual float value(const vec3& direction) const {
             float cosine = dot(unit_vector(direction), uvw.w());
             if (cosine > 0)
-                return cosine/M_PI;
+                return cosine/pi;
             else
                 return 0;
         }
