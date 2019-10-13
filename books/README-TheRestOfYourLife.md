@@ -1,7 +1,7 @@
-Ray Tracing: The Rest Of Your Life
+Ray Tracing: The Rest of Your Life
 ====================================================================================================
 
-![Ray Tracing: The Rest Of Your Life](../images/RTRestOfYourLife.jpg)
+![Ray Tracing: The Rest of Your Life](../images/RTRestOfYourLife.jpg)
 
 
 Getting the Book
@@ -9,14 +9,14 @@ Getting the Book
 The _Ray Tracing in One Weekend_ series of books are now available to the public for free in PDF
 form, along with the accompanying source code.
 
-Releases are available [directly from GitHub][], or from Eric Haines's [Real-Time Rendering][] site.
-Alternatively, you can purchase the Kindle version of this series from [Amazon.com][]. Half of the
-proceeds of these sales go to [Hack the Hood][], a really neat organization.
+You can view the book at https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html. If you
+would like a printed or PDF version, print it directly from your browser (it has been styled to
+support a printed layout).
 
 
 Overview
 ---------
-In [Ray Tracing In One Weekend][] and [Ray Tracing: the Next Week][], you built a “real” ray tracer.
+In [Ray Tracing in One Weekend][] and [Ray Tracing: the Next Week][], you built a “real” ray tracer.
 
 In this volume, I assume you will be pursuing a career related to ray tracing and we will dive into
 the math of creating a very serious ray tracer. When you are done you should be ready to start
@@ -54,11 +54,10 @@ book to Markdeep and moving it to the web.
 
 
 
-[Amazon.com]:                 https://amazon.com/dp/B01DN58P8C
 [CONTRIBUTING]:               ../CONTRIBUTING.md
 [directly from GitHub]:       https://github.com/raytracing/raytracing.github.io/releases/
 [Hack the Hood]:              http://www.hackthehood.org/
-[Ray Tracing In One Weekend]: ../InOneWeekend/
+[Ray Tracing in One Weekend]: ../InOneWeekend/
 [Ray Tracing: The Next Week]: ../TheNextWeek/
 [Real-Time Rendering]:        http://www.realtimerendering.com/#books-small-table
 [submit issues via GitHub]:   https://github.com/raytracing/raytracing.github.io/issues/

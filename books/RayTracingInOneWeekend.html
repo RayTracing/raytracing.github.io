@@ -5,19 +5,13 @@
 
                                    **Ray Tracing in One Weekend**
                                            Peter Shirley
-                                            Version 1.54
-                      <br>Copyright 2018. Peter Shirley. All rights reserved.
+                                     Version 2.0.0, 2019-Oct-07
+                    <br>Copyright 2018-2019. Peter Shirley. All rights reserved.
 
 
 
 Overview
 ====================================================================================================
-
-
-!!! ERROR: Content Under Development
-    See [the official release page](https://github.com/RayTracing/raytracing.github.io/releases/)
-    for latest official PDF version.
-
 
 I’ve taught many graphics classes over the years. Often I do them in ray tracing, because you are
 forced to write all the code but you can still get cool images with no API. I decided to adapt my
@@ -164,9 +158,9 @@ have a good point, but we’re going to always take the “less code” route wh
 Here’s the top part of my vec3 class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include <iostream>
     #include <math.h>
     #include <stdlib.h>
-    #include <iostream>
 
     class vec3 {
     public:
@@ -232,24 +226,26 @@ operations:
         return vec3(v1.e[0] * v2.e[0], v1.e[1] * v2.e[1], v1.e[2] * v2.e[2]);
     }
 
-    inline vec3 operator/(const vec3 &v1, const vec3 &v2) {
-        return vec3(v1.e[0] / v2.e[0], v1.e[1] / v2.e[1], v1.e[2] / v2.e[2]);
-    }
-
     inline vec3 operator*(float t, const vec3 &v) {
         return vec3(t*v.e[0], t*v.e[1], t*v.e[2]);
-    }
-
-    inline vec3 operator/(vec3 v, float t) {
-        return vec3(v.e[0]/t, v.e[1]/t, v.e[2]/t);
     }
 
     inline vec3 operator*(const vec3 &v, float t) {
         return vec3(t*v.e[0], t*v.e[1], t*v.e[2]);
     }
 
+    inline vec3 operator/(const vec3 &v1, const vec3 &v2) {
+        return vec3(v1.e[0] / v2.e[0], v1.e[1] / v2.e[1], v1.e[2] / v2.e[2]);
+    }
+
+    inline vec3 operator/(vec3 v, float t) {
+        return vec3(v.e[0]/t, v.e[1]/t, v.e[2]/t);
+    }
+
     inline float dot(const vec3 &v1, const vec3 &v2) {
-        return v1.e[0] *v2.e[0] + v1.e[1] *v2.e[1]  + v1.e[2] *v2.e[2];
+        return v1.e[0]*v2.e[0]
+             + v1.e[1]*v2.e[1]
+             + v1.e[2]*v2.e[2];
     }
 
     inline vec3 cross(const vec3 &v1, const vec3 &v2) {
@@ -258,47 +254,47 @@ operations:
                     v1.e[0] * v2.e[1] - v1.e[1] * v2.e[0]);
     }
 
-    inline vec3& vec3::operator+=(const vec3 &v){
-        e[0]  += v.e[0];
-        e[1]  += v.e[1];
-        e[2]  += v.e[2];
-        return *this;
-    }
-
-    inline vec3& vec3::operator*=(const vec3 &v){
-        e[0]  *= v.e[0];
-        e[1]  *= v.e[1];
-        e[2]  *= v.e[2];
-        return *this;
-    }
-
-    inline vec3& vec3::operator/=(const vec3 &v){
-        e[0]  /= v.e[0];
-        e[1]  /= v.e[1];
-        e[2]  /= v.e[2];
+    inline vec3& vec3::operator+=(const vec3 &v) {
+        e[0] += v.e[0];
+        e[1] += v.e[1];
+        e[2] += v.e[2];
         return *this;
     }
 
     inline vec3& vec3::operator-=(const vec3& v) {
-        e[0]  -= v.e[0];
-        e[1]  -= v.e[1];
-        e[2]  -= v.e[2];
+        e[0] -= v.e[0];
+        e[1] -= v.e[1];
+        e[2] -= v.e[2];
+        return *this;
+    }
+
+    inline vec3& vec3::operator*=(const vec3 &v) {
+        e[0] *= v.e[0];
+        e[1] *= v.e[1];
+        e[2] *= v.e[2];
         return *this;
     }
 
     inline vec3& vec3::operator*=(const float t) {
-        e[0]  *= t;
-        e[1]  *= t;
-        e[2]  *= t;
+        e[0] *= t;
+        e[1] *= t;
+        e[2] *= t;
+        return *this;
+    }
+
+    inline vec3& vec3::operator/=(const vec3 &v) {
+        e[0] /= v.e[0];
+        e[1] /= v.e[1];
+        e[2] /= v.e[2];
         return *this;
     }
 
     inline vec3& vec3::operator/=(const float t) {
         float k = 1.0/t;
 
-        e[0]  *= k;
-        e[1]  *= k;
-        e[2]  *= k;
+        e[0] *= k;
+        e[1] *= k;
+        e[2] *= k;
         return *this;
     }
 
@@ -311,19 +307,23 @@ operations:
 Now we can change our main to use this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include <iostream>
     #include "vec3.h"
+
+    #include <iostream>
 
     int main() {
         int nx = 200;
         int ny = 100;
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+
         for (int j = ny-1; j >= 0; j--) {
             for (int i = 0; i < nx; i++) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 col(float(i) / float(nx), float(j) / float(ny), 0.2);
                 int ir = int(255.99*col[0]);
                 int ig = int(255.99*col[1]);
                 int ib = int(255.99*col[2]);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 std::cout << ir << " " << ig << " " << ib << "\n";
             }
         }
@@ -393,10 +393,11 @@ Below in code, the ray $r$ goes to approximately the pixel centers (I won’t wo
 for now because we’ll add antialiasing later):
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include <iostream>
     #include "ray.h"
 
-    vec3 color(const ray& r, hitable *world, int depth) {
+    #include <iostream>
+
+    vec3 color(const ray& r) {
         vec3 unit_direction = unit_vector(r.direction());
         float t = 0.5*(unit_direction.y() + 1.0);
         return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
@@ -406,16 +407,20 @@ for now because we’ll add antialiasing later):
         int nx = 200;
         int ny = 100;
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         vec3 lower_left_corner(-2.0, -1.0, -1.0);
         vec3 horizontal(4.0, 0.0, 0.0);
         vec3 vertical(0.0, 2.0, 0.0);
         vec3 origin(0.0, 0.0, 0.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         for (int j = ny-1; j >= 0; j--) {
             for (int i = 0; i < nx; i++) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 float u = float(i) / float(nx);
                 float v = float(j) / float(ny);
                 ray r(origin, lower_left_corner + u*horizontal + v*vertical);
                 vec3 col = color(r);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 int ir = int(255.99*col[0]);
                 int ig = int(255.99*col[1]);
                 int ib = int(255.99*col[2]);
@@ -516,9 +521,12 @@ that hits a small sphere we place at -1 on the z-axis:
         return (discriminant > 0);
     }
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     vec3 color(const ray& r) {
         if (hit_sphere(vec3(0,0,-1), 0.5, r))
             return vec3(1, 0, 0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 unit_direction = unit_vector(r.direction());
         float t = 0.5*(unit_direction.y() + 1.0);
         return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
@@ -562,29 +570,36 @@ and 1) is to map each component to the interval from 0 to 1, and then map x/y/z 
 normal, we need the hit point, not just whether we hit or not. Let’s assume the closest hit point
 (smallest $t$). These changes in the code let us compute and visualize $N$:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     float hit_sphere(const vec3& center, float radius, const ray& r) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 oc = r.origin() - center;
         float a = dot(r.direction(), r.direction());
         float b = 2.0 * dot(oc, r.direction());
         float c = dot(oc, oc) - radius*radius;
         float discriminant = b*b - 4*a*c;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (discriminant < 0) {
             return -1.0;
         }
         else {
             return (-b - sqrt(discriminant) ) / (2.0*a);
         }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
 
     vec3 color(const ray& r) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         float t = hit_sphere(vec3(0,0,-1), 0.5, r);
         if (t > 0.0) {
             vec3 N = unit_vector(r.point_at_parameter(t) - vec3(0,0,-1));
             return 0.5*vec3(N.x()+1, N.y()+1, N.z()+1);
         }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 unit_direction = unit_vector(r.direction());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         t = 0.5*(unit_direction.y() + 1.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -601,11 +616,11 @@ Now, how about several spheres? While it is tempting to have an array of spheres
 solution is the make an “abstract class” for anything a ray might hit and make both a sphere and a
 list of spheres just something you can hit. What that class should be called is something of a
 quandary -- calling it an “object” would be good if not for “object oriented” programming. “Surface”
-is often used, with the weakness being maybe we will want volumes. “Hitable” emphasizes the member
-function that unites them. I don’t love any of these but I will go with “hitable”.
+is often used, with the weakness being maybe we will want volumes. “hittable” emphasizes the member
+function that unites them. I don’t love any of these but I will go with “hittable”.
 
 <div class='together'>
-This `hitable` abstract class will have a hit function that takes in a ray. Most ray tracers have
+This `hittable` abstract class will have a hit function that takes in a ray. Most ray tracers have
 found it convenient to add a valid interval for hits $t_{min}$ to $t_{max}$, so the hit only
 “counts” if $t_{min} < t < t_{max}$. For the initial rays this is positive $t$, but as we will see,
 it can help some details in the code to have an interval $t_{min}$ to $t_{max}$. One design question
@@ -615,19 +630,18 @@ go with the simple solution and compute a bundle of stuff I will store in some s
 we’ll want motion blur at some point, so I’ll add a time input variable. Here’s the abstract class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef HITABLEH
-    #define HITABLEH
+    #ifndef HITTABLEH
+    #define HITTABLEH
 
     #include "ray.h"
 
-    struct hit_record
-    {
+    struct hit_record {
         float t;
         vec3 p;
         vec3 normal;
     };
 
-    class hitable  {
+    class hittable  {
         public:
             virtual bool hit(
                 const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
@@ -644,9 +658,9 @@ And here’s the sphere (note that I eliminated a bunch of redundant 2’s that 
     #ifndef SPHEREH
     #define SPHEREH
 
-    #include "hitable.h"
+    #include "hittable.h"
 
-    class sphere: public hitable  {
+    class sphere: public hittable  {
         public:
             sphere() {}
             sphere(vec3 cen, float r) : center(cen), radius(r)  {};
@@ -690,23 +704,23 @@ And here’s the sphere (note that I eliminated a bunch of redundant 2’s that 
 And a list of objects:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef HITABLELISTH
-    #define HITABLELISTH
+    #ifndef HITTABLELISTH
+    #define HITTABLELISTH
 
-    #include "hitable.h"
+    #include "hittable.h"
 
-    class hitable_list: public hitable  {
+    class hittable_list: public hittable {
         public:
-            hitable_list() {}
-            hitable_list(hitable **l, int n) {list = l; list_size = n; }
+            hittable_list() {}
+            hittable_list(hittable **l, int n) {list = l; list_size = n; }
             virtual bool hit(
                 const ray& r, float tmin, float tmax, hit_record& rec) const;
-            hitable **list;
+            hittable **list;
             int list_size;
     };
 
-    bool hitable_list::hit(
-        const ray& r, float t_min, float t_max, hit_record& rec) const {
+    bool hittable_list::hit(const ray& r, float t_min, float t_max,
+                            hit_record& rec) const {
 
         hit_record temp_rec;
         bool hit_anything = false;
@@ -729,19 +743,25 @@ And a list of objects:
 And the new main:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include <iostream>
-    #include "sphere.h"
-    #include "hitable_list.h"
     #include "float.h"
+    #include "hittable_list.h"
+    #include "sphere.h"
 
-    vec3 color(const ray& r, hitable *world) {
+    #include <iostream>
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    vec3 color(const ray& r, hittable *world) {
         hit_record rec;
         if (world->hit(r, 0.0, MAXFLOAT, rec)) {
             return 0.5*vec3(rec.normal.x()+1, rec.normal.y()+1, rec.normal.z()+1);
         }
         else {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             vec3 unit_direction = unit_vector(r.direction());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             float t = 0.5*(unit_direction.y() + 1.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
         }
     }
@@ -754,18 +774,27 @@ And the new main:
         vec3 horizontal(4.0, 0.0, 0.0);
         vec3 vertical(0.0, 2.0, 0.0);
         vec3 origin(0.0, 0.0, 0.0);
-        hitable *list[2];
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        hittable *list[2];
         list[0] = new sphere(vec3(0,0,-1), 0.5);
         list[1] = new sphere(vec3(0,-100.5,-1), 100);
-        hitable *world = new hitable_list(list,2);
+        hittable *world = new hittable_list(list,2);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         for (int j = ny-1; j >= 0; j--) {
             for (int i = 0; i < nx; i++) {
                 float u = float(i) / float(nx);
                 float v = float(j) / float(ny);
                 ray r(origin, lower_left_corner + u*horizontal + v*vertical);
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 p = r.point_at_parameter(2.0);
                 vec3 col = color(r, world);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
                 int ir = int(255.99*col[0]);
                 int ig = int(255.99*col[1]);
                 int ib = int(255.99*col[2]);
@@ -890,26 +919,36 @@ Main is also changed:
     int main() {
         int nx = 200;
         int ny = 100;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         int ns = 100;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
-        hitable *list[2];
+
+        hittable *list[2];
         list[0] = new sphere(vec3(0,0,-1), 0.5);
         list[1] = new sphere(vec3(0,-100.5,-1), 100);
-        hitable *world = new hitable_list(list,2);
+        hittable *world = new hittable_list(list,2);
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         camera cam;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         for (int j = ny-1; j >= 0; j--) {
             for (int i = 0; i < nx; i++) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 col(0, 0, 0);
-                for (int s=0; s < ns; s++) {
+                for (int s = 0; s < ns; s++) {
                     float u = float(i + random_double()) / float(nx);
                     float v = float(j + random_double()) / float(ny);
                     ray r = cam.get_ray(u, v);
                     col += color(r, world);
                 }
                 col /= float(ns);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
                 int ir = int(255.99*col[0]);
                 int ig = int(255.99*col[1]);
                 int ib = int(255.99*col[2]);
+
                 std::cout << ir << " " << ig << " " << ib << "\n";
             }
         }
@@ -980,11 +1019,13 @@ in range from -1 to +1, and construct a vector with some trigonometry:
 Then update the `color()` function to use the new random direction generator:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hitable *world, int depth) {
+    vec3 color(const ray& r, hittable *world) {
         hit_record rec;
         if (world->hit(r, 0.0, MAXFLOAT, rec)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 target = rec.p + rec.normal + random_unit_vector();
             return 0.5 * color(ray(rec.p, target - rec.p), world);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
         else {
             vec3 unit_direction = unit_vector(r.direction());
@@ -1070,26 +1111,25 @@ This suggests the abstract class:
 
 <div class='together'>
 The `hit_record` is to avoid a bunch of arguments so we can stuff whatever info we want in there.
-You can use arguments instead; it’s a matter of taste. Hitables and materials need to know each
+You can use arguments instead; it’s a matter of taste. Hittables and materials need to know each
 other so there is some circularity of the references. In C++ you just need to alert the compiler
-that the pointer is to a class, which the “class material” in the hitable class below does:
+that the pointer is to a class, which the “class material” in the hittable class below does:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef HITABLEH
-    #define HITABLEH
+    #ifndef HITTABLEH
+    #define HITTABLEH
     #include "ray.h"
 
     class material;
 
-    struct hit_record
-    {
+    struct hit_record {
         float t;
         vec3 p;
         vec3 normal;
         material *mat_ptr;
     };
 
-    class hitable  {
+    class hittable  {
         public:
             virtual bool hit(
                 const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
@@ -1111,7 +1151,7 @@ To achieve this, we must have a reference to the material for our sphere class t
 within `hit_record`. See the lines below marked with **`/* NEW */`**.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class sphere: public hitable  {
+    class sphere: public hittable  {
         public:
             sphere() {}
             sphere(vec3 cen, float r, material *m)
@@ -1161,12 +1201,11 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
         public:
             lambertian(const vec3& a) : albedo(a) {}
             virtual bool scatter(const ray& r_in, const hit_record& rec,
-                vec3& attenuation, ray& scattered) const
-            {
-                 vec3 target = rec.p + rec.normal + random_unit_vector();
-                 scattered = ray(rec.p, target-rec.p);
-                 attenuation = albedo;
-                 return true;
+                                 vec3& attenuation, ray& scattered) const {
+                vec3 target = rec.p + rec.normal + random_unit_vector();
+                scattered = ray(rec.p, target-rec.p);
+                attenuation = albedo;
+                return true;
             }
 
             vec3 albedo;
@@ -1205,8 +1244,7 @@ The metal material just reflects rays using that formula:
         public:
             metal(const vec3& a) : albedo(a) {}
             virtual bool scatter(const ray& r_in, const hit_record& rec,
-                vec3& attenuation, ray& scattered) const
-            {
+                                 vec3& attenuation, ray& scattered) const {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
                 scattered = ray(rec.p, reflected);
                 attenuation = albedo;
@@ -1221,8 +1259,9 @@ The metal material just reflects rays using that formula:
 We need to modify the color function to use this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hitable *world, int depth) {
+    vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (world->hit(r, 0.001, MAXFLOAT, rec)) {
             ray scattered;
             vec3 attenuation;
@@ -1232,6 +1271,7 @@ We need to modify the color function to use this:
             else {
                 return vec3(0,0,0);
             }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
         else {
             vec3 unit_direction = unit_vector(r.direction());
@@ -1252,28 +1292,36 @@ metal spheres:
         int ny = 100;
         int ns = 100;
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
-        hitable *list[4];
-        list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        hittable *list[4];
+        list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.8, 0.3, 0.3)));
         list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
-        list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2), 0.0));
+        list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2)));
         list[3] = new sphere(vec3(-1,0,-1), 0.5, new metal(vec3(0.8, 0.8, 0.8)));
-        hitable *world = new hitable_list(list,4);
+        hittable *world = new hittable_list(list,4);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         camera cam;
         for (int j = ny-1; j >= 0; j--) {
             for (int i = 0; i < nx; i++) {
                 vec3 col(0, 0, 0);
-                for (int s=0; s < ns; s++) {
+                for (int s = 0; s < ns; s++) {
                     float u = float(i + random_double()) / float(nx);
                     float v = float(j + random_double()) / float(ny);
                     ray r = cam.get_ray(u, v);
-                    vec3 p = r.point_at_parameter(2.0);
-                    col += color(r, world,0);
+                    col += color(r, world, 0);
                 }
                 col /= float(ns);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
                 int ir = int(255.99*col[0]);
                 int ig = int(255.99*col[1]);
                 int ib = int(255.99*col[2]);
+
                 std::cout << ir << " " << ig << " " << ib << "\n";
             }
         }
@@ -1313,20 +1361,23 @@ absorb those. We’ll put a maximum of 1 on the radius of the sphere which yield
 
     class metal : public material {
         public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             metal(const vec3& a, float f) : albedo(a) {
                 if (f < 1) fuzz = f; else fuzz = 1;
             }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             virtual bool scatter(const ray& r_in, const hit_record& rec,
-                vec3& attenuation, ray& scattered) const
-            {
+                                 vec3& attenuation, ray& scattered) const {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
                 scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());
                 attenuation = albedo;
                 return (dot(scattered.direction(), rec.normal) > 0);
             }
             vec3 albedo;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             float fuzz;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1407,27 +1458,30 @@ And the dielectric material that always refracts when possible is:
         public:
             dielectric(float ri) : ref_idx(ri) {}
             virtual bool scatter(const ray& r_in, const hit_record& rec,
-                vec3& attenuation, ray& scattered) const
-            {
+                                 vec3& attenuation, ray& scattered) const {
                 vec3 outward_normal;
                 vec3 reflected = reflect(r_in.direction(), rec.normal);
                 float ni_over_nt;
                 attenuation = vec3(1.0, 1.0, 0.0);
                 vec3 refracted;
+
                 if (dot(r_in.direction(), rec.normal) > 0) {
-                     outward_normal = -rec.normal;
-                     ni_over_nt = ref_idx;
+                    outward_normal = -rec.normal;
+                    ni_over_nt = ref_idx;
                 }
                 else {
-                     outward_normal = rec.normal;
-                     ni_over_nt = 1.0 / ref_idx;
+                    outward_normal = rec.normal;
+                    ni_over_nt = 1.0 / ref_idx;
                 }
-                if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted))
-                   scattered = ray(rec.p, refracted);
+
+                if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
+                    scattered = ray(rec.p, refracted);
+                }
                 else {
-                   scattered = ray(rec.p, reflected);
-                   return false;
+                    scattered = ray(rec.p, reflected);
+                    return false;
                 }
+
                 return true;
             }
 
@@ -1484,41 +1538,53 @@ This yields our full glass material:
     class dielectric : public material {
         public:
             dielectric(float ri) : ref_idx(ri) {}
-            virtual bool scatter(
-                const ray& r_in, const hit_record& rec, vec3& attenuation,
-                ray& scattered) const
-            {
+            virtual bool scatter(const ray& r_in, const hit_record& rec,
+                                 vec3& attenuation, ray& scattered) const {
                 vec3 outward_normal;
                 vec3 reflected = reflect(r_in.direction(), rec.normal);
                 float ni_over_nt;
                 attenuation = vec3(1.0, 1.0, 1.0);
                 vec3 refracted;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 float reflect_prob;
                 float cosine;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
                 if (dot(r_in.direction(), rec.normal) > 0) {
                      outward_normal = -rec.normal;
                      ni_over_nt = ref_idx;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                      cosine = ref_idx * dot(r_in.direction(), rec.normal)
                             / r_in.direction().length();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 }
                 else {
                      outward_normal = rec.normal;
                      ni_over_nt = 1.0 / ref_idx;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                      cosine = -dot(r_in.direction(), rec.normal)
                             / r_in.direction().length();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 }
+
                 if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                    reflect_prob = schlick(cosine, ref_idx);
                 }
                 else {
                    reflect_prob = 1.0;
                 }
+
                 if (random_double() < reflect_prob) {
                    scattered = ray(rec.p, reflected);
                 }
                 else {
                    scattered = ray(rec.p, refracted);
                 }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
                 return true;
             }
 
@@ -1535,7 +1601,7 @@ to make a hollow glass sphere:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
     list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
-    list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2)));
+    list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2), 0.3));
     list[3] = new sphere(vec3(-1,0,-1), 0.5, new dielectric(1.5));
     list[4] = new sphere(vec3(-1,0,-1), -0.45, new dielectric(1.5));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1587,6 +1653,7 @@ This implies $h = tan(\theta/2)$. Our camera now becomes:
                 vertical = vec3(0.0, 2*half_height, 0.0);
                 origin = vec3(0.0, 0.0, 0.0);
             }
+
             ray get_ray(float u, float v) {
                 return ray(origin,
                            lower_left_corner + u*horizontal + v*vertical - origin);
@@ -1608,7 +1675,7 @@ When calling it with camera `cam(90, float(nx)/float(ny))` and these spheres:
     float R = cos(M_PI/4);
     list[0] = new sphere(vec3(-R,0,-1), R, new lambertian(vec3(0, 0, 1)));
     list[1] = new sphere(vec3( R,0,-1), R, new lambertian(vec3(1, 0, 0)));
-    hitable *world = new hitable_list(list,2);
+    hittable *world = new hittable_list(list,2);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 gives:
@@ -1648,20 +1715,25 @@ camera horizontally level until you decide to experiment with crazy camera angle
 
     class camera {
         public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             camera(vec3 lookfrom, vec3 lookat, vec3 vup, float vfov, float aspect) {
                 // vfov is top to bottom in degrees
                 vec3 u, v, w;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 float theta = vfov*M_PI/180;
                 float half_height = tan(theta/2);
                 float half_width = aspect * half_height;
-                origin = lookatfrom;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                origin = lookfrom;
                 w = unit_vector(lookfrom - lookat);
                 u = unit_vector(cross(vup, w));
                 v = cross(w, u);
                 lower_left_corner = origin - half_width*u - half_height*v - w;
                 horizontal = 2*half_width*u;
                 vertical = 2*half_height*v;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
+
             ray get_ray(float s, float t) {
                 return ray(origin,
                            lower_left_corner + s*horizontal + t*vertical - origin);
@@ -1745,10 +1817,11 @@ point:
 
     class camera {
         public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             camera(vec3 lookfrom, vec3 lookat, vec3 vup, float vfov, float aspect,
-                float aperture, float focus_dist)
-            {
+                   float aperture, float focus_dist) {
                 lens_radius = aperture / 2;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 float theta = vfov*M_PI/180;
                 float half_height = tan(theta/2);
                 float half_width = aspect * half_height;
@@ -1756,27 +1829,34 @@ point:
                 w = unit_vector(lookfrom - lookat);
                 u = unit_vector(cross(vup, w));
                 v = cross(w, u);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 lower_left_corner = origin
                                   - half_width * focus_dist * u
                                   - half_height * focus_dist * v
                                   - focus_dist * w;
                 horizontal = 2*half_width*focus_dist*u;
                 vertical = 2*half_height*focus_dist*v;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
+
             ray get_ray(float s, float t) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 rd = lens_radius*random_in_unit_disk();
                 vec3 offset = u * rd.x() + v * rd.y();
                 return ray(origin + offset,
                            lower_left_corner + s*horizontal + t*vertical
                                - origin - offset);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
             vec3 origin;
             vec3 lower_left_corner;
             vec3 horizontal;
             vec3 vertical;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 u, v, w;
             float lens_radius;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1810,9 +1890,9 @@ Where Next?
 First let’s make the image on the cover of this book -- lots of random spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hitable *random_scene() {
+    hittable *random_scene() {
         int n = 500;
-        hitable **list = new hitable*[n+1];
+        hittable **list = new hittable*[n+1];
         list[0] =  new sphere(vec3(0,-1000,0), 1000, new lambertian(vec3(0.5, 0.5, 0.5)));
         int i = 1;
         for (int a = -11; a < 11; a++) {
@@ -1846,7 +1926,7 @@ First let’s make the image on the cover of this book -- lots of random spheres
         list[i++] = new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1)));
         list[i++] = new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0));
 
-        return new hitable_list(list,i);
+        return new hittable_list(list,i);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -1882,7 +1962,7 @@ You now have a cool ray tracer! What next?
      blog.
 
   6. Volumes and media. Cool stuff and will challenge your software architecture. I favor making
-     volumes have the hitable interface and probabilistically have intersections based on density.
+     volumes have the hittable interface and probabilistically have intersections based on density.
      Your rendering code doesn’t even have to know it has volumes with that method.
 
   7. Parallelism. Run $N$ copies of your code on $N$ cores with different random seeds. Average the

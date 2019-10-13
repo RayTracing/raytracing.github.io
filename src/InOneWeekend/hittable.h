@@ -1,5 +1,5 @@
-#ifndef HITABLEH
-#define HITABLEH
+#ifndef HITTABLEH
+#define HITTABLEH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -24,7 +24,7 @@ struct hit_record
     material *mat_ptr;
 };
 
-class hitable  {
+class hittable  {
     public:
         virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
 };

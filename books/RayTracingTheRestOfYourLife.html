@@ -5,23 +5,15 @@
 
                                **Ray Tracing: The Rest of Your Life**
                                            Peter Shirley
-                                           Version 1.123
-                      <br>Copyright 2018. Peter Shirley. All rights reserved.
-                         <br>Pay What You Want. ptrshrl@gmail.com at paypal
-            50% of all payments donated to programming education related not-for-profits
+                                     Version 2.0.0, 2019-Oct-07
+                    <br>Copyright 2018-2019. Peter Shirley. All rights reserved.
 
 
 
 Overview
 ====================================================================================================
 
-
-!!! ERROR: Content Under Development
-    See [the official release page](https://github.com/RayTracing/raytracing.github.io/releases/)
-    for latest official PDF version.
-
-
-In _Ray Tracing In One Weekend_ and _Ray Tracing: the Next Week_, you built a “real” ray tracer.
+In _Ray Tracing in One Weekend_ and _Ray Tracing: the Next Week_, you built a “real” ray tracer.
 
 In this volume, I assume you will be pursuing a career related to ray tracing and we will dive into
 the math of creating a very serious ray tracer. When you are done you should be ready to start
@@ -80,15 +72,16 @@ Since the *R* cancels out, we can pick whatever is computationally convenient. L
 centered at the origin:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "random.h"
+
+    #include <iostream>
     #include <math.h>
     #include <stdlib.h>
-    #include <iostream>
-    #include "random.h"
 
     int main() {
         int N = 1000;
         int inside_circle = 0;
-        for (int i = 0; i < nx; i++) {
+        for (int i = 0; i < N; i++) {
             float x = 2*random_double() - 1;
             float y = 2*random_double() - 1;
             if(x*x + y*y < 1)
@@ -105,10 +98,11 @@ This gives me the answer `Estimate of Pi = 3.196`
 If we change the program to run forever and just print out a running estimate:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "random.h"
+
+    #include <iostream>
     #include <math.h>
     #include <stdlib.h>
-    #include <iostream>
-    #include "random.h"
 
     int main() {
         int inside_circle = 0;
@@ -143,8 +137,9 @@ This changes the sample generation, but we need to know how many samples we are 
 because we need to know the grid. Let’s take a hundred million and try it both ways:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include <iostream>
     #include "random.h"
+
+    #include <iostream>
 
     int main() {
         int inside_circle = 0;
@@ -385,10 +380,11 @@ down-weight. The _pdf_ is a perfect measure of how much or little sampling is be
 weighting function should be proportional to $1/pdf$ . In fact it is exactly $1/pdf$ :
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "random.h"
+
+    #include <iostream>
     #include <math.h>
     #include <stdlib.h>
-    #include <iostream>
-    #include "random.h"
 
     inline float pdf(float x) {
         return 0.5*x;
@@ -417,10 +413,11 @@ If we take that same code with uniform samples so the pdf = $1/2$ over the range
 the machinery to get `x = 2*random_double()` and the code is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "random.h"
+
+    #include <iostream>
     #include <math.h>
     #include <stdlib.h>
-    #include <iostream>
-    #include "random.h"
 
     inline float pdf(float x) {
         return 0.5;
@@ -462,10 +459,11 @@ integrating $p$ analytically), but it’s a good exercise to make sure our code 
 sample we get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "random.h"
+
+    #include <iostream>
     #include <math.h>
     #include <stdlib.h>
-    #include <iostream>
-    #include "random.h"
 
     inline float pdf(float x) {
         return 3*x*x/8;
@@ -648,7 +646,7 @@ So for a Lambertian surface the scattering pdf is:
 If we sample using the same pdf, so $p(direction) = cos(\theta) / \pi$, the numerator and
 denominator cancel out and we get:
 
-  $$ Color = A * s(direction) $$
+  $$ Color = A * color(direction) $$
 
 This is exactly what we had in our original color() function! But we need to generalize now so we
 can send extra rays in important directions such as toward the lights.
@@ -699,16 +697,16 @@ Let’s do simple refactoring and temporarily remove all materials that aren’t
 our Cornell Box scene again, and let’s generate the camera in the function that generates the model:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void cornell_box(hitable **scene, camera **cam, float aspect) {
+    void cornell_box(hittable **scene, camera **cam, float aspect) {
         int i = 0;
-        hitable **list = new hitable*[8];
+        hittable **list = new hittable*[8];
         material *red = new lambertian( new constant_texture(vec3(0.65, 0.05, 0.05)) );
         material *white = new lambertian( new constant_texture(vec3(0.73, 0.73, 0.73)) );
         material *green = new lambertian( new constant_texture(vec3(0.12, 0.45, 0.15)) );
         material *light = new diffuse_light( new constant_texture(vec3(15, 15, 15)) );
         list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
         list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
-        list[i++] = new flip_normals(new xz_rect(213, 343, 227, 332, 554, light));
+        list[i++] = new xz_rect(213, 343, 227, 332, 554, light);
         list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
         list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
         list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
@@ -716,9 +714,9 @@ our Cornell Box scene again, and let’s generate the camera in the function tha
             new box(vec3(0, 0, 0), vec3(165, 165, 165), white), -18), vec3(130,0,65));
         list[i++] = new translate(new rotate_y(
             new box(vec3(0, 0, 0), vec3(165, 330, 165), white),  15), vec3(265,0,295));
-        *scene = new hitable_list(list,i);
+        *scene = new hittable_list(list,i);
         vec3 lookfrom(278, 278, -800);
-        vec3 lookat(278,278,0);
+        vec3 lookat(278, 278, 0);
         float dist_to_focus = 10.0;
         float aperture = 0.0;
         float vfov = 40.0;
@@ -747,14 +745,17 @@ We modify the base-class _material_ to enable this importance sampling:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material  {
         public:
+
             virtual bool scatter(const ray& r_in,
                 const hit_record& rec, vec3& albedo, ray& scattered, float& pdf) const {
                 return false;
             }
-            virtual float scattering_pdf(const ray& r_in,
-                const hit_record& rec, const ray& scattered) const {
-                return false;
+
+            virtual float scattering_pdf(const ray& r_in, const hit_record& rec,
+                                         const ray& scattered) const {
+                return 0;
             }
+
             virtual vec3 emitted(float u, float v, const vec3& p) const {
                 return vec3(0,0,0);
             }
@@ -769,6 +770,7 @@ And _Lambertian_ material becomes:
     class lambertian : public material {
         public:
             lambertian(texture *a) : albedo(a) {}
+
             float scattering_pdf(const ray& r_in,
                 const hit_record& rec, const ray& scattered) const {
                 float cosine = dot(rec.normal, unit_vector(scattered.direction()));
@@ -776,6 +778,7 @@ And _Lambertian_ material becomes:
                     return 0;
                 return cosine / M_PI;
             }
+
             bool scatter(const ray& r_in,
                 const hit_record& rec, vec3& alb, ray& scattered, float& pdf) const {
                 vec3 target = rec.p + rec.normal + random_unit_vector();
@@ -784,6 +787,7 @@ And _Lambertian_ material becomes:
                 pdf = dot(rec.normal, scattered.direction()) / M_PI;
                 return true;
             }
+
             texture *albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -793,9 +797,9 @@ And _Lambertian_ material becomes:
 And the color function gets a minor modification:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hitable *world, int depth) {
+    vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
-        if (world->hit(r, 0.001, MAXFLOAT, hrec)) {
+        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
@@ -932,7 +936,7 @@ We can output some of these:
             float r2 = random_double();
             float x = cos(2*M_PI*r1)*2*sqrt(r2*(1-r2));
             float y = sin(2*M_PI*r1)*2*sqrt(r2*(1-r2));
-            float z = 1 - r2;
+            float z = 1 - 2*r2;
 
             std::cout << x << " " << y << " " << z << "\n";
         }
@@ -1083,10 +1087,10 @@ an $\vec{n}$ parallel to $\vec{a}$. A common method is to use an if-statement to
 $\vec{n}$ is a particular axis, and if not, use that axis.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    if (fabs(n.x()) > 0.9)
-        a = (0, 1, 0)
+    if absolute(n.x > 0.9)
+        a ← (0, 1, 0)
     else
-        a = (1, 0, 0)
+        a ← (1, 0, 0)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
@@ -1128,7 +1132,7 @@ utility functions:
             a = vec3(0, 1, 0);
         else
             a = vec3(1, 0, 0);
-        axis[1] = unit_vector( cross( w(), a ) );
+        axis[1] = unit_vector(cross(w(), a));
         axis[0] = cross(w(), v());
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1147,7 +1151,7 @@ We can rewrite our Lambertian material using this to get:
     {
         onb uvw;
         uvw.build_from_w(rec.normal);
-        vec3 direction = uvw.local(random_cosine_direction() );
+        vec3 direction = uvw.local(random_cosine_direction());
         scattered = ray(rec.p, unit_vector(direction), r_in.time());
         alb = albedo->value(rec.u, rec.v, rec.p);
         pdf = dot(uvw.w(), scattered.direction()) / M_PI;
@@ -1209,7 +1213,7 @@ If we hack our color function to sample the light in a very hard-coded fashion j
 math and get the concept, we can add it (see the highlighted region):
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hitable *world, int depth) {
+    vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
         if (world->hit(r, 0,001, MAXFLOAT, rec)) {
             ray scattered;
@@ -1218,6 +1222,7 @@ math and get the concept, we can add it (see the highlighted region):
             float pdf;
             vec3 albedo;
             if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 on_light = vec3(213 + random_double()*(343-213),
                                      554,
                                      227 + random_double()*(332-227));
@@ -1232,6 +1237,7 @@ math and get the concept, we can add it (see the highlighted region):
                     return emitted;
                 pdf = distance_squared / (light_cosine * light_area);
                 scattered = ray(rec.p, to_light, r.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
                 return emitted
                      + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
@@ -1257,7 +1263,7 @@ With 10 samples per pixel this yields:
 This is about what we would expect from something that samples only the light sources, so this
 appears to work. The noisy pops around the light on the ceiling are because the light is two-sided
 and there is a small space between light and ceiling. We probably want to have the light just emit
-down. We can do that by letting the emitted member function of hitable take extra information:
+down. We can do that by letting the emitted member function of hittable take extra information:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     virtual vec3 emitted(const ray& r_in, const hit_record& rec, float u, float v,
@@ -1334,8 +1340,8 @@ minimal interface works, and for the _pdf_ this implies:
 </div>
 
 We’ll see if that works by fleshing out the subclasses. For sampling the light, we will need
-`hitable` to answer some queries that it doesn’t have an interface for. We’ll probably need to mess
-with it too, but we can start by seeing if we can put something in `hitable` involving sampling the
+`hittable` to answer some queries that it doesn’t have an interface for. We’ll probably need to mess
+with it too, but we can start by seeing if we can put something in `hittable` involving sampling the
 bounding box that works with all its subclasses.
 
 <div class='together'>
@@ -1365,7 +1371,7 @@ We can try this in the `color()` function, with the main changes highlighted. We
 variable `pdf` to some other variable name to avoid a name conflict with the new `pdf` class.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hitable *world, int depth) {
+    vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
         if (world->hit(r, 0.001, MAXFLOAT, rec)) {
             ray scattered;
@@ -1374,9 +1380,11 @@ variable `pdf` to some other variable name to avoid a name conflict with the new
             float pdf_val;
             vec3 albedo;
             if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 cosine_pdf p(rec.normal);
                 scattered = ray(rec.p, p.generate(), r.time());
                 pdf_val = p.value(scattered.direction());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return emitted
                      + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
                               * color(scattered, world, depth+1)
@@ -1400,12 +1408,12 @@ computed:
 </div>
 
 <div class='together'>
-Now we can try sampling directions toward a `hitable` like the light.
+Now we can try sampling directions toward a `hittable` like the light.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class hitable_pdf : public pdf {
+    class hittable_pdf : public pdf {
         public:
-            hitable_pdf(hitable *p, const vec3& origin) : ptr(p), o(origin) {}
+            hittable_pdf(hittable *p, const vec3& origin) : ptr(p), o(origin) {}
             virtual float value(const vec3& direction) const {
                 return ptr->pdf_value(o, direction);
             }
@@ -1413,18 +1421,18 @@ Now we can try sampling directions toward a `hitable` like the light.
                 return ptr->random(o);
             }
             vec3 o;
-            hitable *ptr;
+            hittable *ptr;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
 <div class='together'>
-This assumes two as-yet not implemented functions in the `hitable` class. To avoid having to add
-instrumentation to all of `hitable` subclasses, we’ll add two dummy functions to the `hitable`
+This assumes two as-yet not implemented functions in the `hittable` class. To avoid having to add
+instrumentation to all of `hittable` subclasses, we’ll add two dummy functions to the `hittable`
 class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class hitable  {
+    class hittable  {
         public:
             virtual bool hit(const ray& r, float t_min, float t_max,
                 hit_record& rec) const = 0;
@@ -1439,7 +1447,7 @@ class:
 And we change `xz_rect` to implement those functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class xz_rect: public hitable  {
+    class xz_rect: public hittable  {
         public:
             xz_rect() {}
             xz_rect(float _x0, float _x1, float _z0, float _z1, float _k, material *mat)
@@ -1449,6 +1457,7 @@ And we change `xz_rect` to implement those functions:
                 box =  aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
                 return true;
             }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             virtual float  pdf_value(const vec3& o, const vec3& v) const {
                 hit_record rec;
                 if (this->hit(ray(o, v), 0.001, FLT_MAX, rec)) {
@@ -1465,6 +1474,7 @@ And we change `xz_rect` to implement those functions:
                     z0 + random_double()*(z1-z0));
                 return random_point - o;
             }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             material  *mp;
             float x0, x1, z0, z1, k;
     };
@@ -1475,7 +1485,7 @@ And we change `xz_rect` to implement those functions:
 And then change `color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hitable *world, int depth) {
+    vec3 color(const ray& r, hittable *world, int depth) {
         hit_record rec;
         if (world->hit(r, 0.001, MAXFLOAT, rec)) {
             ray scattered;
@@ -1483,9 +1493,11 @@ And then change `color()`:
             vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
             float pdf_val;
             vec3 albedo;
-            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
-                hitable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
-                hitable_pdf p(light_shape, rec.p);
+            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
+                hittable_pdf p(light_shape, rec.p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 scattered = ray(rec.p, p.generate(), r.time());
                 pdf_val = p.value(scattered.direction());
                 return emitted
@@ -1535,7 +1547,7 @@ class is straightforward:
 And plugging it into `color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hitable *world, hitable *light_shape, int depth) {
+    vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
         hit_record rec;
         if (world->hit(r, 0.001, MAXFLOAT, rec)) {
             ray scattered;
@@ -1544,10 +1556,12 @@ And plugging it into `color()`:
             float pdf_val;
             vec3 albedo;
             if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
-                hitable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
-                hitable_pdf p0(light_shape, rec.p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
+                hittable_pdf p0(light_shape, rec.p);
                 cosine_pdf p1(rec.normal);
                 mixture_pdf p(&p0, &p1);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 scattered = ray(rec.p, p.generate(), r.time());
                 pdf_val = p.value(scattered.direction());
                 return emitted + albedo*rec.mat_ptr->scattering_pdf(r, rec, scattered)*
@@ -1626,7 +1640,7 @@ So far I have the color function create two hard-coded `pdf`s :
 
 </div>
 
-We can pass information about the light (or whatever `hitable` we want to sample) into the `color`
+We can pass information about the light (or whatever `hittable` we want to sample) into the `color`
 function, and we can ask the `material` function for a `pdf` (we would have to instrument it to do
 that). We can also either ask `hit` function or the `material` class to supply whether there is a
 specular vector.
@@ -1641,7 +1655,7 @@ if it is diffuse so we can handle that implicitly.
 
 <div class='together'>
 We can redesign `material` and stuff all the new arguments into a `struct` like we did for
-`hitable`:
+`hittable`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     struct scatter_record
@@ -1655,9 +1669,15 @@ We can redesign `material` and stuff all the new arguments into a `struct` like 
     class material  {
         public:
             virtual bool scatter(const ray& r_in, const hit_record& hrec,
-                scatter_record& srec) const { return false; }
+                                 scatter_record& srec) const {
+                return false;
+            }
+
             virtual float scattering_pdf(const ray& r_in, const hit_record& rec,
-                const ray& scattered) const { return false; }
+                                         const ray& scattered) const {
+                return 0;
+            }
+
             virtual vec3 emitted(const ray& r_in, const hit_record& rec,
                 float u, float v, const vec3& p) const { return vec3(0,0,0); }
     };
@@ -1670,14 +1690,19 @@ The Lambertian material becomes simpler:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
         public:
+
             lambertian(texture *a) : albedo(a) {}
+
             float scattering_pdf(const ray& r_in, const hit_record& rec,
-                const ray& scattered) const {
+                                 const ray& scattered) const {
                 float cosine = dot(rec.normal, unit_vector(scattered.direction()));
                 if (cosine < 0)
                     return 0;
                 return cosine / M_PI;
             }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             bool scatter(const ray& r_in, const hit_record& hrec,
                 scatter_record& srec) const {
                 srec.is_specular = false;
@@ -1685,6 +1710,8 @@ The Lambertian material becomes simpler:
                 srec.pdf_ptr = new cosine_pdf(hrec.normal);
                 return true;
             }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
             texture *albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1694,13 +1721,14 @@ The Lambertian material becomes simpler:
 And `color()` changes are small:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hitable *world, hitable *light_shape, int depth) {
+    vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
         hit_record hrec;
         if (world->hit(r, 0.001, MAXFLOAT, hrec)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             scatter_record srec;
             vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
             if (depth < 50 && hrec.mat_ptr->scatter(r, hrec, srec)) {
-                hitable_pdf plight(light_shape, hrec.p);
+                hittable_pdf plight(light_shape, hrec.p);
                 mixture_pdf p(&plight, srec.pdf_ptr);
                 ray scattered = ray(hrec.p, p.generate(), r.time());
                 float pdf_val = p.value(scattered.direction());
@@ -1708,6 +1736,7 @@ And `color()` changes are small:
                     + srec.attenuation * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
                                        * color(scattered, world, light_shape, depth+1)
                                        / pdf_val;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
             else
                 return emitted;
@@ -1728,6 +1757,7 @@ overall, and those are all fixable. For now, I will just fix `specular`. Metal i
         public:
             metal(const vec3& a, float f) : albedo(a)
                 { if (f < 1) fuzz = f; else fuzz = 1; }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             virtual bool scatter(const ray& r_in, const hit_record& hrec,
                 scatter_record& srec) const {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), hrec.normal);
@@ -1737,6 +1767,7 @@ overall, and those are all fixable. For now, I will just fix `specular`. Metal i
                 srec.pdf_ptr = 0;
                 return true;
             }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             vec3 albedo;
             float fuzz;
     };
@@ -1750,18 +1781,20 @@ just like it did before.
 `Color` just needs a new case to generate an implicitly sampled ray:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hitable *world, hitable *light_shape, int depth) {
+    vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
         hit_record hrec;
         if (world->hit(r, 0.001, MAXFLOAT, hrec)) {
             scatter_record srec;
             vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
             if (depth < 50 && hrec.mat_ptr->scatter(r, hrec, srec)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 if (srec.is_specular) {
                     return srec.attenuation
                          * color(srec.specular_ray, world, light_shape, depth+1);
                 }
                 else {
-                    hitable_pdf plight(light_shape, hrec.p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                    hittable_pdf plight(light_shape, hrec.p);
                     mixture_pdf p(&plight, srec.pdf_ptr);
                     ray scattered = ray(hrec.p, p.generate(), r.time());
                     float pdf_val = p.value(scattered.direction());
@@ -1785,9 +1818,9 @@ just like it did before.
 We also need to change the block to metal.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void cornell_box(hitable **scene, camera **cam, float aspect) {
+    void cornell_box(hittable **scene, camera **cam, float aspect) {
         int i = 0;
-        hitable **list = new hitable*[8];
+        hittable **list = new hittable*[8];
         material *red = new lambertian( new constant_texture(vec3(0.65, 0.05, 0.05)) );
         material *white = new lambertian( new constant_texture(vec3(0.73, 0.73, 0.73)) );
         material *green = new lambertian( new constant_texture(vec3(0.12, 0.45, 0.15)) );
@@ -1801,11 +1834,13 @@ We also need to change the block to metal.
         list[i++] = new translate(
             new rotate_y(new box(vec3(0, 0, 0), vec3(165, 165, 165), white),  -18),
             vec3(130,0,65));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         material *aluminum = new metal(vec3(0.8, 0.85, 0.88), 0.0);
         list[i++] = new translate(
             new rotate_y(new box(vec3(0, 0, 0), vec3(165, 330, 165), aluminum),  15),
             vec3(265,0,295));
-        *scene = new hitable_list(list,i);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        *scene = new hittable_list(list,i);
         vec3 lookfrom(278, 278, -800);
         vec3 lookat(278,278,0);
         float dist_to_focus = 10.0;
@@ -1934,8 +1969,8 @@ With the utility function:
 We can first try just sampling the sphere rather than the light:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hitable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
-    hitable *glass_sphere = new sphere(vec3(190, 90, 190), 90, 0);
+    hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
+    hittable *glass_sphere = new sphere(vec3(190, 90, 190), 90, 0);
 
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
@@ -1962,11 +1997,11 @@ expensive!
 <div class='together'>
 We should probably just sample both the sphere and the light. We can do that by creating a mixture
 density of their two densities. We could do that in the `color` function by passing a list of
-hitables in and building a mixture `pdf`, or we could add `pdf` functions to `hitable_list`. I
-think both tactics would work fine, but I will go with instrumenting `hitable_list`.
+hittables in and building a mixture `pdf`, or we could add `pdf` functions to `hittable_list`. I
+think both tactics would work fine, but I will go with instrumenting `hittable_list`.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    float hitable_list::pdf_value(const vec3& o, const vec3& v) const {
+    float hittable_list::pdf_value(const vec3& o, const vec3& v) const {
         float weight = 1.0/list_size;
         float sum = 0;
         for (int i = 0; i < list_size; i++)
@@ -1974,7 +2009,7 @@ think both tactics would work fine, but I will go with instrumenting `hitable_li
         return sum;
     }
 
-    vec3 hitable_list::random(const vec3& o) const {
+    vec3 hittable_list::random(const vec3& o) const {
         int index = int(random_double() * list_size);
         return list[ index ]->random(o);
     }
@@ -1985,23 +2020,12 @@ think both tactics would work fine, but I will go with instrumenting `hitable_li
 We assemble a list to pass in to `color`.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hitable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
-    hitable *glass_sphere = new sphere(vec3(190, 90, 190), 90, 0);
-    hitable *a[2];
+    hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
+    hittable *glass_sphere = new sphere(vec3(190, 90, 190), 90, 0);
+    hittable *a[2];
     a[0] = light_shape;
     a[1] = glass_sphere;
-    hitable_list hlist(a,2);
-
-    for (int j = ny-1; j >= 0; j--) {
-        for (int i = 0; i < nx; i++) {
-            vec3 col(0, 0, 0);
-            for (int s=0; s < ns; s++) {
-                float u = float(i+random_double())/ float(nx);
-                float v = float(j+random_double())/ float(ny);
-                ray r = cam->get_ray(u, v);
-                vec3 p = r.point_at_parameter(2.0);
-                col += color(r, world, &hlist, 0);
-            }
+    hittable_list hlist(a,2);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
@@ -2052,7 +2076,9 @@ And we can insert that in the main loop:
         float v = float(j+random_double())/ float(ny);
         ray r = cam->get_ray(u, v);
         vec3 p = r.point_at_parameter(2.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         col += de_nan(color(r, world, &hlist, 0));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>

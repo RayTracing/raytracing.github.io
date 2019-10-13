@@ -11,7 +11,7 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include "hitable.h"
+#include "hittable.h"
 #include "ray.h"
 #include "texture.h"
 #include "random.h"

@@ -9,14 +9,14 @@ Getting the Book
 The _Ray Tracing in One Weekend_ series of books are now available to the public for free in PDF
 form, along with the accompanying source code.
 
-Releases are available [directly from GitHub][], or from Eric Haines's [Real-Time Rendering][] site.
-Alternatively, you can purchase the Kindle version of this series from [Amazon.com][]. Half of the
-proceeds of these sales go to [Hack the Hood][], a really neat organization.
+You can view the book at https://raytracing.github.io/books/RayTracingTheNextWeek.html. If you would
+like a printed or PDF version, print it directly from your browser (it has been styled to support a
+printed layout).
 
 
 Overview
 ---------
-In [Ray Tracing In One Weekend][], you built a simple brute force path tracer. In this installment
+In [Ray Tracing in One Weekend][], you built a simple brute force path tracer. In this installment
 we’ll add textures, volumes (like fog), rectangles, instances, lights, and support for lots of
 objects using a BVH. When done, you’ll have a “real” ray tracer.
 
@@ -48,10 +48,9 @@ Jean Buckley for editing.
 
 
 
-[Amazon.com]:                 https://amazon.com/dp/B01CO7PQ8C
 [CONTRIBUTING]:               ../CONTRIBUTING.md
 [directly from GitHub]:       https://github.com/raytracing/raytracing.github.io/releases/
 [Hack the Hood]:              http://www.hackthehood.org
-[Ray Tracing In One Weekend]: ../InOneWeekend/
+[Ray Tracing in One Weekend]: ../InOneWeekend/
 [Real-Time Rendering]:        http://www.realtimerendering.com/#books-small-table
 [submit issues via GitHub]:   https://github.com/raytracing/raytracing.github.io/issues/
