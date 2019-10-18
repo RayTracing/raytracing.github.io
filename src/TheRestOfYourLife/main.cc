@@ -17,9 +17,6 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "moving_sphere.h"
-#ifdef _MSC_VER
-#include "msc.h"
-#endif
 #include "pdf.h"
 #include "random.h"
 #include "sphere.h"
