@@ -10,8 +10,8 @@
 //==================================================================================================
 
 #include "common/constants.h"
+#include "common/vec3.h"
 #include "random.h"
-#include "vec3.h"
 
 #include <iostream>
 #include <math.h>
@@ -42,4 +42,3 @@ int main() {
     }
     std::cout << "I =" << sum/N << "\n";
 }
-

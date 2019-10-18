@@ -11,6 +11,7 @@ set ( CMAKE_CXX_STANDARD 11 )
 # Source
 set ( IN_ONE_WEEKEND_SOURCE
   src/common/constants.h
+  src/common/vec3.h
   src/InOneWeekend/camera.h
   src/InOneWeekend/hittable.h
   src/InOneWeekend/hittable_list.h
@@ -18,13 +19,13 @@ set ( IN_ONE_WEEKEND_SOURCE
   src/InOneWeekend/random.h
   src/InOneWeekend/ray.h
   src/InOneWeekend/sphere.h
-  src/InOneWeekend/vec3.h
   src/InOneWeekend/main.cc
 )
 
 set ( THE_NEXT_WEEK_SOURCE
   src/common/constants.h
   src/common/stb_image.h
+  src/common/vec3.h
   src/TheNextWeek/aabb.h
   src/TheNextWeek/aarect.h
   src/TheNextWeek/box.h
@@ -41,13 +42,13 @@ set ( THE_NEXT_WEEK_SOURCE
   src/TheNextWeek/sphere.h
   src/TheNextWeek/surface_texture.h
   src/TheNextWeek/texture.h
-  src/TheNextWeek/vec3.h
   src/TheNextWeek/main.cc
 )
 
 set ( THE_REST_OF_YOUR_LIFE_SOURCE
   src/common/constants.h
   src/common/stb_image.h
+  src/common/vec3.h
   src/TheRestOfYourLife/aabb.h
   src/TheRestOfYourLife/aarect.h
   src/TheRestOfYourLife/box.h
@@ -68,7 +69,6 @@ set ( THE_REST_OF_YOUR_LIFE_SOURCE
   src/TheRestOfYourLife/sphere.h
   src/TheRestOfYourLife/surface_texture.h
   src/TheRestOfYourLife/texture.h
-  src/TheRestOfYourLife/vec3.h
   src/TheRestOfYourLife/main.cc
 )
 

@@ -11,7 +11,7 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include "vec3.h"
+#include "common/vec3.h"
 
 
 class ray
@@ -29,5 +29,5 @@ class ray
         float _time;
 };
 
-#endif
 
+#endif
