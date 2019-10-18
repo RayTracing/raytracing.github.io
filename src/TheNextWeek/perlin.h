@@ -11,8 +11,9 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include "vec3.h"
+#include "common/vec3.h"
 #include "random.h"
+
 
 inline float perlin_interp(vec3 c[2][2][2], float u, float v, float w) {
     float uu = u*u*(3-2*u);
@@ -99,4 +100,3 @@ int *perlin::perm_z = perlin_generate_perm();
 
 
 #endif
-
