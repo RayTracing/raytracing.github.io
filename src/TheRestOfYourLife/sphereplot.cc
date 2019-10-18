@@ -9,7 +9,7 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include "constants.h"
+#include "common/constants.h"
 #include "random.h"
 
 #include <iostream>

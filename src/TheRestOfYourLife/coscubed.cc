@@ -9,8 +9,8 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "common/constants.h"
 #include "random.h"
-#include "constants.h"
 
 #include <iostream>
 #include <math.h>
