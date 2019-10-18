@@ -13,7 +13,7 @@
 #include "box.h"
 #include "bvh.h"
 #include "camera.h"
-#include "constants.h"
+#include "common/constants.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "moving_sphere.h"
