@@ -14,14 +14,14 @@
 #include "bvh.h"
 #include "camera.h"
 #include "common/constants.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "common/stb_image.h"
 #include "constant_medium.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "moving_sphere.h"
 #include "random.h"
 #include "sphere.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 #include "surface_texture.h"
 #include "texture.h"
 
