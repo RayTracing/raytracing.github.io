@@ -9,13 +9,13 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "common/rtweekend.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "common/stb_image.h"
 #include "aarect.h"
 #include "box.h"
 #include "bvh.h"
 #include "camera.h"
-#include "common/rtweekend.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "common/stb_image.h"
 #include "constant_medium.h"
 #include "hittable_list.h"
 #include "material.h"
@@ -261,7 +261,6 @@ int main() {
     int ny = 800;
     int ns = 100;
     std::cout << "P3\n" << nx << " " << ny << "\n255\n";
-    hittable *list[5];
     float R = cos(pi/4);
     //hittable *world = random_scene();
     //hittable *world = two_spheres();

@@ -9,13 +9,13 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "common/rtweekend.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "common/stb_image.h"
 #include "aarect.h"
 #include "box.h"
 #include "bvh.h"
 #include "camera.h"
-#include "common/rtweekend.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "common/stb_image.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "moving_sphere.h"
