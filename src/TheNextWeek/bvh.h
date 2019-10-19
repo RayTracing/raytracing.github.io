@@ -18,21 +18,21 @@
 class bvh_node : public hittable  {
     public:
         bvh_node() {}
-        bvh_node(hittable **l, int n, float time0, float time1);
-        virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
-        virtual bool bounding_box(float t0, float t1, aabb& box) const;
+        bvh_node(hittable **l, int n, double time0, double time1);
+        virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+        virtual bool bounding_box(double t0, double t1, aabb& box) const;
         hittable *left;
         hittable *right;
         aabb box;
 };
 
 
-bool bvh_node::bounding_box(float t0, float t1, aabb& b) const {
+bool bvh_node::bounding_box(double t0, double t1, aabb& b) const {
     b = box;
     return true;
 }
 
-bool bvh_node::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
     if (box.hit(r, t_min, t_max)) {
         hit_record left_rec, right_rec;
         bool hit_left = left->hit(r, t_min, t_max, left_rec);
@@ -97,7 +97,7 @@ int box_z_compare (const void * a, const void * b)
 }
 
 
-bvh_node::bvh_node(hittable **l, int n, float time0, float time1) {
+bvh_node::bvh_node(hittable **l, int n, double time0, double time1) {
     int axis = int(3*random_double());
     if (axis == 0)
        qsort(l, n, sizeof(hittable *), box_x_compare);

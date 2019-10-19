@@ -19,16 +19,16 @@
 
 class constant_medium : public hittable  {
     public:
-        constant_medium(hittable *b, float d, texture *a) : boundary(b), density(d) { phase_function = new isotropic(a); }
-        virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
-        virtual bool bounding_box(float t0, float t1, aabb& box) const { 
+        constant_medium(hittable *b, double d, texture *a) : boundary(b), density(d) { phase_function = new isotropic(a); }
+        virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
+        virtual bool bounding_box(double t0, double t1, aabb& box) const { 
             return boundary->bounding_box(t0, t1, box); }
         hittable *boundary;
-        float density;
+        double density;
         material *phase_function;
 };
 
-bool constant_medium::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+bool constant_medium::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
     bool db = (random_double() < 0.00001);
     db = false;
     hit_record rec1, rec2;
@@ -43,8 +43,8 @@ bool constant_medium::hit(const ray& r, float t_min, float t_max, hit_record& re
                 return false;
             if (rec1.t < 0)
                 rec1.t = 0;
-            float distance_inside_boundary = (rec2.t - rec1.t)*r.direction().length();
-            float hit_distance = -(1/density)*log(random_double()); 
+            auto distance_inside_boundary = (rec2.t - rec1.t)*r.direction().length();
+            auto hit_distance = -(1/density)*log(random_double()); 
             if (hit_distance < distance_inside_boundary) {
             if (db) std::cerr << "hit_distance = " <<  hit_distance << "\n";
                 rec.t = rec1.t + hit_distance / r.direction().length(); 

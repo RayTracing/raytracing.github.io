@@ -17,21 +17,21 @@
 class bvh_node : public hittable  {
     public:
         bvh_node() {}
-        bvh_node(hittable **l, int n, float time0, float time1);
-        virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
-        virtual bool bounding_box(float t0, float t1, aabb& box) const;
+        bvh_node(hittable **l, int n, double time0, double time1);
+        virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+        virtual bool bounding_box(double t0, double t1, aabb& box) const;
         hittable *left;
         hittable *right;
         aabb box;
 };
 
 
-bool bvh_node::bounding_box(float t0, float t1, aabb& b) const {
+bool bvh_node::bounding_box(double t0, double t1, aabb& b) const {
     b = box;
     return true;
 }
 
-bool bvh_node::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
     if (box.hit(r, t_min, t_max)) {
         hit_record left_rec, right_rec;
         bool hit_left = left->hit(r, t_min, t_max, left_rec);
@@ -96,10 +96,10 @@ int box_z_compare (const void * a, const void * b)
 }
 
 
-bvh_node::bvh_node(hittable **l, int n, float time0, float time1) {
+bvh_node::bvh_node(hittable **l, int n, double time0, double time1) {
     aabb *boxes = new aabb[n];
-    float *left_area = new float[n];
-    float *right_area = new float[n];
+    auto *left_area = new double[n];
+    auto *right_area = new double[n];
     aabb main_box;
     bool dummy = l[0]->bounding_box(time0,time1,main_box);
     for (int i = 1; i < n; i++) {
@@ -128,10 +128,10 @@ bvh_node::bvh_node(hittable **l, int n, float time0, float time1) {
         right_box = surrounding_box(right_box, boxes[i]);
         right_area[i] = right_box.area();
     }
-    float min_SAH = FLT_MAX;
+    auto min_SAH = infinity;
     int min_SAH_idx;
     for (int i = 0; i < n-1; i++) {
-        float SAH = i*left_area[i] + (n-i-1)*right_area[i+1];
+        auto SAH = i*left_area[i] + (n-i-1)*right_area[i+1];
         if (SAH < min_SAH) {
             min_SAH_idx = i;
             min_SAH = SAH;

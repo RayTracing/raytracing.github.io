@@ -19,18 +19,18 @@ class hittable_list: public hittable  {
     public:
         hittable_list() {}
         hittable_list(hittable **l, int n) {list = l; list_size = n; }
-        virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
-        virtual bool bounding_box(float t0, float t1, aabb& box) const;
-        virtual float  pdf_value(const vec3& o, const vec3& v) const;
+        virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+        virtual bool bounding_box(double t0, double t1, aabb& box) const;
+        virtual double pdf_value(const vec3& o, const vec3& v) const;
         virtual vec3 random(const vec3& o) const;
 
         hittable **list;
         int list_size;
 };
 
-float hittable_list::pdf_value(const vec3& o, const vec3& v) const {
-    float weight = 1.0/list_size;
-    float sum = 0;
+double hittable_list::pdf_value(const vec3& o, const vec3& v) const {
+    auto weight = 1.0/list_size;
+    auto sum = 0.0;
     for (int i = 0; i < list_size; i++)
         sum += weight*list[i]->pdf_value(o, v);
     return sum;
@@ -42,7 +42,7 @@ vec3 hittable_list::random(const vec3& o) const {
 }
 
 
-bool hittable_list::bounding_box(float t0, float t1, aabb& box) const {
+bool hittable_list::bounding_box(double t0, double t1, aabb& box) const {
     if (list_size < 1) return false;
     aabb temp_box;
     bool first_true = list[0]->bounding_box(t0, t1, temp_box);
@@ -60,7 +60,7 @@ bool hittable_list::bounding_box(float t0, float t1, aabb& box) const {
     return true;
 }
 
-bool hittable_list::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+bool hittable_list::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         hit_record temp_rec;
         bool hit_anything = false;
         double closest_so_far = t_max;
