@@ -10,7 +10,7 @@ set ( CMAKE_CXX_STANDARD 11 )
 
 # Source
 set ( IN_ONE_WEEKEND_SOURCE
-  src/common/constants.h
+  src/common/rtweekend.h
   src/common/vec3.h
   src/InOneWeekend/camera.h
   src/InOneWeekend/hittable.h
@@ -23,7 +23,7 @@ set ( IN_ONE_WEEKEND_SOURCE
 )
 
 set ( THE_NEXT_WEEK_SOURCE
-  src/common/constants.h
+  src/common/rtweekend.h
   src/common/stb_image.h
   src/common/vec3.h
   src/TheNextWeek/aabb.h
@@ -46,7 +46,7 @@ set ( THE_NEXT_WEEK_SOURCE
 )
 
 set ( THE_REST_OF_YOUR_LIFE_SOURCE
-  src/common/constants.h
+  src/common/rtweekend.h
   src/common/stb_image.h
   src/common/vec3.h
   src/TheRestOfYourLife/aabb.h

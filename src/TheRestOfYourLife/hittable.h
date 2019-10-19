@@ -12,7 +12,7 @@
 //==================================================================================================
 
 #include "aabb.h"
-#include "common/constants.h"
+#include "common/rtweekend.h"
 
 #include <float.h>
 

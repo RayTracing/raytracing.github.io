@@ -13,7 +13,7 @@
 #include "box.h"
 #include "bvh.h"
 #include "camera.h"
-#include "common/constants.h"
+#include "common/rtweekend.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "common/stb_image.h"
 #include "constant_medium.h"
