@@ -52,7 +52,7 @@ vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
                 hittable_pdf plight(light_shape, hrec.p);
                 mixture_pdf p(&plight, srec.pdf_ptr);
                 ray scattered = ray(hrec.p, p.generate(), r.time());
-                float pdf_val = p.value(scattered.direction());
+                auto pdf_val = p.value(scattered.direction());
                 delete srec.pdf_ptr;
                 return emitted
                      + srec.attenuation * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
@@ -67,7 +67,7 @@ vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
         return vec3(0,0,0);
 }
 
-void cornell_box(hittable **scene, camera **cam, float aspect) {
+void cornell_box(hittable **scene, camera **cam, double aspect) {
     int i = 0;
     hittable **list = new hittable*[8];
     material *red = new lambertian( new constant_texture(vec3(0.65, 0.05, 0.05)) );
@@ -87,9 +87,9 @@ void cornell_box(hittable **scene, camera **cam, float aspect) {
     *scene = new hittable_list(list,i);
     vec3 lookfrom(278, 278, -800);
     vec3 lookat(278,278,0);
-    float dist_to_focus = 10.0;
-    float aperture = 0.0;
-    float vfov = 40.0;
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.0;
+    auto vfov = 40.0;
     *cam = new camera(lookfrom, lookat, vec3(0,1,0),
                       vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
 }
@@ -101,7 +101,7 @@ int main() {
     std::cout << "P3\n" << nx << " " << ny << "\n255\n";
     hittable *world;
     camera *cam;
-    float aspect = float(ny) / float(nx);
+    auto aspect = double(ny) / double(nx);
     cornell_box(&world, &cam, aspect);
     hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
     hittable *glass_sphere = new sphere(vec3(190, 90, 190), 90, 0);
@@ -114,13 +114,13 @@ int main() {
         for (int i = 0; i < nx; i++) {
             vec3 col(0, 0, 0);
             for (int s=0; s < ns; s++) {
-                float u = float(i+random_double())/ float(nx);
-                float v = float(j+random_double())/ float(ny);
+                auto u = (i + random_double()) / nx;
+                auto v = (j + random_double()) / ny;
                 ray r = cam->get_ray(u, v);
                 vec3 p = r.point_at_parameter(2.0);
                 col += de_nan(color(r, world, &hlist, 0));
             }
-            col /= float(ns);
+            col /= double(ns);
             col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
             int ir = int(255.99*col[0]);
             int ig = int(255.99*col[1]);

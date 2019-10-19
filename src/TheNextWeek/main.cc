@@ -72,13 +72,13 @@ hittable *final() {
     int b = 0;
     for (int i = 0; i < nb; i++) {
         for (int j = 0; j < nb; j++) {
-            float w = 100;
-            float x0 = -1000 + i*w;
-            float z0 = -1000 + j*w;
-            float y0 = 0;
-            float x1 = x0 + w;
-            float y1 = 100*(random_double()+0.01);
-            float z1 = z0 + w;
+            auto w = 100.0;
+            auto x0 = -1000.0 + i*w;
+            auto z0 = -1000.0 + j*w;
+            auto y0 = 0.0;
+            auto x1 = x0 + w;
+            auto y1 = 100.0*(random_double()+0.01);
+            auto z1 = z0 + w;
             boxlist[b++] = new box(vec3(x0,y0,z0), vec3(x1,y1,z1), ground);
         }
     }
@@ -230,7 +230,7 @@ hittable *random_scene() {
     int i = 1;
     for (int a = -10; a < 10; a++) {
         for (int b = -10; b < 10; b++) {
-            float choose_mat = random_double();
+            auto choose_mat = random_double();
             vec3 center(a+0.9*random_double(),0.2,b+0.9*random_double()); 
             if ((center-vec3(4,0.2,0)).length() > 0.9) { 
                 if (choose_mat < 0.8) {  // diffuse
@@ -260,7 +260,7 @@ int main() {
     int ny = 800;
     int ns = 100;
     std::cout << "P3\n" << nx << " " << ny << "\n255\n";
-    float R = cos(pi/4);
+    auto R = cos(pi/4);
     //hittable *world = random_scene();
     //hittable *world = two_spheres();
     //hittable *world = two_perlin_spheres();
@@ -277,18 +277,18 @@ int main() {
     vec3 lookat(278,278,0);
     //vec3 lookfrom(0, 0, 6);
     //vec3 lookat(0,0,0);
-    float dist_to_focus = 10.0;
-    float aperture = 0.0;
-    float vfov = 40.0;
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.0;
+    auto vfov = 40.0;
 
-    camera cam(lookfrom, lookat, vec3(0,1,0), vfov, float(nx)/float(ny), aperture, dist_to_focus, 0.0, 1.0);
+    camera cam(lookfrom, lookat, vec3(0,1,0), vfov, double(nx)/double(ny), aperture, dist_to_focus, 0.0, 1.0);
 
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
             vec3 col(0, 0, 0);
             for (int s=0; s < ns; s++) {
-                float u = float(i+random_double())/ float(nx);
-                float v = float(j+random_double())/ float(ny);
+                auto u = (i + random_double()) / nx;
+                auto v = (j + random_double()) / ny;
                 ray r = cam.get_ray(u, v);
                 vec3 p = r.point_at_parameter(2.0);
                 col += color(r, world,0);

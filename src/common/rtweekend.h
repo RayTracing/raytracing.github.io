@@ -4,7 +4,10 @@
 #include <limits>
 
 
-const float pi {3.1415926535897932385};
-const float infinity {std::numeric_limits<double>::infinity()};
+// Constants
+
+const double pi = 3.1415926535897932385;
+const double infinity = std::numeric_limits<double>::infinity();
+
 
 #endif

@@ -19,9 +19,9 @@
 
 class material;
 
-void get_sphere_uv(const vec3& p, float& u, float& v) {
-    float phi = atan2(p.z(), p.x());
-    float theta = asin(p.y());
+void get_sphere_uv(const vec3& p, double& u, double& v) {
+    auto phi = atan2(p.z(), p.x());
+    auto theta = asin(p.y());
     u = 1-(phi + pi) / (2*pi);
     v = (theta + pi/2) / pi;
 }
@@ -29,9 +29,9 @@ void get_sphere_uv(const vec3& p, float& u, float& v) {
 
 struct hit_record
 {
-    float t;
-    float u;
-    float v;
+    double t;
+    double u;
+    double v;
     vec3 p;
     vec3 normal;
     material *mat_ptr;
@@ -39,16 +39,16 @@ struct hit_record
 
 class hittable  {
     public:
-        virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
-        virtual bool bounding_box(float t0, float t1, aabb& box) const = 0;
-        virtual float  pdf_value(const vec3& o, const vec3& v) const  {return 0.0;}
+        virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+        virtual bool bounding_box(double t0, double t1, aabb& box) const = 0;
+        virtual double pdf_value(const vec3& o, const vec3& v) const  {return 0.0;}
         virtual vec3 random(const vec3& o) const {return vec3(1, 0, 0);}
 };
 
 class flip_normals : public hittable {
     public:
         flip_normals(hittable *p) : ptr(p) {}
-        virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+        virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
             if (ptr->hit(r, t_min, t_max, rec)) {
                 rec.normal = -rec.normal;
                 return true;
@@ -56,7 +56,7 @@ class flip_normals : public hittable {
             else
                 return false;
         }
-        virtual bool bounding_box(float t0, float t1, aabb& box) const {
+        virtual bool bounding_box(double t0, double t1, aabb& box) const {
             return ptr->bounding_box(t0, t1, box);
         }
         hittable *ptr;
@@ -65,13 +65,13 @@ class flip_normals : public hittable {
 class translate : public hittable {
     public:
         translate(hittable *p, const vec3& displacement) : ptr(p), offset(displacement) {}
-        virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
-        virtual bool bounding_box(float t0, float t1, aabb& box) const;
+        virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
+        virtual bool bounding_box(double t0, double t1, aabb& box) const;
         hittable *ptr;
         vec3 offset;
 };
 
-bool translate::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+bool translate::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
     ray moved_r(r.origin() - offset, r.direction(), r.time());
     if (ptr->hit(moved_r, t_min, t_max, rec)) {
         rec.p += offset;
@@ -81,7 +81,7 @@ bool translate::hit(const ray& r, float t_min, float t_max, hit_record& rec) con
         return false;
 }
 
-bool translate::bounding_box(float t0, float t1, aabb& box) const {
+bool translate::bounding_box(double t0, double t1, aabb& box) const {
     if (ptr->bounding_box(t0, t1, box)) {
         box = aabb(box.min() + offset, box.max()+offset);
         return true;
@@ -92,19 +92,19 @@ bool translate::bounding_box(float t0, float t1, aabb& box) const {
 
 class rotate_y : public hittable {
     public:
-        rotate_y(hittable *p, float angle);
-        virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
-        virtual bool bounding_box(float t0, float t1, aabb& box) const {
+        rotate_y(hittable *p, double angle);
+        virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
+        virtual bool bounding_box(double t0, double t1, aabb& box) const {
             box = bbox; return hasbox;}
         hittable *ptr;
-        float sin_theta;
-        float cos_theta;
+        double sin_theta;
+        double cos_theta;
         bool hasbox;
         aabb bbox;
 };
 
-rotate_y::rotate_y(hittable *p, float angle) : ptr(p) {
-    float radians = (pi / 180.) * angle;
+rotate_y::rotate_y(hittable *p, double angle) : ptr(p) {
+    auto radians = (pi / 180.) * angle;
     sin_theta = sin(radians);
     cos_theta = cos(radians);
     hasbox = ptr->bounding_box(0, 1, bbox);
@@ -113,11 +113,11 @@ rotate_y::rotate_y(hittable *p, float angle) : ptr(p) {
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 2; k++) {
-                float x = i*bbox.max().x() + (1-i)*bbox.min().x();
-                float y = j*bbox.max().y() + (1-j)*bbox.min().y();
-                float z = k*bbox.max().z() + (1-k)*bbox.min().z();
-                float newx = cos_theta*x + sin_theta*z;
-                float newz = -sin_theta*x + cos_theta*z;
+                auto x = i*bbox.max().x() + (1-i)*bbox.min().x();
+                auto y = j*bbox.max().y() + (1-j)*bbox.min().y();
+                auto z = k*bbox.max().z() + (1-k)*bbox.min().z();
+                auto newx = cos_theta*x + sin_theta*z;
+                auto newz = -sin_theta*x + cos_theta*z;
                 vec3 tester(newx, y, newz);
                 for ( int c = 0; c < 3; c++ )
                 {
@@ -132,7 +132,7 @@ rotate_y::rotate_y(hittable *p, float angle) : ptr(p) {
     bbox = aabb(min, max);
 }
 
-bool rotate_y::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+bool rotate_y::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
     vec3 origin = r.origin();
     vec3 direction = r.direction();
     origin[0] = cos_theta*r.origin()[0] - sin_theta*r.origin()[2];
