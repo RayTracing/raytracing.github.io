@@ -10,8 +10,7 @@
 //==================================================================================================
 
 #include "common/rtweekend.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "common/stb_image.h"
+#include "common/rtw_stb_image.h"
 #include "aarect.h"
 #include "box.h"
 #include "bvh.h"

@@ -24,8 +24,9 @@ set ( IN_ONE_WEEKEND_SOURCE
 
 set ( THE_NEXT_WEEK_SOURCE
   src/common/rtweekend.h
-  src/common/stb_image.h
+  src/common/rtw_stb_image.h
   src/common/vec3.h
+  src/common/external/stb_image.h
   src/TheNextWeek/aabb.h
   src/TheNextWeek/aarect.h
   src/TheNextWeek/box.h
@@ -47,8 +48,9 @@ set ( THE_NEXT_WEEK_SOURCE
 
 set ( THE_REST_OF_YOUR_LIFE_SOURCE
   src/common/rtweekend.h
-  src/common/stb_image.h
+  src/common/rtw_stb_image.h
   src/common/vec3.h
+  src/common/external/stb_image.h
   src/TheRestOfYourLife/aabb.h
   src/TheRestOfYourLife/aarect.h
   src/TheRestOfYourLife/box.h
