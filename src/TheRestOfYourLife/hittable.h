@@ -11,8 +11,8 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include "aabb.h"
 #include "common/rtweekend.h"
+#include "aabb.h"
 
 #include <float.h>
 
