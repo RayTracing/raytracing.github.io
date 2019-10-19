@@ -138,7 +138,7 @@ inline vec3& vec3::operator*=(const double t) {
 }
 
 inline vec3& vec3::operator/=(const double t) {
-    double k = 1.0f/t;
+    auto k = 1.0f/t;
 
     e[0] *= k;
     e[1] *= k;
