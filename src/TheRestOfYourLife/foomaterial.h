@@ -11,7 +11,7 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include "common/constants.h"
+#include "common/rtweekend.h"
 #include "hittable.h"
 #include "random.h"
 #include "ray.h"

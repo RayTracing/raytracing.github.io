@@ -9,7 +9,7 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include "common/constants.h"
+#include "common/rtweekend.h"
 #include "common/vec3.h"
 #include "random.h"
 

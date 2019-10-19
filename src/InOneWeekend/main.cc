@@ -10,7 +10,7 @@
 //==================================================================================================
 
 #include "camera.h"
-#include "common/constants.h"
+#include "common/rtweekend.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "random.h"
