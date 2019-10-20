@@ -82,12 +82,12 @@ centered at the origin:
         int N = 1000;
         int inside_circle = 0;
         for (int i = 0; i < N; i++) {
-            float x = 2*random_double() - 1;
-            float y = 2*random_double() - 1;
+            auto x = 2*random_double() - 1;
+            auto y = 2*random_double() - 1;
             if(x*x + y*y < 1)
                 inside_circle++;
         }
-        std::cout << "Estimate of Pi = " << 4*float(inside_circle) / N << "\n";
+        std::cout << "Estimate of Pi = " << 4*double(inside_circle) / N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -109,13 +109,15 @@ If we change the program to run forever and just print out a running estimate:
         int runs = 0;
         while (true) {
             runs++;
-            float x = 2*random_double() - 1;
-            float y = 2*random_double() - 1;
-            if(x*x + y*y < 1)
+            auto x = 2*random_double() - 1;
+            auto y = 2*random_double() - 1;
+            if (x*x + y*y < 1)
                 inside_circle++;
 
-            if(runs% 100000 == 0)
-                std::cout << "Estimate of Pi = " << 4*float(inside_circle) / runs << "\n";
+            if (runs % 100000 == 0)
+                std::cout << "Estimate of Pi = "
+                          << 4*double(inside_circle) / runs
+                          << '\n';
 
         }
     }
@@ -147,8 +149,8 @@ because we need to know the grid. Let’s take a hundred million and try it both
         int sqrt_N = 10000;
         for (int i = 0; i < sqrt_N; i++) {
             for (int j = 0; j < sqrt_N; j++) {
-                float x = 2*random_double() - 1;
-                float y = 2*random_double() - 1;
+                auto x = 2*random_double() - 1;
+                auto y = 2*random_double() - 1;
                 if (x*x + y*y < 1)
                     inside_circle++;
                 x = 2*((i + random_double()) / sqrt_N) - 1;
@@ -158,9 +160,9 @@ because we need to know the grid. Let’s take a hundred million and try it both
             }
         }
         std::cout << "Regular    Estimate of Pi = " <<
-              4*float(inside_circle) / (sqrt_N*sqrt_N) << "\n";
+              4*double(inside_circle) / (sqrt_N*sqrt_N) << "\n";
         std::cout << "Stratified Estimate of Pi = " <<
-              4*float(inside_circle_stratified) / (sqrt_N*sqrt_N) << "\n";
+              4*double(inside_circle_stratified) / (sqrt_N*sqrt_N) << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -209,9 +211,9 @@ This suggests a MC approach:
         int inside_circle = 0;
         int inside_circle_stratified = 0;
         int N = 1000000;
-        float sum;
+        double sum;
         for (int i = 0; i < N; i++) {
-            float x = 2*random_double();
+            auto x = 2*random_double();
             sum += x*x;
         }
         std::cout << "I =" << 2*sum/N << "\n";
@@ -386,7 +388,7 @@ weighting function should be proportional to $1/pdf$ . In fact it is exactly $1/
     #include <math.h>
     #include <stdlib.h>
 
-    inline float pdf(float x) {
+    inline double pdf(double x) {
         return 0.5*x;
     }
 
@@ -394,9 +396,9 @@ weighting function should be proportional to $1/pdf$ . In fact it is exactly $1/
         int inside_circle = 0;
         int inside_circle_stratified = 0;
         int N = 1000000;
-        float sum;
+        double sum;
         for (int i = 0; i < N; i++) {
-            float x = sqrt(4*random_double());
+            auto x = sqrt(4*random_double());
             sum += x*x / pdf(x);
         }
         std::cout << "I =" << sum/N << "\n";
@@ -419,7 +421,7 @@ the machinery to get `x = 2*random_double()` and the code is:
     #include <math.h>
     #include <stdlib.h>
 
-    inline float pdf(float x) {
+    inline double pdf(double x) {
         return 0.5;
     }
 
@@ -427,9 +429,9 @@ the machinery to get `x = 2*random_double()` and the code is:
         int inside_circle = 0;
         int inside_circle_stratified = 0;
         int N = 1000000;
-        float sum;
+        double sum;
         for (int i = 0; i < N; i++) {
-            float x = 2*random_double();
+            auto x = 2*random_double();
             sum += x*x / pdf(x);
         }
         std::cout << "I =" << sum/N << "\n";
@@ -465,7 +467,7 @@ sample we get:
     #include <math.h>
     #include <stdlib.h>
 
-    inline float pdf(float x) {
+    inline double pdf(double x) {
         return 3*x*x/8;
     }
 
@@ -473,9 +475,9 @@ sample we get:
         int inside_circle = 0;
         int inside_circle_stratified = 0;
         int N = 1;
-        float sum;
+        double sum;
         for (int i = 0; i < N; i++) {
-            float x = pow(8*random_double(), 1./3.);
+            auto x = pow(8*random_double(), 1./3.);
             sum += x*x / pdf(x);
         }
         std::cout << "I =" << sum/N << "\n";
@@ -543,16 +545,16 @@ Now what is the pdf of these uniform points? As a density on the unit sphere, it
 sphere or $1/(4\pi)$. If the integrand is $cos^2(\theta)$ and $\theta$ is the angle with the z axis:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline float pdf(const vec3& p) {
+    inline double pdf(const vec3& p) {
         return 1 / (4*pi);
     }
 
     int main() {
         int N = 1000000;
-        float sum;
+        double sum;
         for (int i = 0; i < N; i++) {
                 vec3 d = random_on_unit_sphere();
-                float cosine_squared = d.z()*d.z();
+                auto cosine_squared = d.z()*d.z();
                 sum += cosine_squared / pdf(d);
         }
         std::cout << "I =" << sum/N << "\n";
@@ -697,7 +699,7 @@ Let’s do simple refactoring and temporarily remove all materials that aren’t
 our Cornell Box scene again, and let’s generate the camera in the function that generates the model:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void cornell_box(hittable **scene, camera **cam, float aspect) {
+    void cornell_box(hittable **scene, camera **cam, double aspect) {
         int i = 0;
         hittable **list = new hittable*[8];
         material *red = new lambertian( new constant_texture(vec3(0.65, 0.05, 0.05)) );
@@ -717,9 +719,9 @@ our Cornell Box scene again, and let’s generate the camera in the function tha
         *scene = new hittable_list(list,i);
         vec3 lookfrom(278, 278, -800);
         vec3 lookat(278, 278, 0);
-        float dist_to_focus = 10.0;
-        float aperture = 0.0;
-        float vfov = 40.0;
+        auto dist_to_focus = 10.0;
+        auto aperture = 0.0;
+        auto vfov = 40.0;
         *cam = new camera(lookfrom, lookat, vec3(0,1,0),
                           vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
     }
@@ -746,17 +748,20 @@ We modify the base-class _material_ to enable this importance sampling:
     class material  {
         public:
 
-            virtual bool scatter(const ray& r_in,
-                const hit_record& rec, vec3& albedo, ray& scattered, float& pdf) const {
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& albedo, ray& scattered,
+                double& pdf
+            ) const {
                 return false;
             }
 
-            virtual float scattering_pdf(const ray& r_in, const hit_record& rec,
-                                         const ray& scattered) const {
+            virtual double scattering_pdf(
+                const ray& r_in, const hit_record& rec, const ray& scattered
+            ) const {
                 return 0;
             }
 
-            virtual vec3 emitted(float u, float v, const vec3& p) const {
+            virtual vec3 emitted(double u, double v, const vec3& p) const {
                 return vec3(0,0,0);
             }
     };
@@ -771,16 +776,16 @@ And _Lambertian_ material becomes:
         public:
             lambertian(texture *a) : albedo(a) {}
 
-            float scattering_pdf(const ray& r_in,
+            double scattering_pdf(const ray& r_in,
                 const hit_record& rec, const ray& scattered) const {
-                float cosine = dot(rec.normal, unit_vector(scattered.direction()));
+                auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
                 if (cosine < 0)
                     return 0;
                 return cosine / pi;
             }
 
             bool scatter(const ray& r_in,
-                const hit_record& rec, vec3& alb, ray& scattered, float& pdf) const {
+                const hit_record& rec, vec3& alb, ray& scattered, double& pdf) const {
                 vec3 target = rec.p + rec.normal + random_in_unit_sphere();
                 scattered = ray(rec.p, unit_vector(target-rec.p), r_in.time());
                 alb = albedo->value(rec.u, rec.v, rec.p);
@@ -803,7 +808,7 @@ And the color function gets a minor modification:
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
-            float pdf;
+            double pdf;
             vec3 albedo;
             if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf)) {
                 return emitted + albedo*rec.mat_ptr->scattering_pdf(r, rec, scattered)
@@ -826,7 +831,7 @@ hemisphere that is above the surface. This would be $p(direction) = 1/(2* \pi)$ 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool scatter(const ray& r_in,
-        const hit_record& rec, vec3& alb, ray& scattered, float& pdf) const {
+        const hit_record& rec, vec3& alb, ray& scattered, double& pdf) const {
         vec3 direction;
         do {
             direction = random_in_unit_sphere();
@@ -932,11 +937,11 @@ We can output some of these:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
         for (int i = 0; i < 200; i++) {
-            float r1 = random_double();
-            float r2 = random_double();
-            float x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
-            float y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
-            float z = 1 - 2*r2;
+            auto r1 = random_double();
+            auto r2 = random_double();
+            auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
+            auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
+            auto z = 1 - 2*r2;
 
             std::cout << x << " " << y << " " << z << "\n";
         }
@@ -976,13 +981,13 @@ which is $\cos^3 / (1/(2 \pi))$, and we can test this:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
         int N = 1000000;
-        float sum = 0.0;
+        auto sum = 0.0;
         for (int i = 0; i < N; i++) {
-            float r1 = random_double();
-            float r2 = random_double();
-            float x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
-            float y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
-            float z = 1 - r2;
+            auto r1 = random_double();
+            auto r2 = random_double();
+            auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
+            auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
+            auto z = 1 - r2;
             sum += z*z*z / (1.0/(2.0*pi));
         }
         std::cout << "PI/2 = " << pi/2 << "\n";
@@ -1012,18 +1017,18 @@ Let’s also start generating them as random vectors:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline vec3 random_cosine_direction() {
-        float r1 = random_double();
-        float r2 = random_double();
-        float z = sqrt(1-r2);
-        float phi = 2*pi*r1;
-        float x = cos(phi)*sqrt(r2);
-        float y = sin(phi)*sqrt(r2);
+        auto r1 = random_double();
+        auto r2 = random_double();
+        auto z = sqrt(1-r2);
+        auto phi = 2*pi*r1;
+        auto x = cos(phi)*sqrt(r2);
+        auto y = sin(phi)*sqrt(r2);
         return vec3(x, y, z);
     }
 
     int main() {
         int N = 1000000;
-        float sum = 0.0;
+        auto sum = 0.0;
         for (int i = 0; i < N; i++) {
             vec3 v = random_cosine_direction();
             sum += v.z()*v.z()*v.z() / (v.z()/(pi));
@@ -1118,7 +1123,7 @@ utility functions:
             vec3 u() const       { return axis[0]; }
             vec3 v() const       { return axis[1]; }
             vec3 w() const       { return axis[2]; }
-            vec3 local(float a, float b, float c) const { return a*u() + b*v() + c*w(); }
+            vec3 local(double a, double b, double c) const { return a*u() + b*v() + c*w(); }
             vec3 local(const vec3& a) const { return a.x()*u() + a.y()*v() + a.z()*w(); }
             void build_from_w(const vec3&);
             vec3 axis[3];
@@ -1143,12 +1148,8 @@ We can rewrite our Lambertian material using this to get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool scatter(
-        const ray& r_in,
-        const hit_record& rec,
-        vec3& alb,
-        ray& scattered,
-        float& pdf) const
-    {
+        const ray& r_in, const hit_record& rec, vec3& alb, ray& scattered, double& pdf
+    ) const {
         onb uvw;
         uvw.build_from_w(rec.normal);
         vec3 direction = uvw.local(random_cosine_direction());
@@ -1219,7 +1220,7 @@ math and get the concept, we can add it (see the highlighted region):
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
-            float pdf;
+            double pdf;
             vec3 albedo;
             if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1227,12 +1228,12 @@ math and get the concept, we can add it (see the highlighted region):
                                      554,
                                      227 + random_double()*(332-227));
                 vec3 to_light = on_light - rec.p;
-                float distance_squared = to_light.squared_length();
+                auto distance_squared = to_light.squared_length();
                 to_light.make_unit_vector();
                 if (dot(to_light, rec.normal) < 0)
                     return emitted;
-                float light_area = (343-213)*(332-227);
-                float light_cosine = fabs(to_light.y());
+                double light_area = (343-213)*(332-227);
+                auto light_cosine = fabs(to_light.y());
                 if (light_cosine < 0.000001)
                     return emitted;
                 pdf = distance_squared / (light_cosine * light_area);
@@ -1266,7 +1267,7 @@ and there is a small space between light and ceiling. We probably want to have t
 down. We can do that by letting the emitted member function of hittable take extra information:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    virtual vec3 emitted(const ray& r_in, const hit_record& rec, float u, float v,
+    virtual vec3 emitted(const ray& r_in, const hit_record& rec, double u, double v,
         const vec3& p) const {
 
         if (dot(rec.normal, r_in.direction()) < 0.0)
@@ -1333,7 +1334,7 @@ minimal interface works, and for the _pdf_ this implies:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class pdf  {
         public:
-            virtual float value(const vec3& direction) const = 0;
+            virtual double value(const vec3& direction) const = 0;
             virtual vec3 generate() const = 0;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1351,8 +1352,8 @@ First, let’s try a cosine density:
     class cosine_pdf : public pdf {
         public:
             cosine_pdf(const vec3& w) { uvw.build_from_w(w); }
-            virtual float value(const vec3& direction) const {
-                float cosine = dot(unit_vector(direction), uvw.w());
+            virtual double value(const vec3& direction) const {
+                auto cosine = dot(unit_vector(direction), uvw.w());
                 if (cosine > 0)
                     return cosine/pi;
                 else
@@ -1377,7 +1378,7 @@ variable `pdf` to some other variable name to avoid a name conflict with the new
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
-            float pdf_val;
+            double pdf_val;
             vec3 albedo;
             if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1414,7 +1415,7 @@ Now we can try sampling directions toward a `hittable` like the light.
     class hittable_pdf : public pdf {
         public:
             hittable_pdf(hittable *p, const vec3& origin) : ptr(p), o(origin) {}
-            virtual float value(const vec3& direction) const {
+            virtual double value(const vec3& direction) const {
                 return ptr->pdf_value(o, direction);
             }
             virtual vec3 generate() const {
@@ -1434,10 +1435,10 @@ class:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable  {
         public:
-            virtual bool hit(const ray& r, float t_min, float t_max,
+            virtual bool hit(const ray& r, double t_min, double t_max,
                 hit_record& rec) const = 0;
-            virtual bool bounding_box(float t0, float t1, aabb& box) const = 0;
-            virtual float  pdf_value(const vec3& o, const vec3& v) const  {return 0.0;}
+            virtual bool bounding_box(double t0, double t1, aabb& box) const = 0;
+            virtual double pdf_value(const vec3& o, const vec3& v) const  {return 0.0;}
             virtual vec3 random(const vec3& o) const {return vec3(1, 0, 0);}
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1450,21 +1451,23 @@ And we change `xz_rect` to implement those functions:
     class xz_rect: public hittable  {
         public:
             xz_rect() {}
-            xz_rect(float _x0, float _x1, float _z0, float _z1, float _k, material *mat)
-                : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
-            virtual bool hit(const ray& r, float t0, float t1, hit_record& rec) const;
-            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+            xz_rect(
+                double _x0, double _x1, double _z0, double _z1, double _k, material *mat)
+                : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat)
+            {};
+            virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
+            virtual bool bounding_box(double t0, double t1, aabb& box) const {
                 box =  aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
                 return true;
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual float  pdf_value(const vec3& o, const vec3& v) const {
+            virtual double pdf_value(const vec3& o, const vec3& v) const {
                 hit_record rec;
                 if (this->hit(ray(o, v), 0.001, FLT_MAX, rec)) {
-                    float area = (x1-x0)*(z1-z0);
-                    float distance_squared = rec.t * rec.t * v.squared_length();
-                    float cosine = fabs(dot(v, rec.normal) / v.length());
-                    return  distance_squared / (cosine * area);
+                    auto area = (x1-x0)*(z1-z0);
+                    auto distance_squared = rec.t * rec.t * v.squared_length();
+                    auto cosine = fabs(dot(v, rec.normal) / v.length());
+                    return distance_squared / (cosine * area);
                 }
                 else
                     return 0;
@@ -1475,8 +1478,8 @@ And we change `xz_rect` to implement those functions:
                 return random_point - o;
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            material  *mp;
-            float x0, x1, z0, z1, k;
+            material *mp;
+            double x0, x1, z0, z1, k;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -1491,7 +1494,7 @@ And then change `color()`:
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
-            float pdf_val;
+            double pdf_val;
             vec3 albedo;
             if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1529,7 +1532,7 @@ class is straightforward:
     class mixture_pdf : public pdf {
         public:
             mixture_pdf(pdf *p0, pdf *p1 ) { p[0] = p0; p[1] = p1; }
-            virtual float value(const vec3& direction) const {
+            virtual double value(const vec3& direction) const {
                 return 0.5 * p[0]->value(direction) + 0.5 *p[1]->value(direction);
             }
             virtual vec3 generate() const {
@@ -1553,7 +1556,7 @@ And plugging it into `color()`:
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
-            float pdf_val;
+            double pdf_val;
             vec3 albedo;
             if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1668,18 +1671,23 @@ We can redesign `material` and stuff all the new arguments into a `struct` like 
 
     class material  {
         public:
-            virtual bool scatter(const ray& r_in, const hit_record& hrec,
-                                 scatter_record& srec) const {
+            virtual bool scatter(
+                const ray& r_in, const hit_record& hrec, scatter_record& srec
+            ) const {
                 return false;
             }
 
-            virtual float scattering_pdf(const ray& r_in, const hit_record& rec,
-                                         const ray& scattered) const {
+            virtual double scattering_pdf(
+                const ray& r_in, const hit_record& rec, const ray& scattered
+            ) const {
                 return 0;
             }
 
-            virtual vec3 emitted(const ray& r_in, const hit_record& rec,
-                float u, float v, const vec3& p) const { return vec3(0,0,0); }
+            virtual vec3 emitted(
+                const ray& r_in, const hit_record& rec, double u, double v, const vec3& p
+            ) const {
+                return vec3(0,0,0);
+            }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -1693,9 +1701,10 @@ The Lambertian material becomes simpler:
 
             lambertian(texture *a) : albedo(a) {}
 
-            float scattering_pdf(const ray& r_in, const hit_record& rec,
-                                 const ray& scattered) const {
-                float cosine = dot(rec.normal, unit_vector(scattered.direction()));
+            double scattering_pdf(
+                const ray& r_in, const hit_record& rec, const ray& scattered
+            ) const {
+                auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
                 if (cosine < 0)
                     return 0;
                 return cosine / pi;
@@ -1731,7 +1740,7 @@ And `color()` changes are small:
                 hittable_pdf plight(light_shape, hrec.p);
                 mixture_pdf p(&plight, srec.pdf_ptr);
                 ray scattered = ray(hrec.p, p.generate(), r.time());
-                float pdf_val = p.value(scattered.direction());
+                auto pdf_val = p.value(scattered.direction());
                 return emitted
                     + srec.attenuation * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
                                        * color(scattered, world, light_shape, depth+1)
@@ -1755,8 +1764,7 @@ overall, and those are all fixable. For now, I will just fix `specular`. Metal i
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class metal : public material {
         public:
-            metal(const vec3& a, float f) : albedo(a)
-                { if (f < 1) fuzz = f; else fuzz = 1; }
+            metal(const vec3& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             virtual bool scatter(const ray& r_in, const hit_record& hrec,
                 scatter_record& srec) const {
@@ -1769,7 +1777,7 @@ overall, and those are all fixable. For now, I will just fix `specular`. Metal i
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             vec3 albedo;
-            float fuzz;
+            double fuzz;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -1797,7 +1805,7 @@ just like it did before.
                     hittable_pdf plight(light_shape, hrec.p);
                     mixture_pdf p(&plight, srec.pdf_ptr);
                     ray scattered = ray(hrec.p, p.generate(), r.time());
-                    float pdf_val = p.value(scattered.direction());
+                    auto pdf_val = p.value(scattered.direction());
                     delete srec.pdf_ptr;
                     return emitted + srec.attenuation
                                    * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
@@ -1818,7 +1826,7 @@ just like it did before.
 We also need to change the block to metal.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void cornell_box(hittable **scene, camera **cam, float aspect) {
+    void cornell_box(hittable **scene, camera **cam, double aspect) {
         int i = 0;
         hittable **list = new hittable*[8];
         material *red = new lambertian( new constant_texture(vec3(0.65, 0.05, 0.05)) );
@@ -1843,9 +1851,9 @@ We also need to change the block to metal.
         *scene = new hittable_list(list,i);
         vec3 lookfrom(278, 278, -800);
         vec3 lookat(278,278,0);
-        float dist_to_focus = 10.0;
-        float aperture = 0.0;
-        float vfov = 40.0;
+        auto dist_to_focus = 10.0;
+        auto aperture = 0.0;
+        auto vfov = 40.0;
         *cam = new camera(lookfrom, lookat, vec3(0,1,0),
                           vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
     }
@@ -1928,12 +1936,12 @@ $2 \pi$ is the area of a hemisphere, so that works too.
 The sphere class needs the two `pdf`-related functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    float sphere::pdf_value(const vec3& o, const vec3& v) const {
+    double sphere::pdf_value(const vec3& o, const vec3& v) const {
         hit_record rec;
         if (this->hit(ray(o, v), 0.001, FLT_MAX, rec)) {
-            float cos_theta_max = sqrt(1 - radius*radius/(center-o).squared_length());
-            float solid_angle = 2*pi*(1-cos_theta_max);
-            return  1 / solid_angle;
+            auto cos_theta_max = sqrt(1 - radius*radius/(center-o).squared_length());
+            auto solid_angle = 2*pi*(1-cos_theta_max);
+            return 1 / solid_angle;
         }
         else
             return 0;
@@ -1941,7 +1949,7 @@ The sphere class needs the two `pdf`-related functions:
 
     vec3 sphere::random(const vec3& o) const {
         vec3 direction = center - o;
-        float distance_squared = direction.squared_length();
+        auto distance_squared = direction.squared_length();
         onb uvw;
         uvw.build_from_w(direction);
         return uvw.local(random_to_sphere(radius, distance_squared));
@@ -1953,13 +1961,13 @@ The sphere class needs the two `pdf`-related functions:
 With the utility function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline vec3 random_to_sphere(float radius, float distance_squared) {
-        float r1 = random_double();
-        float r2 = random_double();
-        float z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
-        float phi = 2*pi*r1;
-        float x = cos(phi)*sqrt(1-z*z);
-        float y = sin(phi)*sqrt(1-z*z);
+    inline vec3 random_to_sphere(double radius, double distance_squared) {
+        auto r1 = random_double();
+        auto r2 = random_double();
+        auto z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
+        auto phi = 2*pi*r1;
+        auto x = cos(phi)*sqrt(1-z*z);
+        auto y = sin(phi)*sqrt(1-z*z);
         return vec3(x, y, z);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1976,8 +1984,8 @@ We can first try just sampling the sphere rather than the light:
         for (int i = 0; i < nx; i++) {
             vec3 col(0, 0, 0);
             for (int s=0; s < ns; s++) {
-                float u = float(i+random_double())/ float(nx);
-                float v = float(j+random_double())/ float(ny);
+                auto u = (i + random_double()) / nx;
+                auto v = (j + random_double()) / ny;
                 ray r = cam->get_ray(u, v);
                 vec3 p = r.point_at_parameter(2.0);
                 col += color(r, world, glass_sphere, 0);
@@ -2001,9 +2009,9 @@ hittables in and building a mixture `pdf`, or we could add `pdf` functions to `h
 think both tactics would work fine, but I will go with instrumenting `hittable_list`.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    float hittable_list::pdf_value(const vec3& o, const vec3& v) const {
-        float weight = 1.0/list_size;
-        float sum = 0;
+    double hittable_list::pdf_value(const vec3& o, const vec3& v) const {
+        auto weight = 1.0/list_size;
+        auto sum = 0.0;
         for (int i = 0; i < list_size; i++)
             sum += weight*list[i]->pdf_value(o, v);
         return sum;
@@ -2072,8 +2080,8 @@ And we can insert that in the main loop:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     for (int s=0; s < ns; s++) {
-        float u = float(i+random_double())/ float(nx);
-        float v = float(j+random_double())/ float(ny);
+        auto u = (i + random_double()) / nx;
+        auto v = (j + random_double()) / ny;
         ray r = cam->get_ray(u, v);
         vec3 p = r.point_at_parameter(2.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
