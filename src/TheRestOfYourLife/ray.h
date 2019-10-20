@@ -1,5 +1,5 @@
-#ifndef RAYH
-#define RAYH
+#ifndef RAY_H
+#define RAY_H
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //

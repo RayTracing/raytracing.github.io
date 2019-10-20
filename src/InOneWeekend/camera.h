@@ -1,5 +1,5 @@
-#ifndef CAMERAH
-#define CAMERAH
+#ifndef CAMERA_H
+#define CAMERA_H
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //

@@ -1,5 +1,5 @@
-#ifndef ONBH
-#define ONBH
+#ifndef ONB_H
+#define ONB_H
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //

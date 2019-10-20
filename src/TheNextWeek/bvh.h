@@ -1,5 +1,5 @@
-#ifndef BVHH
-#define BVHH
+#ifndef BVH_H
+#define BVH_H
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //

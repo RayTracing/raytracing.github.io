@@ -1,5 +1,5 @@
-#ifndef HITTABLEH
-#define HITTABLEH
+#ifndef HITTABLE_H
+#define HITTABLE_H
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //

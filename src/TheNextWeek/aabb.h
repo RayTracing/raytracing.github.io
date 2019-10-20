@@ -1,5 +1,5 @@
-#ifndef AABBH
-#define AABBH
+#ifndef AABB_H
+#define AABB_H
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //

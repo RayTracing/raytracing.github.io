@@ -1,5 +1,5 @@
-#ifndef MOVINGSPHEREH
-#define MOVINGSPHEREH
+#ifndef MOVING_SPHERE_H
+#define MOVING_SPHERE_H
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
