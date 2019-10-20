@@ -1,6 +1,6 @@
 cmake_minimum_required ( VERSION 3.1.0 )
 
-project ( RAYTRACING_GITHUB_IO
+project ( RTWeekend
   VERSION 3.0.0
   LANGUAGES CXX
 )
@@ -9,7 +9,7 @@ project ( RAYTRACING_GITHUB_IO
 set ( CMAKE_CXX_STANDARD 11 )
 
 # Source
-set ( IN_ONE_WEEKEND_SOURCE
+set ( SOURCE_ONE_WEEKEND
   src/common/rtweekend.h
   src/common/vec3.h
   src/InOneWeekend/camera.h
@@ -22,7 +22,7 @@ set ( IN_ONE_WEEKEND_SOURCE
   src/InOneWeekend/main.cc
 )
 
-set ( THE_NEXT_WEEK_SOURCE
+set ( SOURCE_NEXT_WEEK
   src/common/rtweekend.h
   src/common/rtw_stb_image.h
   src/common/vec3.h
@@ -46,7 +46,7 @@ set ( THE_NEXT_WEEK_SOURCE
   src/TheNextWeek/main.cc
 )
 
-set ( THE_REST_OF_YOUR_LIFE_SOURCE
+set ( SOURCE_REST_OF_YOUR_LIFE
   src/common/rtweekend.h
   src/common/rtw_stb_image.h
   src/common/vec3.h
@@ -74,9 +74,9 @@ set ( THE_REST_OF_YOUR_LIFE_SOURCE
 
 set ( COMMON_DIR src )
 
-add_executable(inOneWeekend      ${IN_ONE_WEEKEND_SOURCE})
-add_executable(theNextWeek       ${THE_NEXT_WEEK_SOURCE})
-add_executable(theRestOfYourLife ${THE_REST_OF_YOUR_LIFE_SOURCE})
+add_executable(inOneWeekend      ${SOURCE_ONE_WEEKEND})
+add_executable(theNextWeek       ${SOURCE_NEXT_WEEK})
+add_executable(theRestOfYourLife ${SOURCE_REST_OF_YOUR_LIFE})
 
 target_include_directories(inOneWeekend      PRIVATE ${COMMON_DIR})
 target_include_directories(theNextWeek       PRIVATE ${COMMON_DIR})
