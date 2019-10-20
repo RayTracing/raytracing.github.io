@@ -1,5 +1,5 @@
-#ifndef BOXH
-#define BOXH
+#ifndef BOX_H
+#define BOX_H
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //

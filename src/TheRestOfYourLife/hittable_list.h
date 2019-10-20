@@ -1,5 +1,5 @@
-#ifndef HITTABLELISTH
-#define HITTABLELISTH
+#ifndef HITTABLE_LIST_H
+#define HITTABLE_LIST_H
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //

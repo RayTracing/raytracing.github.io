@@ -1,5 +1,5 @@
-#ifndef AARECTH
-#define AARECTH
+#ifndef AARECT_H
+#define AARECT_H
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //

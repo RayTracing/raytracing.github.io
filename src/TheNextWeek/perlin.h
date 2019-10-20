@@ -1,5 +1,5 @@
-#ifndef PERLINH
-#define PERLINH
+#ifndef PERLIN_H
+#define PERLIN_H
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //

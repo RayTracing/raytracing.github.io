@@ -1,5 +1,5 @@
-#ifndef TEXTUREH
-#define TEXTUREH
+#ifndef TEXTURE_H
+#define TEXTURE_H
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //

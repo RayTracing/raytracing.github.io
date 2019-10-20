@@ -1,5 +1,5 @@
-#ifndef SURFTEXTH
-#define SURFTEXTH
+#ifndef SURFACE_TEXTURE_H
+#define SURFACE_TEXTURE_H
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //

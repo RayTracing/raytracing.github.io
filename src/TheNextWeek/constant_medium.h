@@ -1,5 +1,5 @@
-#ifndef CMEDH
-#define CMEDH
+#ifndef CONSTANT_MEDIUM_H
+#define CONSTANT_MEDIUM_H
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //

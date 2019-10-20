@@ -1,5 +1,5 @@
-#ifndef RANDOMH
-#define RANDOMH
+#ifndef RANDOM_H
+#define RANDOM_H
 
 #include <cstdlib>
 

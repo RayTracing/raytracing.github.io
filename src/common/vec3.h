@@ -1,5 +1,5 @@
-#ifndef VEC3H
-#define VEC3H
+#ifndef VEC3_H
+#define VEC3_H
 //==================================================================================================
 // Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
