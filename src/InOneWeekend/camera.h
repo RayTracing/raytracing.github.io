@@ -54,5 +54,4 @@ class camera {
         double lens_radius;
 };
 
-
 #endif

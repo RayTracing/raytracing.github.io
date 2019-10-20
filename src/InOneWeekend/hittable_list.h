@@ -37,5 +37,4 @@ bool hittable_list::hit(const ray& r, double t_min, double t_max, hit_record& re
     return hit_anything;
 }
 
-
 #endif

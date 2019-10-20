@@ -124,5 +124,4 @@ class dielectric : public material {
         double ref_idx;
 };
 
-
 #endif

@@ -165,4 +165,3 @@ bvh_node::bvh_node(hittable **l, int n, double time0, double time1) {
 }
 
 #endif
-

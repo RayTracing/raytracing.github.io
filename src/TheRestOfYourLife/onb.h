@@ -40,5 +40,4 @@ void onb::build_from_w(const vec3& n) {
     axis[0] = cross(w(), v());
 }
 
-
 #endif

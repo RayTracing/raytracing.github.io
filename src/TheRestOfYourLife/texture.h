@@ -50,13 +50,12 @@ class noise_texture : public texture {
         noise_texture() {}
         noise_texture(double sc) : scale(sc) {}
         virtual vec3 value(double u, double v, const vec3& p) const {
-//            return vec3(1,1,1)*0.5*(1 + noise.turb(scale * p));
-//            return vec3(1,1,1)*noise.turb(scale * p);
-              return vec3(1,1,1)*0.5*(1 + sin(scale*p.x() + 5*noise.turb(scale*p))) ;
+            // return vec3(1,1,1)*0.5*(1 + noise.turb(scale * p));
+            // return vec3(1,1,1)*noise.turb(scale * p);
+            return vec3(1,1,1)*0.5*(1 + sin(scale*p.x() + 5*noise.turb(scale*p))) ;
         }
         perlin noise;
         double scale;
 };
 
 #endif
-
