@@ -33,5 +33,4 @@ class ray
         double _time;
 };
 
-
 #endif

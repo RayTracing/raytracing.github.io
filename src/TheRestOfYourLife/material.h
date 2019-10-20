@@ -229,4 +229,3 @@ class dielectric : public material {
 */
 
 #endif
-

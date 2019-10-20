@@ -59,5 +59,5 @@ class camera {
         double time0, time1;  // new variables for shutter open/close times
         double lens_radius;
 };
-#endif
 
+#endif
