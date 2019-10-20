@@ -66,15 +66,19 @@ For this we will first need to have a ray store the time it exists at:
     {
         public:
             ray() {}
-            ray(const vec3& a, const vec3& b, float ti = 0.0) { A = a; B = b; _time = ti;}
-            vec3 origin() const       { return A; }
-            vec3 direction() const    { return B; }
-            float time() const    { return _time; }
-            vec3 point_at_parameter(float t) const { return A + t*B; }
+            ray(const vec3& a, const vec3& b, double ti = 0.0) {
+                A = a;
+                B = b;
+                _time = ti;
+            }
+            vec3 origin() const    { return A; }
+            vec3 direction() const { return B; }
+            double time() const    { return _time; }
+            vec3 point_at_parameter(double t) const { return A + t*B; }
 
             vec3 A;
             vec3 B;
-            float _time;
+            double _time;
     };
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -90,18 +94,18 @@ to camera because for now it is not allowed to move; it just sends out rays over
     class camera {
         public:
             camera(vec3 lookfrom, vec3 lookat, vec3 vup,
-                   float vfov /* vfov is top to bottom in degrees */,
-                   float aspect, float aperture, float focus_dist,
+                   double vfov /* vfov is top to bottom in degrees */,
+                   double aspect, double aperture, double focus_dist,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                   float t0, float t1) {
+                   double t0, double t1) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
                 time0 = t0;
                 time1 = t1;
                 lens_radius = aperture / 2;
-                float theta = vfov*pi/180;
-                float half_height = tan(theta/2);
-                float half_width = aspect * half_height;
+                auto theta = vfov*pi/180;
+                auto half_height = tan(theta/2);
+                auto half_width = aspect * half_height;
                 origin = lookfrom;
                 w = unit_vector(lookfrom - lookat);
                 u = unit_vector(cross(vup, w));
@@ -114,11 +118,11 @@ to camera because for now it is not allowed to move; it just sends out rays over
                 vertical = 2*half_height*focus_dist*v;
             }
 
-            ray get_ray(float s, float t) {
+            ray get_ray(double s, double t) {
                 vec3 rd = lens_radius*random_in_unit_disk();
                 vec3 offset = u * rd.x() + v * rd.y();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                float time = time0 + random_double()*(time1-time0);
+                auto time = time0 + random_double()*(time1-time0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return ray(
                     origin + offset,
@@ -132,9 +136,9 @@ to camera because for now it is not allowed to move; it just sends out rays over
             vec3 vertical;
             vec3 u, v, w;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            float time0, time1;
+            double time0, time1;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            float lens_radius;
+            double lens_radius;
     };
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -147,19 +151,21 @@ times need not match up with the camera aperture open close.
     class moving_sphere: public hittable {
         public:
             moving_sphere() {}
-            moving_sphere(vec3 cen0, vec3 cen1, float t0, float t1, float r, material *m)
+            moving_sphere(
+                vec3 cen0, vec3 cen1, double t0, double t1, double r, material *m)
               : center0(cen0), center1(cen1), time0(t0), time1(t1), radius(r), mat_ptr(m)
-                {};
-            virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
-            virtual bool bounding_box(float t0, float t1, aabb& box) const;
-            vec3 center(float time) const;
+            {};
+            virtual bool hit(
+                const ray& r, double tmin, double tmax, hit_record& rec) const;
+            virtual bool bounding_box(double t0, double t1, aabb& box) const;
+            vec3 center(double time) const;
             vec3 center0, center1;
-            float time0, time1;
-            float radius;
+            double time0, time1;
+            double radius;
             material *mat_ptr;
     };
 
-    vec3 moving_sphere::center(float time) const{
+    vec3 moving_sphere::center(double time) const{
         return center0 + ((time - time0) / (time1 - time0))*(center1 - center0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -172,17 +178,17 @@ intersection code barely needs a change: `center` just needs to become a functio
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool moving_sphere::hit(
-        const ray& r, float t_min, float t_max, hit_record& rec) const {
+        const ray& r, double t_min, double t_max, hit_record& rec) const {
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         vec3 oc = r.origin() - center(r.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        float a = dot(r.direction(), r.direction());
-        float b = dot(oc, r.direction());
-        float c = dot(oc, oc) - radius*radius;
-        float discriminant = b*b - a*c;
+        auto a = dot(r.direction(), r.direction());
+        auto b = dot(oc, r.direction());
+        auto c = dot(oc, oc) - radius*radius;
+        auto discriminant = b*b - a*c;
         if (discriminant > 0) {
-            float temp = (-b - sqrt(discriminant))/a;
+            auto temp = (-b - sqrt(discriminant))/a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
@@ -245,7 +251,7 @@ the camera aperture open over that frame.
         int i = 1;
         for (int a = -10; a < 10; a++) {
             for (int b = -10; b < 10; b++) {
-                float choose_mat = random_double();
+                auto choose_mat = random_double();
                 vec3 center(a+0.9*random_double(),0.2,b+0.9*random_double());
                 if ((center-vec3(4,0.2,0)).length() > 0.9) {
                     if (choose_mat < 0.8) {  // diffuse
@@ -293,11 +299,11 @@ And with these viewing parameters gives:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 lookfrom(13,2,3);
     vec3 lookat(0,0,0);
-    float dist_to_focus = 10.0;
-    float aperture = 0.0;
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.0;
 
     camera cam(
-        lookfrom, lookat, vec3(0,1,0), 20, float(nx)/float(ny), aperture,
+        lookfrom, lookat, vec3(0,1,0), 20, double(nx)/ny, aperture,
         dist_to_focus, 0.0, 1.0
     );
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -499,8 +505,8 @@ because in a ray tracer all cases come up eventually). With all three dimensions
 passing in the interval $t_{min}$, $t_{max}$ we get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline float ffmin(float a, float b) { return a < b ? a : b; }
-    inline float ffmax(float a, float b) { return a > b ? a : b; }
+    inline double ffmin(double a, double b) { return a < b ? a : b; }
+    inline double ffmax(double a, double b) { return a > b ? a : b; }
 
     class aabb {
         public:
@@ -510,12 +516,12 @@ passing in the interval $t_{min}$, $t_{max}$ we get:
             vec3 min() const {return _min; }
             vec3 max() const {return _max; }
 
-            bool hit(const ray& r, float tmin, float tmax) const {
+            bool hit(const ray& r, double tmin, double tmax) const {
                 for (int a = 0; a < 3; a++) {
-                    float t0 = ffmin((_min[a] - r.origin()[a]) / r.direction()[a],
-                                     (_max[a] - r.origin()[a]) / r.direction()[a]);
-                    float t1 = ffmax((_min[a] - r.origin()[a]) / r.direction()[a],
-                                     (_max[a] - r.origin()[a]) / r.direction()[a]);
+                    auto t0 = ffmin((_min[a] - r.origin()[a]) / r.direction()[a],
+                                    (_max[a] - r.origin()[a]) / r.direction()[a]);
+                    auto t1 = ffmax((_min[a] - r.origin()[a]) / r.direction()[a],
+                                    (_max[a] - r.origin()[a]) / r.direction()[a]);
                     tmin = ffmax(t0, tmin);
                     tmax = ffmin(t1, tmax);
                     if (tmax <= tmin)
@@ -537,11 +543,11 @@ Kensler at Pixar tried some experiments and has proposed this version of the cod
 extremely well on many compilers, and I have adopted it as my go-to method:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline bool aabb::hit(const ray& r, float tmin, float tmax) const {
+    inline bool aabb::hit(const ray& r, double tmin, double tmax) const {
         for (int a = 0; a < 3; a++) {
-            float invD = 1.0f / r.direction()[a];
-            float t0 = (min()[a] - r.origin()[a]) * invD;
-            float t1 = (max()[a] - r.origin()[a]) * invD;
+            auto invD = 1.0f / r.direction()[a];
+            auto t0 = (min()[a] - r.origin()[a]) * invD;
+            auto t1 = (max()[a] - r.origin()[a]) * invD;
             if (invD < 0.0f)
                 std::swap(t0, t1);
             tmin = t0 > tmin ? t0 : tmin;
@@ -565,8 +571,8 @@ frame and the bounding box will bound the object moving through that interval.
     class hittable {
         public:
             virtual bool hit(
-                const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
-            virtual bool bounding_box(float t0, float t1, aabb& box) const = 0;
+                const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+            virtual bool bounding_box(double t0, double t1, aabb& box) const = 0;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -575,7 +581,7 @@ frame and the bounding box will bound the object moving through that interval.
 For a sphere, that `bounding_box` function is easy:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool sphere::bounding_box(float t0, float t1, aabb& box) const {
+    bool sphere::bounding_box(double t0, double t1, aabb& box) const {
         box = aabb(center - vec3(radius, radius, radius),
                    center + vec3(radius, radius, radius));
         return true;
@@ -588,7 +594,7 @@ For `moving sphere`, we can take the box of the sphere at $t_0$, and the box of 
 and compute the box of those two boxes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool moving_sphere::bounding_box(float t0, float t1, aabb& box) const {
+    bool moving_sphere::bounding_box(double t0, double t1, aabb& box) const {
         aabb box0(center(t0) - vec3(radius, radius, radius),
                   center(t0) + vec3(radius, radius, radius));
         aabb box1(center(t1) - vec3(radius, radius, radius),
@@ -604,7 +610,7 @@ For lists you can store the bounding box at construction, or compute it on the f
 the fly because it is only usually called at BVH construction.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool hittable_list::bounding_box(float t0, float t1, aabb& box) const {
+    bool hittable_list::bounding_box(double t0, double t1, aabb& box) const {
         if (list_size < 1) return false;
         aabb temp_box;
         bool first_true = list[0]->bounding_box(t0, t1, temp_box);
@@ -652,17 +658,18 @@ a class:
     class bvh_node : public hittable {
         public:
             bvh_node() {}
-            bvh_node(hittable **l, int n, float time0, float time1);
+            bvh_node(hittable **l, int n, double time0, double time1);
 
-            virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
-            virtual bool bounding_box(float t0, float t1, aabb& box) const;
+            virtual bool hit(
+                const ray& r, double tmin, double tmax, hit_record& rec) const;
+            virtual bool bounding_box(double t0, double t1, aabb& box) const;
 
             hittable *left;
             hittable *right;
             aabb box;
     };
 
-    bool bvh_node::bounding_box(float t0, float t1, aabb& b) const {
+    bool bvh_node::bounding_box(double t0, double t1, aabb& b) const {
         b = box;
         return true;
     }
@@ -677,7 +684,7 @@ The `hit` function is pretty straightforward: check whether the box for the node
 check the children and sort out any details:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool bvh_node::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+    bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         if (box.hit(r, t_min, t_max)) {
             hit_record left_rec, right_rec;
             bool hit_left = left->hit(r, t_min, t_max, left_rec);
@@ -732,7 +739,7 @@ one recursion would probably help a little, but I figure the whole method will g
 This yields:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bvh_node::bvh_node(hittable **l, int n, float time0, float time1) {
+    bvh_node::bvh_node(hittable **l, int n, double time0, double time1) {
         int axis = int(3*random_double());
 
         if (axis == 0)
@@ -805,14 +812,14 @@ being able to make any color a texture is great.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class texture (
         public:
-            virtual vec3 value(float u, float v, const vec3& p) const = O;
+            virtual vec3 value(double u, double v, const vec3& p) const = O;
     };
 
     class constant_texture : public texture {
         public:
             constant_texture() {}
             constant_texture(vec3 c) : color(c) {}
-            virtual vec3 value(float u, float v, const vec3& p) const {
+            virtual vec3 value(double u, double v, const vec3& p) const {
                 return color;
             }
             vec3 color;
@@ -862,8 +869,8 @@ forms a 3D checker pattern.
         public:
             checker_texture() {}
             checker_texture(texture *t0, texture *tl): even(t0), odd(t1) {}
-            virtual vec3 value(float u, float v, const vec3& p) const {
-                float sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
+            virtual vec3 value(double u, double v, const vec3& p) const {
+                auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
                 if (sines < 0)
                     return odd—>value(u, v, p);
                 else
@@ -917,11 +924,11 @@ With camera:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 lookfrom(13,2,3);
     vec3 lookat(0,0,0);
-    float dist_to_focus = 10.0;
-    float aperture = 0.0;
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.0;
 
-    camera cam(lookfrom, lookat, vec3(0,1,0), 20, float(nx)/float(ny),
-               aperture, dist_to_focus, 0.0, 1.0);
+    camera cam(lookfrom, lookat, vec3(0,1,0), 20, double(nx)/ny, aperture, dist_to_focus,
+        0.0, 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We get:
@@ -967,23 +974,23 @@ code to make it all happen:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin {
         public:
-            float noise(const vec3& p) const {
-                float u = p.x() - floor(p.x());
-                float v = p.y() - floor(p.y());
-                float w = p.z() - floor(p.z());
-                int i = floor(p.x());
-                int j = floor(p.y());
-                int k = floor(p.z());
+            double noise(const vec3& p) const {
+                auto u = p.x() - floor(p.x());
+                auto v = p.y() - floor(p.y());
+                auto w = p.z() - floor(p.z());
+                auto i = static_cast<int>(floor(p.x()));
+                auto j = static_cast<int>(floor(p.y()));
+                auto k = static_cast<int>(floor(p.z()));
                 return ranfloat[perm_x[i] ^ perm_y[j] ^ perm_z[k]];
             }
-            static float *ranfloat;
+            static double *ranfloat;
             static int *perm_x;
             static int *perm_y;
             static int *perm_z;
     };
 
-    static vec3* perlin_generate() {
-        float * p = new float[256];
+    static double* perlin_generate() {
+        auto p = new double[256];
         for (int i = 0; i < 256; ++i)
             p[i] = random_double();
         return p;
@@ -1007,7 +1014,7 @@ code to make it all happen:
         return p;
     }
 
-    float *perlin::ranfloat = perlin_generate();
+    double *perlin::ranfloat = perlin_generate();
     int *perlin::perm_x = perlin_generate_perm();
     int *perlin::perm_y = perlin_generate_perm();
     int *perlin::perm_z = perlin_generate_perm();
@@ -1022,7 +1029,7 @@ colors:
     class noise_texture : public texture {
         public:
             noise_texture() {}
-            virtual vec3 value(float u, float v, const vec3& p) const {
+            virtual vec3 value(double u, double v, const vec3& p) const {
                 return vec3(1,1,1) * noise.noise(p);
             }
             perlin noise;
@@ -1050,9 +1057,9 @@ With the same camera as before:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 lookfrom(13,2,3);
     vec3 lookat(0,0,0);
-    float dist_to_focus = 10.0;
-    float aperture = 0.0;
-    camera cam(lookfrom, lookat, vec3(0,1,0), 20, float(nx)/float(ny),
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.0;
+    camera cam(lookfrom, lookat, vec3(0,1,0), 20, double(nx)/ny,
                aperture, dist_to_focus, 0.0, 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -1068,8 +1075,8 @@ Add the hashing does scramble as hoped:
 To make it smooth, we can linearly interpolate:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline float trilinear_interp(float c[2][2][2], float u, float v, float w) {
-        float accum = 0;
+    inline double trilinear_interp(double c[2][2][2], double u, double v, double w) {
+        auto accum = 0.0;
         for (int i=0; i < 2; 1++)
             for (int j=0; j < 2; j++)
                 for (int k=0; k < 2; k++)
@@ -1082,14 +1089,14 @@ To make it smooth, we can linearly interpolate:
 
     class perlin {
         public:
-            float noise(const vec3& p) const {
-                float u = p.x() - floor(p.x());
-                float v = p.y() - floor(p.y());
-                float w = p.z() - floor(p.z());
+            double noise(const vec3& p) const {
+                auto u = p.x() - floor(p.x());
+                auto v = p.y() - floor(p.y());
+                auto w = p.z() - floor(p.z());
                 int i = floor(p.x());
                 int j = floor(p.y());
                 int k = floor(p.z());
-                float c[2][2][2];
+                double c[2][2][2];
                 for (int di=0; di < 2; di++)
                     for (int dj=0; dj < 2; dj++)
                         for (int dk=0; dk < 2; dk++)
@@ -1122,10 +1129,10 @@ the interpolation:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin (
         public:
-            float noise(const vec3& p) const {
-                float u = p.x() - floor(p.x());
-                float v = p.y() - floor(p.y());
-                float w = p.z() - floor(p.z());
+            double noise(const vec3& p) const {
+                auto u = p.x() - floor(p.x());
+                auto v = p.y() - floor(p.y());
+                auto w = p.z() - floor(p.z());
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 u = u*u*(3-2*u);
@@ -1154,8 +1161,8 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
     class noise_texture : public texture {
         public:
             noise_texture() {}
-            noise_texture(float sc) : scale(sc) {}
-            virtual vec3 value(float u, float v, const vec3& p) const {
+            noise_texture(double sc) : scale(sc) {}
+            virtual vec3 value(double u, double v, const vec3& p) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none delete
                 return vec3(1,1,1) * noise.noise(p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1163,7 +1170,7 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
             perlin noise;
-            float scale;
+            double scale;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1211,10 +1218,10 @@ The Perlin class is now:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin {
         public:
-            float noise(const vec3& p) const {
-                float u = p.x() - floor(p.x());
-                float v = p.y() - floor(p.y());
-                float w = p.z() - floor(p.z());
+            double noise(const vec3& p) const {
+                auto u = p.x() - floor(p.x());
+                auto v = p.y() - floor(p.y());
+                auto w = p.z() - floor(p.z());
                 int i = floor(p.x());
                 int j = floor(p.y());
                 int k = floor(p.z());
@@ -1241,11 +1248,11 @@ The Perlin class is now:
 And the interpolation becomes a bit more complicated:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline float perlin_interp(vec3 c[2][2][2], float u, float v, float w) {
-        float uu = u*u*(3-2*u);
-        float vv = v*v*(3-2*v);
-        float ww = w*w*(3-2*w);
-        float accum = 0;
+    inline double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
+        auto uu = u*u*(3-2*u);
+        auto vv = v*v*(3-2*v);
+        auto ww = w*w*(3-2*w);
+        auto accum = 0.0;
         for (int i=0; i < 2; i++)
             for (int j=0; j < 2; j++)
                 for (int k=0; k < 2; k++) {
@@ -1271,10 +1278,10 @@ Very often, a composite noise that has multiple summed frequencies is used. This
 turbulence and is a sum of repeated calls to noise:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    float turb(const vec3& p, int depth=7) const {
-        float accum = 0;
+    double turb(const vec3& p, int depth=7) const {
+        auto accum = 0.0;
         vec3 temp_p = p;
-        float weight = 1.0;
+        auto weight = 1.0;
         for (int i = 0; i < depth; i++) {
             accum += weight*noise(temp_p);
             weight *= 0.5;
@@ -1305,8 +1312,8 @@ effect is:
     class noise_texture : public texture {
         public:
             noise_texture() {}
-            noise_texture(float sc) : scale(sc) {}
-            virtual vec3 value(float u, float v, const vec3& p) const {
+            noise_texture(double sc) : scale(sc) {}
+            virtual vec3 value(double u, double v, const vec3& p) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none delete
                 return vec3(1,1,1) * noise.noise(scale * p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1314,7 +1321,7 @@ effect is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
             perlin noise;
-            float scale;
+            double scale;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1394,9 +1401,9 @@ things on the unit sphere centered at the origin. The call inside sphere::hit sh
 The utility function is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void get_sphere_uv(const vec3& p, float& u, float& v) {
-        float phi = atan2(p.z(), p.x());
-        float theta = asin(p.y());
+    void get_sphere_uv(const vec3& p, double& u, double& v) {
+        auto phi = atan2(p.z(), p.x());
+        auto theta = asin(p.y());
         u = 1-(phi + pi) / (2*pi);
         v = (theta + pi/2) / pi;
     }
@@ -1413,21 +1420,21 @@ RGBs that each range 0..255 for black to fully-on.
             image_texture() {}
             image_texture(unsigned char *pixels, int A, int B)
                 : data(pixels), nx(A), ny(B) {}
-            virtual vec3 value(float u, float v, const vec3& p) const;
+            virtual vec3 value(double u, double v, const vec3& p) const;
             unsigned char *data;
             int nx, ny;
     };
 
-    vec3 image_texture::value(float u, float v, const vec3& p) const {
+    vec3 image_texture::value(double u, double v, const vec3& p) const {
          int i = (  u) * nx;
          int j = (1-v) * ny - 0.001;
          if (i < 0) i = 0;
          if (j < 0) j = 0;
          if (i > nx-1) i = nx-1;
          if (j > ny-1) j = ny-1;
-         float r = int(data[3*i + 3*nx*j]  ) / 255.0;
-         float g = int(data[3*i + 3*nx*j+1]) / 255.0;
-         float b = int(data[3*i + 3*nx*j+2]) / 255.0;
+         auto r = int(data[3*i + 3*nx*j]  ) / 255.0;
+         auto g = int(data[3*i + 3*nx*j+1]) / 255.0;
+         auto b = int(data[3*i + 3*nx*j+2]) / 255.0;
          return vec3(r, g, b);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1484,7 +1491,7 @@ ray what color it is and performs no reflection. It’s very simple:
             diffuse_light(texture *a) : emit(a) {}
             virtual bool scatter(const ray& r_in, const hit_record& rec,
                 vec3& attenuation, ray& scattered) const { return false; }
-            virtual vec3 emitted(float u, float v, const vec3& p) const {
+            virtual vec3 emitted(double u, double v, const vec3& p) const {
                 return emit->value(u, v, p);
             }
             texture *emit;
@@ -1501,7 +1508,7 @@ class return black:
         public:
             virtual bool scatter(const ray& r_in, const hit_record& rec,
                 vec3& attenuation, ray& scattered) const = 0;
-            virtual vec3 emitted(float u, float v, const vec3& p) const {
+            virtual vec3 emitted(double u, double v, const vec3& p) const {
                 return vec3(0,0,0);
             }
     };
@@ -1565,15 +1572,17 @@ The actual `xy_rect` class is thus:
     class xy_rect: public hittable {
         public:
             xy_rect() {}
-            xy_rect(float _x0, float _x1, float _y0, float _y1, float _k, material *mat)
-                : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
-            virtual bool hit(const ray& r, float t0, float t1, hit_record& rec) const;
-            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+            xy_rect(
+                double _x0, double _x1, double _y0, double _y1, double _k, material *mat)
+                : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat)
+            {};
+            virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
+            virtual bool bounding_box(double t0, double t1, aabb& box) const {
                 box =  aabb(vec3(x0,y0, k-0.0001), vec3(x1, y1, k+0.0001));
                 return true;
             }
             material *mp;
-            float x0, x1, y0, y1, k;
+            double x0, x1, y0, y1, k;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -1582,12 +1591,12 @@ The actual `xy_rect` class is thus:
 And the hit function is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool xy_rect::hit(const ray& r, float t0, float t1, hit_record& rec) const {
-        float t = (k-r.origin().z()) / r.direction().z();
+    bool xy_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
+        auto t = (k-r.origin().z()) / r.direction().z();
         if (t < t0 || t > t1)
             return false;
-        float x = r.origin().x() + t*r.direction().x();
-        float y = r.origin().y() + t*r.direction().y();
+        auto x = r.origin().x() + t*r.direction().x();
+        auto y = r.origin().y() + t*r.direction().y();
         if (x < x0 || x > x1 || y < y0 || y > y1)
             return false;
         rec.u = (x-x0)/(x1-x0);
@@ -1644,29 +1653,33 @@ This is xz and yz:
     class xz_rect: public hittable {
         public:
             xz_rect() {}
-            xz_rect(float _x0, float _x1, float _z0, float _z1, float _k, material *mat)
-                : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
-            virtual bool hit(const ray& r, float t0, float t1, hit_record& rec) const;
-            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+            xz_rect(
+                double _x0, double _x1, double _z0, double _z1, double _k, material *mat)
+                : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat)
+            {};
+            virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
+            virtual bool bounding_box(double t0, double t1, aabb& box) const {
                 box =  aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
                 return true;
             }
             material *mp;
-            float x0, x1, z0, z1, k;
+            double x0, x1, z0, z1, k;
     };
 
     class yz_rect: public hittable {
         public:
             yz_rect() {}
-            yz_rect(float _y0, float _y1, float _z0, float _z1, float _k, material *mat)
-                : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
-            virtual bool hit(const ray& r, float t0, float t1, hit_record& rec) const;
-            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+            yz_rect(
+                double _y0, double _y1, double _z0, double _z1, double _k, material *mat)
+                : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat)
+            {};
+            virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
+            virtual bool bounding_box(double t0, double t1, aabb& box) const {
                 box =  aabb(vec3(k-0.0001, y0, z0), vec3(k+0.0001, y1, z1));
                 return true;
             }
             material  *mp;
-            float y0, y1, z0, z1, k;
+            double y0, y1, z0, z1, k;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -1675,12 +1688,12 @@ This is xz and yz:
 With unsurprising hit functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool xz_rect::hit(const ray& r, float t0, float t1, hit_record& rec) const {
-        float t = (k-r.origin().y()) / r.direction().y();
+    bool xz_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
+        auto t = (k-r.origin().y()) / r.direction().y();
         if (t < t0 || t > t1)
             return false;
-        float x = r.origin().x() + t*r.direction().x();
-        float z = r.origin().z() + t*r.direction().z();
+        auto x = r.origin().x() + t*r.direction().x();
+        auto z = r.origin().z() + t*r.direction().z();
         if (x < x0 || x > x1 || z < z0 || z > z1)
             return false;
         rec.u = (x-x0)/(x1-x0);
@@ -1692,12 +1705,12 @@ With unsurprising hit functions:
         return true;
     }
 
-    bool yz_rect::hit(const ray& r, float t0, float t1, hit_record& rec) const {
-        float t = (k-r.origin().x()) / r.direction().x();
+    bool yz_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
+        auto t = (k-r.origin().x()) / r.direction().x();
         if (t < t0 || t > t1)
             return false;
-        float y = r.origin().y() + t*r.direction().y();
-        float z = r.origin().z() + t*r.direction().z();
+        auto y = r.origin().y() + t*r.direction().y();
+        auto z = r.origin().z() + t*r.direction().z();
         if (y < y0 || y > y1 || z < z0 || z > z1)
             return false;
         rec.u = (y-y0)/(y1-y0);
@@ -1740,11 +1753,11 @@ And the view info:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 lookfrom(278, 278, -800);
     vec3 lookat(278,278,0);
-    float dist_to_focus = 10.0;
-    float aperture = 0.0;
-    float vfov = 40.0;
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.0;
+    auto vfov = 40.0;
 
-    camera cam(lookfrom, lookat, vec3(0,1,0), vfov, float(nx)/float(ny),
+    camera cam(lookfrom, lookat, vec3(0,1,0), vfov, double(nx)/ny,
         aperture, dist_to_focus, 0.0, 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -1767,7 +1780,7 @@ another hittable, but reverses the normals:
             flip_normals(hittable *p) : ptr(p) {}
 
             virtual bool hit(
-                const ray& r, float t_min, float t_max, hit_record& rec) const {
+                const ray& r, double t_min, double t_max, hit_record& rec) const {
 
                 if (ptr->hit(r, t_min, t_max, rec)) {
                     rec.normal = -rec.normal;
@@ -1777,7 +1790,7 @@ another hittable, but reverses the normals:
                     return false;
             }
 
-            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+            virtual bool bounding_box(double t0, double t1, aabb& box) const {
                 return ptr->bounding_box(t0, t1, box);
             }
 
@@ -1830,8 +1843,8 @@ make an axis-aligned block primitive that holds 6 rectangles:
         public:
             box() {}
             box(const vec3& p0, const vec3& p1, material *ptr);
-            virtual bool hit(const ray& r, float t0, float t1, hit_record& rec) const;
-            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+            virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
+            virtual bool bounding_box(double t0, double t1, aabb& box) const {
                 box =  aabb(pmin, pmax);
                 return true;
             }
@@ -1855,7 +1868,7 @@ make an axis-aligned block primitive that holds 6 rectangles:
         list_ptr = new hittable_list(list,6);
     }
 
-    bool box::hit(const ray& r, float t0, float t1, hit_record& rec) const {
+    bool box::hit(const ray& r, double t0, double t1, hit_record& rec) const {
         return list_ptr->hit(r, t0, t1, rec);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1900,13 +1913,13 @@ move any underlying hittable is a _translate_ instance.
             translate(hittable *p, const vec3& displacement)
                 : ptr(p), offset(displacement) {}
             virtual bool hit(
-                const ray& r, float t_min, float t_max, hit_record& rec) const;
-            virtual bool bounding_box(float t0, float t1, aabb& box) const;
+                const ray& r, double t_min, double t_max, hit_record& rec) const;
+            virtual bool bounding_box(double t0, double t1, aabb& box) const;
             hittable *ptr;
             vec3 offset;
     };
 
-    bool translate::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+    bool translate::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         ray moved_r(r.origin() - offset, r.direction(), r.time());
         if (ptr->hit(moved_r, t_min, t_max, rec)) {
             rec.p += offset;
@@ -1916,7 +1929,7 @@ move any underlying hittable is a _translate_ instance.
             return false;
     }
 
-    bool translate::bounding_box(float t0, float t1, aabb& box) const {
+    bool translate::bounding_box(double t0, double t1, aabb& box) const {
         if (ptr->bounding_box(t0, t1, box)) {
             box = aabb(box.min() + offset, box.max() + offset);
             return true;
@@ -1974,15 +1987,15 @@ For a y-rotation class we have:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class rotate_y : public hittable {
         public:
-            rotate_y(hittable *p, float angle);
+            rotate_y(hittable *p, double angle);
             virtual bool hit(
-                const ray& r, float t_min, float t_max, hit_record& rec) const;
-            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+                const ray& r, double t_min, double t_max, hit_record& rec) const;
+            virtual bool bounding_box(double t0, double t1, aabb& box) const {
                 box = bbox; return hasbox;
             }
             hittable *ptr;
-            float sin_theta;
-            float cos_theta;
+            double sin_theta;
+            double cos_theta;
             bool hasbox;
             aabb bbox;
     };
@@ -1993,8 +2006,8 @@ For a y-rotation class we have:
 With constructor:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    rotate_y::rotate_y(hittable *p, float angle) : ptr(p) {
-        float radians = (pi / 180.) * angle;
+    rotate_y::rotate_y(hittable *p, double angle) : ptr(p) {
+        auto radians = (pi / 180.) * angle;
         sin_theta = sin(radians);
         cos_theta = cos(radians);
         hasbox = ptr->bounding_box(0, 1, bbox);
@@ -2003,11 +2016,11 @@ With constructor:
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 2; j++) {
                 for (int k = 0; k < 2; k++) {
-                    float x = i*bbox.max().x() + (1-i)*bbox.min().x();
-                    float y = j*bbox.max().y() + (1-j)*bbox.min().y();
-                    float z = k*bbox.max().z() + (1-k)*bbox.min().z();
-                    float newx = cos_theta*x + sin_theta*z;
-                    float newz = -sin_theta*x + cos_theta*z;
+                    auto x = i*bbox.max().x() + (1-i)*bbox.min().x();
+                    auto y = j*bbox.max().y() + (1-j)*bbox.min().y();
+                    auto z = k*bbox.max().z() + (1-k)*bbox.min().z();
+                    auto newx = cos_theta*x + sin_theta*z;
+                    auto newz = -sin_theta*x + cos_theta*z;
                     vec3 tester(newx, y, newz);
                     for ( int c = 0; c < 3; c++ )
                     {
@@ -2028,7 +2041,7 @@ With constructor:
 And the hit function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool rotate_y::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+    bool rotate_y::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         vec3 origin = r.origin();
         vec3 direction = r.direction();
         origin[0] = cos_theta*r.origin()[0] - sin_theta*r.origin()[2];
@@ -2111,16 +2124,16 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class constant_medium : public hittable {
         public:
-            constant_medium(hittable *b, float d, texture *a) : boundary(b), density(d) {
+            constant_medium(hittable *b, double d, texture *a) : boundary(b), density(d) {
                 phase_function = new isotropic(a);
             }
             virtual bool hit(
-                const ray& r, float t_min, float t_max, hit_record& rec) const;
-            virtual bool bounding_box(float t0, float t1, aabb& box) const {
+                const ray& r, double t_min, double t_max, hit_record& rec) const;
+            virtual bool bounding_box(double t0, double t1, aabb& box) const {
                 return boundary->bounding_box(t0, t1, box);
             }
             hittable *boundary;
-            float density;
+            double density;
             material *phase_function;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2152,7 +2165,7 @@ The scattering function of isotropic picks a uniform random direction:
 And the hit function is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool constant_medium::hit(const ray& r, float t_min, float t_max, hit_record& rec)
+    bool constant_medium::hit(const ray& r, double t_min, double t_max, hit_record& rec)
     const {
 
         // Print occasional samples when debugging. To enable, set enableDebug true.
@@ -2178,8 +2191,8 @@ And the hit function is:
                 if (rec1.t < 0)
                     rec1.t = 0;
 
-                float distance_inside_boundary = (rec2.t - rec1.t)*r.direction().length();
-                float hit_distance = -(1/density) * log(random_double());
+                auto distance_inside_boundary = (rec2.t - rec1.t)*r.direction().length();
+                auto hit_distance = -(1/density) * log(random_double());
 
                 if (hit_distance < distance_inside_boundary) {
 
@@ -2272,13 +2285,13 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         int b = 0;
         for (int i = 0; i < nb; i++) {
             for (int j = 0; j < nb; j++) {
-                float w = 100;
-                float x0 = -1000 + i*w;
-                float z0 = -1000 + j*w;
-                float y0 = 0;
-                float x1 = x0 + w;
-                float y1 = 100*(random_double()+0.01);
-                float z1 = z0 + w;
+                auto w = 100.0;
+                auto x0 = -1000.0 + i*w;
+                auto z0 = -1000.0 + j*w;
+                auto y0 = 0.0;
+                auto x1 = x0 + w;
+                auto y1 = 100.0*(random_double()+0.01);
+                auto z1 = z0 + w;
                 boxlist[b++] = new box(vec3(x0,y0,z0), vec3(x1,y1,z1), ground);
             }
         }
