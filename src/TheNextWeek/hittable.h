@@ -32,7 +32,7 @@ struct hit_record {
     double u;
     double v;
     vec3 p;
-    vec3 normal; 
+    vec3 normal;
     material *mat_ptr;
 };
 
@@ -65,7 +65,7 @@ class translate : public hittable {
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& box) const;
         hittable *ptr;
-        vec3 offset; 
+        vec3 offset;
 };
 
 bool translate::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
@@ -127,7 +127,7 @@ rotate_y::rotate_y(hittable *p, double angle) : ptr(p) {
         }
     }
     bbox = aabb(min, max);
-}   
+}
 
 bool rotate_y::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
     vec3 origin = r.origin();
@@ -148,7 +148,7 @@ bool rotate_y::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
         rec.normal = normal;
         return true;
     }
-    else 
+    else
         return false;
 }
 

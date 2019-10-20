@@ -1,7 +1,7 @@
 #ifndef CONSTANT_MEDIUM_H
 #define CONSTANT_MEDIUM_H
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -77,6 +77,5 @@ bool constant_medium::hit(const ray& r, double t_min, double t_max, hit_record& 
     }
     return false;
 }
-
 
 #endif

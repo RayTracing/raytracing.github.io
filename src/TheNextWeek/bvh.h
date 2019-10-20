@@ -38,9 +38,9 @@ bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
         bool hit_left = left->hit(r, t_min, t_max, left_rec);
         bool hit_right = right->hit(r, t_min, t_max, right_rec);
         if (hit_left && hit_right) {
-            if (left_rec.t < right_rec.t) 
+            if (left_rec.t < right_rec.t)
                 rec = left_rec;
-            else 
+            else
                 rec = right_rec;
             return true;
         }
@@ -52,7 +52,7 @@ bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
             rec = right_rec;
             return true;
         }
-        else 
+        else
             return false;
     }
     else return false;
@@ -118,7 +118,7 @@ bvh_node::bvh_node(hittable **l, int n, double time0, double time1) {
     }
     aabb box_left, box_right;
     if(!left->bounding_box(time0,time1, box_left) || !right->bounding_box(time0,time1, box_right))
-        std::cerr << "no bounding box in bvh_node constructor\n"; 
+        std::cerr << "no bounding box in bvh_node constructor\n";
     box = surrounding_box(box_left, box_right);
 }
 
