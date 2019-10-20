@@ -31,16 +31,16 @@
 
 vec3 color(const ray& r, hittable *world, int depth) {
     hit_record rec;
-    if (world->hit(r, 0.001, infinity, rec)) { 
+    if (world->hit(r, 0.001, infinity, rec)) {
         ray scattered;
         vec3 attenuation;
         vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
-        if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) 
+        if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered))
              return emitted + attenuation*color(scattered, world, depth+1);
-        else 
+        else
             return emitted;
     }
-    else 
+    else
         return vec3(0,0,0);
 }
 
@@ -231,8 +231,8 @@ hittable *random_scene() {
     for (int a = -10; a < 10; a++) {
         for (int b = -10; b < 10; b++) {
             auto choose_mat = random_double();
-            vec3 center(a+0.9*random_double(),0.2,b+0.9*random_double()); 
-            if ((center-vec3(4,0.2,0)).length() > 0.9) { 
+            vec3 center(a+0.9*random_double(),0.2,b+0.9*random_double());
+            if ((center-vec3(4,0.2,0)).length() > 0.9) {
                 if (choose_mat < 0.8) {  // diffuse
                     list[i++] = new moving_sphere(center, center+vec3(0,0.5*random_double(), 0), 0.0, 1.0, 0.2, new lambertian(new constant_texture(vec3(random_double()*random_double(), random_double()*random_double(), random_double()*random_double()))));
                 }
@@ -295,9 +295,9 @@ int main() {
             }
             col /= float(ns);
             col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
-            int ir = int(255.99*col[0]); 
-            int ig = int(255.99*col[1]); 
-            int ib = int(255.99*col[2]); 
+            int ir = int(255.99*col[0]);
+            int ig = int(255.99*col[1]);
+            int ib = int(255.99*col[2]);
             std::cout << ir << " " << ig << " " << ib << "\n";
         }
     }
