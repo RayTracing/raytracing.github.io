@@ -45,7 +45,7 @@ don’t know that, do a little review. If you need that review, or to learn it f
 check out Marschner’s and my graphics text, Foley, Van Dam, _et al._, or McGuire’s graphics codex.
 
 If you run into trouble, or do something cool you’d like to show somebody, send me some email at
-ptrshrl@gmail.com
+ptrshrl@gmail.com.
 
 I’ll be maintaining a site related to the book including further reading and links to resources at a
 blog https://in1weekend.blogspot.com/ related to this book.
@@ -72,16 +72,18 @@ Let’s make some C++ code to output such a thing:
     int main() {
         int nx = 200;
         int ny = 100;
-        std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+
+        std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
+
         for (int j = ny-1; j >= 0; j--) {
             for (int i = 0; i < nx; i++) {
                 auto r = double(i) / nx;
                 auto g = double(j) / ny;
                 auto b = 0.2;
-                int ir = int(255.99*r);
-                int ig = int(255.99*g);
-                int ib = int(255.99*b);
-                std::cout << ir << " " << ig << " " << ib << "\n";
+                int ir = static_cast<int>(255.999 * r);
+                int ig = static_cast<int>(255.999 * g);
+                int ib = static_cast<int>(255.999 * b);
+                std::cout << ir << ' ' << ig << ' ' << ib << '\n';
             }
         }
     }
@@ -200,6 +202,13 @@ Here’s the top part of my `vec3` class:
                 return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
             }
 
+            void write_color(std::ostream &out) {
+                // Write the translated [0,255] value of each color component.
+                out << static_cast<int>(255.999 * e[0]) << ' '
+                    << static_cast<int>(255.999 * e[1]) << ' '
+                    << static_cast<int>(255.999 * e[2]) << '\n';
+            }
+
             double e[3];
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -267,17 +276,15 @@ Now we can change our main to use this:
     int main() {
         int nx = 200;
         int ny = 100;
-        std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+
+        std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
 
         for (int j = ny-1; j >= 0; j--) {
             for (int i = 0; i < nx; i++) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                vec3 col(double(i)/nx, double(j)/ny, 0.2);
-                auto ir = int(255.99*col[0]);
-                auto ig = int(255.99*col[1]);
-                auto ib = int(255.99*col[2]);
+                vec3 color(double(i)/nx, double(j)/ny, 0.2);
+                color.write_color(std::cout);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                std::cout << ir << " " << ig << " " << ib << "\n";
             }
         }
     }
@@ -351,7 +358,7 @@ for now because we’ll add antialiasing later):
 
     #include <iostream>
 
-    vec3 color(const ray& r) {
+    vec3 ray_color(const ray& r) {
         vec3 unit_direction = unit_vector(r.direction());
         auto t = 0.5*(unit_direction.y() + 1.0);
         return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
@@ -373,13 +380,9 @@ for now because we’ll add antialiasing later):
                 auto u = double(i) / nx;
                 auto v = double(j) / ny;
                 ray r(origin, lower_left_corner + u*horizontal + v*vertical);
-                vec3 col = color(r);
+                vec3 color = ray_color(r);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                int ir = int(255.99*col[0]);
-                int ig = int(255.99*col[1]);
-                int ib = int(255.99*col[2]);
-
-                std::cout << ir << " " << ig << " " << ib << "\n";
+                color.write_color(std::cout);
             }
         }
     }
@@ -387,7 +390,7 @@ for now because we’ll add antialiasing later):
 </div>
 
 <div class='together'>
-The `color(ray)` function linearly blends white and blue depending on the up/downess of the $y$
+The `ray_color(ray)` function linearly blends white and blue depending on the up/downess of the $y$
 coordinate. I first made it a unit vector so $-1.0 < y < 1.0$. I then did a standard graphics trick
 of scaling that to $0.0 < t < 1.0$. When $t = 1.0$ I want blue. When $t = 0.0$ I want white. In
 between, I want a blend. This forms a “linear blend”, or “linear interpolation”, or “lerp” for
@@ -477,7 +480,7 @@ that hits a small sphere we place at -1 on the z-axis:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    vec3 color(const ray& r) {
+    vec3 ray_color(const ray& r) {
         if (hit_sphere(vec3(0,0,-1), 0.5, r))
             return vec3(1, 0, 0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -542,7 +545,7 @@ normal, we need the hit point, not just whether we hit or not. Let’s assume th
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
 
-    vec3 color(const ray& r) {
+    vec3 ray_color(const ray& r) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto t = hit_sphere(vec3(0,0,-1), 0.5, r);
         if (t > 0.0) {
@@ -697,16 +700,18 @@ And a list of objects:
 <div class='together'></div>
 We need some math constants that we conveniently define in their own header file. For now we only
 need infinity, but we will also throw our own definition of pi in there, which we will need later.
-There is no standard portable definition of pi, so we just define our own constant for it.
+There is no standard portable definition of pi, so we just define our own constant for it. We'll
+throw common useful constants and future utility functions in `rtweekend.h`, our general main header
+file.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef CONSTANTS_H
-    #define CONSTANTS_H
+    #ifndef RTWEEKEND_H
+    #define RTWEEKEND_H
 
     #include <limits>
 
     const double pi = 3.1415926535897932385;
-    const double infinity = std::numeric_limits<double>::infinity(); 
+    const double infinity = std::numeric_limits<double>::infinity();
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -716,7 +721,8 @@ There is no standard portable definition of pi, so we just define our own consta
 And the new main:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "common/constants.h"
+    #include "common/rtweekend.h"
+    #include "common/vec3.h"
     #include "float.h"
     #include "hittable_list.h"
     #include "sphere.h"
@@ -726,7 +732,7 @@ And the new main:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    vec3 color(const ray& r, hittable *world) {
+    vec3 ray_color(const ray& r, hittable *world) {
         hit_record rec;
         if (world->hit(r, 0.0, infinity, rec)) {
             return 0.5*vec3(rec.normal.x()+1, rec.normal.y()+1, rec.normal.z()+1);
@@ -744,7 +750,7 @@ And the new main:
     int main() {
         int nx = 200;
         int ny = 100;
-        std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+        std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
         vec3 lower_left_corner(-2.0, -1.0, -1.0);
         vec3 horizontal(4.0, 0.0, 0.0);
         vec3 vertical(0.0, 2.0, 0.0);
@@ -767,14 +773,10 @@ And the new main:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 p = r.point_at_parameter(2.0);
-                vec3 col = color(r, world);
+                vec3 color = ray_color(r, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-                int ir = int(255.99*col[0]);
-                int ig = int(255.99*col[1]);
-                int ib = int(255.99*col[2]);
-
-                std::cout << ir << " " << ig << " " << ib << "\n";
+                color.write_color(std::cout);
             }
         }
     }
@@ -887,6 +889,35 @@ before:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
+To handle the multi-sampled color computation, we update the `vec3::write_color()` function. Rather
+than adding in a fractional contribution each time we accumulate more light to the color, just add
+the full color each iteration, and then perform a single divide at the end (by the number of
+samples) when writing out the color. In addition, we'll add a handy utility function to the
+`rtweekend.h` utility header: `clamp(x,min,max)`, which clamps the value `x` to the range [min,max]:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline double clamp(double x, double min, double max) {
+        if (x < min) return min;
+        if (x > max) return max;
+        return x;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    void write_color(std::ostream &out, int num_samples) {
+        // Divide the color total by the number of samples.
+        auto scale = 1.0 / num_samples;
+        auto r = scale * e[0];
+        auto g = scale * e[1];
+        auto b = scale * e[2];
+
+        // Write the translated [0,255] value of each color component.
+        out << static_cast<int>(256.0 * clamp(r, 0.0, 0.999999)) << ' '
+            << static_cast<int>(256.0 * clamp(g, 0.0, 0.999999)) << ' '
+            << static_cast<int>(256.0 * clamp(b, 0.0, 0.999999)) << '\n';
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 <div class='together'>
 Main is also changed:
 
@@ -895,7 +926,7 @@ Main is also changed:
         int nx = 200;
         int ny = 100;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        int ns = 100;
+        int num_samples = 100;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
@@ -910,21 +941,15 @@ Main is also changed:
         for (int j = ny-1; j >= 0; j--) {
             for (int i = 0; i < nx; i++) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                vec3 col(0, 0, 0);
-                for (int s = 0; s < ns; s++) {
+                vec3 color(0, 0, 0);
+                for (int s = 0; s < num_samples; s++) {
                     auto u = (i + random_double()) / nx;
                     auto v = (j + random_double()) / ny;
                     ray r = cam.get_ray(u, v);
-                    col += color(r, world);
+                    color += ray_color(r, world);
                 }
-                col /= double(ns);
+                color.write_color(std::cout, num_samples);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-                int ir = int(255.99*col[0]);
-                int ig = int(255.99*col[1]);
-                int ib = int(255.99*col[2]);
-
-                std::cout << ir << " " << ig << " " << ib << "\n";
             }
         }
     }
@@ -993,15 +1018,15 @@ outside the sphere. A do/while construct is perfect for that:
 </div>
 
 <div class='together'>
-Then update the `color()` function to use the new random direction generator:
+Then update the `ray_color()` function to use the new random direction generator:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world) {
+    vec3 ray_color(const ray& r, hittable *world) {
         hit_record rec;
         if (world->hit(r, 0.0, infinity, rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-            return 0.5 * color(ray(rec.p, target - rec.p), world);
+            return 0.5 * ray_color(ray(rec.p, target - rec.p), world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
         else {
@@ -1031,13 +1056,23 @@ which means raising the color to the power $1/gamma$, or in our simple case ½, 
 square-root:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    col /= double(ns);
-    col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
-    int ir = int(255.99*col[0]);
-    int ig = int(255.99*col[1]);
-    int ib = int(255.99*col[2]);
-    std::cout << ir << " " << ig << " " << ib << "\n";
+    void write_color(std::ostream &out, int num_samples) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        // Divide the color total by the number of samples and gamma-correct
+        // for a gamma value of 2.0.
+        auto scale = 1.0 / num_samples;
+        auto r = sqrt(scale * e[0]);
+        auto g = sqrt(scale * e[1]);
+        auto b = sqrt(scale * e[2]);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        // Write the translated [0,255] value of each color component.
+        out << static_cast<int>(256.0 * clamp(r, 0.0, 0.999999)) << ' '
+            << static_cast<int>(256.0 * clamp(g, 0.0, 0.999999)) << ' '
+            << static_cast<int>(256.0 * clamp(b, 0.0, 0.999999)) << '\n';
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 </div>
 
 <div class='together'>
@@ -1237,7 +1272,7 @@ The metal material just reflects rays using that formula:
 We need to modify the color function to use this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, int depth) {
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
         hit_record rec;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (world->hit(r, 0.001, infinity, rec)) {
@@ -1268,7 +1303,7 @@ metal spheres:
     int main() {
         int nx = 200;
         int ny = 100;
-        int ns = 100;
+        int num_samples = 100;
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
 
@@ -1284,23 +1319,14 @@ metal spheres:
         camera cam;
         for (int j = ny-1; j >= 0; j--) {
             for (int i = 0; i < nx; i++) {
-                vec3 col(0, 0, 0);
-                for (int s = 0; s < ns; s++) {
+                vec3 color(0, 0, 0);
+                for (int s = 0; s < num_samples; s++) {
                     auto u = (i + random_double()) / nx;
                     auto v = (j + random_double()) / ny;
                     ray r = cam.get_ray(u, v);
-                    col += color(r, world, 0);
+                    color += ray_color(r, world, 0);
                 }
-                col /= double(ns);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-                int ir = int(255.99*col[0]);
-                int ig = int(255.99*col[1]);
-                int ib = int(255.99*col[2]);
-
-                std::cout << ir << " " << ig << " " << ib << "\n";
+                color.write_color(std::cout, num_samples);
             }
         }
     }
@@ -1606,7 +1632,7 @@ This implies $h = tan(\theta/2)$. Our camera now becomes:
     #ifndef CAMERA_H
     #define CAMERA_H
 
-    #include "common/constants.h"
+    #include "common/rtweekend.h"
     #include "ray.h"
 
     class camera {

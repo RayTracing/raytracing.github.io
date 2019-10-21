@@ -11,6 +11,8 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "common/rtweekend.h"
+
 #include <iostream>
 #include <math.h>
 
@@ -52,6 +54,26 @@ class vec3 {
 
         double squared_length() const {
             return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
+        }
+
+        void write_color(std::ostream &out, int num_samples) {
+            // Replace NaN component values with zero.
+            // See explanation in Ray Tracing: The Rest of Your Life.
+            if (e[0] != e[0]) e[0] = 0.0;
+            if (e[1] != e[1]) e[1] = 0.0;
+            if (e[2] != e[2]) e[2] = 0.0;
+
+            // Divide the color total by the number of samples and gamma-correct
+            // for a gamma value of 2.0.
+            auto scale = 1.0 / num_samples;
+            auto r = sqrt(scale * e[0]);
+            auto g = sqrt(scale * e[1]);
+            auto b = sqrt(scale * e[2]);
+
+            // Write the translated [0,255] value of each color component.
+            out << static_cast<int>(255.999 * clamp(r, 0.0, 1.0)) << ' '
+                << static_cast<int>(255.999 * clamp(g, 0.0, 1.0)) << ' '
+                << static_cast<int>(255.999 * clamp(b, 0.0, 1.0)) << '\n';
         }
 
         double e[3];

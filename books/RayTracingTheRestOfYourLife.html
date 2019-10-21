@@ -224,9 +224,9 @@ This suggests a MC approach:
 This, as expected, produces approximately the exact answer we get with algebra, $I = 8/3$. But we
 could also do it for functions that we can’t analytically integrate like $log(sin(x))$. In graphics,
 we often have functions we can evaluate but can’t write down explicitly, or functions we can only
-probabilistically evaluate. That is in fact what the ray tracing `color()` function of the last two
-books is -- we don’t know what color is seen in every direction, but we can statistically estimate
-it in any given dimension.
+probabilistically evaluate. That is in fact what the ray tracing `ray_color()` function of the last
+two books is -- we don’t know what color is seen in every direction, but we can statistically
+estimate it in any given dimension.
 
 One problem with the random program we wrote in the first two books is small light sources create
 too much noise because our uniform sampling doesn’t sample the light often enough. We could lessen
@@ -650,8 +650,8 @@ denominator cancel out and we get:
 
   $$ Color = A * color(direction) $$
 
-This is exactly what we had in our original color() function! But we need to generalize now so we
-can send extra rays in important directions such as toward the lights.
+This is exactly what we had in our original `ray_color()` function! But we need to generalize now so
+we can send extra rays in important directions such as toward the lights.
 
 The treatment above is slightly non-standard because I want the same math to work for surfaces and
 volumes. To do otherwise will make some ugly code.
@@ -802,7 +802,7 @@ And _Lambertian_ material becomes:
 And the color function gets a minor modification:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, int depth) {
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
         hit_record rec;
         if (world->hit(r, 0.001, infinity, rec)) {
             ray scattered;
@@ -811,8 +811,9 @@ And the color function gets a minor modification:
             double pdf;
             vec3 albedo;
             if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf)) {
-                return emitted + albedo*rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                    *color(scattered, world, depth+1) / pdf;
+                return emitted
+                     + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                              * ray_color(scattered, world, depth+1) / pdf;
             }
             else
                 return emitted;
@@ -1210,11 +1211,11 @@ So
 </div>
 
 <div class='together'>
-If we hack our color function to sample the light in a very hard-coded fashion just to check that
-math and get the concept, we can add it (see the highlighted region):
+If we hack our `ray_color()` function to sample the light in a very hard-coded fashion just to check
+that math and get the concept, we can add it (see the highlighted region):
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, int depth) {
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
         hit_record rec;
         if (world->hit(r, 0,001, infinity, rec)) {
             ray scattered;
@@ -1242,7 +1243,7 @@ math and get the concept, we can add it (see the highlighted region):
 
                 return emitted
                      + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                              * color(scattered, world, depth+1) / pdf;
+                              * ray_color(scattered, world, depth+1) / pdf;
             }
             else
                 return emitted;
@@ -1368,11 +1369,11 @@ First, let’s try a cosine density:
 </div>
 
 <div class='together'>
-We can try this in the `color()` function, with the main changes highlighted. We also need to change
-variable `pdf` to some other variable name to avoid a name conflict with the new `pdf` class.
+We can try this in the `ray_color()` function, with the main changes highlighted. We also need to
+change variable `pdf` to some other variable name to avoid a name conflict with the new `pdf` class.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, int depth) {
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
         hit_record rec;
         if (world->hit(r, 0.001, infinity, rec)) {
             ray scattered;
@@ -1388,7 +1389,7 @@ variable `pdf` to some other variable name to avoid a name conflict with the new
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return emitted
                      + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                              * color(scattered, world, depth+1)
+                              * ray_color(scattered, world, depth+1)
                               / pdf_val;
             }
             else
@@ -1485,10 +1486,10 @@ And we change `xz_rect` to implement those functions:
 </div>
 
 <div class='together'>
-And then change `color()`:
+And then change `ray_color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, int depth) {
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
         hit_record rec;
         if (world->hit(r, 0.001, infinity, rec)) {
             ray scattered;
@@ -1505,7 +1506,7 @@ And then change `color()`:
                 pdf_val = p.value(scattered.direction());
                 return emitted
                      + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                              * color(scattered, world, depth+1)
+                              * ray_color(scattered, world, depth+1)
                               / pdf_val;
             }
             else
@@ -1547,10 +1548,10 @@ class is straightforward:
 </div>
 
 <div class='together'>
-And plugging it into `color()`:
+And plugging it into `ray_color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
+    vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) {
         hit_record rec;
         if (world->hit(r, 0.001, infinity, rec)) {
             ray scattered;
@@ -1567,8 +1568,10 @@ And plugging it into `color()`:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 scattered = ray(rec.p, p.generate(), r.time());
                 pdf_val = p.value(scattered.direction());
-                return emitted + albedo*rec.mat_ptr->scattering_pdf(r, rec, scattered)*
-                    color(scattered, world, depth+1) / pdf_val;
+                return emitted
+                     + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                              * ray_color(scattered, world, depth+1)
+                              / pdf_val;
             }
             else
                 return emitted;
@@ -1607,9 +1610,9 @@ rays; that’s a personal design preference.
 
 There are some other issues with the code.
 
-The pdf construction is hard coded in the color() function and we should clean that up. Probably we
-should pass something into color about the lights. Unlike bvh construction, we should be careful
-about memory leaks as there are an unbounded number of samples.
+The pdf construction is hard coded in the `ray_color()` function and we should clean that up.
+Probably we should pass something into color about the lights. Unlike bvh construction, we should be
+careful about memory leaks as there are an unbounded number of samples.
 
 The specular rays (glass and metal) are no longer supported. The math would work out if we just made
 their scattering function a delta function . But that would be floating point disaster. We could
@@ -1636,25 +1639,25 @@ Cleaning Up pdf Management.
 ====================================================================================================
 
 <div class='together'>
-So far I have the color function create two hard-coded `pdf`s :
+So far I have the `ray_color()` function create two hard-coded `pdf`s :
 
 1. `p0()` related to the shape of the light
 2. `p1()` related to the normal vector and type of surface
 
 </div>
 
-We can pass information about the light (or whatever `hittable` we want to sample) into the `color`
-function, and we can ask the `material` function for a `pdf` (we would have to instrument it to do
-that). We can also either ask `hit` function or the `material` class to supply whether there is a
-specular vector.
+We can pass information about the light (or whatever `hittable` we want to sample) into the
+`ray_color()` function, and we can ask the `material` function for a `pdf` (we would have to
+instrument it to do that). We can also either ask `hit` function or the `material` class to supply
+whether there is a specular vector.
 
 One thing we would like to allow for is a material like varnished wood that is partially ideal
 specular (the polish) and partially diffuse (the wood). Some renderers have the material generate
 two rays: one specular and one diffuse. I am not fond of branching, so I would rather have the
 material randomly decide whether it is diffuse or specular. The catch with that approach is that we
 need to be careful when we ask for the `pdf` value and be aware of whether for this evaluation of
-`color()` it is diffuse or specular. Fortunately, we know that we should only call the `pdf value()`
-if it is diffuse so we can handle that implicitly.
+`ray_color()` it is diffuse or specular. Fortunately, we know that we should only call the `pdf
+value()` if it is diffuse so we can handle that implicitly.
 
 <div class='together'>
 We can redesign `material` and stuff all the new arguments into a `struct` like we did for
@@ -1727,10 +1730,10 @@ The Lambertian material becomes simpler:
 </div>
 
 <div class='together'>
-And `color()` changes are small:
+And `ray_color()` changes are small:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
+    vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) {
         hit_record hrec;
         if (world->hit(r, 0.001, infinity, hrec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1743,7 +1746,7 @@ And `color()` changes are small:
                 auto pdf_val = p.value(scattered.direction());
                 return emitted
                     + srec.attenuation * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
-                                       * color(scattered, world, light_shape, depth+1)
+                                       * ray_color(scattered, world, light_shape, depth+1)
                                        / pdf_val;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
@@ -1786,10 +1789,10 @@ Note that if fuzziness is high, this surface isn’t ideally specular, but the i
 just like it did before.
 
 <div class='together'>
-`Color` just needs a new case to generate an implicitly sampled ray:
+`ray_color()` just needs a new case to generate an implicitly sampled ray:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
+    vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) {
         hit_record hrec;
         if (world->hit(r, 0.001, infinity, hrec)) {
             scatter_record srec;
@@ -1798,7 +1801,7 @@ just like it did before.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 if (srec.is_specular) {
                     return srec.attenuation
-                         * color(srec.specular_ray, world, light_shape, depth+1);
+                         * ray_color(srec.specular_ray, world, light_shape, depth+1);
                 }
                 else {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1809,7 +1812,7 @@ just like it did before.
                     delete srec.pdf_ptr;
                     return emitted + srec.attenuation
                                    * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
-                                   * color(scattered, world, light_shape, depth+1)
+                                   * ray_color(scattered, world, light_shape, depth+1)
                                    / pdf_val;
                 }
             }
@@ -1988,7 +1991,7 @@ We can first try just sampling the sphere rather than the light:
                 auto v = (j + random_double()) / ny;
                 ray r = cam->get_ray(u, v);
                 vec3 p = r.point_at_parameter(2.0);
-                col += color(r, world, glass_sphere, 0);
+                col += ray_color(r, world, glass_sphere, 0);
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
@@ -2004,7 +2007,7 @@ expensive!
 
 <div class='together'>
 We should probably just sample both the sphere and the light. We can do that by creating a mixture
-density of their two densities. We could do that in the `color` function by passing a list of
+density of their two densities. We could do that in the `ray_color()` function by passing a list of
 hittables in and building a mixture `pdf`, or we could add `pdf` functions to `hittable_list`. I
 think both tactics would work fine, but I will go with instrumenting `hittable_list`.
 
@@ -2025,7 +2028,7 @@ think both tactics would work fine, but I will go with instrumenting `hittable_l
 </div>
 
 <div class='together'>
-We assemble a list to pass in to `color`.
+We assemble a list to pass in to `ray_color()`.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
@@ -2062,31 +2065,29 @@ or so.
 So big decision: sweep this bug under the rug and check for `NaN`s, or just kill `NaN`s and hope
 this doesn't come back to bite us later. I will always opt for the lazy strategy, especially when I
 know floating point is hard. First, how do we check for a `NaN`? The one thing I always remember
-for `NaN`s is that any `if` test with a `NaN` in it is false. This leads to the common trick:
+for `NaN`s is that any `if` test with a `NaN` in it is false. Using this trick, we update the
+`vec3::write_color()` function to replace any NaN components with zero:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline vec3 de_nan(const vec3& c) {
-        vec3 temp = c;
-        if (!(temp[0] == temp[0])) temp[0] = 0;
-        if (!(temp[1] == temp[1])) temp[1] = 0;
-        if (!(temp[2] == temp[2])) temp[2] = 0;
-        return temp;
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</div>
-
-<div class='together'>
-And we can insert that in the main loop:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    for (int s=0; s < ns; s++) {
-        auto u = (i + random_double()) / nx;
-        auto v = (j + random_double()) / ny;
-        ray r = cam->get_ray(u, v);
-        vec3 p = r.point_at_parameter(2.0);
+    void write_color(std::ostream &out, int num_samples) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        col += de_nan(color(r, world, &hlist, 0));
+        // Replace NaN component values with zero.
+        if (e[0] != e[0]) e[0] = 0.0;
+        if (e[1] != e[1]) e[1] = 0.0;
+        if (e[2] != e[2]) e[2] = 0.0;
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        // Divide the color total by the number of samples and gamma-correct
+        // for a gamma value of 2.0.
+        auto scale = 1.0 / num_samples;
+        auto r = sqrt(scale * e[0]);
+        auto g = sqrt(scale * e[1]);
+        auto b = sqrt(scale * e[2]);
+
+        // Write the translated [0,255] value of each color component.
+        out << static_cast<int>(255.999 * clamp(r, 0.0, 1.0)) << ' '
+            << static_cast<int>(255.999 * clamp(g, 0.0, 1.0)) << ' '
+            << static_cast<int>(255.999 * clamp(b, 0.0, 1.0)) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>

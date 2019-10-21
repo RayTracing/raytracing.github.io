@@ -11,7 +11,7 @@ const double infinity = std::numeric_limits<double>::infinity();
 
 // Utility Functions
 
-template<class T> T clamp(T x, T min, T max) {
+inline double clamp(double x, double min, double max) {
     if (x < min) return min;
     if (x > max) return max;
     return x;

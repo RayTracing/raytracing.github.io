@@ -10,8 +10,8 @@
 //==================================================================================================
 
 #include "common/rtweekend.h"
-#include "common/color.h"
 #include "common/rtw_stb_image.h"
+#include "common/vec3.h"
 #include "aarect.h"
 #include "box.h"
 #include "bvh.h"
@@ -30,14 +30,14 @@
 #include <limits>
 
 
-color hit_color(const ray& r, hittable *world, hittable *light_shape, int depth) {
+vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) {
     hit_record hrec;
     if (world->hit(r, 0.001, infinity, hrec)) {
         scatter_record srec;
         vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
         if (depth < 50 && hrec.mat_ptr->scatter(r, hrec, srec)) {
             if (srec.is_specular) {
-                return srec.attenuation * hit_color(srec.specular_ray, world, light_shape, depth+1);
+                return srec.attenuation * ray_color(srec.specular_ray, world, light_shape, depth+1);
             }
             else {
                 hittable_pdf plight(light_shape, hrec.p);
@@ -47,7 +47,7 @@ color hit_color(const ray& r, hittable *world, hittable *light_shape, int depth)
                 delete srec.pdf_ptr;
                 return emitted
                      + srec.attenuation * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
-                                        * hit_color(scattered, world, light_shape, depth+1)
+                                        * ray_color(scattered, world, light_shape, depth+1)
                                         / pdf_val;
             }
         }
@@ -86,10 +86,12 @@ void cornell_box(hittable **scene, camera **cam, double aspect) {
 }
 
 int main() {
-    int nx = 500;
-    int ny = 500;
-    int ns = 10;
+    int nx = 600;
+    int ny = 600;
+    int num_samples = 100;
+
     std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
+
     hittable *world;
     camera *cam;
     auto aspect = double(ny) / double(nx);
@@ -103,16 +105,15 @@ int main() {
 
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
-            color c;
-            for (int s=0; s < ns; s++) {
+            vec3 color;
+            for (int s=0; s < num_samples; s++) {
                 auto u = (i + random_double()) / nx;
                 auto v = (j + random_double()) / ny;
                 ray r = cam->get_ray(u, v);
                 vec3 p = r.point_at_parameter(2.0);
-                c += hit_color(r, world, &hlist, 0);
+                color += ray_color(r, world, &hlist, 0);
             }
-            c /= ns;
-            std::cout << color(sqrt(c.r), sqrt(c.g), sqrt(c.b)) << '\n';
+            color.write_color(std::cout, num_samples);
         }
     }
 }

@@ -1467,8 +1467,8 @@ We start to see some of the power of all colors being textures -- we can assign 
 to the lambertian material, and lambertian doesn’t need to be aware of it.
 
 <div class='together'>
-To test this, assign it to a sphere, and then temporarily cripple the color() function in main to
-just return attenuation. You should get something like:
+To test this, assign it to a sphere, and then temporarily cripple the `ray_color()` function in main
+to just return attenuation. You should get something like:
 
   ![Image 6-2](../images/img-2-6-02.jpg)
 
@@ -1515,17 +1515,17 @@ class return black:
 </div>
 
 <div class='together'>
-Next, let’s make the background black in our color function, and pay attention to emitted:
+Next, let’s make the background black in our `ray_color` function, and pay attention to emitted:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, int depth) {
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
         hit_record rec;
         if (world->hit(r, 0.001, infinity, rec)) {
             ray scattered;
             vec3 attenuation;
             vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
             if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered))
-                 return emitted + attenuation*color(scattered, world, depth+1);
+                 return emitted + attenuation * ray_color(scattered, world, depth+1);
             else
                 return emitted;
         }
