@@ -10,6 +10,7 @@
 //==================================================================================================
 
 #include "common/rtweekend.h"
+#include "common/color.h"
 #include "camera.h"
 #include "hittable_list.h"
 #include "material.h"
@@ -21,13 +22,13 @@
 #include <limits>
 
 
-vec3 color(const ray& r, hittable *world, int depth) {
+color hit_color(const ray& r, hittable *world, int depth) {
     hit_record rec;
     if (world->hit(r, 0.001, infinity, rec)) {
         ray scattered;
         vec3 attenuation;
         if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
-             return attenuation*color(scattered, world, depth+1);
+             return attenuation * hit_color(scattered, world, depth+1);
         }
         else {
             return vec3(0,0,0);
@@ -87,7 +88,7 @@ int main() {
     int nx = 1200;
     int ny = 800;
     int ns = 10;
-    std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+    std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
     hittable *world = random_scene();
 
     vec3 lookfrom(13,2,3);
@@ -99,19 +100,15 @@ int main() {
 
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
-            vec3 col(0, 0, 0);
+            color c;
             for (int s=0; s < ns; s++) {
                 auto u = double(i + random_double()) / double(nx);
                 auto v = double(j + random_double()) / double(ny);
                 ray r = cam.get_ray(u, v);
-                col += color(r, world,0);
+                c += hit_color(r, world, 0);
             }
-            col /= double(ns);
-            col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
-            int ir = int(255.99*col[0]);
-            int ig = int(255.99*col[1]);
-            int ib = int(255.99*col[2]);
-            std::cout << ir << " " << ig << " " << ib << "\n";
+            c /= ns;
+            std::cout << color(sqrt(c.r), sqrt(c.g), sqrt(c.b)) << '\n';
         }
     }
 }

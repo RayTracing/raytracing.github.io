@@ -10,6 +10,7 @@
 //==================================================================================================
 
 #include "common/rtweekend.h"
+#include "common/color.h"
 #include "common/rtw_stb_image.h"
 #include "aarect.h"
 #include "box.h"
@@ -29,14 +30,14 @@
 #include <limits>
 
 
-vec3 color(const ray& r, hittable *world, int depth) {
+color hit_color(const ray& r, hittable *world, int depth) {
     hit_record rec;
     if (world->hit(r, 0.001, infinity, rec)) {
         ray scattered;
         vec3 attenuation;
         vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
         if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered))
-             return emitted + attenuation*color(scattered, world, depth+1);
+             return emitted + attenuation * hit_color(scattered, world, depth+1);
         else
             return emitted;
     }
@@ -259,7 +260,7 @@ int main() {
     int nx = 800;
     int ny = 800;
     int ns = 100;
-    std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+    std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
     auto R = cos(pi/4);
     //hittable *world = random_scene();
     //hittable *world = two_spheres();
@@ -285,20 +286,16 @@ int main() {
 
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
-            vec3 col(0, 0, 0);
+            color c;
             for (int s=0; s < ns; s++) {
                 auto u = (i + random_double()) / nx;
                 auto v = (j + random_double()) / ny;
                 ray r = cam.get_ray(u, v);
                 vec3 p = r.point_at_parameter(2.0);
-                col += color(r, world,0);
+                c += hit_color(r, world, 0);
             }
-            col /= float(ns);
-            col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
-            int ir = int(255.99*col[0]);
-            int ig = int(255.99*col[1]);
-            int ib = int(255.99*col[2]);
-            std::cout << ir << " " << ig << " " << ib << "\n";
+            c /= ns;
+            std::cout << color(sqrt(c.r), sqrt(c.g), sqrt(c.b)) << '\n';
         }
     }
 }
