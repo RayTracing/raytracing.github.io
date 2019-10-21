@@ -1,3 +1,9 @@
+#---------------------------------------------------------------------------------------------------
+# CMake Build Configuration for the Ray Tracing Weekend Series
+#
+# See README.md for guidance.
+#---------------------------------------------------------------------------------------------------
+
 cmake_minimum_required ( VERSION 3.1.0 )
 
 project ( RTWeekend
@@ -11,6 +17,7 @@ set ( CMAKE_CXX_STANDARD 11 )
 # Source
 set ( SOURCE_ONE_WEEKEND
   src/common/rtweekend.h
+  src/common/color.h
   src/common/vec3.h
   src/InOneWeekend/camera.h
   src/InOneWeekend/hittable.h
@@ -24,6 +31,7 @@ set ( SOURCE_ONE_WEEKEND
 
 set ( SOURCE_NEXT_WEEK
   src/common/rtweekend.h
+  src/common/color.h
   src/common/rtw_stb_image.h
   src/common/vec3.h
   src/common/external/stb_image.h
@@ -48,6 +56,7 @@ set ( SOURCE_NEXT_WEEK
 
 set ( SOURCE_REST_OF_YOUR_LIFE
   src/common/rtweekend.h
+  src/common/color.h
   src/common/rtw_stb_image.h
   src/common/vec3.h
   src/common/external/stb_image.h

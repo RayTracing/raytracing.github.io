@@ -10,6 +10,7 @@
 //==================================================================================================
 
 #include "common/rtweekend.h"
+#include "common/color.h"
 #include "common/rtw_stb_image.h"
 #include "aarect.h"
 #include "box.h"
@@ -29,24 +30,14 @@
 #include <limits>
 
 
-inline vec3 de_nan(const vec3& c) {
-    vec3 temp = c;
-    if (!(temp[0] == temp[0])) temp[0] = 0;
-    if (!(temp[1] == temp[1])) temp[1] = 0;
-    if (!(temp[2] == temp[2])) temp[2] = 0;
-    return temp;
-}
-
-
-
-vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
+color hit_color(const ray& r, hittable *world, hittable *light_shape, int depth) {
     hit_record hrec;
     if (world->hit(r, 0.001, infinity, hrec)) {
         scatter_record srec;
         vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
         if (depth < 50 && hrec.mat_ptr->scatter(r, hrec, srec)) {
             if (srec.is_specular) {
-                return srec.attenuation * color(srec.specular_ray, world, light_shape, depth+1);
+                return srec.attenuation * hit_color(srec.specular_ray, world, light_shape, depth+1);
             }
             else {
                 hittable_pdf plight(light_shape, hrec.p);
@@ -56,7 +47,7 @@ vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
                 delete srec.pdf_ptr;
                 return emitted
                      + srec.attenuation * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
-                                        * color(scattered, world, light_shape, depth+1)
+                                        * hit_color(scattered, world, light_shape, depth+1)
                                         / pdf_val;
             }
         }
@@ -98,7 +89,7 @@ int main() {
     int nx = 500;
     int ny = 500;
     int ns = 10;
-    std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+    std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
     hittable *world;
     camera *cam;
     auto aspect = double(ny) / double(nx);
@@ -112,20 +103,16 @@ int main() {
 
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
-            vec3 col(0, 0, 0);
+            color c;
             for (int s=0; s < ns; s++) {
                 auto u = (i + random_double()) / nx;
                 auto v = (j + random_double()) / ny;
                 ray r = cam->get_ray(u, v);
                 vec3 p = r.point_at_parameter(2.0);
-                col += de_nan(color(r, world, &hlist, 0));
+                c += hit_color(r, world, &hlist, 0);
             }
-            col /= double(ns);
-            col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
-            int ir = int(255.99*col[0]);
-            int ig = int(255.99*col[1]);
-            int ib = int(255.99*col[2]);
-            std::cout << ir << " " << ig << " " << ib << "\n";
+            c /= ns;
+            std::cout << color(sqrt(c.r), sqrt(c.g), sqrt(c.b)) << '\n';
         }
     }
 }
