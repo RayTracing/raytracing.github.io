@@ -1,5 +1,5 @@
-#ifndef HITABLELISTH
-#define HITABLELISTH
+#ifndef HITTABLELISTH
+#define HITTABLELISTH
 //==================================================================================================
 // Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
@@ -11,20 +11,20 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include "hitable.h"
+#include "hittable.h"
 
 
-class hitable_list: public hitable  {
+class hittable_list: public hittable  {
     public:
-        hitable_list() {}
-        hitable_list(hitable **l, int n) {list = l; list_size = n; }
+        hittable_list() {}
+        hittable_list(hittable **l, int n) {list = l; list_size = n; }
         virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
         virtual bool bounding_box(float t0, float t1, aabb& box) const;
-        hitable **list;
+        hittable **list;
         int list_size;
 };
 
-bool hitable_list::bounding_box(float t0, float t1, aabb& box) const {
+bool hittable_list::bounding_box(float t0, float t1, aabb& box) const {
     if (list_size < 1) return false;
     aabb temp_box;
     bool first_true = list[0]->bounding_box(t0, t1, temp_box);
@@ -42,7 +42,7 @@ bool hitable_list::bounding_box(float t0, float t1, aabb& box) const {
     return true;
 }
 
-bool hitable_list::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+bool hittable_list::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
         hit_record temp_rec;
         bool hit_anything = false;
         double closest_so_far = t_max;
