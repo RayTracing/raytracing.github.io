@@ -710,8 +710,16 @@ file.
 
     #include <limits>
 
-    const double pi = 3.1415926535897932385;
+    // Constants
+
     const double infinity = std::numeric_limits<double>::infinity();
+    const double pi = 3.1415926535897932385;
+
+    // Utility Functions
+
+    inline double degrees_to_radians(double degrees) {
+        return degrees * pi / 180;
+    }
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1651,8 +1659,11 @@ This implies $h = tan(\theta/2)$. Our camera now becomes:
 
     class camera {
         public:
-            camera(double vfov, double aspect) { // vfov is top to bottom in degrees
-                auto theta = vfov*pi/180;
+            camera(
+                double vfov, // vfov is top to bottom in degrees
+                double aspect
+            ) {
+                auto theta = degrees_to_radians(vfov);
                 auto half_height = tan(theta/2);
                 auto half_width = aspect * half_height;
                 lower_left_corner = vec3(-half_width, -half_height, -1.0);
@@ -1723,11 +1734,14 @@ camera horizontally level until you decide to experiment with crazy camera angle
     class camera {
         public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            camera(vec3 lookfrom, vec3 lookat, vec3 vup, double vfov, double aspect) {
-                // vfov is top to bottom in degrees
+            camera(
+                vec3 lookfrom, vec3 lookat, vec3 vup,
+                double vfov, // vfov is top to bottom in degrees
+                double aspect
+            ) {
                 vec3 u, v, w;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                auto theta = vfov*pi/180;
+                auto theta = degrees_to_radians(vfov);
                 auto half_height = tan(theta/2);
                 auto half_width = aspect * half_height;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1825,11 +1839,14 @@ point:
     class camera {
         public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            camera(vec3 lookfrom, vec3 lookat, vec3 vup, double vfov, double aspect,
-                   double aperture, double focus_dist) {
+            camera(
+                vec3 lookfrom, vec3 lookat, vec3 vup,
+                double vfov, // vfov is top to bottom in degrees
+                double aspect, double aperture, double focus_dist
+            ) {
                 lens_radius = aperture / 2;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                auto theta = vfov*pi/180;
+                auto theta = degrees_to_radians(vfov);
                 auto half_height = tan(theta/2);
                 auto half_width = aspect * half_height;
                 origin = lookfrom;
