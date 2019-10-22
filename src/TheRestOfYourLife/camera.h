@@ -31,7 +31,7 @@ class camera {
             time0 = t0;
             time1 = t1;
             lens_radius = aperture / 2;
-            auto theta = vfov*pi/180;
+            auto theta = degrees_to_radians(vfov);
             auto half_height = tan(theta/2);
             auto half_width = aspect * half_height;
             origin = lookfrom;

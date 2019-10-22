@@ -29,7 +29,7 @@ class camera {
         camera(vec3 lookfrom, vec3 lookat, vec3 vup, double vfov, double aspect, double aperture, double focus_dist) {
             // vfov is top to bottom in degrees
             lens_radius = aperture / 2;
-            auto theta = vfov*pi/180;
+            auto theta = degrees_to_radians(vfov);
             auto half_height = tan(theta/2);
             auto half_width = aspect * half_height;
             origin = lookfrom;

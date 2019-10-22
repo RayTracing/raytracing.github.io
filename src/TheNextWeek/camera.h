@@ -27,11 +27,15 @@ vec3 random_in_unit_disk() {
 class camera {
     public:
         // new:  add t0 and t1
-        camera(vec3 lookfrom, vec3 lookat, vec3 vup, double vfov, double aspect, double aperture, double focus_dist, double t0, double t1) { // vfov is top to bottom in degrees
+        camera(
+            vec3 lookfrom, vec3 lookat, vec3 vup,
+            double vfov, // vfov is top to bottom in degrees
+            double aspect, double aperture, double focus_dist, double t0, double t1
+        ) {
             time0 = t0;
             time1 = t1;
             lens_radius = aperture / 2;
-            auto theta = vfov*pi/180;
+            auto theta = degrees_to_radians(vfov);
             auto half_height = tan(theta/2);
             auto half_width = aspect * half_height;
             origin = lookfrom;
