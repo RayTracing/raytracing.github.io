@@ -13,7 +13,6 @@
 
 #include "common/rtweekend.h"
 #include "hittable.h"
-#include "random.h"
 #include "ray.h"
 
 

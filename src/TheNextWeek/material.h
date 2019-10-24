@@ -15,7 +15,6 @@
 #include "hittable.h"
 #include "ray.h"
 #include "texture.h"
-#include "random.h"
 
 
 double schlick(double cosine, double ref_idx) {

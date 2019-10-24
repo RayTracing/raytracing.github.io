@@ -19,7 +19,6 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "moving_sphere.h"
-#include "random.h"
 #include "sphere.h"
 #include "surface_texture.h"
 #include "texture.h"

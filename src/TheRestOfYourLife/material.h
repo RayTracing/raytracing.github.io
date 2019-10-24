@@ -15,7 +15,6 @@
 #include "hittable.h"
 #include "onb.h"
 #include "pdf.h"
-#include "random.h"
 #include "ray.h"
 #include "texture.h"
 

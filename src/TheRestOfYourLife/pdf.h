@@ -13,7 +13,6 @@
 
 #include "common/rtweekend.h"
 #include "onb.h"
-#include "random.h"
 
 
 inline vec3 random_cosine_direction() {

@@ -13,7 +13,6 @@
 #include "camera.h"
 #include "hittable_list.h"
 #include "material.h"
-#include "random.h"
 #include "sphere.h"
 
 #include <float.h>

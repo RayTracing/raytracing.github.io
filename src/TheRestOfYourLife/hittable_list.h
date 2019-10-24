@@ -13,7 +13,6 @@
 
 #include "common/rtweekend.h"
 #include "hittable.h"
-#include "random.h"
 
 
 class hittable_list: public hittable  {

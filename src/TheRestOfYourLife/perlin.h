@@ -12,7 +12,6 @@
 //==================================================================================================
 
 #include "common/rtweekend.h"
-#include "random.h"
 
 
 inline double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
