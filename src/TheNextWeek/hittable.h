@@ -1,7 +1,7 @@
 #ifndef HITTABLE_H
 #define HITTABLE_H
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -12,6 +12,7 @@
 //==================================================================================================
 
 #include "common/rtweekend.h"
+#include "common/vec3.h"
 #include "aabb.h"
 
 #include <float.h>
@@ -105,8 +106,8 @@ rotate_y::rotate_y(hittable *p, double angle) : ptr(p) {
     sin_theta = sin(radians);
     cos_theta = cos(radians);
     hasbox = ptr->bounding_box(0, 1, bbox);
-    vec3 min(FLT_MAX, FLT_MAX, FLT_MAX);
-    vec3 max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+    vec3 min(infinity, infinity, infinity);
+    vec3 max(-infinity, -infinity, -infinity);
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
             for (int k = 0; k < 2; k++) {
