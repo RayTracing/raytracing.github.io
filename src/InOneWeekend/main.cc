@@ -104,7 +104,7 @@ int main() {
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
             vec3 color;
-            for (int s=0; s < num_samples; s++) {
+            for (int s = 0; s < num_samples; s++) {
                 auto u = double(i + random_double()) / double(nx);
                 auto v = double(j + random_double()) / double(ny);
                 ray r = cam.get_ray(u, v);

@@ -1148,7 +1148,7 @@ that the pointer is to a class, which the “class material” in the hittable c
         material *mat_ptr;
     };
 
-    class hittable  {
+    class hittable {
         public:
             virtual bool hit(
                 const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
@@ -1226,8 +1226,9 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
     class lambertian : public material {
         public:
             lambertian(const vec3& a) : albedo(a) {}
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                                 vec3& attenuation, ray& scattered) const {
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
                 vec3 target = rec.p + rec.normal + random_unit_vector();
                 scattered = ray(rec.p, target-rec.p);
                 attenuation = albedo;
@@ -1385,8 +1386,9 @@ absorb those. We’ll put a maximum of 1 on the radius of the sphere which yield
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                                 vec3& attenuation, ray& scattered) const {
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());

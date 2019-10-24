@@ -77,7 +77,7 @@ void cornell_box(hittable **scene, camera **cam, double aspect) {
                     new box(vec3(0, 0, 0), vec3(165, 330, 165), white),  15), vec3(265,0,295));
     *scene = new hittable_list(list,i);
     vec3 lookfrom(278, 278, -800);
-    vec3 lookat(278,278,0);
+    vec3 lookat(278, 278, 0);
     auto dist_to_focus = 10.0;
     auto aperture = 0.0;
     auto vfov = 40.0;
@@ -106,7 +106,7 @@ int main() {
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
             vec3 color;
-            for (int s=0; s < num_samples; s++) {
+            for (int s = 0; s < num_samples; s++) {
                 auto u = (i + random_double()) / nx;
                 auto v = (j + random_double()) / ny;
                 ray r = cam->get_ray(u, v);

@@ -157,7 +157,7 @@ class diffuse_light : public material  {
 };
 
 
-/*
+#if 0
 class isotropic : public material {
     public:
         isotropic(texture *a) : albedo(a) {}
@@ -169,10 +169,10 @@ class isotropic : public material {
 
         texture *albedo;
 };
-*/
+#endif
 
 
-/*
+#if 0
 class metal : public material {
     public:
         metal(const vec3& a, double f) : albedo(a) { if (f < 1) fuzz = f; else fuzz = 1; }
@@ -207,6 +207,7 @@ class dielectric : public material {
                   ni_over_nt = 1.0 / ref_idx;
                   cosine = -dot(r_in.direction(), rec.normal) / r_in.direction().length();
              }
+
              if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
                 reflect_prob = schlick(cosine, ref_idx);
              }
@@ -214,18 +215,19 @@ class dielectric : public material {
                 scattered = ray(rec.p, reflected);
                 reflect_prob = 1.0;
              }
+
              if (random_double() < reflect_prob) {
                 scattered = ray(rec.p, reflected);
              }
              else {
                 scattered = ray(rec.p, refracted);
              }
+
              return true;
         }
 
         double ref_idx;
 };
-
-*/
+#endif
 
 #endif
