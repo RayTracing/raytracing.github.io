@@ -93,17 +93,18 @@ to camera because for now it is not allowed to move; it just sends out rays over
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
         public:
-            camera(vec3 lookfrom, vec3 lookat, vec3 vup,
-                   double vfov /* vfov is top to bottom in degrees */,
-                   double aspect, double aperture, double focus_dist,
+            camera(
+                vec3 lookfrom, vec3 lookat, vec3 vup,
+                double vfov, // vfov is top to bottom in degrees
+                double aspect, double aperture, double focus_dist,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                   double t0, double t1) {
+                double t0, double t1
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
+            ) {
                 time0 = t0;
                 time1 = t1;
                 lens_radius = aperture / 2;
-                auto theta = vfov*pi/180;
+                auto theta = degrees_to_radians(vfov);
                 auto half_height = tan(theta/2);
                 auto half_width = aspect * half_height;
                 origin = lookfrom;
@@ -2006,7 +2007,7 @@ With constructor:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     rotate_y::rotate_y(hittable *p, double angle) : ptr(p) {
-        auto radians = (pi / 180.) * angle;
+        auto radians = degrees_to_radians(angle);
         sin_theta = sin(radians);
         cos_theta = cos(radians);
         hasbox = ptr->bounding_box(0, 1, bbox);

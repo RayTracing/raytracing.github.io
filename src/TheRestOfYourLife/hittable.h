@@ -104,7 +104,7 @@ class rotate_y : public hittable {
 };
 
 rotate_y::rotate_y(hittable *p, double angle) : ptr(p) {
-    auto radians = (pi / 180.) * angle;
+    auto radians = degrees_to_radians(angle);
     sin_theta = sin(radians);
     cos_theta = cos(radians);
     hasbox = ptr->bounding_box(0, 1, bbox);
