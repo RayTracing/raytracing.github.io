@@ -1167,7 +1167,7 @@ functions of the material pointer to find out what ray, if any, is scattered.
 
 <div class='together'>
 To achieve this, we must have a reference to the material for our sphere class to returned
-within `hit_record`. See the lines below marked with **`/* NEW */`**.
+within `hit_record`. See the highlighted lines below:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere: public hittable  {
@@ -1179,7 +1179,9 @@ within `hit_record`. See the lines below marked with **`/* NEW */`**.
                 const ray& r, double tmin, double tmax, hit_record& rec) const;
             vec3 center;
             double radius;
-            material *mat_ptr; /* NEW */
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            material *mat_ptr;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
 
     bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
@@ -1194,7 +1196,9 @@ within `hit_record`. See the lines below marked with **`/* NEW */`**.
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
                 rec.normal = (rec.p - center) / radius;
-                rec.mat_ptr = mat_ptr; /* NEW */
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                rec.mat_ptr = mat_ptr;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return true;
             }
             temp = (-b + sqrt(discriminant)) / a;
@@ -1202,7 +1206,9 @@ within `hit_record`. See the lines below marked with **`/* NEW */`**.
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
                 rec.normal = (rec.p - center) / radius;
-                rec.mat_ptr = mat_ptr; /* NEW */
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                rec.mat_ptr = mat_ptr;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return true;
             }
         }
