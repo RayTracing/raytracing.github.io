@@ -183,12 +183,14 @@ intersection code barely needs a change: `center` just needs to become a functio
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         vec3 oc = r.origin() - center(r.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        auto a = dot(r.direction(), r.direction());
-        auto b = dot(oc, r.direction());
-        auto c = dot(oc, oc) - radius*radius;
-        auto discriminant = b*b - a*c;
+        auto a = r.direction().squared_length();
+        auto half_b = dot(oc, r.direction());
+        auto c = oc.squared_length() - radius*radius;
+        auto discriminant = half_b*half_b - a*c;
+
         if (discriminant > 0) {
-            auto temp = (-b - sqrt(discriminant))/a;
+            auto root = sqrt(discriminant);
+            auto temp = (-half_b - root)/a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
@@ -198,7 +200,7 @@ intersection code barely needs a change: `center` just needs to become a functio
                 rec.mat_ptr = mat_ptr;
                 return true;
             }
-            temp = (-b + sqrt(discriminant))/a;
+            temp = (-half_b + root) / a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
