@@ -90,6 +90,7 @@ centered at the origin:
         std::cout << "Estimate of Pi = " << 4*double(inside_circle) / N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [estpi-1]: <kbd>[pi.cc]</kbd> Estimating π]
 </div>
 
 This gives me the answer `Estimate of Pi = 3.196`
@@ -122,6 +123,7 @@ If we change the program to run forever and just print out a running estimate:
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [estpi-2]: <kbd>[pi.cc]</kbd> Estimating π, v2]
 </div>
 
 <div class='together'>
@@ -165,6 +167,7 @@ because we need to know the grid. Let’s take a hundred million and try it both
               4*double(inside_circle_stratified) / (sqrt_N*sqrt_N) << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [estpi-3]: <kbd>[pi.cc]</kbd> Estimating π, v3]
 
 I get:
 
@@ -207,6 +210,12 @@ $$ I = 2 \cdot \text{average}(x^2, 0, 2) $$
 This suggests a MC approach:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "common/rtweekend.h"
+
+    #include <iostream>
+    #include <math.h>
+    #include <stdlib.h>
+
     int main() {
         int inside_circle = 0;
         int inside_circle_stratified = 0;
@@ -219,6 +228,7 @@ This suggests a MC approach:
         std::cout << "I =" << 2*sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [integ-xsq-1]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$]
 </div>
 
 This, as expected, produces approximately the exact answer we get with algebra, $I = 8/3$. But we
@@ -381,16 +391,11 @@ We need to account for the non-uniformity of the _pdf_ of $x$. Where we sample t
 down-weight. The _pdf_ is a perfect measure of how much or little sampling is being done. So the
 weighting function should be proportional to $1/pdf$ . In fact it is exactly $1/pdf$ :
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "common/rtweekend.h"
-
-    #include <iostream>
-    #include <math.h>
-    #include <stdlib.h>
-
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     inline double pdf(double x) {
         return 0.5*x;
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
         int inside_circle = 0;
@@ -398,12 +403,15 @@ weighting function should be proportional to $1/pdf$ . In fact it is exactly $1/
         int N = 1000000;
         double sum;
         for (int i = 0; i < N; i++) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto x = sqrt(4*random_double());
             sum += x*x / pdf(x);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
         std::cout << "I =" << sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [integ-xsq-2]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$ with _pdf_]
 </div>
 
 Since we are sampling more where the integrand is big, we might expect less noise and thus faster
@@ -414,17 +422,11 @@ sampling_.
 If we take that same code with uniform samples so the pdf = $1/2$ over the range [0,2] we can use
 the machinery to get `x = 2*random_double()` and the code is:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "common/rtweekend.h"
-    #include "random.h"
-
-    #include <iostream>
-    #include <math.h>
-    #include <stdlib.h>
-
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     inline double pdf(double x) {
         return 0.5;
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
         int inside_circle = 0;
@@ -432,12 +434,15 @@ the machinery to get `x = 2*random_double()` and the code is:
         int N = 1000000;
         double sum;
         for (int i = 0; i < N; i++) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto x = 2*random_double();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             sum += x*x / pdf(x);
         }
         std::cout << "I =" << sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [integ-xsq-3]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$, v3]
 </div>
 
 <div class='together'>
@@ -461,29 +466,29 @@ This perfect importance sampling is only possible when we already know the answe
 integrating $p$ analytically), but it’s a good exercise to make sure our code works. For just 1
 sample we get:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "common/rtweekend.h"
-
-    #include <iostream>
-    #include <math.h>
-    #include <stdlib.h>
-
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     inline double pdf(double x) {
         return 3*x*x/8;
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
         int inside_circle = 0;
         int inside_circle_stratified = 0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         int N = 1;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         double sum;
         for (int i = 0; i < N; i++) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto x = pow(8*random_double(), 1./3.);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             sum += x*x / pdf(x);
         }
         std::cout << "I =" << sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [integ-xsq-4]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$, final version]
 </div>
 
 Which always returns the exact answer.
@@ -504,7 +509,7 @@ MC Integration on the Sphere of Directions
 ====================================================================================================
 
 In our ray tracer we pick random directions, and directions can be represented as points on the
-unit-sphere. The same methodology as before applies. But now we need to have a pdf defined over 2D.
+unit sphere. The same methodology as before applies, but now we need to have a pdf defined over 2D.
 Suppose we have this integral over all directions:
 
   $$ \int cos^2(\theta) $$
@@ -525,6 +530,7 @@ uniform random samples in a unit sphere:
         return p;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rand-unit-sphere]: <kbd>[pdf.h]</kbd> Random point in unit sphere]
 </div>
 
 <div class='together'>
@@ -539,6 +545,8 @@ To get points on a unit sphere we can just normalize the vector to those points:
         return unit_vector(p);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rand-on-sphere]: <kbd>[sphere_importance.cc]</kbd>
+    Random point on the surface of the unit sphere, importance sampled]
 </div>
 
 <div class='together'>
@@ -562,6 +570,8 @@ z axis:
         std::cout << "I =" << sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-sphereimp]: <kbd>[sphere_importance.cc]</kbd>
+    Generating importance-sampled points on the unit sphere]
 </div>
 
 The analytic answer (if you remember enough advanced calc, check me!) is $\frac{4}{3} \pi$, and the
@@ -702,12 +712,13 @@ our Cornell Box scene again, and let’s generate the camera in the function tha
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     void cornell_box(hittable **scene, camera **cam, double aspect) {
-        int i = 0;
-        hittable **list = new hittable*[8];
         material *red = new lambertian( new constant_texture(vec3(0.65, 0.05, 0.05)) );
         material *white = new lambertian( new constant_texture(vec3(0.73, 0.73, 0.73)) );
         material *green = new lambertian( new constant_texture(vec3(0.12, 0.45, 0.15)) );
         material *light = new diffuse_light( new constant_texture(vec3(15, 15, 15)) );
+
+        hittable **list = new hittable*[8];
+        int i = 0;
         list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
         list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
         list[i++] = new xz_rect(213, 343, 227, 332, 554, light);
@@ -719,6 +730,7 @@ our Cornell Box scene again, and let’s generate the camera in the function tha
         list[i++] = new translate(new rotate_y(
             new box(vec3(0, 0, 0), vec3(165, 330, 165), white),  15), vec3(265,0,295));
         *scene = new hittable_list(list,i);
+
         vec3 lookfrom(278, 278, -800);
         vec3 lookat(278, 278, 0);
         auto dist_to_focus = 10.0;
@@ -728,10 +740,11 @@ our Cornell Box scene again, and let’s generate the camera in the function tha
                           vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [cornell-box]: <kbd>[main.cc]</kbd> Cornell box, refactored]
 </div>
 
 <div class='together'>
-At 500x500 my code produces this image in 10min on 1 core of my Macbook:
+At 500×500 my code produces this image in 10min on 1 core of my Macbook:
 
   ![Figure 6-1](../images/img-3-06-1.jpg)
 
@@ -744,10 +757,10 @@ that. Remember MC basics: $\int f(x) \approx f(r)/p(r)$. For the Lambertian mate
 let’s sample like we do now: $p(direction) = \cos(\theta) / \pi$.
 
 <div class='together'>
-We modify the base-class _material_ to enable this importance sampling:
+We modify the base-class `material` to enable this importance sampling:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class material  {
+    class material {
         public:
 
             virtual bool scatter(
@@ -768,6 +781,8 @@ We modify the base-class _material_ to enable this importance sampling:
             }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-material]: <kbd>[material.h]</kbd>
+    The material class, adding importance sampling]
 </div>
 
 <div class='together'>
@@ -798,6 +813,8 @@ And _Lambertian_ material becomes:
             texture *albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-lambertian-impsample]: <kbd>[material.h]</kbd>
+    Lambertian material, modified for importance sampling]
 </div>
 
 <div class='together'>
@@ -824,6 +841,8 @@ And the color function gets a minor modification:
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-impsample]: <kbd>[main.cc]</kbd>
+    The ray_color function, modified for importance sampling]
 </div>
 
 You should get exactly the same picture.
@@ -845,6 +864,7 @@ hemisphere that is above the surface. This would be $p(direction) = \frac{1}{2\p
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scatter-mod]: <kbd>[material.h]</kbd> Modified scatter function]
 </div>
 
 <div class='together'>
@@ -950,6 +970,7 @@ We can output some of these:
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rand-unit-sphere-plot]: <kbd>[sphere_plot.cc]</kbd> Random points on the unit sphere]
 </div>
 
 <div class='together'>
@@ -997,6 +1018,7 @@ which is $\cos^3 / (1/(2 \pi))$, and we can test this:
         std::cout << "Estimate = " << sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [cos-cubed]: <kbd>[cos_cubed.cc]</kbd> Integration using $cos^3(x)$]
 </div>
 
 <div class='together'>
@@ -1040,6 +1062,7 @@ Let’s also start generating them as random vectors:
         std::cout << "Estimate = " << sum/N << "\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [cos-density]: <kbd>[cos_density.cc]</kbd> Integration with cosine density function]
 </div>
 
 We can generate other densities later as we need them. In the next chapter we’ll get them aligned to
@@ -1126,14 +1149,13 @@ enough? I’m not sure, but let’s make a class because it won't really be more
 utility functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class onb
-    {
+    class onb {
         public:
             onb() {}
             inline vec3 operator[](int i) const { return axis[i]; }
-            vec3 u() const       { return axis[0]; }
-            vec3 v() const       { return axis[1]; }
-            vec3 w() const       { return axis[2]; }
+            vec3 u() const { return axis[0]; }
+            vec3 v() const { return axis[1]; }
+            vec3 w() const { return axis[2]; }
             vec3 local(double a, double b, double c) const { return a*u() + b*v() + c*w(); }
             vec3 local(const vec3& a) const { return a.x()*u() + a.y()*v() + a.z()*w(); }
             void build_from_w(const vec3&);
@@ -1152,6 +1174,7 @@ utility functions:
         axis[0] = cross(w(), v());
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-onb]: <kbd>[onb.h]</kbd> Ortho-normal basis class]
 </div>
 
 <div class='together'>
@@ -1170,6 +1193,7 @@ We can rewrite our Lambertian material using this to get:
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scatter-onb]: <kbd>[material.h]</kbd> Scatter function, with ortho-normal basis]
 </div>
 
 <div class='together'>
@@ -1262,6 +1286,7 @@ that math and get the concept, we can add it (see the highlighted region):
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-lights]: <kbd>[main.cc]</kbd> Ray color with light sampling]
 </div>
 
 <div class='together'>
@@ -1287,6 +1312,7 @@ down. We can do that by letting the emitted member function of hittable take ext
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [emitted-directional]: <kbd>[material.h]</kbd> Material emission, directional]
 </div>
 
 <div class='together'>
@@ -1343,12 +1369,13 @@ for! It’s never obvious what goes in an abstract class, so my approach is to b
 minimal interface works, and for the _pdf_ this implies:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class pdf  {
+    class pdf {
         public:
             virtual double value(const vec3& direction) const = 0;
             virtual vec3 generate() const = 0;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-pdf]: <kbd>[pdf.h]</kbd> The PDF class]
 </div>
 
 We’ll see if that works by fleshing out the subclasses. For sampling the light, we will need
@@ -1370,12 +1397,13 @@ First, let’s try a cosine density:
                 else
                     return 0;
             }
-            virtual vec3 generate() const  {
+            virtual vec3 generate() const {
                 return uvw.local(random_cosine_direction());
             }
             onb uvw;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-cos-pdf]: <kbd>[pdf.h]</kbd> The cosine_pdf class]
 </div>
 
 <div class='together'>
@@ -1409,6 +1437,7 @@ change variable `pdf` to some other variable name to avoid a name conflict with 
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-cos-pdf]: <kbd>[main.cc]</kbd> The ray_color function, using cosine pdf]
 </div>
 
 This yields an apparently matching result so all we’ve done so far is refactor where `pdf` is
@@ -1436,6 +1465,7 @@ Now we can try sampling directions toward a `hittable` like the light.
             hittable *ptr;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-hittable-pdf]: <kbd>[pdf.h]</kbd> The hittable_pdf class]
 </div>
 
 <div class='together'>
@@ -1444,22 +1474,25 @@ instrumentation to all of `hittable` subclasses, we’ll add two dummy functions
 class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class hittable  {
+    class hittable {
         public:
-            virtual bool hit(const ray& r, double t_min, double t_max,
-                hit_record& rec) const = 0;
+            virtual bool hit(
+                const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
             virtual bool bounding_box(double t0, double t1, aabb& box) const = 0;
-            virtual double pdf_value(const vec3& o, const vec3& v) const  {return 0.0;}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            virtual double pdf_value(const vec3& o, const vec3& v) const {return 0.0;}
             virtual vec3 random(const vec3& o) const {return vec3(1, 0, 0);}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hittable-plus2]: <kbd>[hittable.h]</kbd> The hittable class, with two new methods]
 </div>
 
 <div class='together'>
 And we change `xz_rect` to implement those functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class xz_rect: public hittable  {
+    class xz_rect: public hittable {
         public:
             xz_rect() {}
             xz_rect(
@@ -1493,6 +1526,7 @@ And we change `xz_rect` to implement those functions:
             double x0, x1, z0, z1, k;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [xz-rect-pdf]: <kbd>[aarect.h]</kbd> XZ rect with pdf]
 </div>
 
 <div class='together'>
@@ -1526,6 +1560,7 @@ And then change `ray_color()`:
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-hittable-pdf]: <kbd>[main.cc]</kbd> ray_color function with hittable pdf]
 </div>
 
 <div class='together'>
@@ -1555,6 +1590,7 @@ class is straightforward:
             pdf *p[2];
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-mixturepdf]: <kbd>[pdf.h]</kbd> The mixture_pdf class]
 </div>
 
 <div class='together'>
@@ -1590,6 +1626,7 @@ And plugging it into `ray_color()`:
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-mixture]: <kbd>[main.cc]</kbd> The ray_color function, using mixture pdf]
 </div>
 
 <div class='together'>
@@ -1673,19 +1710,21 @@ value()` if it is diffuse so we can handle that implicitly.
 We can redesign `material` and stuff all the new arguments into a `struct` like we did for
 `hittable`:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    struct scatter_record
-    {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    struct scatter_record {
         ray specular_ray;
         bool is_specular;
         vec3 attenuation;
         pdf *pdf_ptr;
     };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-    class material  {
+    class material {
         public:
             virtual bool scatter(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 const ray& r_in, const hit_record& hrec, scatter_record& srec
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ) const {
                 return false;
             }
@@ -1697,12 +1736,15 @@ We can redesign `material` and stuff all the new arguments into a `struct` like 
             }
 
             virtual vec3 emitted(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 const ray& r_in, const hit_record& rec, double u, double v, const vec3& p
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ) const {
                 return vec3(0,0,0);
             }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [material-refactor]: <kbd>[material.h]</kbd> Refactoring the material class]
 </div>
 
 <div class='together'>
@@ -1725,8 +1767,8 @@ The Lambertian material becomes simpler:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            bool scatter(const ray& r_in, const hit_record& hrec,
-                scatter_record& srec) const {
+            bool scatter(const ray& r_in, const hit_record& hrec, scatter_record& srec
+            ) const {
                 srec.is_specular = false;
                 srec.attenuation = albedo->value(hrec.u, hrec.v, hrec.p);
                 srec.pdf_ptr = new cosine_pdf(hrec.normal);
@@ -1737,6 +1779,7 @@ The Lambertian material becomes simpler:
             texture *albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [lambertian-scatter]: <kbd>[material.h]</kbd> New lambertian scatter() method]
 </div>
 
 <div class='together'>
@@ -1767,6 +1810,7 @@ And `ray_color()` changes are small:
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-scatter]: <kbd>[main.cc]</kbd> Ray color with scatter]
 </div>
 
 <div class='together'>
@@ -1793,6 +1837,7 @@ overall, and those are all fixable. For now, I will just fix `specular`. Metal i
             double fuzz;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [metal-scatter]: <kbd>[material.h]</kbd> The metal class scatter method]
 </div>
 
 Note that if fuzziness is high, this surface isn’t ideally specular, but the implicit sampling works
@@ -1833,6 +1878,8 @@ just like it did before.
             return vec3(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-implicit]: <kbd>[main.cc]</kbd>
+    Ray color function with implicitly-sampled rays]
 </div>
 
 <div class='together'>
@@ -1871,6 +1918,7 @@ We also need to change the block to metal.
                           vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-cornell-al]: <kbd>[main.cc]</kbd> Cornell box scene with aluminum material]
 </div>
 
 <div class='together'>
@@ -1968,6 +2016,7 @@ The sphere class needs the two `pdf`-related functions:
         return uvw.local(random_to_sphere(radius, distance_squared));
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [sphere-pdf]: <kbd>[sphere.h]</kbd> Sphere with pdf]
 </div>
 
 <div class='together'>
@@ -1984,6 +2033,7 @@ With the utility function:
         return vec3(x, y, z);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rand-to-sphere]: <kbd>[pdf.h]</kbd> The random_to_sphere utility function]
 </div>
 
 <div class='together'>
@@ -2004,6 +2054,7 @@ We can first try just sampling the sphere rather than the light:
                 col += ray_color(r, world, glass_sphere, 0);
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [sampling-sphere]: <kbd>[main.cc]</kbd> Sampling just the sphere]
 </div>
 
 <div class='together'>
@@ -2035,6 +2086,7 @@ think both tactics would work fine, but I will go with instrumenting `hittable_l
         return list[ index ]->random(o);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [density-mixture]: <kbd>[hittable_list.h]</kbd> Creating a mixture of densities]
 </div>
 
 <div class='together'>
@@ -2048,6 +2100,7 @@ We assemble a list to pass in to `ray_color()`.
     a[1] = glass_sphere;
     hittable_list hlist(a,2);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-density-mixture]: <kbd>[main.cc]</kbd> Updating the scene]
 </div>
 
 <div class='together'>
@@ -2100,6 +2153,7 @@ for `NaN`s is that any `if` test with a `NaN` in it is false. Using this trick, 
             << static_cast<int>(255.999 * clamp(b, 0.0, 1.0)) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [write-color-nan]: <kbd>[common/vec3.h]</kbd> NaN-tolerant write_color function]
 </div>
 
 <div class='together'>
