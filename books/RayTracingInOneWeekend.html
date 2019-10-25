@@ -297,17 +297,17 @@ Rays, a Simple Camera, and Background
 ====================================================================================================
 
 The one thing that all ray tracers have is a ray class, and a computation of what color is seen
-along a ray. Let’s think of a ray as a function $p(t) = A + t*B$. Here $p$ is a 3D position along a
-line in 3D. $A$ is the ray origin and $B$ is the ray direction. The ray parameter $t$ is a real
-number (`double` in the code). Plug in a different $t$ and $p(t)$ moves the point along the ray. Add
-in negative $t$ and you can go anywhere on the 3D line. For positive $t$, you get only the parts in
-front of $A$, and this is what is often called a half-line or ray. The example $C = p(2)$ is shown
-here:
+along a ray. Let’s think of a ray as a function $p(t) = \mathbf{a} + t \vec{\mathbf{b}}$. Here
+$\mathbf{p}$ is a 3D position along a line in 3D. $\mathbf{a}$ is the ray origin and
+$\vec{\mathbf{b}}$ is the ray direction. The ray parameter $t$ is a real number (`double` in the
+code). Plug in a different $t$ and $p(t)$ moves the point along the ray. Add in negative $t$ and you
+can go anywhere on the 3D line. For positive $t$, you get only the parts in front of $\mathbf{a}$,
+and this is what is often called a half-line or ray. The example $\mathbf{c} = p(2)$ is shown here:
 
   ![Figure 4-1](../images/fig-1-04-1.jpg)
 
 <div class='together'>
-The function $p(t)$ in more verbose code form I call “point_at_parameter(t)”:
+The function $p(t)$ in more verbose code form I call `point_at_parameter(t)`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef RAY_H
@@ -350,7 +350,7 @@ length vector because I think not doing that makes for simpler and slightly fast
   ![Figure 4-2](../images/fig-1-04-2.jpg)
 
 <div class='together'>
-Below in code, the ray $r$ goes to approximately the pixel centers (I won’t worry about exactness
+Below in code, the ray `r` goes to approximately the pixel centers (I won’t worry about exactness
 for now because we’ll add antialiasing later):
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -392,11 +392,11 @@ for now because we’ll add antialiasing later):
 <div class='together'>
 The `ray_color(ray)` function linearly blends white and blue depending on the up/downess of the $y$
 coordinate. I first made it a unit vector so $-1.0 < y < 1.0$. I then did a standard graphics trick
-of scaling that to $0.0 < t < 1.0$. When $t = 1.0$ I want blue. When $t = 0.0$ I want white. In
+of scaling that to $0.0 ≤ t ≤ 1.0$. When $t = 1.0$ I want blue. When $t = 0.0$ I want white. In
 between, I want a blend. This forms a “linear blend”, or “linear interpolation”, or “lerp” for
 short, between two things. A lerp is always of the form
 
-  $$ blendedValue = (1-t)*startValue + t*endValue, $$
+  $$ \text{blendedValue} = (1-t)\cdot\text{startValue} + t\cdot\text{endValue}, $$
 
 with $t$ going from zero to one. In our case this produces:
 
@@ -414,43 +414,50 @@ Let’s add a single object to our ray tracer. People often use spheres in ray t
 calculating whether a ray hits a sphere is pretty straightforward. Recall that the equation for a
 sphere centered at the origin of radius $R$ is $x^2 + y^2 + z^2 = R^2$. The way you can read that
 equation is “for any $(x, y, z)$, if $x^2 + y^2 + z^2 = R^2$ then $(x,y,z)$ is on the sphere, and
-otherwise it is not”. It gets uglier if the sphere center is at $(C_x, C_y, C_z)$:
+otherwise it is not”. It gets uglier if the sphere center is at
+$(\mathbf{c}_x, \mathbf{c}_y, \mathbf{c}_z)$:
 
-  $$ (x-C_x)^2 + (y-C_y)^2 + (z-C_z)^2 = R^2 $$
+  $$ (x-\mathbf{c}_x)^2 + (y-\mathbf{c}_y)^2 + (z-\mathbf{c}_z)^2 = R^2 $$
 </div>
 
 <div class='together'>
 In graphics, you almost always want your formulas to be in terms of vectors so all the x/y/z stuff
 is under the hood in the `vec3` class. You might note that the vector from center
-$C = (C_x,C_y,C_z)$ to point $P = (x,y,z)$ is $(p - C)$, and therefore
+$\mathbf{c} = (\mathbf{c}_x,\mathbf{c}_y,\mathbf{c}_z)$ to point $\mathbf{P} = (x,y,z)$ is
+$(\mathbf{p} - \mathbf{c})$, and therefore
 
-  $$ dot((p - C),(p - C)) = (x-C_x)^2 + (y-C_y)^2 + (z-C_z)^2 $$
+  $$ (\mathbf{p} - \mathbf{c}) \cdot (\mathbf{p} - \mathbf{c})
+     = (x-\mathbf{c}_x)^2 + (y-\mathbf{c}_y)^2 + (z-\mathbf{c}_z)^2
+  $$
 </div>
 
 <div class='together'>
 So the equation of the sphere in vector form is:
 
-  $$ dot((p - C),(p - C)) = R^2 $$
+  $$ (\mathbf{p} - \mathbf{c}) \cdot (\mathbf{p} - \mathbf{c}) = R^2 $$
 </div>
 
 <div class='together'>
-We can read this as “any point p that satisfies this equation is on the sphere”. We want to know
-if our ray $p(t) = A + t*B$ ever hits the sphere anywhere. If it does hit the sphere, there is
-some $t$ for which $p(t)$ satisfies the sphere equation. So we are looking for any $t$ where this
-is true:
+We can read this as “any point $\mathbf{p}$ that satisfies this equation is on the sphere”. We want
+to know if our ray $p(t) = \mathbf{a} + t\vec{\mathbf{b}}$ ever hits the sphere anywhere. If it does
+hit the sphere, there is some $t$ for which $p(t)$ satisfies the sphere equation. So we are looking
+for any $t$ where this is true:
 
-  $$ dot((p(t) - C),(p(t) - C)) = R^2 $$
+  $$ (p(t) - \mathbf{c})\cdot(p(t) - \mathbf{c}) = R^2 $$
 
 or expanding the full form of the ray $p(t)$:
 
-  $$ dot((A + t*B - C), (A + t*B - C)) = R^2 $$
+  $$ (\mathbf{a} + t \vec{\mathbf{b}} - \mathbf{c}) \cdot = R^2 $$
 </div>
 
 <div class='together'>
 The rules of vector algebra are all that we would want here, and if we expand that equation and
 move all the terms to the left hand side we get:
 
-  $$ t^2 \cdot dot(B,B) + 2t \cdot dot(B,A-C) + dot(A-C,A-C) - R^2 = 0 $$
+  $$ t^2 \vec{\mathbf{b}}\cdot\vec{\mathbf{b}}
+     + 2t \vec{\mathbf{b}} \cdot \vec{(\mathbf{a}-\mathbf{c})}
+     + \vec{(\mathbf{a}-\mathbf{c})} \cdot \vec{(\mathbf{a}-\mathbf{c})} - R^2 = 0
+  $$
 </div>
 
 <div class='together'>
@@ -522,10 +529,11 @@ minus the center:
 On the earth, this implies that the vector from the earth’s center to you points straight up. Let’s
 throw that into the code now, and shade it. We don’t have any lights or anything yet, so let’s just
 visualize the normals with a color map. A common trick used for visualizing normals (because it’s
-easy and somewhat intuitive to assume $N$ is a unit length vector -- so each component is between -1
-and 1) is to map each component to the interval from 0 to 1, and then map x/y/z to r/g/b. For the
-normal, we need the hit point, not just whether we hit or not. Let’s assume the closest hit point
-(smallest $t$). These changes in the code let us compute and visualize $N$:
+easy and somewhat intuitive to assume $\vec{\mathbf{N}}$ is a unit length vector -- so each
+component is between -1 and 1) is to map each component to the interval from 0 to 1, and then map
+x/y/z to r/g/b. For the normal, we need the hit point, not just whether we hit or not. Let’s assume
+the closest hit point (smallest $t$). These changes in the code let us compute and visualize
+$\vec{\mathbf{N}}$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     double hit_sphere(const vec3& center, double radius, const ray& r) {
@@ -856,13 +864,12 @@ a bit so we can make a cooler camera later.
 
 One thing we need is a random number generator that returns real random numbers. We need a function
 that returns a canonical random number which by convention returns random real in the range
-$0 ≤ ran < 1$. The “less than” before the 1 is important as we will sometimes take advantage of
-that.
+$0 ≤ r < 1$. The “less than” before the 1 is important as we will sometimes take advantage of that.
 
 <div class='together'>
 A simple approach to this is to use the `rand()` function that can be found in `<cstdlib>`. This
-function returns a random integer in the range 0 and RANDMAX. Hence we can get a real random number
-as desired with the following code snippet:
+function returns a random integer in the range 0 and `RAND_MAX`. Hence we can get a real random
+number as desired with the following code snippet:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef RANDOM_H
@@ -1045,7 +1052,8 @@ Lambertian.)
 
 <div class='together'>
 Pick a random point $s$ from the unit radius sphere that is tangent to the hitpoint, and send a ray
-from the hitpoint $p$ to the random point $s$. That sphere has center $(p + N)$:
+from the hitpoint $\mathbf{p}$ to the random point $\mathbf{S}$. That sphere has center
+$\mathbf{p} + \vec{\mathbf{N}}$:
 
   ![Figure 8-2](../images/fig-1-08-2.png)
 
@@ -1053,8 +1061,8 @@ from the hitpoint $p$ to the random point $s$. That sphere has center $(p + N)$:
 
 <div class='together'>
 We also need a way to pick a random point in a unit radius sphere centered at the origin. One way to
-do that is to pick a random angle $a$ on the $Z$ plane and a random $z$ coordinate in [-1,+1] to
-construct a vector with some trigonometry:
+do that is to pick a random angle $a$ on the $\mathbf{Z}$ plane and a random $z$ coordinate in
+$[-1,+1]$ to construct a vector with some trigonometry:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_unit_vector() {
@@ -1296,9 +1304,10 @@ reflected from a metal mirror? Vector math is our friend here:
 </div>
 
 <div class='together'>
-The reflected ray direction in red is just $(v + 2B)$. In our design, $N$ is a unit vector, but $v$
-may not be. The length of $B$ should be $dot(v,N)$. Because $v$ points in, we will need a minus
-sign, yielding:
+The reflected ray direction in red is just $\vec{\mathbf{V}} + 2\vec{\mathbf{B}}$. In our design,
+$\vec{\mathbf{N}}$ is a unit vector, but $\vec{\mathbf{V}}$ may not be. The length of
+$\vec{\mathbf{B}}$ should be $\vec{\mathbf{V}} \cdot \vec{\mathbf{N}}$. Because $\vec{\mathbf{V}}$
+points in, we will need a minus sign, yielding:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 reflect(const vec3& v, const vec3& n) {
@@ -1484,7 +1493,7 @@ of the image and it was clearly wrong. That often does the job.
 <div class='together'>
 The refraction is described by Snell’s law:
 
-  $$ n \cdot sin(theta) = n' \cdot sin(theta') $$
+  $$ n \cdot \sin\theta = n' \cdot \sin\theta' $$
 
 Where $n$ and $n'$ are the refractive indices (typically air = 1, glass = 1.3–1.7, diamond = 2.4)
 and the geometry is:
@@ -1699,7 +1708,7 @@ $z = -2$ plane, or whatever, as long as we made $h$ a ratio to that distance. He
 </div>
 
 <div class='together'>
-This implies $h = tan(\theta/2)$. Our camera now becomes:
+This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef CAMERA_H

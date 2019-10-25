@@ -242,9 +242,10 @@ Be sure that in the materials you have the scattered rays be at the time of the 
 </div>
 
 <div class='together'>
-If we take the example diffuse spheres from scene at the end of the last book and make them move
-from their centers at `time==0`, to `center + vec3(0, 0.5*random_double(), 0)` at `time==1`, with
-the camera aperture open over that frame.
+The code below takes the example diffuse spheres from the scene at the end of the last book, and
+makes them move during the image render. (Think of a camera with shutter opening at time 0 and then
+closing again at time 1.) Each sphere moves from its center $\mathbf{C}$ at time $t=0$ to
+$\mathbf{C} + (0, r/2, 0)$ at time $t=1$, where $r$ is a random number in $[0,1)$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable *random_scene() {
@@ -408,26 +409,27 @@ In 3D, those boundaries are planes. The equations for the planes are $x = x_0$, 
 does the ray hit that plane? Recall that the ray can be thought of as just a function that given a
 $t$ returns a location $p(t)$:
 
-  $$ p(t) = A + t \cdot B $$
+  $$ p(t) = \mathbf{a} + t \vec{\mathbf{b}} $$
 </div>
 
 <div class='together'>
-That equation applies to all three of the x/y/z coordinates. For example $x(t) = A_x + t \cdot B_x$.
-This ray hits the plane $x = x_0$ at the $t$ that satisfies this equation:
+That equation applies to all three of the x/y/z coordinates. For example
+$x(t) = \mathbf{a}_x + t \vec{\mathbf{b}}_x$. This ray hits the plane $x = x_0$ at the $t$ that
+satisfies this equation:
 
-  $$ x_0 = A_x + t_0 \cdot B_x $$
+  $$ x_0 = \mathbf{a}_x + t_0 \vec{\mathbf{b}}_x $$
 </div>
 
 <div class='together'>
 Thus $t$ at that hitpoint is:
 
-  $$ t_0 = \frac{x_0 - A_x}{B_x} $$
+  $$ t_0 = \frac{x_0 - \mathbf{a}_x}{\vec{\mathbf{b}}_x} $$
 </div>
 
 <div class='together'>
 We get the similar expression for $x_1$:
 
-  $$ t_1 = \frac{x_1 - A_x}{B_x} $$
+  $$ t_1 = \frac{x_1 - \mathbf{a}_x}{\vec{\mathbf{b}}_x} $$
 </div>
 
 <div class='together'>
@@ -469,23 +471,31 @@ extra mile in vectorization for speed.) For our purposes, this is unlikely to be
 as long as we make it reasonably fast, so let’s go for simplest, which is often fastest anyway!
 First let’s look at computing the intervals:
 
-  $$ t_{x0} = \frac{x_0 - A_x}{B_x} $$
-  $$ t_{x1} = \frac{x_1 - A_x}{B_x} $$
+  $$ t_{x0} = \frac{x_0 - \mathbf{a}_x}{\vec{\mathbf{b}}_x} $$
+  $$ t_{x1} = \frac{x_1 - \mathbf{a}_x}{\vec{\mathbf{b}}_x} $$
 </div>
 
 <div class='together'>
-One troublesome thing is that perfectly valid rays will have $B_x = 0$, causing division by zero.
-Some of those rays are inside the slab, and some are not. Also, the zero will have a ± sign under
-IEEE floating point. The good news for $B_x = 0$ is that $t_{x0}$ and $t_{x1}$ will both be +∞ or
-both be -∞ if not between $x_0$ and $x_1$. So, using min and max should get us the right answers:
+One troublesome thing is that perfectly valid rays will have $\vec{\mathbf{b}}_x = 0$, causing
+division by zero. Some of those rays are inside the slab, and some are not. Also, the zero will have
+a ± sign under IEEE floating point. The good news for $\vec{\mathbf{b}}_x = 0$ is that $t_{x0}$ and
+$t_{x1}$ will both be +∞ or both be -∞ if not between $x_0$ and $x_1$. So, using min and max should
+get us the right answers:
 
-  $$ t_{x0} = min(\frac{x_0 - A_x}{B_x}, \frac{x_1 - A_x}{B_x}) $$
-  $$ t_{x1} = max(\frac{x_0 - A_x}{B_x}, \frac{x_1 - A_x}{B_x}) $$
+  $$ t_{x0} = \min(
+     \frac{x_0 - \mathbf{a}_x}{\vec{\mathbf{b}}_x},
+     \frac{x_1 - \mathbf{a}_x}{\vec{\mathbf{b}}_x})
+  $$
+
+  $$ t_{x1} = \max(
+     \frac{x_0 - \mathbf{a}_x}{\vec{\mathbf{b}}_x},
+     \frac{x_1 - \mathbf{a}_x}{\vec{\mathbf{b}}_x})
+  $$
 </div>
 
-The remaining troublesome case if we do that is if $B_x = 0$ and either $x_0 - A_x = 0$ or $x_1-A_x
-= 0$ so we get a `NaN`. In that case we can probably accept either hit or no hit answer, but we’ll
-revisit that later.
+The remaining troublesome case if we do that is if $\vec{\mathbf{b}}_x = 0$ and either
+$x_0 - \mathbf{a}_x = 0$ or $x_1 - \mathbf{a}_x = 0$ so we get a `NaN`. In that case we can probably
+accept either hit or no hit answer, but we’ll revisit that later.
 
 <div class='together'>
 Now, let’s look at that overlap function. Suppose we can assume the intervals are not reversed (so
@@ -1307,7 +1317,7 @@ Used directly, turbulence gives a sort of camouflage netting appearance:
 <div class='together'>
 However, usually turbulence is used indirectly. For example, the “hello world” of procedural solid
 textures is a simple marble-like texture. The basic idea is to make color proportional to something
-like a sine function, and use turbulence to adjust the phase (so it shifts $x$ in $sin( x )$) which
+like a sine function, and use turbulence to adjust the phase (so it shifts $x$ in $\sin(x)$) which
 makes the stripes undulate. Commenting out straight noise and turbulence, and giving a marble-like
 effect is:
 
@@ -1347,46 +1357,46 @@ A direct way to use scaled $(u,v)$ in an image is to round the u and v to intege
 $(i,j)$ pixels. This is awkward, because we don’t want to have to change the code when we change
 image resolution. So instead, one of the the most universal unofficial standards in graphics is to
 use texture coordinates instead of image pixel coordinates. These are just some form of fractional
-position in the image. For example, for pixel $(i,j)$ in an nx by ny image, the image texture
+position in the image. For example, for pixel $(i,j)$ in an $N_x$ by $N_y$ image, the image texture
 position is:
 
-  $$ u = i/(nx-1) $$
-  $$ v = j/(nx-1) $$
+  $$ u = \frac{i}{N_x-1} $$
+  $$ v = \frac{j}{N_y-1} $$
 </div>
 
 <div class='together'>
-This is just a fractional position. For a hittable, we need to also return a u and v in the hit
+This is just a fractional position. For a hittable, we need to also return a $u$ and $v$ in the hit
 record. For spheres, this is usually based on some form of longitude and latitude, _i.e._, spherical
 coordinates. So if we have a $(\theta,\phi)$ in spherical coordinates we just need to scale $\theta$
 and $\phi$ to fractions. If $\theta$ is the angle down from the pole, and $\phi$ is the angle around
 the axis through the poles, the normalization to $[0,1]$ would be:
 
-  $$ u = \phi / (2\pi) $$
-  $$ v = \theta / \pi $$
+  $$ u = \frac{\phi}{2\pi} $$
+  $$ v = \frac{\theta}{\pi} $$
 </div>
 
 <div class='together'>
 To compute $\theta$ and $\phi$, for a given hitpoint, the formula for spherical coordinates of a
 unit radius sphere on the origin is:
 
-  $$ x = cos(\phi) cos(\theta) $$
-  $$ y = sin(\phi) cos(\theta) $$
-  $$ z = sin(\theta) $$
+  $$ x = \cos(\phi) \cos(\theta) $$
+  $$ y = \sin(\phi) \cos(\theta) $$
+  $$ z = \sin(\theta) $$
 </div>
 
 <div class='together'>
 We need to invert that. Because of the lovely `math.h` function `atan2()` which takes any number
-proportional to sine and cosine and returns the angle, we can pass in $x$ and $y$ (the $cos(\theta)$
-cancel):
+proportional to sine and cosine and returns the angle, we can pass in $x$ and $y$ (the
+$\cos(\theta)$ cancel):
 
-  $$ \phi = atan2(y, x) $$
+  $$ \phi = \text{atan2}(y, x) $$
 </div>
 
 <div class='together'>
 The $atan2$ returns in the range $-\pi$ to $\pi$ so we need to take a little care there.
 The $\theta$ is more straightforward:
 
-  $$ \theta = asin(z) $$
+  $$ \theta = \text{asin}(z) $$
 
 which returns numbers in the range $-\pi/2$ to $\pi/2$.
 </div>
@@ -1552,17 +1562,18 @@ k$. An axis-aligned rectangle is defined by lines $x=x_0$ , $x=x_1$ , $y=y_0$ , 
 
 <div class='together'>
 To determine whether a ray hits such a rectangle, we first determine where the ray hits the plane.
-Recall that a ray $p(t) = a + t \cdot b$ has its z component defined by $z(t) = a_z + t \cdot b_z$.
-Rearranging those terms we can solve for what the t is where $z=k$.
+Recall that a ray $p(t) = \mathbf{a} + t \cdot \vec{\mathbf{b}}$ has its z component defined by
+$z(t) = \mathbf{a}_z + t \cdot \vec{\mathbf{b}}_z$. Rearranging those terms we can solve for what
+the t is where $z=k$.
 
-  $$ t = (k-a_z) / b_z $$
+  $$ t = \frac{k-\mathbf{a}_z}{\vec{\mathbf{b}}_z} $$
 </div>
 
 <div class='together'>
-Once we have t, we can plug that into the equations for x and y:
+Once we have $t$, we can plug that into the equations for $x$ and $y$:
 
-  $$ x = a_x + t*b_x $$
-  $$ y = a_y + t*b_y $$
+  $$ x = \mathbf{a}_x + t \cdot \vec{\mathbf{b}}_x $$
+  $$ y = \mathbf{a}_y + t \cdot \vec{\mathbf{b}}_y $$
 </div>
 
 It is a hit if $x_0 < x < x_1$ and $y_0 < y < y_1$.
@@ -1957,25 +1968,25 @@ This involves some basic trigonometry that uses formulas that I will not cover h
 the correct impression it’s a little involved, but it is straightforward, and you can find it in any
 graphics text and in many lecture notes. The result for rotating counter-clockwise about z is:
 
-  $$ x' = cos(\theta) \cdot x - sin(\theta) \cdot y $$
-  $$ y' = sin(\theta) \cdot x + cos(\theta) \cdot y $$
+  $$ x' = \cos(\theta) \cdot x - \sin(\theta) \cdot y $$
+  $$ y' = \sin(\theta) \cdot x + \cos(\theta) \cdot y $$
 </div>
 
 The great thing is that it works for any $\theta$ and doesn’t need any cases for quadrants or
 anything like that. The inverse transform is the opposite geometric operation: rotate by $-\theta$.
-Here, recall that $cos(\theta) = cos(-\theta)$ and $sin(-\theta) = -sin(\theta)$, so the formulas
-are very simple.
+Here, recall that $\cos(\theta) = \cos(-\theta)$ and $\sin(-\theta) = -\sin(\theta)$, so the
+formulas are very simple.
 
 <div class='together'>
 Similarly, for rotating about y (as we want to do for the blocks in the box) the formulas are:
 
-  $$ x' =  cos(\theta) \cdot x + sin(\theta) \cdot z $$
-  $$ z' = -sin(\theta) \cdot x + cos(\theta) \cdot z $$
+  $$ x' =  \cos(\theta) \cdot x + \sin(\theta) \cdot z $$
+  $$ z' = -\sin(\theta) \cdot x + \cos(\theta) \cdot z $$
 
 And about the x-axis:
 
-  $$ y' = cos(\theta) \cdot y - sin(\theta) \cdot z $$
-  $$ z' = sin(\theta) \cdot y + cos(\theta) \cdot z $$
+  $$ y' = \cos(\theta) \cdot y - \sin(\theta) \cdot z $$
+  $$ z' = \sin(\theta) \cdot y + \cos(\theta) \cdot z $$
 </div>
 
 Unlike the situation with translations, the surface normal vector also changes, so we need to
@@ -2112,9 +2123,9 @@ through.
 
 <div class='together'>
 As the ray passes through the volume, it may scatter at any point. The denser the volume, the more
-likely that is. The probability that the ray scatters in any small distance $\delta L$ is:
+likely that is. The probability that the ray scatters in any small distance $\Delta L$ is:
 
-  $$ probability = C \cdot \delta L $$
+  $$ \text{probability} = C \cdot \Delta L $$
 </div>
 
 <div class='together'>

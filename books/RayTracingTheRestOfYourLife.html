@@ -64,11 +64,11 @@ Now, suppose you pick random points inside the square. The fraction of those ran
 up inside the circle should be proportional to the area of the circle. The exact fraction should in
 fact be the ratio of the circle area to the square area. Fraction:
 
-  $$ \frac{Pi \cdot R^2}{(2R)^2} = \frac{Pi}{4} $$
+  $$ \frac{\pi r^2}{(2r)^2} = \frac{\pi}{4} $$
 </div>
 
 <div class='together'>
-Since the *R* cancels out, we can pick whatever is computationally convenient. Let’s go with R=1
+Since the $r$ cancels out, we can pick whatever is computationally convenient. Let’s go with $r=1$,
 centered at the origin:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -196,11 +196,11 @@ $$ I = \int_{0}^{2} x^2 dx $$
 <div class='together'>
 In computer sciency notation, we might write this as:
 
-$$ I = area( x^2, 0, 2 ) $$
+$$ I = \text{area}( x^2, 0, 2 ) $$
 
 We could also write it as:
 
-$$ I = 2 \cdot average(x^2, 0, 2) $$
+$$ I = 2 \cdot \text{average}(x^2, 0, 2) $$
 </div>
 
 <div class='together'>
@@ -222,11 +222,11 @@ This suggests a MC approach:
 </div>
 
 This, as expected, produces approximately the exact answer we get with algebra, $I = 8/3$. But we
-could also do it for functions that we can’t analytically integrate like $log(sin(x))$. In graphics,
-we often have functions we can evaluate but can’t write down explicitly, or functions we can only
-probabilistically evaluate. That is in fact what the ray tracing `ray_color()` function of the last
-two books is -- we don’t know what color is seen in every direction, but we can statistically
-estimate it in any given dimension.
+could also do it for functions that we can’t analytically integrate like $\log(\sin(x))$. In
+graphics, we often have functions we can evaluate but can’t write down explicitly, or functions we
+can only probabilistically evaluate. That is in fact what the ray tracing `ray_color()` function of
+the last two books is -- we don’t know what color is seen in every direction, but we can
+statistically estimate it in any given dimension.
 
 One problem with the random program we wrote in the first two books is small light sources create
 too much noise because our uniform sampling doesn’t sample the light often enough. We could lessen
@@ -251,18 +251,18 @@ height of all the bins would drop to zero. A density function is one where we ta
 adjust them so they don’t get shorter as we add more bins. For the case of the tree histogram above
 we might try:
 
-  $$ \text{Bin-height} = \frac{(\text{Fraction of trees between height }H\text{ and }H’)}{(H-H’)} $$
+  $$ \text{bin-height} = \frac{(\text{Fraction of trees between height }H\text{ and }H’)}{(H-H’)} $$
 </div>
 
 <div class='together'>
 That would work! We could interpret that as a statistical predictor of a tree’s height:
 
-  $$ \text{Probability a random tree is between } H \text{ and } H’ = \text{Bin-height}\cdot(H-H’)$$
+  $$ \text{Probability a random tree is between } H \text{ and } H’ = \text{bin-height}\cdot(H-H’)$$
 </div>
 
 If we wanted to know about the chances of being in a span of multiple bins, we would sum.
 
-A _probability density function_, henceforth pdf, is that fractional histogram made continuous.
+A _probability density function_, henceforth _pdf_, is that fractional histogram made continuous.
 
 Let’s make a _pdf_ and use it a bit to understand it more. Suppose I want a random number $r$
 between 0 and 2 whose probability is proportional to itself: $r$. We would expect the pdf $p(r)$
@@ -273,9 +273,9 @@ to look something like the figure below. But how high should it be?
 <div class='together'>
 The height is just $p(2)$. What should that be? We could reasonably make it anything by
 convention, and we should pick something that is convenient. Just as with histograms we can sum up
-(integrate) the region to figure out the probability that $r$ is in some interval $(x0,x1)$:
+(integrate) the region to figure out the probability that $r$ is in some interval $(x_0,x_1)$:
 
-  $$ \text{Probability } x0 < r < x1 = C \cdot area(p(r), x0, x1) $$
+  $$ \text{Probability } x_0 < r < x_1 = C \cdot \text{area}(p(r), x_0, x_1) $$
 </div>
 
 <div class='together'>
@@ -283,16 +283,16 @@ where $C$ is a scaling constant. We may as well make $C = 1$ for cleanliness, an
 what is done in probability. And we know the probability $r$ has the value 1 somewhere, so for
 this case
 
-  $$ area(p(r), 0, 2) = 1 $$
+  $$ \text{area}(p(r), 0, 2) = 1 $$
 </div>
 
 <div class='together'>
-Since $p(r)$ is proportional to $r$ , _i.e._, $p = C’ \cdot r$ for some other constant $C’$
+Since $p(r)$ is proportional to $r$ , _i.e._, $p = C' \cdot r$ for some other constant $C'$
 
   $$
-  area(C’r, 0, 2) = \int_{0}^{2} C’ r dr
-                  = \frac{C’r^2}{2}(2) - \frac{C’r^2}{2}(0)
-                  = 2C’
+  area(C'r, 0, 2) = \int_{0}^{2} C' r dr
+                  = \frac{C'r^2}{2}(2) - \frac{C'r^2}{2}(0)
+                  = 2C'
   $$
 
 So $p(r) = r/2$.
@@ -308,11 +308,11 @@ longer a uniform _pdf_ . The _pdf_ of $e$ will be bigger near 0 than it is near 
 number between 0 and 1 makes it smaller). To take this general observation to a function, we need
 the cumulative probability distribution function $P(x)$:
 
-  $$ P(x) = area(p, -\infty, x) $$
+  $$ P(x) = \text{area}(p, -\infty, x) $$
 </div>
 
 <div class='together'>
-Note that for x where we didn’t define $p(x)$, $p(x) = 0$, _i.e._, the probability of an $x$ there
+Note that for $x$ where we didn’t define $p(x)$, $p(x) = 0$, _i.e._, the probability of an $x$ there
 is zero. For our example _pdf_ $p(r) = r/2$ , the $P(x)$ is:
 
   $$ P(x) = 0 : x < 0                 $$
@@ -341,7 +341,7 @@ $f(0.25) = 1.0$. This can be generalized to figure out $f()$ for every possible 
 <div class='together'>
 That means $f$ just undoes whatever $P$ does. So,
 
-  $$ f(x) = P^-1 (x) $$
+  $$ f(x) = P^{-1}(x) $$
 </div>
 
 <div class='together'>
@@ -349,7 +349,7 @@ The -1 means “inverse function”. Ugly notation, but standard. For our purpos
 if we have pdf $p()$ and its cumulative distribution function $P()$ , then if we do this to a random
 number we’ll get what we want:
 
-  $$ e = P^-1 (\text{random_double}()) $$
+  $$ e = P^{-1} (\text{random_double}()) $$
 </div>
 
 <div class='together'>
@@ -364,7 +364,7 @@ we get the inverse by solving for $x$ in terms of $y$:
 
 Thus our random number with density $p$ we get by:
 
-  $$ e = \sqrt{4*\text{random_double}()} $$
+  $$ e = \sqrt{4\cdot\text{random_double}()} $$
 </div>
 
 Note that does range 0 to 2 as hoped, and if we send in $1/4$ for `random_double()` we get 1 as
@@ -509,9 +509,9 @@ Suppose we have this integral over all directions:
   $$ \int cos^2(\theta) $$
 
 <div class='together'>
-By MC integration, we should just be able to sample $cos^2(\theta) / p(direction)$. But what is
-direction in that context? We could make it based on polar coordinates, so $p$ would be in terms of
-$(\theta, \phi)$ . However you do it, remember that a pdf has to integrate to 1 and represent the
+By MC integration, we should just be able to sample $\cos^2(\theta) / p(\text{direction})$. But what
+is direction in that context? We could make it based on polar coordinates, so $p$ would be in terms
+of $(\theta, \phi)$ . However you do it, remember that a pdf has to integrate to 1 and represent the
 relative probability of that direction being sampled. We have a method from the last books to take
 uniform random samples in a unit sphere:
 
@@ -541,8 +541,9 @@ To get points on a unit sphere we can just normalize the vector to those points:
 </div>
 
 <div class='together'>
-Now what is the pdf of these uniform points? As a density on the unit sphere, it is $1/area$ of the
-sphere or $1/(4\pi)$. If the integrand is $cos^2(\theta)$ and $\theta$ is the angle with the z axis:
+Now what is the pdf of these uniform points? As a density on the unit sphere, it is $1/\text{area}$
+of the sphere or $1/(4\pi)$. If the integrand is $\cos^2(\theta)$ and $\theta$ is the angle with the
+z axis:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline double pdf(const vec3& p) {
@@ -607,7 +608,7 @@ they become mirror-like as your viewing angle approaches grazing.
 <div class='together'>
 The color of a surface in terms of these quantities is:
 
-  $$ Color = \int A \cdot s(direction) \cdot color(direction) $$
+  $$ Color = \int A \cdot s(direction) \cdot \text{color}(direction) $$
 </div>
 
 Note that $A$ and $s()$ might depend on the view direction, so of course color can vary with view
@@ -616,39 +617,39 @@ direction. Also $A$ and $s()$ may vary with position on the surface or within th
 <div class='together'>
 If we apply the MC basic formula we get the following statistical estimate:
 
-  $$ Color = (A \cdot s(direction) \cdot color(direction)) / p(direction) $$
+  $$ Color = \frac{A \cdot s(direction) \cdot \text{color}(direction)}{p(direction)} $$
 
 where $p(direction)$ is the pdf of whatever direction we randomly generate.
 </div>
 
 For a Lambertian surface we already implicitly implemented this formula for the special case where
-$p()$ is a cosine density. The $s()$ of a Lambertian surface is proportional to $cos(\theta)$, where
-$\theta$ is the angle relative to the surface normal. Remember that all pdf need to integrate to
-one. For $cos(\theta) < 0$ we have $s(direction) = 0$, and the integral of cos over the hemisphere
-is $\pi$.
+$p()$ is a cosine density. The $s()$ of a Lambertian surface is proportional to $\cos(\theta)$,
+where $\theta$ is the angle relative to the surface normal. Remember that all pdf need to integrate
+to one. For $\cos(\theta) < 0$ we have $s(direction) = 0$, and the integral of cos over the
+hemisphere is $\pi$.
 
 <div class='together'>
-To see that remember that in spherical coordinates remember that:
+To see that, remember that in spherical coordinates:
 
-  $$ \delta A = sin(\theta) \delta \theta \delta \phi $$
+  $$ dA = \sin(\theta) d\theta d\phi $$
 
 So:
 
-  $$ Area = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} cos(\theta)sin(\theta) \delta \theta \delta \phi =
-    2 \pi \cdot \frac{1}{2} = \pi $$
+  $$ Area = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} cos(\theta) sin(\theta) d\theta d\phi =
+    2 \pi \frac{1}{2} = \pi $$
 </div>
 
 <div class='together'>
 So for a Lambertian surface the scattering pdf is:
 
-  $$ s(direction) = cos(\theta) / \pi $$
+  $$ s(direction) = \frac{\cos(\theta)}{\pi} $$
 </div>
 
 <div class='together'>
-If we sample using the same pdf, so $p(direction) = cos(\theta) / \pi$, the numerator and
+If we sample using the same pdf, so $p(direction) = \cos(\theta) / \pi$, the numerator and
 denominator cancel out and we get:
 
-  $$ Color = A * color(direction) $$
+  $$ Color = A \cdot color(direction) $$
 
 This is exactly what we had in our original `ray_color()` function! But we need to generalize now so
 we can send extra rays in important directions such as toward the lights.
@@ -661,7 +662,7 @@ volumes. To do otherwise will make some ugly code.
 If you read the literature, you’ll see reflection described by the bidirectional reflectance
 distribution function (BRDF). It relates pretty simply to our terms:
 
-  $$ BRDF = A * s(direction) / cos(\theta) $$
+  $$ BRDF = \frac{A \cdot s(direction)}{\cos(\theta)} $$
 
 So for a Lambertian surface for example, $BRDF = A / \pi$. Translation between our terms and BRDF is
 easy.
@@ -683,13 +684,13 @@ $s$, and let’s call that $pSurface(direction)$ . A great thing about pdfs is t
 linear mixtures of them to form mixture densities that are also pdfs. For example, the simplest
 would be:
 
-  $$ p(direction) = 0.5 \cdot pLight(direction) + 0.5* \cdot pSurface(direction) $$
+  $$ p(direction) = \frac{1}{2}\cdotp Light(direction) + \frac{1}{2}\cdot pSurface(direction) $$
 </div>
 
 As long as the weights are positive and add up to one, any such mixture of pdfs is a pdf. And
 remember, we can use any pdf -- it doesn’t change the answer we converge to! So, the game is to
-figure out how to make the pdf larger where the product $s(direction)*color(direction)$ is large.
-For diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is high.
+figure out how to make the pdf larger where the product $s(direction) \cdot color(direction)$ is
+large. For diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is high.
 
 For a mirror, $s()$ is huge only near one direction, so it matters a lot more. Most renderers in
 fact make mirrors a special case and just make the $s/p$ implicit -- our code currently does that.
@@ -739,7 +740,7 @@ light.
 
 First, let’s instrument the code so that it explicitly samples some pdf and then normalizes for
 that. Remember MC basics: $\int f(x) \approx f(r)/p(r)$. For the Lambertian material,
-let’s sample like we do now: $p(direction) = cos(\theta) / \pi$.
+let’s sample like we do now: $p(direction) = \cos(\theta) / \pi$.
 
 <div class='together'>
 We modify the base-class _material_ to enable this importance sampling:
@@ -828,7 +829,7 @@ You should get exactly the same picture.
 
 <div class='together'>
 Now, just for the experience, try a different sampling strategy. Let’s choose randomly from the
-hemisphere that is above the surface. This would be $p(direction) = 1/(2* \pi)$ .
+hemisphere that is above the surface. This would be $p(direction) = \frac{1}{2\pi}$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool scatter(const ray& r_in,
@@ -879,7 +880,7 @@ $\phi$ are:
 
   $$ a(\phi) = \frac{1}{2\pi} $$
 (uniform)
-  $$ b(\theta) = 2*\pi*f(\theta)\sin(\theta) $$
+  $$ b(\theta) = 2\pi f(\theta)\sin(\theta) $$
 </div>
 
 <div class='together'>
@@ -961,7 +962,7 @@ On the plot.ly website you can rotate that around and see that it appears unifor
 
 <div class='together'>
 Now let’s derive uniform on the hemisphere. The density being uniform on the hemisphere means
-$p(direction) = 1 / (2 \pi)$ and just changing the constant in the theta equations yields:
+$p(direction) = \frac{1}{2\pi}$ and just changing the constant in the theta equations yields:
 
   $$ \cos(\theta) = 1 - r_2 $$
 </div>
@@ -976,7 +977,7 @@ it by hand:
 </div>
 
 <div class='together'>
-Now for integration with importance sampling. $p(direction) = 1/(2 \pi)$, so we average $f/p$
+Now for integration with importance sampling. $p(direction) = \frac{1}{2\pi}$, so we average $f/p$
 which is $\cos^3 / (1/(2 \pi))$, and we can test this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1057,40 +1058,46 @@ relative positions/orientations of the camera and scene, so as long as the camer
 described in the same coordinate system, all is well.
 
 <div class='together'>
-Suppose we have an origin $\mathbf{O}$ and cartesian unit vectors $\vec{x}$, $\vec{y}$, and
-$\vec{z}$. When we say a location is (3, -2, 7), we really are saying:
+Suppose we have an origin $\mathbf{o}$ and cartesian unit vectors $\vec{\mathbf{x}}$,
+$\vec{\mathbf{y}}$, and $\vec{\mathbf{z}}$. When we say a location is (3, -2, 7), we really are
+saying:
 
-  $$ \text{Location is } \mathbf{O} + 3\vec{x} - 2\vec{y} + 7\vec{z} $$
+  $$ \text{Location is } \mathbf{o} + 3\vec{\mathbf{x}} - 2\vec{\mathbf{y}} + 7\vec{\mathbf{z}} $$
 </div>
 
 <div class='together'>
-If we want to measure coordinates in another coordinate system with origin $\mathbf{O}’$ and basis
-vectors $\vec{U}$, $\vec{V}$, and $\vec{W}$, we can just find the numbers $(u, v, w)$ such that:
+If we want to measure coordinates in another coordinate system with origin $\mathbf{o}'$ and basis
+vectors $\vec{\mathbf{u}}$, $\vec{\mathbf{v}}$, and $\vec{\mathbf{w}}$, we can just find the numbers
+$(u, v, w)$ such that:
 
-  $$ \text{Location is } \mathbf{O}’ + u\vec{U} + v\vec{V} + w\vec{W} $$
+  $$ \text{Location is } \mathbf{o}' + u\vec{\mathbf{u}} + v\vec{\mathbf{v}} + w\vec{\mathbf{w}} $$
 </div>
 
 If you take an intro graphics course, there will be a lot of time spent on coordinate systems and
 4×4 coordinate transformation matrices. Pay attention, it’s important stuff in graphics! But we
 won’t need it. What we need to is generate random directions with a set distribution relative to
-$\vec{n}$. We don’t need an origin because a direction is relative to no specified origin. We do
-need two cotangent vectors that are mutually perpendicular to $\vec{n}$ and each other.
+$\vec{\mathbf{n}}$. We don’t need an origin because a direction is relative to no specified origin.
+We do need two cotangent vectors that are mutually perpendicular to $\vec{\mathbf{n}}$ and each
+other.
 
 <div class='together'>
 Some models will come with at least one cotangent vector. The hard case of making an ONB is when we
-just have one vector. Suppose we have any vector $\vec{a}$ that is not zero length or parallel to
-$\vec{n}$. We can get to vectors $\vec{s}$ and $\vec{t}$ parallel to $\vec{n}$ by using the property
-of the cross product that $\vec{c} \times \vec{d}$ is perpendicular to both $\vec{c}$ and $\vec{d}$:
+just have one vector. Suppose we have any vector $\vec{\mathbf{a}}$ that is not zero length or
+parallel to $\vec{\mathbf{n}}$. We can get to vectors $\vec{\mathbf{s}}$ and $\vec{\mathbf{t}}$
+parallel to $\vec{\mathbf{n}}$ by using the property of the cross product that
+$\vec{\mathbf{c}} \times \vec{\mathbf{d}}$ is perpendicular to both $\vec{\mathbf{c}}$ and
+$\vec{\mathbf{d}}$:
 
-  $$ \vec{t} = \text{unit_vector}(\vec{a} \times \vec{n}) $$
+  $$ \vec{\mathbf{t}} = \text{unit_vector}(\vec{\mathbf{a}} \times \vec{\mathbf{n}}) $$
 
-  $$ \vec{s} = \vec{t} \times \vec{n} $$
+  $$ \vec{\mathbf{s}} = \vec{\mathbf{t}} \times \vec{\mathbf{n}} $$
 </div>
 
 <div class='together'>
-The catch is, we don’t have an $\vec{a}$ and if we pick a particular one at some point we will get
-an $\vec{n}$ parallel to $\vec{a}$. A common method is to use an if-statement to determine whether
-$\vec{n}$ is a particular axis, and if not, use that axis.
+The catch is, we don’t have an $\vec{\mathbf{a}}$ and if we pick a particular one at some point we
+will get an $\vec{\mathbf{n}}$ parallel to $\vec{\mathbf{a}}$. A common method is to use an
+if-statement to determine whether $\vec{\mathbf{n}}$ is a particular axis, and if not, use that
+axis.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if absolute(n.x > 0.9)
@@ -1105,7 +1112,9 @@ Once we have an ONB and we have a $random(x,y,z)$ relative the the Z-axis we can
 relative to $\vec{n}$ as:
 
   $$
-  \text{Random vector} = (\vec{x} \cdot \vec{s}) + (\vec{y} \cdot \vec{t}) + (\vec{z} \cdot \vec{n})
+  \text{Random vector} = (\vec{\mathbf{x}} \cdot \vec{\mathbf{s}})
+                       + (\vec{\mathbf{y}} \cdot \vec{\mathbf{t}})
+                       + (\vec{\mathbf{z}} \cdot \vec{\mathbf{n}})
   $$
 </div>
 
@@ -1196,18 +1205,18 @@ If we look at a small area $dA$ on the light, the probability of sampling it is 
 On the sphere, the probability of sampling the small area $dw$ on the sphere is $p(direction) \cdot
 dw$. There is a geometric relationship between $dw$ and $dA$:
 
-  $$ dw = \frac{dA \cdot cos(alpha)}{distance(p,q)^2} $$
+  $$ dw = \frac{dA \cdot \cos(alpha)}{distance^2(p,q)} $$
 
 Since the probability of sampling dw and dA must be the same, we have
 
-  $$ \frac{p(direction) \cdot cos(alpha)}{distance(p,q)^2} \cdot dA
+  $$ \frac{p(direction) \cdot \cos(alpha)}{distance^2(p,q)} \cdot dA
      = p_q(q) \cdot dA
      = \frac{dA}{A}
   $$
 
 So
 
-  $$ p(direction) = \frac{distance(p,q)^2}{cos(alpha) \cdot A} $$
+  $$ p(direction) = \frac{distance^2(p,q)}{\cos(alpha) \cdot A} $$
 </div>
 
 <div class='together'>
@@ -1292,10 +1301,10 @@ Mixture Densities
 ====================================================================================================
 
 <div class='together'>
-We have used a _pdf_ related to $cosine(\theta)$, and a _pdf_ related to sampling the light. We
-would like a _pdf_ that combines these. A common tool in probability is to mix the densities to
-form a mixture density. Any weighted average of _pdf_ s is a _pdf_. For example, we could just
-average the two densities:
+We have used a _pdf_ related to $\cos(\theta)$, and a _pdf_ related to sampling the light. We would
+like a _pdf_ that combines these. A common tool in probability is to mix the densities to form a
+mixture density. Any weighted average of _pdf_ s is a _pdf_. For example, we could just average the
+two densities:
 
   $$ pdf\_mixture(direction) = \frac{1}{2} pdf\_reflection(direction) +
         \frac{1}{2}pdf\_light(direction)
@@ -1624,7 +1633,7 @@ calculations.
 
 We also lack a real background function infrastructure in case we want to add an environment map or
 more interesting functional background. Some environment maps are HDR (the R/G/B components are
-floats rather than 0-255 bytes usually interpreted as 0-1). Our output has been HDR all along and
+floats rather than 0–255 bytes usually interpreted as 0-1). Our output has been HDR all along and
 we’ve just been truncating it.
 
 Finally, our renderer is RGB and a more physically-based one -- like an automobile manufacturer
@@ -1877,35 +1886,35 @@ easier. When we sample a sphere’s solid angle uniformly from a point outside t
 really just sampling a cone uniformly (the cone is tangent to the sphere). Let’s say the code has
 `theta_max`. Recall from Chapter 9, that to sample $\theta$ we have:
 
-  $$ r2 = \int_{0}^{\theta} 2 \pi \cdot f(t) \cdot sin(t) dt $$
+  $$ r_2 = \int_{0}^{\theta} 2\pi \cdot f(t) \cdot \sin(t) dt $$
 
 Here $f(t)$ is an as yet uncalculated constant $C$, so:
 
-  $$ r2 = \int_{0}^{\theta} 2 \pi \cdot C \cdot sin(t) dt $$
+  $$ r_2 = \int_{0}^{\theta} 2\pi \cdot C \cdot \sin(t) dt $$
 
 Doing some algebra/calculus this yields:
 
-  $$ r2 = 2 \pi \cdot C \cdot (1-cos(\theta)) $$
+  $$ r_2 = 2\pi \cdot C \cdot (1-\cos(\theta)) $$
 </div>
 
 <div class='together'>
 So
 
-  $$ cos(\theta) = 1 - r2/(2 \pi \cdot C) $$
+  $$ cos(\theta) = 1 - \frac{r_2}{2 \pi \cdot C} $$
 </div>
 
 <div class='together'>
-We know that for $r2 = 1$ we should get $\theta_{max}$, so we can solve for $C$:
+We know that for $r_2 = 1$ we should get $\theta_{max}$, so we can solve for $C$:
 
-  $$ cos(\theta) = 1 + r2 \cdot (cos(\theta_{max})-1) $$
+  $$ \cos(\theta) = 1 + r_2 \cdot (\cos(\theta_{max})-1) $$
 </div>
 
 <div class='together'>
 $\phi$ we sample like before, so:
 
-  $$ z = cos(\theta) = 1 + r2 \cdot (cos(\theta_{max})-1) $$
-  $$ x = cos(\phi) \cdot sin(\theta) = cos(2 \pi \cdot r1) \cdot \sqrt{1-z^2} $$
-  $$ y = sin(\phi) \cdot sin(\theta) = sin(2 \pi \cdot r1) \cdot \sqrt{1-z^2} $$
+  $$ z = \cos(\theta) = 1 + r_2 \cdot (\cos(\theta_{max}) - 1) $$
+  $$ x = \cos(\phi) \cdot \sin(\theta) = \cos(2\pi \cdot r_1) \cdot \sqrt{1-z^2} $$
+  $$ y = \sin(\phi) \cdot \sin(\theta) = \sin(2\pi \cdot r_1) \cdot \sqrt{1-z^2} $$
 </div>
 
 <div class='together'>
@@ -1916,9 +1925,9 @@ Now what is $\theta_{max}$?
 </div>
 
 <div class='together'>
-We can see from the figure that $sin(\theta_{max}) = R / length( c - p )$. So:
+We can see from the figure that $\sin(\theta_{max}) = R / length(\mathbf{c} - \mathbf{p})$. So:
 
-  $$ cos(\theta_{max}) = \sqrt{1- (R / length( c - p ))^2} $$
+  $$ \cos(\theta_{max}) = \sqrt{1 - \frac{R^2}{length^2(\mathbf{c} - \mathbf{p})}} $$
 </div>
 
 <div class='together'>
@@ -1926,14 +1935,14 @@ We also need to evaluate the _pdf_ of directions. For directions toward the sphe
 $1/solid\_angle$. What is the solid angle of the sphere? It has something to do with the $C$ above.
 It, by definition, is the area on the unit sphere, so the integral is
 
-  $$ solid\_angle = \int_{0}^{2 \pi} \int_{0}^{\theta_{max}} sin(\theta) d \theta d \phi
-       = 2 \pi \cdot (1-cos(\theta_{max})) $$
+  $$ solid\_angle = \int_{0}^{2\pi} \int_{0}^{\theta_{max}} \sin(\theta)
+       = 2 \pi \cdot (1-\cos(\theta_{max})) $$
 </div>
 
 It’s good to check the math on all such calculations. I usually plug in the extreme cases (thank you
 for that concept, Mr. Horton -- my high school physics teacher). For a zero radius sphere
-$cos(\theta_{max}) = 0$, and that works. For a sphere tangent at $p$, $cos(\theta_{max}) = 0$, and
-$2 \pi$ is the area of a hemisphere, so that works too.
+$\cos(\theta_{max}) = 0$, and that works. For a sphere tangent at $\mathbf{p}$,
+$\cos(\theta_{max}) = 0$, and $2\pi$ is the area of a hemisphere, so that works too.
 
 <div class='together'>
 The sphere class needs the two `pdf`-related functions:
@@ -2058,7 +2067,7 @@ Tracers have this as a main loop:
 
 If you find yourself getting some form of acne in the images, and this acne is white or black, so
 one "bad" sample seems to kill the whole pixel, that sample is probably a huge number or a `NaN`.
-This particular acne is probably a `NaN`. Mine seems to come up once in every 10-100 million rays
+This particular acne is probably a `NaN`. Mine seems to come up once in every 10–100 million rays
 or so.
 
 <div class='together'>
