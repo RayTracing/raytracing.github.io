@@ -1,7 +1,7 @@
 #ifndef SPHERE_H
 #define SPHERE_H
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -12,6 +12,7 @@
 //==================================================================================================
 
 #include "common/rtweekend.h"
+#include "common/vec3.h"
 #include "hittable.h"
 #include "onb.h"
 #include "pdf.h"
@@ -32,7 +33,7 @@ class sphere: public hittable  {
 
 double sphere::pdf_value(const vec3& o, const vec3& v) const {
     hit_record rec;
-    if (this->hit(ray(o, v), 0.001, FLT_MAX, rec)) {
+    if (this->hit(ray(o, v), 0.001, infinity, rec)) {
         auto cos_theta_max = sqrt(1 - radius*radius/(center-o).squared_length());
         auto solid_angle = 2*pi*(1-cos_theta_max);
         return  1 / solid_angle;
