@@ -1,5 +1,5 @@
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -10,7 +10,6 @@
 //==================================================================================================
 
 #include "common/rtweekend.h"
-#include "random.h"
 
 #include <iostream>
 #include <math.h>
@@ -18,16 +17,15 @@
 
 int main() {
     int N = 1000000;
-    float sum = 0.0;
+    auto sum = 0.0;
     for (int i = 0; i < N; i++) {
-        float r1 = random_double();
-        float r2 = random_double();
-        float x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
-        float y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
-        float z = 1 - r2;
+        auto r1 = random_double();
+        auto r2 = random_double();
+        auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
+        auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
+        auto z = 1 - r2;
         sum += z*z*z / (1.0/(2.0*pi));
     }
     std::cout << "PI/2 = " << pi/2 << "\n";
     std::cout << "Estimate = " << sum/N << "\n";
 }
-

@@ -1,5 +1,5 @@
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -10,8 +10,6 @@
 //==================================================================================================
 
 #include "common/rtweekend.h"
-#include "common/vec3.h"
-#include "random.h"
 
 #include <iostream>
 #include <math.h>
@@ -26,19 +24,17 @@ vec3 random_on_unit_sphere() {
     return unit_vector(p);
 }
 
-
-
-inline float pdf(const vec3& p) {
-    return  1 / (4*pi);
+inline double pdf(const vec3& p) {
+    return  1.0 / (4.0*pi);
 }
 
 int main() {
     int N = 1000000;
-    float sum;
+    auto sum = 0.0;
     for (int i = 0; i < N; i++) {
-            vec3 d = random_on_unit_sphere();
-            float cosine_squared = d.z()*d.z();
-            sum += cosine_squared / pdf(d);
+        vec3 d = random_on_unit_sphere();
+        auto cosine_squared = d.z()*d.z();
+        sum += cosine_squared / pdf(d);
     }
-    std::cout << "I =" << sum/N << "\n";
+    std::cout << "I = " << sum/N << '\n';
 }
