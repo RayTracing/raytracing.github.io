@@ -18,8 +18,10 @@ class bvh_node : public hittable  {
     public:
         bvh_node() {}
         bvh_node(hittable **l, int n, double time0, double time1);
+
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& box) const;
+
         hittable *left;
         hittable *right;
         aabb box;
@@ -36,6 +38,7 @@ bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
         hit_record left_rec, right_rec;
         bool hit_left = left->hit(r, t_min, t_max, left_rec);
         bool hit_right = right->hit(r, t_min, t_max, right_rec);
+
         if (hit_left && hit_right) {
             if (left_rec.t < right_rec.t)
                 rec = left_rec;
@@ -116,7 +119,7 @@ bvh_node::bvh_node(hittable **l, int n, double time0, double time1) {
         right = new bvh_node(l + n/2, n - n/2, time0, time1);
     }
     aabb box_left, box_right;
-    if(!left->bounding_box(time0,time1, box_left) || !right->bounding_box(time0,time1, box_right))
+    if(!left->bounding_box(time0, time1, box_left) || !right->bounding_box(time0, time1, box_right))
         std::cerr << "no bounding box in bvh_node constructor\n";
     box = surrounding_box(box_left, box_right);
 }

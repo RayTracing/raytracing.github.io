@@ -656,6 +656,7 @@ And here’s the sphere:
     #ifndef SPHERE_H
     #define SPHERE_H
 
+    #include "common/vec3.h"
     #include "hittable.h"
 
     class sphere: public hittable  {
@@ -764,6 +765,16 @@ file.
         return degrees * pi / 180;
     }
 
+    inline double clamp(double x, double min, double max) {
+        if (x < min) return min;
+        if (x > max) return max;
+        return x;
+    }
+
+    // Common Headers
+
+    #include "common/vec3.h"
+
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -774,7 +785,6 @@ And the new main:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "common/rtweekend.h"
-    #include "common/vec3.h"
     #include "float.h"
     #include "hittable_list.h"
     #include "sphere.h"
@@ -911,6 +921,7 @@ before:
     #ifndef CAMERA_H
     #define CAMERA_H
 
+    #include "common/rtweekend.h"
     #include "ray.h"
 
     class camera {
@@ -1175,6 +1186,8 @@ that the pointer is to a class, which the “class material” in the hittable c
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef HITTABLE_H
     #define HITTABLE_H
+
+    #include "common/rtweekend.h"
     #include "ray.h"
 
     class material;
@@ -1186,7 +1199,7 @@ that the pointer is to a class, which the “class material” in the hittable c
         material *mat_ptr;
     };
 
-    class hittable  {
+    class hittable {
         public:
             virtual bool hit(
                 const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
@@ -1266,8 +1279,9 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
     class lambertian : public material {
         public:
             lambertian(const vec3& a) : albedo(a) {}
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                                 vec3& attenuation, ray& scattered) const {
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
                 vec3 target = rec.p + rec.normal + random_unit_vector();
                 scattered = ray(rec.p, target-rec.p);
                 attenuation = albedo;
@@ -1425,8 +1439,9 @@ absorb those. We’ll put a maximum of 1 on the radius of the sphere which yield
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                                 vec3& attenuation, ray& scattered) const {
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());
@@ -1775,6 +1790,7 @@ camera horizontally level until you decide to experiment with crazy camera angle
     #ifndef CAMERA_H
     #define CAMERA_H
 
+    #include "common/rtweekend.h"
     #include "ray.h"
 
     class camera {
