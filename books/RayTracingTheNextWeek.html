@@ -146,7 +146,7 @@ to camera because for now it is not allowed to move; it just sends out rays over
 
 We also need a moving object. I’ll create a sphere class that has its center move linearly from
 `center0` at `time0` to `center1` at `time1`. Outside that time interval it continues on, so those
-times need not match up with the camera aperture open close.
+times need not match up with the camera aperture open and close.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class moving_sphere: public hittable {
@@ -823,7 +823,7 @@ classes so feel free to do something different, but I am a big believer in this 
 being able to make any color a texture is great.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class texture (
+    class texture {
         public:
             virtual vec3 value(double u, double v, const vec3& p) const = O;
     };
@@ -846,13 +846,16 @@ Now we can make textured materials by replacing the vec3 color with a texture po
     class lambertian : public material {
         public:
             lambertian(texture *a) : albedo(a) {}
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                                 vec3& attenuation, ray& scattered) const {
+
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
                 vec3 target = rec.p + rec.normal + random_unit_vector();
                 scattered = ray(rec.p, target - rec.p);
                 attenuation = albedo->value(0, 0, rec.p);
                 return true;
             }
+
             texture *albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2035,11 +2038,11 @@ With constructor:
                     auto newx = cos_theta*x + sin_theta*z;
                     auto newz = -sin_theta*x + cos_theta*z;
                     vec3 tester(newx, y, newz);
-                    for ( int c = 0; c < 3; c++ )
+                    for (int c = 0; c < 3; c++)
                     {
-                        if ( tester[c] > max[c] )
+                        if (tester[c] > max[c])
                             max[c] = tester[c];
-                        if ( tester[c] < min[c] )
+                        if (tester[c] < min[c])
                             min[c] = tester[c];
                     }
                 }
@@ -2310,7 +2313,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         }
         int l = 0;
         list[l++] = new bvh_node(boxlist, b, 0, 1);
-        material *light = new diffuse_light( new constant_texture(vec3(7, 7, 7)));
+        material *light = new diffuse_light(new constant_texture(vec3(7, 7, 7)));
         list[l++] = new xz_rect(123, 423, 147, 412, 554, light);
         vec3 center(400, 400, 200);
         list[l++] = new moving_sphere(center, center+vec3(30, 0, 0),
@@ -2330,7 +2333,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         material *emat =  new lambertian(new image_texture(tex_data, nx, ny));
         list[l++] = new sphere(vec3(400, 200, 400), 100, emat);
         texture *pertext = new noise_texture(0.1);
-        list[l++] =  new sphere(vec3(220, 280, 300), 80, new lambertian( pertext ));
+        list[l++] =  new sphere(vec3(220, 280, 300), 80, new lambertian(pertext));
         int ns = 1000;
         for (int j = 0; j < ns; j++) {
             boxlist2[j] = new sphere(

@@ -1,5 +1,5 @@
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -11,7 +11,6 @@
 
 #include "common/rtweekend.h"
 #include "common/rtw_stb_image.h"
-#include "common/vec3.h"
 #include "aarect.h"
 #include "box.h"
 #include "bvh.h"
@@ -20,7 +19,6 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "moving_sphere.h"
-#include "random.h"
 #include "sphere.h"
 #include "surface_texture.h"
 #include "texture.h"
@@ -68,8 +66,8 @@ hittable *final() {
     hittable **list = new hittable*[30];
     hittable **boxlist = new hittable*[10000];
     hittable **boxlist2 = new hittable*[10000];
-    material *white = new lambertian( new constant_texture(vec3(0.73, 0.73, 0.73)) );
-    material *ground = new lambertian( new constant_texture(vec3(0.48, 0.83, 0.53)) );
+    material *white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
+    material *ground = new lambertian(new constant_texture(vec3(0.48, 0.83, 0.53)));
     int b = 0;
     for (int i = 0; i < nb; i++) {
         for (int j = 0; j < nb; j++) {
@@ -85,7 +83,7 @@ hittable *final() {
     }
     int l = 0;
     list[l++] = new bvh_node(boxlist, b, 0, 1);
-    material *light = new diffuse_light( new constant_texture(vec3(7, 7, 7)) );
+    material *light = new diffuse_light(new constant_texture(vec3(7, 7, 7)));
     list[l++] = new xz_rect(123, 423, 147, 412, 554, light);
     vec3 center(400, 400, 200);
     list[l++] = new moving_sphere(center, center+vec3(30, 0, 0), 0, 1, 50, new lambertian(new constant_texture(vec3(0.7, 0.3, 0.1))));
@@ -106,7 +104,7 @@ hittable *final() {
     for (int j = 0; j < ns; j++) {
         boxlist2[j] = new sphere(vec3(165*random_double(), 165*random_double(), 165*random_double()), 10, white);
     }
-    list[l++] =   new translate(new rotate_y(new bvh_node(boxlist2,ns, 0.0, 1.0), 15), vec3(-100,270,395));
+    list[l++] =   new translate(new rotate_y(new bvh_node(boxlist2, ns, 0.0, 1.0), 15), vec3(-100,270,395));
     return new hittable_list(list,l);
 }
 
@@ -139,7 +137,7 @@ hittable *cornell_final() {
     for (int j = 0; j < ns; j++) {
         boxlist[j] = new sphere(vec3(165*random_double(), 330*random_double(), 165*random_double()), 10, white);
     }
-    list[i++] =   new translate(new rotate_y(new bvh_node(boxlist,ns, 0.0, 1.0), 15), vec3(265,0,295));
+    list[i++] =   new translate(new rotate_y(new bvh_node(boxlist, ns, 0.0, 1.0), 15), vec3(265,0,295));
     */
     hittable *boundary2 = new translate(new rotate_y(new box(vec3(0, 0, 0), vec3(165, 165, 165), new dielectric(1.5)), -18), vec3(130,0,65));
     list[i++] = boundary2;
@@ -253,7 +251,7 @@ hittable *random_scene() {
     list[i++] = new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0));
 
     //return new hittable_list(list,i);
-    return new bvh_node(list,i, 0.0, 1.0);
+    return new bvh_node(list, i, 0.0, 1.0);
 }
 
 int main() {
@@ -289,7 +287,7 @@ int main() {
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
             vec3 color;
-            for (int s=0; s < num_samples; s++) {
+            for (int s = 0; s < num_samples; s++) {
                 auto u = (i + random_double()) / nx;
                 auto v = (j + random_double()) / ny;
                 ray r = cam.get_ray(u, v);

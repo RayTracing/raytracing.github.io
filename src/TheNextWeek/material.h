@@ -1,7 +1,7 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -11,10 +11,10 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "common/rtweekend.h"
 #include "hittable.h"
 #include "ray.h"
 #include "texture.h"
-#include "random.h"
 
 
 double schlick(double cosine, double ref_idx) {
@@ -88,11 +88,13 @@ class isotropic : public material {
 class lambertian : public material {
     public:
         lambertian(texture *a) : albedo(a) {}
-        virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const  {
-             vec3 target = rec.p + rec.normal + random_unit_vector();
-             scattered = ray(rec.p, target-rec.p, r_in.time());
-             attenuation = albedo->value(rec.u, rec.v, rec.p);
-             return true;
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+        ) const {
+            vec3 target = rec.p + rec.normal + random_unit_vector();
+            scattered = ray(rec.p, target-rec.p, r_in.time());
+            attenuation = albedo->value(rec.u, rec.v, rec.p);
+            return true;
         }
 
         texture *albedo;
@@ -132,6 +134,7 @@ class dielectric : public material {
                   ni_over_nt = 1.0 / ref_idx;
                   cosine = -dot(r_in.direction(), rec.normal) / r_in.direction().length();
              }
+
              if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
                 reflect_prob = schlick(cosine, ref_idx);
              }
@@ -139,12 +142,14 @@ class dielectric : public material {
                 scattered = ray(rec.p, reflected, r_in.time());
                 reflect_prob = 1.0;
              }
+
              if (random_double() < reflect_prob) {
                 scattered = ray(rec.p, reflected, r_in.time());
              }
              else {
                 scattered = ray(rec.p, refracted, r_in.time());
              }
+
              return true;
         }
 

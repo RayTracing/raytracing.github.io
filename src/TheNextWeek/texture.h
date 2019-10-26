@@ -1,7 +1,7 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -11,6 +11,7 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "common/rtweekend.h"
 #include "perlin.h"
 
 
@@ -21,8 +22,8 @@ class texture  {
 
 class constant_texture : public texture {
     public:
-        constant_texture() { }
-        constant_texture(vec3 c) : color(c) { }
+        constant_texture() {}
+        constant_texture(vec3 c) : color(c) {}
         virtual vec3 value(double u, double v, const vec3& p) const {
             return color;
         }
@@ -31,8 +32,8 @@ class constant_texture : public texture {
 
 class checker_texture : public texture {
     public:
-        checker_texture() { }
-        checker_texture(texture *t0, texture *t1): even(t0), odd(t1) { }
+        checker_texture() {}
+        checker_texture(texture *t0, texture *t1): even(t0), odd(t1) {}
         virtual vec3 value(double u, double v, const vec3& p) const {
             auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
             if (sines < 0)
@@ -52,7 +53,7 @@ class noise_texture : public texture {
         virtual vec3 value(double u, double v, const vec3& p) const {
             // return vec3(1,1,1)*0.5*(1 + noise.turb(scale * p));
             // return vec3(1,1,1)*noise.turb(scale * p);
-            return vec3(1,1,1)*0.5*(1 + sin(scale*p.x() + 5*noise.turb(scale*p))) ;
+            return vec3(1,1,1)*0.5*(1 + sin(scale*p.x() + 5*noise.turb(scale*p)));
         }
         perlin noise;
         double scale;

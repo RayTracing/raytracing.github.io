@@ -1,7 +1,7 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -11,8 +11,8 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "common/rtweekend.h"
 #include "hittable.h"
-#include "random.h"
 #include "ray.h"
 
 
@@ -63,7 +63,9 @@ vec3 random_in_unit_sphere() {
 
 class material  {
     public:
-        virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const = 0;
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+        ) const = 0;
 };
 
 
@@ -118,14 +120,17 @@ class dielectric : public material {
                   ni_over_nt = 1.0 / ref_idx;
                   cosine = -dot(r_in.direction(), rec.normal) / r_in.direction().length();
              }
+
              if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted))
                 reflect_prob = schlick(cosine, ref_idx);
              else
                 reflect_prob = 1.0;
+
              if (random_double() < reflect_prob)
                 scattered = ray(rec.p, reflected);
              else
                 scattered = ray(rec.p, refracted);
+
              return true;
         }
 

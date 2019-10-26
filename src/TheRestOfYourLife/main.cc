@@ -1,5 +1,5 @@
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -11,7 +11,6 @@
 
 #include "common/rtweekend.h"
 #include "common/rtw_stb_image.h"
-#include "common/vec3.h"
 #include "aarect.h"
 #include "box.h"
 #include "bvh.h"
@@ -20,7 +19,6 @@
 #include "material.h"
 #include "moving_sphere.h"
 #include "pdf.h"
-#include "random.h"
 #include "sphere.h"
 #include "surface_texture.h"
 #include "texture.h"
@@ -77,7 +75,7 @@ void cornell_box(hittable **scene, camera **cam, double aspect) {
                     new box(vec3(0, 0, 0), vec3(165, 330, 165), white),  15), vec3(265,0,295));
     *scene = new hittable_list(list,i);
     vec3 lookfrom(278, 278, -800);
-    vec3 lookat(278,278,0);
+    vec3 lookat(278, 278, 0);
     auto dist_to_focus = 10.0;
     auto aperture = 0.0;
     auto vfov = 40.0;
@@ -106,7 +104,7 @@ int main() {
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
             vec3 color;
-            for (int s=0; s < num_samples; s++) {
+            for (int s = 0; s < num_samples; s++) {
                 auto u = (i + random_double()) / nx;
                 auto v = (j + random_double()) / ny;
                 ray r = cam->get_ray(u, v);

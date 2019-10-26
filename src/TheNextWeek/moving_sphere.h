@@ -1,7 +1,7 @@
 #ifndef MOVING_SPHERE_H
 #define MOVING_SPHERE_H
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -11,13 +11,17 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
+#include "common/rtweekend.h"
 #include "hittable.h"
 
 
 class moving_sphere: public hittable  {
     public:
         moving_sphere() {}
-        moving_sphere(vec3 cen0, vec3 cen1, double t0, double t1, double r, material *m) : center0(cen0), center1(cen1), time0(t0),time1(t1), radius(r), mat_ptr(m)  {};
+        moving_sphere(
+            vec3 cen0, vec3 cen1, double t0, double t1, double r, material *m)
+          : center0(cen0), center1(cen1), time0(t0), time1(t1), radius(r), mat_ptr(m)
+        {};
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& box) const;
         vec3 center(double time) const;

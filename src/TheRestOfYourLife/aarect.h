@@ -12,9 +12,7 @@
 //==================================================================================================
 
 #include "common/rtweekend.h"
-#include "common/vec3.h"
 #include "hittable.h"
-#include "random.h"
 
 
 class xy_rect: public hittable  {
