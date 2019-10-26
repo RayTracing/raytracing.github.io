@@ -26,6 +26,6 @@ int main() {
         auto z = 1 - r2;
         sum += z*z*z / (1.0/(2.0*pi));
     }
-    std::cout << "PI/2 = " << pi/2 << "\n";
-    std::cout << "Estimate = " << sum/N << "\n";
+    std::cout << "PI/2 = " << pi/2 << '\n';
+    std::cout << "Estimate = " << sum/N << '\n';
 }

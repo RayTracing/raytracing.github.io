@@ -35,16 +35,13 @@ inline vec3 random_to_sphere(double radius, double distance_squared) {
     return vec3(x, y, z);
 }
 
-
 vec3 random_in_unit_sphere() {
     vec3 p;
     do {
-        p = 2.0*vec3(random_double(),random_double(),random_double()) - vec3(1,1,1);
-    } while (dot(p,p) >= 1.0);
+        p = 2*vec3(random_double(),random_double(),random_double()) - vec3(1,1,1);
+    } while (p.squared_length() >= 1);
     return p;
 }
-
-
 
 class pdf  {
     public:
@@ -52,7 +49,6 @@ class pdf  {
         virtual vec3 generate() const = 0;
         virtual ~pdf() {}
 };
-
 
 class cosine_pdf : public pdf {
     public:
