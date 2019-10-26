@@ -535,6 +535,7 @@ normal, we need the hit point, not just whether we hit or not. Let’s assume th
         auto b = 2.0 * dot(oc, r.direction());
         auto c = dot(oc, oc) - radius*radius;
         auto discriminant = b*b - 4*a*c;
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (discriminant < 0) {
             return -1.0;
@@ -568,6 +569,46 @@ And that yields this picture:
   ![Image 6-1](../images/img-1-06-1.png)
 
 </div>
+
+Let’s revisit the ray-sphere equation:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 oc = r.origin() - center;
+    auto a = dot(r.direction(), r.direction());
+    auto b = 2.0 * dot(oc, r.direction());
+    auto c = dot(oc, oc) - radius*radius;
+    auto discriminant = b*b - 4*a*c;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+First, recall that a vector dotted with itself is equal to the squared length of that vector.
+
+Second, notice how the equation for `b` has a factor of two in it. Consider what happens to the
+quadratic equation if $b = 2h$:
+
+  $$ \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} $$
+
+  $$ = \frac{-2h \pm \sqrt{(2h)^2 - 4ac}}{2a} $$
+
+  $$ = \frac{-2h \pm 2\sqrt{h^2 - ac}}{2a} $$
+
+  $$ = \frac{-h \pm \sqrt{h^2 - ac}}{a} $$
+
+Using these observations, we can now simplify the sphere-intersection code to this:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 oc = r.origin() - center;
+    auto a = r.direction().squared_length();
+    auto half_b = dot(oc, r.direction());
+    auto c = oc.squared_length() - radius*radius;
+    auto discriminant = half_b*half_b - a*c;
+
+    if (discriminant < 0) {
+        return -1.0;
+    }
+    else {
+        return (-half_b - sqrt(discriminant) ) / a;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 Now, how about several spheres? While it is tempting to have an array of spheres, a very clean
 solution is the make an “abstract class” for anything a ray might hit and make both a sphere and a
@@ -609,7 +650,7 @@ we’ll want motion blur at some point, so I’ll add a time input variable. Her
 </div>
 
 <div class='together'>
-And here’s the sphere (note that I eliminated a bunch of redundant 2’s that cancel each other out):
+And here’s the sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef SPHERE_H
@@ -629,19 +670,21 @@ And here’s the sphere (note that I eliminated a bunch of redundant 2’s that 
 
     bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         vec3 oc = r.origin() - center;
-        auto a = dot(r.direction(), r.direction());
-        auto b = dot(oc, r.direction());
-        auto c = dot(oc, oc) - radius*radius;
-        auto discriminant = b*b - a*c;
+        auto a = r.direction().squared_length();
+        auto half_b = dot(oc, r.direction());
+        auto c = oc.squared_length() - radius*radius;
+        auto discriminant = half_b*half_b - a*c;
+
         if (discriminant > 0) {
-            auto temp = (-b - sqrt(discriminant))/a;
+            auto root = sqrt(discriminant);
+            auto temp = (-half_b - root)/a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
                 rec.normal = (rec.p - center) / radius;
                 return true;
             }
-            temp = (-b + sqrt(discriminant)) / a;
+            temp = (-half_b + root) / a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
@@ -1162,7 +1205,7 @@ functions of the material pointer to find out what ray, if any, is scattered.
 
 <div class='together'>
 To achieve this, we must have a reference to the material for our sphere class to returned
-within `hit_record`. See the lines below marked with **`/* NEW */`**.
+within `hit_record`. See the highlighted lines below:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere: public hittable  {
@@ -1174,30 +1217,38 @@ within `hit_record`. See the lines below marked with **`/* NEW */`**.
                 const ray& r, double tmin, double tmax, hit_record& rec) const;
             vec3 center;
             double radius;
-            material *mat_ptr; /* NEW */
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            material *mat_ptr;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
 
     bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         vec3 oc = r.origin() - center;
-        auto a = dot(r.direction(), r.direction());
-        auto b = dot(oc, r.direction());
-        auto c = dot(oc, oc) - radius*radius;
-        auto discriminant = b*b - a*c;
+        auto a = r.direction().squared_length();
+        auto half_b = dot(oc, r.direction());
+        auto c = oc.squared_length() - radius*radius;
+        auto discriminant = half_b*half_b - a*c;
+
         if (discriminant > 0) {
-            auto temp = (-b - sqrt(discriminant))/a;
+            auto root = sqrt(discriminant);
+            auto temp = (-half_b - root)/a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
                 rec.normal = (rec.p - center) / radius;
-                rec.mat_ptr = mat_ptr; /* NEW */
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                rec.mat_ptr = mat_ptr;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return true;
             }
-            temp = (-b + sqrt(discriminant)) / a;
+            temp = (-half_b + root) / a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
                 rec.normal = (rec.p - center) / radius;
-                rec.mat_ptr = mat_ptr; /* NEW */
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                rec.mat_ptr = mat_ptr;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return true;
             }
         }

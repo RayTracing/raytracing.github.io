@@ -1,7 +1,7 @@
 #ifndef SPHERE_H
 #define SPHERE_H
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -12,6 +12,7 @@
 //==================================================================================================
 
 #include "common/rtweekend.h"
+#include "common/vec3.h"
 #include "hittable.h"
 #include "onb.h"
 #include "pdf.h"
@@ -32,7 +33,7 @@ class sphere: public hittable  {
 
 double sphere::pdf_value(const vec3& o, const vec3& v) const {
     hit_record rec;
-    if (this->hit(ray(o, v), 0.001, FLT_MAX, rec)) {
+    if (this->hit(ray(o, v), 0.001, infinity, rec)) {
         auto cos_theta_max = sqrt(1 - radius*radius/(center-o).squared_length());
         auto solid_angle = 2*pi*(1-cos_theta_max);
         return  1 / solid_angle;
@@ -57,12 +58,14 @@ bool sphere::bounding_box(double t0, double t1, aabb& box) const {
 
 bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
     vec3 oc = r.origin() - center;
-    auto a = dot(r.direction(), r.direction());
-    auto b = dot(oc, r.direction());
-    auto c = dot(oc, oc) - radius*radius;
-    auto discriminant = b*b - a*c;
+    auto a = r.direction().squared_length();
+    auto half_b = dot(oc, r.direction());
+    auto c = oc.squared_length() - radius*radius;
+    auto discriminant = half_b*half_b - a*c;
+
     if (discriminant > 0) {
-        auto temp = (-b - sqrt(b*b-a*c))/a;
+        auto root = sqrt(discriminant);
+        auto temp = (-half_b - root)/a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
             rec.p = r.point_at_parameter(rec.t);
@@ -71,7 +74,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
             rec.mat_ptr = mat_ptr;
             return true;
         }
-        temp = (-b + sqrt(b*b-a*c))/a;
+        temp = (-half_b + root)/a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
             rec.p = r.point_at_parameter(rec.t);

@@ -1,7 +1,7 @@
 #ifndef AARECT_H
 #define AARECT_H
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -42,7 +42,7 @@ class xz_rect: public hittable  {
         }
         virtual double  pdf_value(const vec3& o, const vec3& v) const {
             hit_record rec;
-            if (this->hit(ray(o, v), 0.001, FLT_MAX, rec)) {
+            if (this->hit(ray(o, v), 0.001, infinity, rec)) {
                 auto area = (x1-x0)*(z1-z0);
                 auto distance_squared = rec.t * rec.t * v.squared_length();
                 auto cosine = fabs(dot(v, rec.normal) / v.length());

@@ -184,12 +184,14 @@ intersection code barely needs a change: `center` just needs to become a functio
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         vec3 oc = r.origin() - center(r.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        auto a = dot(r.direction(), r.direction());
-        auto b = dot(oc, r.direction());
-        auto c = dot(oc, oc) - radius*radius;
-        auto discriminant = b*b - a*c;
+        auto a = r.direction().squared_length();
+        auto half_b = dot(oc, r.direction());
+        auto c = oc.squared_length() - radius*radius;
+        auto discriminant = half_b*half_b - a*c;
+
         if (discriminant > 0) {
-            auto temp = (-b - sqrt(discriminant))/a;
+            auto root = sqrt(discriminant);
+            auto temp = (-half_b - root)/a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
@@ -199,7 +201,7 @@ intersection code barely needs a change: `center` just needs to become a functio
                 rec.mat_ptr = mat_ptr;
                 return true;
             }
-            temp = (-b + sqrt(discriminant))/a;
+            temp = (-half_b + root) / a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
@@ -2011,8 +2013,8 @@ With constructor:
         sin_theta = sin(radians);
         cos_theta = cos(radians);
         hasbox = ptr->bounding_box(0, 1, bbox);
-        vec3 min(FLT_MAX, FLT_MAX, FLT_MAX);
-        vec3 max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+        vec3 min(infinity, infinity, infinity);
+        vec3 max(-infinity, -infinity, -infinity);
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 2; j++) {
                 for (int k = 0; k < 2; k++) {
@@ -2174,8 +2176,8 @@ And the hit function is:
 
         hit_record rec1, rec2;
 
-        if (boundary->hit(r, -FLT_MAX, FLT_MAX, rec1)) {
-            if (boundary->hit(r, rec1.t+0.0001, FLT_MAX, rec2)) {
+        if (boundary->hit(r, -infinity, infinity, rec1)) {
+            if (boundary->hit(r, rec1.t+0.0001, infinity, rec2)) {
 
                 if (debugging) std::cerr << "\nt0 t1 " << rec1.t << " " << rec2.t << '\n';
 
