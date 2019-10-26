@@ -12,10 +12,8 @@
 //==================================================================================================
 
 #include "common/rtweekend.h"
-#include "common/vec3.h"
 #include "hittable.h"
 #include "material.h"
-#include "random.h"
 #include "texture.h"
 
 #include <float.h>

@@ -766,6 +766,7 @@ file.
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 </div>
 
 <div class='together'>
@@ -862,19 +863,17 @@ that.
 <div class='together'>
 A simple approach to this is to use the `rand()` function that can be found in `<cstdlib>`. This
 function returns a random integer in the range 0 and RANDMAX. Hence we can get a real random number
-as desired with the following code snippet:
+as desired with the following code snippet, added to `common/rtweekend.h`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef RANDOM_H
-    #define RANDOM_H
-
     #include <cstdlib>
+    ...
 
     inline double random_double() {
         return rand() / (RAND_MAX + 1.0);
     }
-    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 </div>
 
 <div class='together'>
@@ -883,9 +882,6 @@ addressed this issue with the `<random>` header (if imperfectly according to som
 If you want to use this, you can obtain a random number with the conditions we need as follows:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef RANDOM_H
-    #define RANDOM_H
-
     #include <functional>
     #include <random>
 
@@ -893,10 +889,9 @@ If you want to use this, you can obtain a random number with the conditions we n
         static std::uniform_real_distribution<double> distribution(0.0, 1.0);
         static std::mt19937 generator;
         static std::function<double()> rand_generator =
-          std::bind(distribution, generator);
+            std::bind(distribution, generator);
         return rand_generator();
-      }
-    #endif
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
@@ -1876,7 +1871,7 @@ point:
     #ifndef CAMERA_H
     #define CAMERA_H
 
-    #include "random.h"
+    #include "common/rtweekend.h"
     #include "ray.h"
 
     vec3 random_in_unit_disk() {

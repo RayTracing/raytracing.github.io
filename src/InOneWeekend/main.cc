@@ -1,5 +1,5 @@
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -10,12 +10,9 @@
 //==================================================================================================
 
 #include "common/rtweekend.h"
-#include "common/vec3.h"
-
 #include "camera.h"
 #include "hittable_list.h"
 #include "material.h"
-#include "random.h"
 #include "sphere.h"
 
 #include <float.h>

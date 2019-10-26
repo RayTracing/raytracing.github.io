@@ -1,7 +1,7 @@
 #ifndef PERLIN_H
 #define PERLIN_H
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -11,8 +11,7 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include "common/vec3.h"
-#include "random.h"
+#include "common/rtweekend.h"
 
 
 inline double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
