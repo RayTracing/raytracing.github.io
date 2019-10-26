@@ -34,7 +34,6 @@ int main() {
     }
 
     auto N = static_cast<double>(sqrt_N) * sqrt_N;
-
     std::cout
         << "Regular    Estimate of Pi = "
         << 4*double(inside_circle) / N << '\n'

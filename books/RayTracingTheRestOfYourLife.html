@@ -87,7 +87,7 @@ centered at the origin:
             if(x*x + y*y < 1)
                 inside_circle++;
         }
-        std::cout << "Estimate of Pi = " << 4*double(inside_circle) / N << "\n";
+        std::cout << "Estimate of Pi = " << 4*double(inside_circle) / N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estpi-1]: <kbd>[pi.cc]</kbd> Estimating π]
@@ -161,10 +161,13 @@ because we need to know the grid. Let’s take a hundred million and try it both
                     inside_circle_stratified++;
             }
         }
-        std::cout << "Regular    Estimate of Pi = " <<
-              4*double(inside_circle) / (sqrt_N*sqrt_N) << "\n";
-        std::cout << "Stratified Estimate of Pi = " <<
-              4*double(inside_circle_stratified) / (sqrt_N*sqrt_N) << "\n";
+
+        auto N = static_cast<double>(sqrt_N) * sqrt_N;
+        std::cout
+            << "Regular    Estimate of Pi = "
+            << 4*double(inside_circle) / (sqrt_N*sqrt_N) << '\n'
+            << "Stratified Estimate of Pi = "
+            << 4*double(inside_circle_stratified) / (sqrt_N*sqrt_N) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estpi-3]: <kbd>[pi.cc]</kbd> Estimating π, v3]
@@ -401,14 +404,14 @@ weighting function should be proportional to $1/pdf$ . In fact it is exactly $1/
         int inside_circle = 0;
         int inside_circle_stratified = 0;
         int N = 1000000;
-        double sum;
+        auto sum = 0.0;
         for (int i = 0; i < N; i++) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto x = sqrt(4*random_double());
             sum += x*x / pdf(x);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-        std::cout << "I =" << sum/N << "\n";
+        std::cout << "I = " << sum/N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-xsq-2]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$ with _pdf_]
@@ -432,14 +435,14 @@ the machinery to get `x = 2*random_double()` and the code is:
         int inside_circle = 0;
         int inside_circle_stratified = 0;
         int N = 1000000;
-        double sum;
+        auto sum = 0.0;
         for (int i = 0; i < N; i++) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto x = 2*random_double();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             sum += x*x / pdf(x);
         }
-        std::cout << "I =" << sum/N << "\n";
+        std::cout << "I = " << sum/N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-xsq-3]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$, v3]
@@ -478,14 +481,14 @@ sample we get:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         int N = 1;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        double sum;
+        auto sum = 0.0;
         for (int i = 0; i < N; i++) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto x = pow(8*random_double(), 1./3.);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             sum += x*x / pdf(x);
         }
-        std::cout << "I =" << sum/N << "\n";
+        std::cout << "I = " << sum/N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-xsq-4]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$, final version]
@@ -525,8 +528,8 @@ uniform random samples in a unit sphere:
     vec3 random_in_unit_sphere() {
         vec3 p;
         do {
-            p = 2.0*vec3(random_double(),random_double(),random_double()) - vec3(1,1,1);
-        } while (dot(p,p) >= 1.0);
+            p = 2*vec3(random_double(),random_double(),random_double()) - vec3(1,1,1);
+        } while (p.squared_length() >= 1);
         return p;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -539,10 +542,12 @@ To get points on a unit sphere we can just normalize the vector to those points:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_on_unit_sphere() {
         vec3 p;
+        double len_squared;
         do {
-            p = 2.0*vec3(random_double(),random_double(),random_double()) - vec3(1,1,1);
-        } while (dot(p,p) >= 1.0);
-        return unit_vector(p);
+            p = 2*vec3(random_double(),random_double(),random_double()) - vec3(1,1,1);
+            len_squared = p.squared_length();
+        } while (len_squared >= 1);
+        return p / sqrt(len_squared);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [rand-on-sphere]: <kbd>[sphere_importance.cc]</kbd>
@@ -561,13 +566,13 @@ z axis:
 
     int main() {
         int N = 1000000;
-        double sum;
+        auto sum = 0.0;
         for (int i = 0; i < N; i++) {
-                vec3 d = random_on_unit_sphere();
-                auto cosine_squared = d.z()*d.z();
-                sum += cosine_squared / pdf(d);
+            vec3 d = random_on_unit_sphere();
+            auto cosine_squared = d.z()*d.z();
+            sum += cosine_squared / pdf(d);
         }
-        std::cout << "I =" << sum/N << "\n";
+        std::cout << "I = " << sum/N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-sphereimp]: <kbd>[sphere_importance.cc]</kbd>
@@ -965,8 +970,7 @@ We can output some of these:
             auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
             auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
             auto z = 1 - 2*r2;
-
-            std::cout << x << " " << y << " " << z << "\n";
+            std::cout << x << " " << y << " " << z << '\n';
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1014,8 +1018,8 @@ which is $\cos^3 / (1/(2 \pi))$, and we can test this:
             auto z = 1 - r2;
             sum += z*z*z / (1.0/(2.0*pi));
         }
-        std::cout << "PI/2 = " << pi/2 << "\n";
-        std::cout << "Estimate = " << sum/N << "\n";
+        std::cout << "PI/2 = " << pi/2 << '\n';
+        std::cout << "Estimate = " << sum/N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [cos-cubed]: <kbd>[cos_cubed.cc]</kbd> Integration using $cos^3(x)$]
@@ -1041,6 +1045,11 @@ We can save a little algebra on specific cases by noting
 Let’s also start generating them as random vectors:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "common/rtweekend.h"
+
+    #include <iostream>
+    #include <math.h>
+
     inline vec3 random_cosine_direction() {
         auto r1 = random_double();
         auto r2 = random_double();
@@ -1058,8 +1067,8 @@ Let’s also start generating them as random vectors:
             vec3 v = random_cosine_direction();
             sum += v.z()*v.z()*v.z() / (v.z()/(pi));
         }
-        std::cout << "PI/2 = " << pi/2 << "\n";
-        std::cout << "Estimate = " << sum/N << "\n";
+        std::cout << "PI/2 = " << pi/2 << '\n';
+        std::cout << "Estimate = " << sum/N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [cos-density]: <kbd>[cos_density.cc]</kbd> Integration with cosine density function]

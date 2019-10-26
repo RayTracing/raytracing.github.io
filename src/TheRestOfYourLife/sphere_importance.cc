@@ -18,10 +18,12 @@
 
 vec3 random_on_unit_sphere() {
     vec3 p;
+    double len_squared;
     do {
-        p = 2.0*vec3(random_double(),random_double(),random_double()) - vec3(1,1,1);
-    } while (dot(p,p) >= 1.0);
-    return unit_vector(p);
+        p = 2*vec3(random_double(), random_double(), random_double()) - vec3(1,1,1);
+        len_squared = p.squared_length();
+    } while (len_squared >= 1);
+    return p / sqrt(len_squared);
 }
 
 inline double pdf(const vec3& p) {

@@ -33,6 +33,6 @@ int main() {
         vec3 v = random_cosine_direction();
         sum += v.z()*v.z()*v.z() / (v.z()/(pi));
     }
-    std::cout << "PI/2 = " << pi/2 << "\n";
-    std::cout << "Estimate = " << sum/N << "\n";
+    std::cout << "PI/2 = " << pi/2 << '\n';
+    std::cout << "Estimate = " << sum/N << '\n';
 }
