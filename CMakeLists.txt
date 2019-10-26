@@ -22,7 +22,6 @@ set ( SOURCE_ONE_WEEKEND
   src/InOneWeekend/hittable.h
   src/InOneWeekend/hittable_list.h
   src/InOneWeekend/material.h
-  src/InOneWeekend/random.h
   src/InOneWeekend/ray.h
   src/InOneWeekend/sphere.h
   src/InOneWeekend/main.cc
@@ -44,7 +43,6 @@ set ( SOURCE_NEXT_WEEK
   src/TheNextWeek/material.h
   src/TheNextWeek/moving_sphere.h
   src/TheNextWeek/perlin.h
-  src/TheNextWeek/random.h
   src/TheNextWeek/ray.h
   src/TheNextWeek/sphere.h
   src/TheNextWeek/surface_texture.h
@@ -70,7 +68,6 @@ set ( SOURCE_REST_OF_YOUR_LIFE
   src/TheRestOfYourLife/onb.h
   src/TheRestOfYourLife/pdf.h
   src/TheRestOfYourLife/perlin.h
-  src/TheRestOfYourLife/random.h
   src/TheRestOfYourLife/ray.h
   src/TheRestOfYourLife/sphere.h
   src/TheRestOfYourLife/surface_texture.h

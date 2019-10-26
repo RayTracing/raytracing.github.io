@@ -1,7 +1,7 @@
 #ifndef PDF_H
 #define PDF_H
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -13,7 +13,6 @@
 
 #include "common/rtweekend.h"
 #include "onb.h"
-#include "random.h"
 
 
 inline vec3 random_cosine_direction() {

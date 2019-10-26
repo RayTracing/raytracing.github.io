@@ -1,6 +1,7 @@
 #ifndef RTWEEKEND_H
 #define RTWEEKEND_H
 
+#include <cstdlib>
 #include <limits>
 
 
@@ -20,5 +21,13 @@ inline double clamp(double x, double min, double max) {
     if (x > max) return max;
     return x;
 }
+
+inline double random_double() {
+    return rand() / (RAND_MAX + 1.0);
+}
+
+// Common Headers
+
+#include "common/vec3.h"
 
 #endif

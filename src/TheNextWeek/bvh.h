@@ -12,7 +12,6 @@
 //==================================================================================================
 
 #include "hittable.h"
-#include "random.h"
 
 
 class bvh_node : public hittable  {
