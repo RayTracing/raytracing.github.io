@@ -17,11 +17,11 @@
 
 int main() {
     for (int i = 0; i < 2000; i++) {
-        float r1 = random_double();
-        float r2 = random_double();
-        float x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
-        float y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
-        float z = 1 - 2*r2;
-        std::cout << x << " " << y << " " << z << "\n";
+        auto r1 = random_double();
+        auto r2 = random_double();
+        auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
+        auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
+        auto z = 1 - 2*r2;
+        std::cout << x << " " << y << " " << z << '\n';
     }
 }
