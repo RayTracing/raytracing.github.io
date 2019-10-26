@@ -1,5 +1,5 @@
 //==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is distributed
@@ -9,22 +9,19 @@
 // with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==================================================================================================
 
-#include "random.h"
+#include "common/rtweekend.h"
 
 #include <iostream>
 #include <math.h>
-#include <stdlib.h>
 
 
 int main() {
-    int inside_circle = 0;
-    int inside_circle_stratified = 0;
-    int N = 1000000;
-    float sum;
-    for (int i = 0; i < N; i++) {
-            float x = 2*random_double();
-            sum += x*x;
+    for (int i = 0; i < 2000; i++) {
+        float r1 = random_double();
+        float r2 = random_double();
+        float x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
+        float y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
+        float z = 1 - 2*r2;
+        std::cout << x << " " << y << " " << z << "\n";
     }
-    std::cout << "I =" << 2*sum/N << "\n";
 }
-

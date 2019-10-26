@@ -38,12 +38,12 @@ struct hit_record
     material *mat_ptr;
 };
 
-class hittable  {
+class hittable {
     public:
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
         virtual bool bounding_box(double t0, double t1, aabb& box) const = 0;
-        virtual double pdf_value(const vec3& o, const vec3& v) const  {return 0.0;}
-        virtual vec3 random(const vec3& o) const {return vec3(1, 0, 0);}
+        virtual double pdf_value(const vec3& o, const vec3& v) const { return 0.0; }
+        virtual vec3 random(const vec3& o) const { return vec3(1,0,0); }
 };
 
 class flip_normals : public hittable {
@@ -120,8 +120,7 @@ rotate_y::rotate_y(hittable *p, double angle) : ptr(p) {
                 auto newx = cos_theta*x + sin_theta*z;
                 auto newz = -sin_theta*x + cos_theta*z;
                 vec3 tester(newx, y, newz);
-                for ( int c = 0; c < 3; c++ )
-                {
+                for ( int c = 0; c < 3; c++ ) {
                     if ( tester[c] > max[c] )
                         max[c] = tester[c];
                     if ( tester[c] < min[c] )
