@@ -12,10 +12,7 @@
 //==================================================================================================
 
 #include "common/rtweekend.h"
-#include "common/vec3.h"
 #include "aabb.h"
-
-#include <float.h>
 
 
 class material;

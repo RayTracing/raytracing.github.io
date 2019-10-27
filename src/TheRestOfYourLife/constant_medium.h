@@ -16,8 +16,6 @@
 #include "material.h"
 #include "texture.h"
 
-#include <float.h>
-
 
 class constant_medium : public hittable  {
     public:
