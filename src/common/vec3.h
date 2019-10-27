@@ -14,7 +14,6 @@
 #include "common/rtweekend.h"
 
 #include <iostream>
-#include <math.h>
 
 
 class vec3 {

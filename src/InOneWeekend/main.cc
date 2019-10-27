@@ -15,9 +15,7 @@
 #include "material.h"
 #include "sphere.h"
 
-#include <float.h>
 #include <iostream>
-#include <limits>
 
 
 vec3 ray_color(const ray& r, hittable *world, int depth) {
