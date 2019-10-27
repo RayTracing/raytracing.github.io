@@ -40,7 +40,7 @@ struct hit_record {
 class hittable {
     public:
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
-        virtual bool bounding_box(double t0, double t1, aabb& box) const = 0;
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const = 0;
 };
 
 class flip_normals : public hittable {
@@ -54,8 +54,8 @@ class flip_normals : public hittable {
             else
                 return false;
         }
-        virtual bool bounding_box(double t0, double t1, aabb& box) const {
-            return ptr->bounding_box(t0, t1, box);
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            return ptr->bounding_box(t0, t1, output_box);
         }
         hittable *ptr;
 };
@@ -64,7 +64,7 @@ class translate : public hittable {
     public:
         translate(hittable *p, const vec3& displacement) : ptr(p), offset(displacement) {}
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& box) const;
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
         hittable *ptr;
         vec3 offset;
 };
@@ -79,9 +79,11 @@ bool translate::hit(const ray& r, double t_min, double t_max, hit_record& rec) c
         return false;
 }
 
-bool translate::bounding_box(double t0, double t1, aabb& box) const {
-    if (ptr->bounding_box(t0, t1, box)) {
-        box = aabb(box.min() + offset, box.max()+offset);
+bool translate::bounding_box(double t0, double t1, aabb& output_box) const {
+    if (ptr->bounding_box(t0, t1, output_box)) {
+        output_box = aabb(
+            output_box.min() + offset,
+            output_box.max() + offset);
         return true;
     }
     else
@@ -92,8 +94,10 @@ class rotate_y : public hittable {
     public:
         rotate_y(hittable *p, double angle);
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& box) const {
-            box = bbox; return hasbox;}
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            output_box = bbox;
+            return hasbox;
+        }
         hittable *ptr;
         double sin_theta;
         double cos_theta;

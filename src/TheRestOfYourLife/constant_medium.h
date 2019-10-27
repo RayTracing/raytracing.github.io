@@ -25,8 +25,8 @@ class constant_medium : public hittable  {
             phase_function = new isotropic(a);
         }
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& box) const {
-            return boundary->bounding_box(t0, t1, box);
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            return boundary->bounding_box(t0, t1, output_box);
         }
         hittable *boundary;
         double density;

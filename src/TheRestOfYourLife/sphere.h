@@ -23,7 +23,7 @@ class sphere: public hittable  {
         sphere() {}
         sphere(vec3 cen, double r, material *m) : center(cen), radius(r), mat_ptr(m)  {};
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& box) const;
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
         virtual double  pdf_value(const vec3& o, const vec3& v) const;
         virtual vec3 random(const vec3& o) const;
         vec3 center;
@@ -51,8 +51,10 @@ vec3 sphere::random(const vec3& o) const {
 }
 
 
-bool sphere::bounding_box(double t0, double t1, aabb& box) const {
-    box = aabb(center - vec3(radius, radius, radius), center + vec3(radius, radius, radius));
+bool sphere::bounding_box(double t0, double t1, aabb& output_box) const {
+    output_box = aabb(
+        center - vec3(radius, radius, radius),
+        center + vec3(radius, radius, radius));
     return true;
 }
 

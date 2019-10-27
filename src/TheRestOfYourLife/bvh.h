@@ -20,15 +20,15 @@ class bvh_node : public hittable  {
         bvh_node() {}
         bvh_node(hittable **l, int n, double time0, double time1);
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& box) const;
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
         hittable *left;
         hittable *right;
         aabb box;
 };
 
 
-bool bvh_node::bounding_box(double t0, double t1, aabb& b) const {
-    b = box;
+bool bvh_node::bounding_box(double t0, double t1, aabb& output_box) const {
+    output_box = box;
     return true;
 }
 
@@ -58,7 +58,6 @@ bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
     else return false;
 }
 
-
 int box_x_compare (const void * a, const void * b) {
     aabb box_left, box_right;
     hittable *ah = *(hittable**)a;
@@ -83,6 +82,7 @@ int box_y_compare (const void * a, const void * b)
     else
         return 1;
 }
+
 int box_z_compare (const void * a, const void * b)
 {
     aabb box_left, box_right;
@@ -102,10 +102,10 @@ bvh_node::bvh_node(hittable **l, int n, double time0, double time1) {
     auto *left_area = new double[n];
     auto *right_area = new double[n];
     aabb main_box;
-    bool dummy = l[0]->bounding_box(time0,time1,main_box);
+    bool dummy = l[0]->bounding_box(time0, time1, main_box);
     for (int i = 1; i < n; i++) {
         aabb new_box;
-        bool dummy = l[i]->bounding_box(time0,time1,new_box);
+        bool dummy = l[i]->bounding_box(time0, time1, new_box);
         main_box = surrounding_box(new_box, main_box);
     }
     int axis = main_box.longest_axis();
@@ -116,7 +116,7 @@ bvh_node::bvh_node(hittable **l, int n, double time0, double time1) {
     else
         qsort(l, n, sizeof(hittable *), box_z_compare);
     for (int i = 0; i < n; i++)
-        bool dummy = l[i]->bounding_box(time0,time1,boxes[i]);
+        bool dummy = l[i]->bounding_box(time0, time1, boxes[i]);
     left_area[0] = boxes[0].area();
     aabb left_box = boxes[0];
     for (int i = 1; i < n-1; i++) {
