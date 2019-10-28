@@ -15,9 +15,13 @@ project ( RTWeekend
 set ( CMAKE_CXX_STANDARD 11 )
 
 # Source
-set ( SOURCE_ONE_WEEKEND
+set ( COMMON_ALL
   src/common/rtweekend.h
   src/common/vec3.h
+)
+
+set ( SOURCE_ONE_WEEKEND
+  ${COMMON_ALL}
   src/InOneWeekend/camera.h
   src/InOneWeekend/hittable.h
   src/InOneWeekend/hittable_list.h
@@ -28,9 +32,8 @@ set ( SOURCE_ONE_WEEKEND
 )
 
 set ( SOURCE_NEXT_WEEK
-  src/common/rtweekend.h
+  ${COMMON_ALL}
   src/common/rtw_stb_image.h
-  src/common/vec3.h
   src/common/external/stb_image.h
   src/TheNextWeek/aabb.h
   src/TheNextWeek/aarect.h
@@ -51,13 +54,13 @@ set ( SOURCE_NEXT_WEEK
 )
 
 set ( SOURCE_REST_OF_YOUR_LIFE
-  src/common/rtweekend.h
+  ${COMMON_ALL}
   src/common/rtw_stb_image.h
-  src/common/vec3.h
   src/common/external/stb_image.h
   src/TheRestOfYourLife/aabb.h
   src/TheRestOfYourLife/aarect.h
   src/TheRestOfYourLife/box.h
+  src/TheRestOfYourLife/bucamera.h
   src/TheRestOfYourLife/bvh.h
   src/TheRestOfYourLife/camera.h
   src/TheRestOfYourLife/constant_medium.h
@@ -75,12 +78,23 @@ set ( SOURCE_REST_OF_YOUR_LIFE
   src/TheRestOfYourLife/main.cc
 )
 
-set ( COMMON_DIR src )
-
+# Executables
 add_executable(inOneWeekend      ${SOURCE_ONE_WEEKEND})
 add_executable(theNextWeek       ${SOURCE_NEXT_WEEK})
 add_executable(theRestOfYourLife ${SOURCE_REST_OF_YOUR_LIFE})
+add_executable(cos_cubed         src/TheRestOfYourLife/cos_cubed.cc         ${COMMON_ALL})
+add_executable(cos_density       src/TheRestOfYourLife/cos_density.cc       ${COMMON_ALL})
+add_executable(integrate_x_sq    src/TheRestOfYourLife/integrate_x_sq.cc    ${COMMON_ALL})
+add_executable(pi                src/TheRestOfYourLife/pi.cc                ${COMMON_ALL})
+add_executable(sphere_importance src/TheRestOfYourLife/sphere_importance.cc ${COMMON_ALL})
+add_executable(sphere_plot       src/TheRestOfYourLife/sphere_plot.cc       ${COMMON_ALL})
 
-target_include_directories(inOneWeekend      PRIVATE ${COMMON_DIR})
-target_include_directories(theNextWeek       PRIVATE ${COMMON_DIR})
-target_include_directories(theRestOfYourLife PRIVATE ${COMMON_DIR})
+target_include_directories(inOneWeekend      PRIVATE src)
+target_include_directories(theNextWeek       PRIVATE src)
+target_include_directories(theRestOfYourLife PRIVATE src)
+target_include_directories(cos_cubed         PRIVATE src)
+target_include_directories(cos_density       PRIVATE src)
+target_include_directories(integrate_x_sq    PRIVATE src)
+target_include_directories(pi                PRIVATE src)
+target_include_directories(sphere_importance PRIVATE src)
+target_include_directories(sphere_plot       PRIVATE src)

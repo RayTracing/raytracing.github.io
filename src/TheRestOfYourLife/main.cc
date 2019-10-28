@@ -57,12 +57,13 @@ vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) 
 }
 
 void cornell_box(hittable **scene, camera **cam, double aspect) {
-    int i = 0;
-    hittable **list = new hittable*[8];
     material *red = new lambertian( new constant_texture(vec3(0.65, 0.05, 0.05)) );
     material *white = new lambertian( new constant_texture(vec3(0.73, 0.73, 0.73)) );
     material *green = new lambertian( new constant_texture(vec3(0.12, 0.45, 0.15)) );
     material *light = new diffuse_light( new constant_texture(vec3(15, 15, 15)) );
+
+    hittable **list = new hittable*[8];
+    int i = 0;
     list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
     list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
     list[i++] = new flip_normals(new xz_rect(213, 343, 227, 332, 554, light));
@@ -74,6 +75,7 @@ void cornell_box(hittable **scene, camera **cam, double aspect) {
     list[i++] = new translate(new rotate_y(
                     new box(vec3(0, 0, 0), vec3(165, 330, 165), white),  15), vec3(265,0,295));
     *scene = new hittable_list(list,i);
+
     vec3 lookfrom(278, 278, -800);
     vec3 lookat(278, 278, 0);
     auto dist_to_focus = 10.0;

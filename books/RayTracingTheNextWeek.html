@@ -62,8 +62,7 @@ the objects are where they need to be for the ray, and the intersection guts don
 For this we will first need to have a ray store the time it exists at:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class ray
-    {
+    class ray {
         public:
             ray() {}
             ray(const vec3& a, const vec3& b, double ti = 0.0) {
@@ -82,6 +81,7 @@ For this we will first need to have a ray store the time it exists at:
     };
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [time-ray]: <kbd>[ray.h]</kbd> Ray with time information]
 </div>
 
 Now we need to modify the camera to generate rays at a random time between `time1` and `time2`.
@@ -143,6 +143,7 @@ to camera because for now it is not allowed to move; it just sends out rays over
     };
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [time-camera]: <kbd>[camera.h]</kbd> Camera with time information]
 
 We also need a moving object. I’ll create a sphere class that has its center move linearly from
 `center0` at `time0` to `center1` at `time1`. Outside that time interval it continues on, so those
@@ -170,6 +171,7 @@ times need not match up with the camera aperture open and close.
         return center0 + ((time - time0) / (time1 - time0))*(center1 - center0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [moving-sphere]: <kbd>[moving_sphere.h]</kbd> A moving sphere]
 
 <div class='together'>
 An alternative to making a new moving sphere class is to just make them all move and have the
@@ -215,6 +217,7 @@ intersection code barely needs a change: `center` just needs to become a functio
         return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [moving-sphere-hit]: <kbd>[moving-sphere.h]</kbd> Moving sphere hit function]
 </div>
 
 <div class='together'>
@@ -239,6 +242,7 @@ Be sure that in the materials you have the scattered rays be at the time of the 
         vec3 albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [lambertian-animate]: <kbd>[material.h]</kbd> Lambertian matrial for moving objects]
 </div>
 
 <div class='together'>
@@ -295,10 +299,12 @@ $\mathbf{C} + (0, r/2, 0)$ at time $t=1$, where $r$ is a random number in $[0,1)
         return new hittable_list(list,i);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-spheres-moving]:
+    <kbd>[main.cc]</kbd> Last book's final scene, but with moving spheres]
 </div>
 
 <div class='together'>
-And with these viewing parameters gives:
+And with these viewing parameters:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 lookfrom(13,2,3);
@@ -311,6 +317,9 @@ And with these viewing parameters gives:
         dist_to_focus, 0.0, 1.0
     );
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-spheres-moving-camera]: <kbd>[main.cc]</kbd> Viewing parameters]
+
+gives the following result:
 
   ![Image 2-1](../images/img-2-2-01.jpg)
 
@@ -547,6 +556,7 @@ passing in the interval $t_{min}$, $t_{max}$ we get:
             vec3 _max;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [aabb]: <kbd>[aabb.h]</kbd> Axis-aligned bounding box class]
 </div>
 
 <div class='together'>
@@ -571,6 +581,7 @@ extremely well on many compilers, and I have adopted it as my go-to method:
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [aabb-hit]: <kbd>[aabb.h]</kbd> Axis-aligned bounding box hit function]
 </div>
 
 <div class='together'>
@@ -588,6 +599,7 @@ frame and the bounding box will bound the object moving through that interval.
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const = 0;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hittable-bbox]: <kbd>[hittable.h]</kbd> Hittable class with bounding-box]
 </div>
 
 <div class='together'>
@@ -601,6 +613,7 @@ For a sphere, that `bounding_box` function is easy:
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [sphere-bbox]: <kbd>[sphere.h]</kbd> Sphere with bounding box]
 </div>
 
 <div class='together'>
@@ -619,6 +632,7 @@ and compute the box of those two boxes:
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [moving-sphere-bbox]: <kbd>[moving_sphere.h]</kbd> Moving sphere with bounding box]
 </div>
 
 <div class='together'>
@@ -644,6 +658,7 @@ the fly because it is only usually called at BVH construction.
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hit-list-bbox]: <kbd>[hittable_list.h]</kbd> Hittable list with bounding box]
 </div>
 
 <div class='together'>
@@ -661,6 +676,7 @@ boxes:
         return aabb(small,big);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [surrounding-box]: <kbd>[aabb.h]</kbd> Surrounding bounding box]
 </div>
 
 <div class='together'>
@@ -690,6 +706,7 @@ a class:
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [bvh]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy]
 </div>
 
 Note that the children pointers are to generic hittables. They can be other `bvh_nodes`, or
@@ -726,6 +743,7 @@ check the children and sort out any details:
         else return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [bvh-hit]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy hit function]
 </div>
 
 <div class='together'>
@@ -788,6 +806,7 @@ This yields:
         box = surrounding_box(box_left, box_right);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [bvh-node]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy node]
 </div>
 
 The check for whether there is a bounding box at all is in case you sent in something like an
@@ -813,6 +832,7 @@ this part, you have a future as a systems person!
             return 1;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [bvh-x-comp]: <kbd>[bvh.h]</kbd> BVH comparison function, X-axis]
 
 
 
@@ -841,6 +861,7 @@ being able to make any color a texture is great.
             vec3 color;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [texture]: <kbd>[texture.h]</kbd> A texture class]
 
 <div class='together'>
 Now we can make textured materials by replacing the vec3 color with a texture pointer:
@@ -848,20 +869,27 @@ Now we can make textured materials by replacing the vec3 color with a texture po
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
         public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             lambertian(texture *a) : albedo(a) {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
             ) const {
                 vec3 target = rec.p + rec.normal + random_unit_vector();
                 scattered = ray(rec.p, target - rec.p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 attenuation = albedo->value(0, 0, rec.p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return true;
             }
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             texture *albedo;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [lambertian-textured]: <kbd>[material.h]</kbd> Lambertian material with texture]
 </div>
 
 <div class='together'>
@@ -870,12 +898,14 @@ where you used to have
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     new lambertian(vec3(0.5, 0.5, 0.5)))
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [lam-solid]: <kbd>[main.cc]</kbd> Lambertian material with solid color]
 
 now you should replace the `vec3(...)` with `new constant_texture(vec3(...))`
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     new lambertian(new constant_texture(vec3(0.5, 0.5, 0.5))))
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [lam-textured]: <kbd>[main.cc]</kbd> Lambertian material with texture]
 </div>
 
 <div class='together'>
@@ -899,6 +929,7 @@ forms a 3D checker pattern.
             texture *even;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [checker-texture]: <kbd>[texture.h]</kbd> Checkered texture]
 </div>
 
 Those checker odd/even pointers can be to a constant texture or to some other procedural texture.
@@ -914,6 +945,7 @@ If we add this to our random_scene() function’s base sphere:
     );
     list[0] = new sphere(vec3(0,-1000,0), 1000, new lambertian(checker));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [checker-example]: <kbd>[main.cc]</kbd> Checkered texture in use]
 
 We get:
 
@@ -937,6 +969,7 @@ If we add a new scene:
         return new hittable_list(list,2);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-two-checker]: <kbd>[main.cc]</kbd> Scene with two checkered spheres]
 
 With camera:
 
@@ -949,6 +982,7 @@ With camera:
     camera cam(lookfrom, lookat, vec3(0,1,0), 20, double(nx)/ny, aperture, dist_to_focus,
         0.0, 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-two-checker-view]: <kbd>[main.cc]</kbd> Viewing parameters]
 
 We get:
 
@@ -1038,6 +1072,7 @@ code to make it all happen:
     int *perlin::perm_y = perlin_generate_perm();
     int *perlin::perm_z = perlin_generate_perm();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin]: <kbd>[perlin.h]</kbd> A Perlin texture class and functions]
 </div>
 
 <div class='together'>
@@ -1054,6 +1089,7 @@ colors:
             perlin noise;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [noise-texture]: <kbd>[texture.h]</kbd> Noise texture]
 </div>
 
 <div class='together'>
@@ -1068,6 +1104,7 @@ We can use that texture on some spheres:
         return new hittable_list(list, 2);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-perlin]: <kbd>[main.cc]</kbd> Scene with two Perlin-textured spheres]
 </div>
 
 <div class='together'>
@@ -1081,6 +1118,7 @@ With the same camera as before:
     camera cam(lookfrom, lookat, vec3(0,1,0), 20, double(nx)/ny,
                aperture, dist_to_focus, 0.0, 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-perlin-view]: <kbd>[main.cc]</kbd> Viewing parameters]
 </div>
 
 <div class='together'>
@@ -1131,6 +1169,7 @@ To make it smooth, we can linearly interpolate:
             static int *perm_z;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-trilinear]: <kbd>[perlin.h]</kbd> Perlin with trilienear interpolation]
 </div>
 
 <div class='together'>
@@ -1164,6 +1203,7 @@ the interpolation:
                 int k = floor(p.z());
                 ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-smoothed]: <kbd>[perlin.h]</kbd> Perlin smoothed]
 </div>
 
 <div class='together'>
@@ -1192,6 +1232,7 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
             double scale;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-smoothed-2]: <kbd>[perlin.h]</kbd> Perlin smoothed, higher frequency]
 
 which gives:
 
@@ -1211,6 +1252,7 @@ max off the lattice. So, first we need to change the random floats to random vec
     int *perlin::perm_y = perlin_generate_perm();
     int *perlin::perm_z = perlin_generate_perm();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-randunit]: <kbd>[perlin.h]</kbd> Perlin with random unit translations]
 </div>
 
 <div class='together'>
@@ -1229,6 +1271,7 @@ exactly uniform:
         return p;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-gen-2]: <kbd>[perlin.h]</kbd> New perlin_generate()]
 </div>
 
 <div class='together'>
@@ -1261,6 +1304,7 @@ The Perlin class is now:
             static int *perm_z;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-2]: <kbd>[perlin.h]</kbd> The perlin class so far]
 </div>
 
 <div class='together'>
@@ -1283,6 +1327,7 @@ And the interpolation becomes a bit more complicated:
         return accum;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-interp]: <kbd>[perlin.h]</kbd> Perlin interpolation function so far]
 </div>
 
 <div class='together'>
@@ -1309,6 +1354,7 @@ turbulence and is a sum of repeated calls to noise:
         return fabs(accum);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-turb]: <kbd>[perlin.h]</kbd> Turbulence function]
 </div>
 
 Here `fabs()` is the `math.h` absolute value function.
@@ -1343,6 +1389,7 @@ effect is:
             double scale;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [noise-tex-2]: <kbd>[texture.h]</kbd> Noise texture with turbulence]
 
 Which yields:
 
@@ -1414,6 +1461,7 @@ things on the unit sphere centered at the origin. The call inside sphere::hit sh
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [get-sphere-uv-call]: <kbd>[sphere.h]</kbd> Sphere UV coordinates from hit]
 </div>
 
 <div class='together'>
@@ -1427,6 +1475,7 @@ The utility function is:
         v = (theta + pi/2) / pi;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [get-sphere-uv]: <kbd>[sphere.h]</kbd> get_sphere_uv function]
 </div>
 
 Now we also need to create a texture class that holds an image. I am going to use my favorite image
@@ -1457,6 +1506,7 @@ RGBs that each range 0..255 for black to fully-on.
          return vec3(r, g, b);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [img-texture]: <kbd>[surface_texture.h]</kbd> Image texture class]
 
 <div class='together'>
 The representation of a packed array in that order is pretty standard. Thankfully, the `stb_image`
@@ -1465,6 +1515,7 @@ package makes that super simple -- just include the header `common/rtw_stb_image
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "common/rtw_stb_image.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [incl-stb-img]: Including the STB image package]
 </div>
 
 <div class='together'>
@@ -1480,6 +1531,7 @@ is:
     unsigned char *tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
     material *mat = new lambertian(new image_texture(tex_data, nx, ny));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [stbi-load-use]: <kbd>[main.cc]</kbd> Using stbi_load() to load an image]
 </div>
 
 We start to see some of the power of all colors being textures -- we can assign any kind of texture
@@ -1500,8 +1552,8 @@ Rectangles and Lights
 
 <div class='together'>
 First, let’s make a light emitting material. We need to add an emitted function (we could also add
-it to hit_record instead -- that’s a matter of design taste). Like the background, it just tells the
-ray what color it is and performs no reflection. It’s very simple:
+it to `hit_record instead` -- that’s a matter of design taste). Like the background, it just tells
+the ray what color it is and performs no reflection. It’s very simple:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class diffuse_light : public material {
@@ -1515,6 +1567,7 @@ ray what color it is and performs no reflection. It’s very simple:
             texture *emit;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [diffuse-light]: <kbd>[material.h]</kbd> A diffuse light class]
 </div>
 
 <div class='together'>
@@ -1526,11 +1579,14 @@ class return black:
         public:
             virtual bool scatter(const ray& r_in, const hit_record& rec,
                 vec3& attenuation, ray& scattered) const = 0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             virtual vec3 emitted(double u, double v, const vec3& p) const {
                 return vec3(0,0,0);
             }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [matl-emit]: <kbd>[material.h]</kbd> New emitted function in class material]
 </div>
 
 <div class='together'>
@@ -1542,6 +1598,7 @@ Next, let’s make the background black in our `ray_color` function, and pay att
         if (world->hit(r, 0.001, infinity, rec)) {
             ray scattered;
             vec3 attenuation;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
             if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered))
                  return emitted + attenuation * ray_color(scattered, world, depth+1);
@@ -1550,8 +1607,10 @@ Next, let’s make the background black in our `ray_color` function, and pay att
         }
         else
             return vec3(0,0,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-emitted]: <kbd>[main.cc]</kbd> ray_color function for emitting materials]
 </div>
 
 Now, let’s make some rectangles. Rectangles are often convenient for modelling man-made
@@ -1604,6 +1663,7 @@ The actual `xy_rect` class is thus:
             double x0, x1, y0, y1, k;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [xy-rect]: <kbd>[aarect.h]</kbd> XY-plane rectangle objects]
 </div>
 
 <div class='together'>
@@ -1627,6 +1687,7 @@ And the hit function is:
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [xy-rect-hit]: <kbd>[aarect.h]</kbd> Hit function for XY rectangle objects]
 </div>
 
 <div class='together'>
@@ -1645,6 +1706,7 @@ If we set up a rectangle as a light:
         return new hittable_list(list,4);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rect-light]: <kbd>[main.cc]</kbd> A simple rectangle light]
 </div>
 
 <div class='together'>
@@ -1701,6 +1763,7 @@ This is xz and yz:
             double y0, y1, z0, z1, k;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [xz-yz-rects]: <kbd>[aarect.h]</kbd> XZ and YZ rectangle objects]
 </div>
 
 <div class='together'>
@@ -1741,6 +1804,7 @@ With unsurprising hit functions:
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [xz-yz]: <kbd>[aarect.h]</kbd> XZ and YZ rectangle object hit functions]
 </div>
 
 <div class='together'>
@@ -1764,6 +1828,7 @@ Let’s make the 5 walls and the light of the box:
         return new hittable_list(list,i);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [cornell-box-empty]: <kbd>[main.cc]</kbd> Cornell box scene, empty]
 </div>
 
 <div class='together'>
@@ -1779,6 +1844,7 @@ And the view info:
     camera cam(lookfrom, lookat, vec3(0,1,0), vfov, double(nx)/ny,
         aperture, dist_to_focus, 0.0, 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [cornell-box-view]: <kbd>[main.cc]</kbd> Viewing parameters]
 </div>
 
 <div class='together'>
@@ -1816,6 +1882,7 @@ another hittable, but reverses the normals:
             hittable *ptr;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [flip-normals]: <kbd>[hittable.h]</kbd> Flip-normals function]
 </div>
 
 <div class='together'>
@@ -1830,16 +1897,23 @@ This makes Cornell:
         material *green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
         material *light = new diffuse_light(new constant_texture(vec3(15, 15, 15)));
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
         list[i++] = new xz_rect(213, 343, 227, 332, 554, light);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         return new hittable_list(list,i);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [cornell-box-flipped]: <kbd>[main.cc]</kbd> Empty Cornell box with flipped rectangles]
 </div>
 
 <div class='together'>
@@ -1891,6 +1965,7 @@ make an axis-aligned block primitive that holds 6 rectangles:
         return list_ptr->hit(r, t0, t1, rec);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [box-class]: <kbd>[box.h]</kbd> A box object]
 
 <div class='together'>
 Now we can add two blocks (but not rotated)
@@ -1899,6 +1974,7 @@ Now we can add two blocks (but not rotated)
     list[i++] = new box(vec3(130, 0, 65), vec3(295, 165, 230), white);
     list[i++] = new box(vec3(265, 0, 295), vec3(430, 330, 460), white);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [add-boxes]: <kbd>[main.cc]</kbd> Adding box objects]
 
 </div>
 
@@ -1957,6 +2033,7 @@ move any underlying hittable is a _translate_ instance.
             return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [translate-class]: <kbd>[hittable.h]</kbd> Hittable translation class]
 </div>
 
 <div class='together'>
@@ -2020,6 +2097,7 @@ For a y-rotation class we have:
             aabb bbox;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rot-y]: <kbd>[hittable.h]</kbd> Hittable rotate-Y class]
 </div>
 
 <div class='together'>
@@ -2042,8 +2120,7 @@ With constructor:
                     auto newx = cos_theta*x + sin_theta*z;
                     auto newz = -sin_theta*x + cos_theta*z;
                     vec3 tester(newx, y, newz);
-                    for (int c = 0; c < 3; c++)
-                    {
+                    for (int c = 0; c < 3; c++) {
                         if (tester[c] > max[c])
                             max[c] = tester[c];
                         if (tester[c] < min[c])
@@ -2055,6 +2132,7 @@ With constructor:
         bbox = aabb(min, max);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rot-y-rot]: <kbd>[hittable.h]</kbd> Rotate-Y rotate method]
 </div>
 
 <div class='together'>
@@ -2084,6 +2162,7 @@ And the hit function:
             return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rot-y-hit]: <kbd>[hittable.h]</kbd> Hittable Y-rotate hit function]
 </div>
 
 <div class='together'>
@@ -2099,6 +2178,7 @@ And the changes to Cornell are:
                     vec3(265,0,295)
                 );
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-rot-y]: <kbd>[main.cc]</kbd> Cornell scene with Y-rotated boxes]
 </div>
 
 <div class='together'>
@@ -2157,6 +2237,7 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
             material *phase_function;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [const-med-class]: <kbd>[constant_medium.h]</kbd> Constant medium class]
 </div>
 
 <div class='together'>
@@ -2179,6 +2260,7 @@ The scattering function of isotropic picks a uniform random direction:
             texture *albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [isotropic-class]: <kbd>[material.h]</kbd> The isotropic class]
 </div>
 
 <div class='together'>
@@ -2234,6 +2316,7 @@ And the hit function is:
         return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [const-med-hit]: <kbd>[constant_medium.h]</kbd> Constant medium hit method]
 </div>
 
 The reason we have to be so careful about the logic around the boundary is we need to make sure this
@@ -2275,6 +2358,7 @@ If we replace the two blocks with smoke and fog (dark and light particles) and m
         return new hittable_list(list,i);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [cornell-smoke]: <kbd>[main.cc]</kbd> Cornell box, with smoke]
 </div>
 
 <div class='together'>
@@ -2349,6 +2433,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         return new hittable_list(list,l);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-final]: <kbd>[main.cc]</kbd> Final scene]
 
 <div class='together'>
 Running it with 10,000 rays per pixel yields:
