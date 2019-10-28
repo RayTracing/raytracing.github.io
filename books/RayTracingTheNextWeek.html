@@ -159,7 +159,7 @@ times need not match up with the camera aperture open and close.
             {};
             virtual bool hit(
                 const ray& r, double tmin, double tmax, hit_record& rec) const;
-            virtual bool bounding_box(double t0, double t1, aabb& box) const;
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
             vec3 center(double time) const;
             vec3 center0, center1;
             double time0, time1;
@@ -596,7 +596,7 @@ frame and the bounding box will bound the object moving through that interval.
         public:
             virtual bool hit(
                 const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
-            virtual bool bounding_box(double t0, double t1, aabb& box) const = 0;
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const = 0;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hittable-bbox]: <kbd>[hittable.h]</kbd> Hittable class with bounding-box]
@@ -606,9 +606,10 @@ frame and the bounding box will bound the object moving through that interval.
 For a sphere, that `bounding_box` function is easy:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool sphere::bounding_box(double t0, double t1, aabb& box) const {
-        box = aabb(center - vec3(radius, radius, radius),
-                   center + vec3(radius, radius, radius));
+    bool sphere::bounding_box(double t0, double t1, aabb& output_box) const {
+        output_box = aabb(
+            center - vec3(radius, radius, radius),
+            center + vec3(radius, radius, radius));
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -620,12 +621,14 @@ For `moving sphere`, we can take the box of the sphere at $t_0$, and the box of 
 and compute the box of those two boxes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool moving_sphere::bounding_box(double t0, double t1, aabb& box) const {
-        aabb box0(center(t0) - vec3(radius, radius, radius),
-                  center(t0) + vec3(radius, radius, radius));
-        aabb box1(center(t1) - vec3(radius, radius, radius),
-                  center(t1) + vec3(radius, radius, radius));
-        box = surrounding_box(box0, box1);
+    bool moving_sphere::bounding_box(double t0, double t1, aabb& output_box) const {
+        aabb box0(
+            center(t0) - vec3(radius, radius, radius),
+            center(t0) + vec3(radius, radius, radius));
+        aabb box1(
+            center(t1) - vec3(radius, radius, radius),
+            center(t1) + vec3(radius, radius, radius));
+        output_box = surrounding_box(box0, box1);
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -637,17 +640,17 @@ For lists you can store the bounding box at construction, or compute it on the f
 the fly because it is only usually called at BVH construction.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool hittable_list::bounding_box(double t0, double t1, aabb& box) const {
+    bool hittable_list::bounding_box(double t0, double t1, aabb& output_box) const {
         if (list_size < 1) return false;
         aabb temp_box;
         bool first_true = list[0]->bounding_box(t0, t1, temp_box);
         if (!first_true)
             return false;
         else
-            box = temp_box;
+            output_box = temp_box;
         for (int i = 1; i < list_size; i++) {
             if(list[i]->bounding_box(t0, t1, temp_box)) {
-                box = surrounding_box(box, temp_box);
+                output_box = surrounding_box(output_box, temp_box);
             }
             else
                 return false;
@@ -691,15 +694,15 @@ a class:
 
             virtual bool hit(
                 const ray& r, double tmin, double tmax, hit_record& rec) const;
-            virtual bool bounding_box(double t0, double t1, aabb& box) const;
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
 
             hittable *left;
             hittable *right;
             aabb box;
     };
 
-    bool bvh_node::bounding_box(double t0, double t1, aabb& b) const {
-        b = box;
+    bool bvh_node::bounding_box(double t0, double t1, aabb& output_box) const {
+        output_box = box;
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1652,8 +1655,8 @@ The actual `xy_rect` class is thus:
                 : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat)
             {};
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
-            virtual bool bounding_box(double t0, double t1, aabb& box) const {
-                box =  aabb(vec3(x0,y0, k-0.0001), vec3(x1, y1, k+0.0001));
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+                output_box =  aabb(vec3(x0,y0, k-0.0001), vec3(x1, y1, k+0.0001));
                 return true;
             }
             material *mp;
@@ -1736,8 +1739,8 @@ This is xz and yz:
                 : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat)
             {};
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
-            virtual bool bounding_box(double t0, double t1, aabb& box) const {
-                box =  aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+                output_box =  aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
                 return true;
             }
             material *mp;
@@ -1752,8 +1755,8 @@ This is xz and yz:
                 : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat)
             {};
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
-            virtual bool bounding_box(double t0, double t1, aabb& box) const {
-                box =  aabb(vec3(k-0.0001, y0, z0), vec3(k+0.0001, y1, z1));
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+                output_box =  aabb(vec3(k-0.0001, y0, z0), vec3(k+0.0001, y1, z1));
                 return true;
             }
             material  *mp;
@@ -1872,8 +1875,8 @@ another hittable, but reverses the normals:
                     return false;
             }
 
-            virtual bool bounding_box(double t0, double t1, aabb& box) const {
-                return ptr->bounding_box(t0, t1, box);
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+                return ptr->bounding_box(t0, t1, output_box);
             }
 
             hittable *ptr;
@@ -1934,8 +1937,8 @@ make an axis-aligned block primitive that holds 6 rectangles:
             box() {}
             box(const vec3& p0, const vec3& p1, material *ptr);
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
-            virtual bool bounding_box(double t0, double t1, aabb& box) const {
-                box =  aabb(pmin, pmax);
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+                output_box =  aabb(pmin, pmax);
                 return true;
             }
             vec3 pmin, pmax;
@@ -2006,7 +2009,7 @@ move any underlying hittable is a _translate_ instance.
                 : ptr(p), offset(displacement) {}
             virtual bool hit(
                 const ray& r, double t_min, double t_max, hit_record& rec) const;
-            virtual bool bounding_box(double t0, double t1, aabb& box) const;
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
             hittable *ptr;
             vec3 offset;
     };
@@ -2021,9 +2024,9 @@ move any underlying hittable is a _translate_ instance.
             return false;
     }
 
-    bool translate::bounding_box(double t0, double t1, aabb& box) const {
-        if (ptr->bounding_box(t0, t1, box)) {
-            box = aabb(box.min() + offset, box.max() + offset);
+    bool translate::bounding_box(double t0, double t1, aabb& output_box) const {
+        if (ptr->bounding_box(t0, t1, output_box)) {
+            output_box = aabb(output_box.min() + offset, output_box.max() + offset);
             return true;
         }
         else
@@ -2083,8 +2086,9 @@ For a y-rotation class we have:
             rotate_y(hittable *p, double angle);
             virtual bool hit(
                 const ray& r, double t_min, double t_max, hit_record& rec) const;
-            virtual bool bounding_box(double t0, double t1, aabb& box) const {
-                box = bbox; return hasbox;
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+                output_box = bbox;
+                return hasbox;
             }
             hittable *ptr;
             double sin_theta;
@@ -2225,8 +2229,8 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
             }
             virtual bool hit(
                 const ray& r, double t_min, double t_max, hit_record& rec) const;
-            virtual bool bounding_box(double t0, double t1, aabb& box) const {
-                return boundary->bounding_box(t0, t1, box);
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+                return boundary->bounding_box(t0, t1, output_box);
             }
             hittable *boundary;
             double density;

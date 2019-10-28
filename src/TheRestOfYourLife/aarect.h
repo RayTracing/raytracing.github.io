@@ -22,12 +22,14 @@ class xy_rect: public hittable  {
             : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat)
         {};
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& box) const {
-               box =  aabb(vec3(x0,y0, k-0.0001), vec3(x1, y1, k+0.0001));
-               return true; }
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            output_box =  aabb(vec3(x0,y0, k-0.0001), vec3(x1, y1, k+0.0001));
+            return true;
+        }
         material  *mp;
         double x0, x1, y0, y1, k;
 };
+
 
 class xz_rect: public hittable  {
     public:
@@ -36,8 +38,8 @@ class xz_rect: public hittable  {
             : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat)
         {};
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& box) const {
-            box =  aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            output_box =  aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
             return true;
         }
         virtual double  pdf_value(const vec3& o, const vec3& v) const {
@@ -59,6 +61,7 @@ class xz_rect: public hittable  {
         double x0, x1, z0, z1, k;
 };
 
+
 class yz_rect: public hittable  {
     public:
         yz_rect() {}
@@ -66,15 +69,12 @@ class yz_rect: public hittable  {
             : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat)
         {};
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& box) const {
-               box =  aabb(vec3(k-0.0001, y0, z0), vec3(k+0.0001, y1, z1));
-               return true; }
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            output_box =  aabb(vec3(k-0.0001, y0, z0), vec3(k+0.0001, y1, z1));
+            return true; }
         material  *mp;
         double y0, y1, z0, z1, k;
 };
-
-
-
 
 bool xy_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
     auto t = (k-r.origin().z()) / r.direction().z();
@@ -92,7 +92,6 @@ bool xy_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
     rec.normal = vec3(0, 0, 1);
     return true;
 }
-
 
 bool xz_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
     auto t = (k-r.origin().y()) / r.direction().y();

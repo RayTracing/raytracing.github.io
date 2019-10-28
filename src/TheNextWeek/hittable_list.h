@@ -19,12 +19,12 @@ class hittable_list: public hittable  {
         hittable_list() {}
         hittable_list(hittable **l, int n) {list = l; list_size = n; }
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& box) const;
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
         hittable **list;
         int list_size;
 };
 
-bool hittable_list::bounding_box(double t0, double t1, aabb& box) const {
+bool hittable_list::bounding_box(double t0, double t1, aabb& output_box) const {
     if (list_size < 1) return false;
 
     aabb temp_box;
@@ -33,11 +33,11 @@ bool hittable_list::bounding_box(double t0, double t1, aabb& box) const {
     if (!first_true)
         return false;
     else
-        box = temp_box;
+        output_box = temp_box;
 
     for (int i = 1; i < list_size; i++) {
         if (list[i]->bounding_box(t0, t1, temp_box))
-            box = surrounding_box(box, temp_box);
+            output_box = surrounding_box(output_box, temp_box);
         else
             return false;
     }
