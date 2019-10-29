@@ -13,22 +13,40 @@
 
 #include "hittable.h"
 
+#include <vector>
+
 
 class hittable_list: public hittable  {
     public:
         hittable_list() {}
-        hittable_list(hittable **l, int n) { list = l; list_size = n; }
-        virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
-        hittable **list;
-        int list_size;
+        ~hittable_list();
+        virtual bool hit(
+            const ray& r, double tmin, double tmax, hit_record& rec) const;
+
+        void add(hittable*);
+
+        std::vector<hittable*> objects;
 };
 
-bool hittable_list::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+hittable_list::~hittable_list() {
+    for (auto objectPtr : objects) {
+        delete objectPtr;
+    }
+}
+
+void hittable_list::add(hittable* objectPtr) {
+    objects.push_back(objectPtr);
+}
+
+bool hittable_list::hit(
+    const ray& r, double t_min, double t_max, hit_record& rec
+) const {
     hit_record temp_rec;
     bool hit_anything = false;
     double closest_so_far = t_max;
-    for (int i = 0; i < list_size; i++) {
-        if (list[i]->hit(r, t_min, closest_so_far, temp_rec)) {
+
+    for (auto objectPtr : objects) {
+        if (objectPtr->hit(r, t_min, closest_so_far, temp_rec)) {
             hit_anything = true;
             closest_so_far = temp_rec.t;
             rec = temp_rec;
