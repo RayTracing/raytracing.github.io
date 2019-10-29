@@ -818,14 +818,13 @@ And the new main:
         if (world->hit(r, 0.0, infinity, rec)) {
             return 0.5*vec3(rec.normal.x()+1, rec.normal.y()+1, rec.normal.z()+1);
         }
-        else {
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            vec3 unit_direction = unit_vector(r.direction());
+        vec3 unit_direction = unit_vector(r.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            auto t = 0.5*(unit_direction.y() + 1.0);
+        auto t = 0.5*(unit_direction.y() + 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
-        }
+        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
     }
 
     int main() {
@@ -1111,14 +1110,62 @@ Then update the `ray_color()` function to use the new random direction generator
             return 0.5 * ray_color(ray(rec.p, target - rec.p), world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-        else {
-            vec3 unit_direction = unit_vector(r.direction());
-            auto t = 0.5*(unit_direction.y() + 1.0);
-            return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
-        }
+
+        vec3 unit_direction = unit_vector(r.direction());
+        auto t = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-random-unit]: <kbd>[main.cc]</kbd> ray_color() using a random ray direction]
+</div>
+
+<div class='together'>
+There's one potential problem lurking here. Notice that the `ray_color` function is recursive. When
+will it stop recursing? When it fails to hit anything. In some cases, however, that may be a long
+time — long enough to blow the stack. To guard against that, let's limit the maximum recursion
+depth, returning no light contribution at the maximum depth:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
+        hit_record rec;
+        if (world->hit(r, 0.0, infinity, rec)) {
+            if (depth <= 0)
+                return vec3(0,0,0);
+            vec3 target = rec.p + rec.normal + random_unit_vector();
+            return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+
+        vec3 unit_direction = unit_vector(r.direction());
+        auto t = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+    }
+    ...
+    int main() {
+        int nx = 200;
+        int ny = 100;
+        int num_samples = 100;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        int max_depth = 50;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+        for (int j = ny-1; j >= 0; j--) {
+            for (int i = 0; i < nx; i++) {
+                vec3 color(0, 0, 0);
+                for (int s = 0; s < num_samples; s++) {
+                    auto u = (i + random_double()) / nx;
+                    auto v = (j + random_double()) / ny;
+                    ray r = cam.get_ray(u, v);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                    color += ray_color(r, world, max_depth);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                }
+                color.write_color(std::cout, num_samples);
+            }
+        }
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-depth]: <kbd>[main.cc]</kbd> ray_color() with depth limiting]
 </div>
 
 <div class='together'>
@@ -1383,21 +1430,19 @@ We need to modify the color function to use this:
         hit_record rec;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (world->hit(r, 0.001, infinity, rec)) {
+            if (depth <= 0)
+                return vec3(0,0,0);
             ray scattered;
             vec3 attenuation;
-            if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
-                return attenuation*color(scattered, world, depth+1);
-            }
-            else {
-                return vec3(0,0,0);
-            }
+            if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+                return attenuation * ray_color(scattered, world, depth-1);
+            return vec3(0,0,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-        else {
-            vec3 unit_direction = unit_vector(r.direction());
-            auto t = 0.5*(unit_direction.y() + 1.0);
-            return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
-        }
+
+        vec3 unit_direction = unit_vector(r.direction());
+        auto t = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-scatter]: <kbd>[main.cc]</kbd> Ray color with scattered reflectance]
@@ -1412,6 +1457,7 @@ metal spheres:
         int nx = 200;
         int ny = 100;
         int num_samples = 100;
+        int max_depth = 50;
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
 
@@ -1432,7 +1478,7 @@ metal spheres:
                     auto u = (i + random_double()) / nx;
                     auto v = (j + random_double()) / ny;
                     ray r = cam.get_ray(u, v);
-                    color += ray_color(r, world, 0);
+                    color += ray_color(r, world, max_depth);
                 }
                 color.write_color(std::cout, num_samples);
             }

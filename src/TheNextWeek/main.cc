@@ -28,17 +28,16 @@
 
 vec3 ray_color(const ray& r, hittable *world, int depth) {
     hit_record rec;
-    if (world->hit(r, 0.001, infinity, rec)) {
-        ray scattered;
-        vec3 attenuation;
-        vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
-        if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered))
-             return emitted + attenuation * ray_color(scattered, world, depth+1);
-        else
-            return emitted;
-    }
-    else
+    if (depth <= 0 || !world->hit(r, 0.001, infinity, rec))
         return vec3(0,0,0);
+
+    ray scattered;
+    vec3 attenuation;
+    vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+    if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+        return emitted;
+
+    return emitted + attenuation * ray_color(scattered, world, depth-1);
 }
 
 hittable *earth() {
@@ -256,6 +255,7 @@ int main() {
     int nx = 600;
     int ny = 600;
     int num_samples = 100;
+    int max_depth = 50;
 
     std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
 
@@ -290,7 +290,7 @@ int main() {
                 auto v = (j + random_double()) / ny;
                 ray r = cam.get_ray(u, v);
                 vec3 p = r.point_at_parameter(2.0);
-                color += ray_color(r, world, 0);
+                color += ray_color(r, world, max_depth);
             }
             color.write_color(std::cout, num_samples);
         }

@@ -1595,19 +1595,16 @@ Next, let’s make the background black in our `ray_color` function, and pay att
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 ray_color(const ray& r, hittable *world, int depth) {
         hit_record rec;
-        if (world->hit(r, 0.001, infinity, rec)) {
-            ray scattered;
-            vec3 attenuation;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
-            if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered))
-                 return emitted + attenuation * ray_color(scattered, world, depth+1);
-            else
-                return emitted;
-        }
-        else
+        if (depth <= 0 || !world->hit(r, 0.001, infinity, rec))
             return vec3(0,0,0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        ray scattered;
+        vec3 attenuation;
+        vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+        if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+            return emitted;
+
+        return emitted + attenuation * ray_color(scattered, world, depth-1);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-emitted]: <kbd>[main.cc]</kbd> ray_color function for emitting materials]
