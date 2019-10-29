@@ -28,30 +28,27 @@
 
 vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) {
     hit_record hrec;
-    if (world->hit(r, 0.001, infinity, hrec)) {
-        scatter_record srec;
-        vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
-        if (depth < 50 && hrec.mat_ptr->scatter(r, hrec, srec)) {
-            if (srec.is_specular) {
-                return srec.attenuation * ray_color(srec.specular_ray, world, light_shape, depth+1);
-            }
-            else {
-                hittable_pdf plight(light_shape, hrec.p);
-                mixture_pdf p(&plight, srec.pdf_ptr);
-                ray scattered = ray(hrec.p, p.generate(), r.time());
-                auto pdf_val = p.value(scattered.direction());
-                delete srec.pdf_ptr;
-                return emitted
-                     + srec.attenuation * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
-                                        * ray_color(scattered, world, light_shape, depth+1)
-                                        / pdf_val;
-            }
-        }
-        else
-            return emitted;
-    }
-    else
+    if (depth <= 0 || !world->hit(r, 0.001, infinity, hrec))
         return vec3(0,0,0);
+
+    scatter_record srec;
+    vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
+    if (!hrec.mat_ptr->scatter(r, hrec, srec))
+        return emitted;
+
+    if (srec.is_specular) {
+        return srec.attenuation * ray_color(srec.specular_ray, world, light_shape, depth-1);
+    }
+    hittable_pdf plight(light_shape, hrec.p);
+    mixture_pdf p(&plight, srec.pdf_ptr);
+    ray scattered = ray(hrec.p, p.generate(), r.time());
+    auto pdf_val = p.value(scattered.direction());
+    delete srec.pdf_ptr;
+
+    return emitted
+         + srec.attenuation * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+                            * ray_color(scattered, world, light_shape, depth-1)
+                            / pdf_val;
 }
 
 void cornell_box(hittable **scene, camera **cam, double aspect) {
@@ -87,6 +84,7 @@ int main() {
     int nx = 600;
     int ny = 600;
     int num_samples = 100;
+    int max_depth = 50;
 
     std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
 
@@ -109,7 +107,7 @@ int main() {
                 auto v = (j + random_double()) / ny;
                 ray r = cam->get_ray(u, v);
                 vec3 p = r.point_at_parameter(2.0);
-                color += ray_color(r, world, &hlist, 0);
+                color += ray_color(r, world, &hlist, max_depth);
             }
             color.write_color(std::cout, num_samples);
         }
