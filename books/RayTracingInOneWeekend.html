@@ -659,8 +659,7 @@ we’ll want motion blur at some point, so I’ll add a time input variable. Her
 
     class hittable {
         public:
-            virtual bool hit(
-                const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
     };
 
     #endif
@@ -735,15 +734,12 @@ And a list of objects:
         public:
             hittable_list() {}
             hittable_list(hittable **l, int n) {list = l; list_size = n; }
-            virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const;
+            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
             hittable **list;
             int list_size;
     };
 
-    bool hittable_list::hit(const ray& r, double t_min, double t_max,
-                            hit_record& rec) const {
-
+    bool hittable_list::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         hit_record temp_rec;
         bool hit_anything = false;
         double closest_so_far = t_max;
@@ -951,9 +947,9 @@ before:
                 vertical = vec3(0.0, 2.0, 0.0);
                 origin = vec3(0.0, 0.0, 0.0);
             }
+
             ray get_ray(double u, double v) {
-                return ray(origin,
-                           lower_left_corner + u*horizontal + v*vertical - origin);
+                return ray(origin, lower_left_corner + u*horizontal + v*vertical - origin);
             }
 
             vec3 origin;
@@ -1247,8 +1243,8 @@ This suggests the abstract class:
     class material {
         public:
             virtual bool scatter(
-                const ray& r_in, const hit_record& rec, vec3& attenuation,
-                ray& scattered) const = 0;
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const = 0;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [material-initial]: <kbd>[material.h]</kbd> The material class]
@@ -1282,8 +1278,7 @@ that the pointer is to a class, which the “class material” in the hittable c
 
     class hittable {
         public:
-            virtual bool hit(
-                const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
     };
 
     #endif
@@ -1306,10 +1301,8 @@ within `hit_record`. See the highlighted lines below:
     class sphere: public hittable {
         public:
             sphere() {}
-            sphere(vec3 cen, double r, material *m)
-                : center(cen), radius(r), mat_ptr(m) {};
-            virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const;
+            sphere(vec3 cen, double r, material *m) : center(cen), radius(r), mat_ptr(m) {};
+            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
             vec3 center;
             double radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1409,8 +1402,9 @@ The metal material just reflects rays using that formula:
     class metal : public material {
         public:
             metal(const vec3& a) : albedo(a) {}
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                                 vec3& attenuation, ray& scattered) const {
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
                 scattered = ray(rec.p, reflected);
                 attenuation = albedo;
@@ -1622,8 +1616,9 @@ And the dielectric material that always refracts when possible is:
     class dielectric : public material {
         public:
             dielectric(double ri) : ref_idx(ri) {}
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                                 vec3& attenuation, ray& scattered) const {
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
                 vec3 outward_normal;
                 vec3 reflected = reflect(r_in.direction(), rec.normal);
                 double ni_over_nt;
@@ -1706,8 +1701,9 @@ This yields our full glass material:
     class dielectric : public material {
         public:
             dielectric(double ri) : ref_idx(ri) {}
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                                 vec3& attenuation, ray& scattered) const {
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
                 vec3 outward_normal;
                 vec3 reflected = reflect(r_in.direction(), rec.normal);
                 double ni_over_nt;
@@ -1825,8 +1821,7 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             ray get_ray(double u, double v) {
-                return ray(origin,
-                           lower_left_corner + u*horizontal + v*vertical - origin);
+                return ray(origin, lower_left_corner + u*horizontal + v*vertical - origin);
             }
 
             vec3 origin;
@@ -1904,8 +1899,7 @@ camera horizontally level until you decide to experiment with crazy camera angle
             }
 
             ray get_ray(double s, double t) {
-                return ray(origin,
-                           lower_left_corner + s*horizontal + t*vertical - origin);
+                return ray(origin, lower_left_corner + s*horizontal + t*vertical - origin);
             }
 
             vec3 origin;
@@ -2010,9 +2004,11 @@ point:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 rd = lens_radius*random_in_unit_disk();
                 vec3 offset = u * rd.x() + v * rd.y();
-                return ray(origin + offset,
-                           lower_left_corner + s*horizontal + t*vertical
-                               - origin - offset);
+
+                return ray(
+                    origin + offset,
+                    lower_left_corner + s*horizontal + t*vertical - origin - offset
+                );
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
