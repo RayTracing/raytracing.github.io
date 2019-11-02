@@ -275,11 +275,11 @@ That would work! We could interpret that as a statistical predictor of a tree’
 
 If we wanted to know about the chances of being in a span of multiple bins, we would sum.
 
-A _probability density function_, henceforth _pdf_, is that fractional histogram made continuous.
+A _probability density function_, henceforth _PDF_, is that fractional histogram made continuous.
 
-Let’s make a _pdf_ and use it a bit to understand it more. Suppose I want a random number $r$
-between 0 and 2 whose probability is proportional to itself: $r$. We would expect the pdf $p(r)$
-to look something like the figure below. But how high should it be?
+Let’s make a _PDF_ and use it a bit to understand it more. Suppose I want a random number $r$
+between 0 and 2 whose probability is proportional to itself: $r$. We would expect the PDF $p(r)$ to
+look something like the figure below. But how high should it be?
 
   ![Figure 3-2](../images/fig-3-03-2.jpg)
 
@@ -311,22 +311,22 @@ Since $p(r)$ is proportional to $r$, _i.e._, $p = C' \cdot r$ for some other con
 So $p(r) = r/2$.
 </div>
 
-How do we generate a random number with that pdf $p(r)$? For that we will need some more machinery.
+How do we generate a random number with that PDF $p(r)$? For that we will need some more machinery.
 Don’t worry this doesn’t go on forever!
 
 <div class='together'>
 Given a random number from `d = random_double()` that is uniform and between 0 and 1, we should be
-able to find some function $f(d)$ that gives us what we want. Suppose $e = f(d) = d^2$. That is no
-longer a uniform _pdf_. The _pdf_ of $e$ will be bigger near 0 than it is near 1 (squaring a
-number between 0 and 1 makes it smaller). To take this general observation to a function, we need
-the cumulative probability distribution function $P(x)$:
+able to find some function $f(d)$ that gives us what we want. Suppose $e = f(d) = d^2$. This is no
+longer a uniform PDF. The PDF of $e$ will be bigger near 0 than it is near 1 (squaring a number
+between 0 and 1 makes it smaller). To convert this general observation to a function, we need the
+cumulative probability distribution function $P(x)$:
 
   $$ P(x) = \text{area}(p, -\infty, x) $$
 </div>
 
 <div class='together'>
 Note that for $x$ where we didn’t define $p(x)$, $p(x) = 0$, _i.e._, the probability of an $x$ there
-is zero. For our example _pdf_ $p(r) = r/2$, the $P(x)$ is:
+is zero. For our example PDF $p(r) = r/2$, the $P(x)$ is:
 
   $$ P(x) = 0 : x < 0                 $$
   $$ P(x) = \frac{x^2}{4} : 0 < x < 2 $$
@@ -341,7 +341,7 @@ function arguments in a program. If we evaluate $P$ at $x = 0.5$, we get:
 </div>
 
 <div class='together'>
-This says _the probability that a random variable with our pdf is less than one is 25%_. This gives
+This says _the probability that a random variable with our PDF is less than one is 25%_. This gives
 rise to a clever observation that underlies many methods to generate non-uniform random numbers. We
 want a function `f()` that when we call it as `f(random_double())` we get a return value with a pdf
 $\frac{x^2}{4}$. We don’t know what that is, but we do know that 25% of what it returns should be
@@ -359,14 +359,14 @@ That means $f$ just undoes whatever $P$ does. So,
 
 <div class='together'>
 The -1 means “inverse function”. Ugly notation, but standard. For our purposes what this means is,
-if we have pdf $p()$ and its cumulative distribution function $P()$, then if we do this to a random
+if we have PDF $p()$ and its cumulative distribution function $P()$, then if we do this to a random
 number we’ll get what we want:
 
   $$ e = P^{-1} (\text{random_double}()) $$
 </div>
 
 <div class='together'>
-For our _pdf_ $p(x) = x/2$, and corresponding $P(x)$, we need to compute the inverse of $P$. If we
+For our PDF $p(x) = x/2$, and corresponding $P(x)$, we need to compute the inverse of $P$. If we
 have
 
   $$ y = \frac{x^2}{4} $$
@@ -390,8 +390,8 @@ We can now sample our old integral
 </div>
 
 <div class='together'>
-We need to account for the non-uniformity of the _pdf_ of $x$. Where we sample too much we should
-down-weight. The _pdf_ is a perfect measure of how much or little sampling is being done. So the
+We need to account for the non-uniformity of the PDF of $x$. Where we sample too much we should
+down-weight. The PDF is a perfect measure of how much or little sampling is being done. So the
 weighting function should be proportional to $1/pdf$. In fact it is exactly $1/pdf$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -414,15 +414,15 @@ weighting function should be proportional to $1/pdf$. In fact it is exactly $1/p
         std::cout << "I = " << sum/N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [integ-xsq-2]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$ with _pdf_]
+    [Listing [integ-xsq-2]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$ with PDF]
 </div>
 
 Since we are sampling more where the integrand is big, we might expect less noise and thus faster
-convergence. This is why using a carefully chosen non-uniform pdf is usually called _importance
+convergence. This is why using a carefully chosen non-uniform PDF is usually called _importance
 sampling_.
 
 <div class='together'>
-If we take that same code with uniform samples so the pdf = $1/2$ over the range [0,2] we can use
+If we take that same code with uniform samples so the PDF = $1/2$ over the range [0,2] we can use
 the machinery to get `x = 2*random_double()` and the code is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -449,9 +449,9 @@ the machinery to get `x = 2*random_double()` and the code is:
 </div>
 
 <div class='together'>
-Note that we don’t need that 2 in the `2*sum/N` anymore -- that is handled by the _pdf_, which is 2
+Note that we don’t need that 2 in the `2*sum/N` anymore -- that is handled by the PDF, which is 2
 when you divide by it. You’ll note that importance sampling helps a little, but not a ton. We could
-make the pdf follow the integrand exactly:
+make the PDF follow the integrand exactly:
 
   $$ p(x) = \frac{3}{8}x^2 $$
 
@@ -500,8 +500,8 @@ Which always returns the exact answer.
 Let’s review now because that was most of the concepts that underlie MC ray tracers.
 
   1. You have an integral of $f(x)$ over some domain $[a,b]$
-  2. You pick a pdf $p$ that is non-zero over $[a,b]$
-  3. You average a whole ton of $f(r)/p(r)$ where $r$ is a random number $r$ with pdf $p$.
+  2. You pick a PDF $p$ that is non-zero over $[a,b]$
+  3. You average a whole ton of $f(r)/p(r)$ where $r$ is a random number $r$ with PDF $p$.
 
 This will always converge to the right answer. The more $p$ follows $f$, the faster it converges.
 </div>
@@ -512,7 +512,7 @@ MC Integration on the Sphere of Directions
 ====================================================================================================
 
 In our ray tracer we pick random directions, and directions can be represented as points on the
-unit sphere. The same methodology as before applies, but now we need to have a pdf defined over 2D.
+unit sphere. The same methodology as before applies, but now we need to have a PDF defined over 2D.
 Suppose we have this integral over all directions:
 
   $$ \int cos^2(\theta) $$
@@ -520,7 +520,7 @@ Suppose we have this integral over all directions:
 <div class='together'>
 By MC integration, we should just be able to sample $\cos^2(\theta) / p(\text{direction})$. But what
 is direction in that context? We could make it based on polar coordinates, so $p$ would be in terms
-of $(\theta, \phi)$. However you do it, remember that a pdf has to integrate to 1 and represent the
+of $(\theta, \phi)$. However you do it, remember that a PDF has to integrate to 1 and represent the
 relative probability of that direction being sampled. We have a method from the last books to take
 uniform random samples in a unit sphere:
 
@@ -555,7 +555,7 @@ To get points on a unit sphere we can just normalize the vector to those points:
 </div>
 
 <div class='together'>
-Now what is the pdf of these uniform points? As a density on the unit sphere, it is $1/\text{area}$
+Now what is the PDF of these uniform points? As a density on the unit sphere, it is $1/\text{area}$
 of the sphere or $1/(4\pi)$. If the integrand is $\cos^2(\theta)$ and $\theta$ is the angle with the
 z axis:
 
@@ -616,8 +616,8 @@ based renderers, we would use a set of wavelengths for the light color rather th
 almost always harness our intuition by thinking of R, G, and B as specific long, medium, and short
 wavelengths.
 
-If the light does scatter, it will have a directional distribution that we can describe as a pdf
-over solid angle. I will refer to this as its _scattering pdf_: $s(direction)$. The scattering pdf
+If the light does scatter, it will have a directional distribution that we can describe as a PDF
+over solid angle. I will refer to this as its _scattering PDF_: $s(direction)$. The scattering PDF
 can also vary with incident direction, as you will notice when you look at reflections off a road --
 they become mirror-like as your viewing angle approaches grazing.
 
@@ -635,12 +635,12 @@ If we apply the MC basic formula we get the following statistical estimate:
 
   $$ Color = \frac{A \cdot s(direction) \cdot \text{color}(direction)}{p(direction)} $$
 
-where $p(direction)$ is the pdf of whatever direction we randomly generate.
+where $p(direction)$ is the PDF of whatever direction we randomly generate.
 </div>
 
 For a Lambertian surface we already implicitly implemented this formula for the special case where
 $p()$ is a cosine density. The $s()$ of a Lambertian surface is proportional to $\cos(\theta)$,
-where $\theta$ is the angle relative to the surface normal. Remember that all pdf need to integrate
+where $\theta$ is the angle relative to the surface normal. Remember that all PDF need to integrate
 to one. For $\cos(\theta) < 0$ we have $s(direction) = 0$, and the integral of cos over the
 hemisphere is $\pi$.
 
@@ -656,13 +656,13 @@ So:
 </div>
 
 <div class='together'>
-So for a Lambertian surface the scattering pdf is:
+So for a Lambertian surface the scattering PDF is:
 
   $$ s(direction) = \frac{\cos(\theta)}{\pi} $$
 </div>
 
 <div class='together'>
-If we sample using the same pdf, so $p(direction) = \cos(\theta) / \pi$, the numerator and
+If we sample using the same PDF, so $p(direction) = \cos(\theta) / \pi$, the numerator and
 denominator cancel out and we get:
 
   $$ Color = A \cdot color(direction) $$
@@ -684,7 +684,7 @@ So for a Lambertian surface for example, $BRDF = A / \pi$. Translation between o
 easy.
 
 For participation media (volumes), our albedo is usually called _scattering albedo_, and our
-scattering pdf is usually called _phase function_.
+scattering PDF is usually called _phase function_.
 </div>
 
 
@@ -695,17 +695,17 @@ Importance Sampling Materials
 <div class='together'>
 Our goal over the next two chapters is to instrument our program to send a bunch of extra rays
 toward light sources so that our picture is less noisy. Let’s assume we can send a bunch of rays
-toward the light source using a pdf $pLight(direction)$. Let’s also assume we have a pdf related to
-$s$, and let’s call that $pSurface(direction)$. A great thing about pdfs is that you can just use
-linear mixtures of them to form mixture densities that are also pdfs. For example, the simplest
+toward the light source using a PDF $pLight(direction)$. Let’s also assume we have a PDF related to
+$s$, and let’s call that $pSurface(direction)$. A great thing about PDFs is that you can just use
+linear mixtures of them to form mixture densities that are also PDFs. For example, the simplest
 would be:
 
   $$ p(direction) = \frac{1}{2}\cdotp Light(direction) + \frac{1}{2}\cdot pSurface(direction) $$
 </div>
 
-As long as the weights are positive and add up to one, any such mixture of pdfs is a pdf. And
-remember, we can use any pdf -- it doesn’t change the answer we converge to! So, the game is to
-figure out how to make the pdf larger where the product $s(direction) \cdot color(direction)$ is
+As long as the weights are positive and add up to one, any such mixture of PDFs is a PDF. And
+remember, we can use any PDF -- it doesn’t change the answer we converge to! So, the game is to
+figure out how to make the PDF larger where the product $s(direction) \cdot color(direction)$ is
 large. For diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is high.
 
 For a mirror, $s()$ is huge only near one direction, so it matters a lot more. Most renderers in
@@ -753,13 +753,13 @@ At 500×500 my code produces this image in 10min on 1 core of my Macbook:
 
   ![Figure 6-1](../images/img-3-06-1.jpg)
 
-Reducing that noise is our goal. We’ll do that by constructing a pdf that sends more rays to the
+Reducing that noise is our goal. We’ll do that by constructing a PDF that sends more rays to the
 light.
 </div>
 
-First, let’s instrument the code so that it explicitly samples some pdf and then normalizes for
-that. Remember MC basics: $\int f(x) \approx f(r)/p(r)$. For the Lambertian material,
-let’s sample like we do now: $p(direction) = \cos(\theta) / \pi$.
+First, let’s instrument the code so that it explicitly samples some PDF and then normalizes for
+that. Remember MC basics: $\int f(x) \approx f(r)/p(r)$. For the Lambertian material, let’s sample
+like we do now: $p(direction) = \cos(\theta) / \pi$.
 
 <div class='together'>
 We modify the base-class `material` to enable this importance sampling:
@@ -902,7 +902,7 @@ $dA = \sin(\theta) \cdot d\theta \cdot d\phi$. If you haven’t, you’ll have t
 next step, but you’ll get it when you take advanced calc.
 
 <div class='together'>
-Given a directional pdf, $p(direction) = f(\theta)$ on the sphere, the 1D pdfs on $\theta$ and
+Given a directional PDF, $p(direction) = f(\theta)$ on the sphere, the 1D PDFs on $\theta$ and
 $\phi$ are:
 
   $$ a(\phi) = \frac{1}{2\pi} $$
@@ -1233,8 +1233,8 @@ direction we want.
 
 <div class='together'>
 It’s really easy to pick a random direction toward the light; just pick a random point on the light
-and send a ray in that direction. But we also need to know the _pdf(direction)_. What is that? For a
-light of area $A$, if we sample uniformly on that light, the _pdf_ on the surface of the light is
+and send a ray in that direction. But we also need to know the PDF(direction). What is that? For a
+light of area $A$, if we sample uniformly on that light, the PDF on the surface of the light is
 $1/A$. But what is it on the area of the unit sphere that defines directions? Fortunately, there is
 a simple correspondence, as outlined in the diagram:
 
@@ -1346,10 +1346,10 @@ Mixture Densities
 ====================================================================================================
 
 <div class='together'>
-We have used a _pdf_ related to $\cos(\theta)$, and a _pdf_ related to sampling the light. We would
-like a _pdf_ that combines these. A common tool in probability is to mix the densities to form a
-mixture density. Any weighted average of _pdf_ s is a _pdf_. For example, we could just average the
-two densities:
+We have used a PDF related to $\cos(\theta)$, and a PDF related to sampling the light. We would like
+a PDF that combines these. A common tool in probability is to mix the densities to form a mixture
+density. Any weighted average of PDFs is a PDF. For example, we could just average the two
+densities:
 
   $$ pdf\_mixture(direction) = \frac{1}{2} pdf\_reflection(direction) +
         \frac{1}{2}pdf\_light(direction)
@@ -1369,11 +1369,11 @@ quite as easy as one might expect. Choosing the random direction is simple:
 </div>
 
 But evaluating $pdf\_mixture$ is slightly more subtle. We need to evaluate both $pdf\_reflection$
-and $pdf\_light$ because there are some directions where either _pdf_ could have generated the
+and $pdf\_light$ because there are some directions where either PDF could have generated the
 direction. For example, we might generate a direction toward the light using $pdf\_reflection$.
 
 <div class='together'>
-If we step back a bit, we see that there are two functions a _pdf_ needs to support:
+If we step back a bit, we see that there are two functions a PDF needs to support:
 
 1. What is your value at this location?
 2. Return a random number that is distributed appropriately.
@@ -1384,7 +1384,7 @@ If we step back a bit, we see that there are two functions a _pdf_ needs to supp
 The details of how this is done under the hood varies for the $pdf\_reflection$ and the $pdf\_light$
 and the mixture density of the two of them, but that is exactly what class hierarchies were invented
 for! It’s never obvious what goes in an abstract class, so my approach is to be greedy and hope a
-minimal interface works, and for the _pdf_ this implies:
+minimal interface works, and for the PDF this implies:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class pdf {
@@ -1393,7 +1393,7 @@ minimal interface works, and for the _pdf_ this implies:
             virtual vec3 generate() const = 0;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [class-pdf]: <kbd>[pdf.h]</kbd> The PDF class]
+    [Listing [class-pdf]: <kbd>[pdf.h]</kbd> The `pdf` class]
 </div>
 
 We’ll see if that works by fleshing out the subclasses. For sampling the light, we will need
@@ -1457,8 +1457,8 @@ change variable `pdf` to some other variable name to avoid a name conflict with 
     [Listing [ray-color-cos-pdf]: <kbd>[main.cc]</kbd> The ray_color function, using cosine pdf]
 </div>
 
+<div class='together'>
 This yields an apparently matching result so all we’ve done so far is refactor where `pdf` is
-</div>
 computed:
 
   ![Image 10-1](../images/img-3-10-1.jpg)
@@ -1577,7 +1577,7 @@ And then change `ray_color()`:
                       / pdf_val;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-hittable-pdf]: <kbd>[main.cc]</kbd> ray_color function with hittable pdf]
+    [Listing [ray-color-hittable-pdf]: <kbd>[main.cc]</kbd> ray_color function with hittable PDF]
 </div>
 
 <div class='together'>
@@ -1610,7 +1610,7 @@ class is straightforward:
             pdf *p[2];
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [class-mixturepdf]: <kbd>[pdf.h]</kbd> The mixture_pdf class]
+    [Listing [class-mixturep-df]: <kbd>[pdf.h]</kbd> The `mixture_pdf` class]
 </div>
 
 <div class='together'>
@@ -1645,7 +1645,7 @@ And plugging it into `ray_color()`:
                       / pdf_val;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-mixture]: <kbd>[main.cc]</kbd> The ray_color function, using mixture pdf]
+    [Listing [ray-color-mixture]: <kbd>[main.cc]</kbd> The ray_color function, using mixture PDF]
 </div>
 
 <div class='together'>
@@ -1676,8 +1676,8 @@ rays; that’s a personal design preference.
 
 There are some other issues with the code.
 
-The pdf construction is hard coded in the `ray_color()` function and we should clean that up.
-Probably we should pass something into color about the lights. Unlike bvh construction, we should be
+The PDF construction is hard coded in the `ray_color()` function and we should clean that up.
+Probably we should pass something into color about the lights. Unlike BVH construction, we should be
 careful about memory leaks as there are an unbounded number of samples.
 
 The specular rays (glass and metal) are no longer supported. The math would work out if we just made
@@ -1701,11 +1701,11 @@ book.
 
 
 
-Cleaning Up pdf Management.
+Cleaning Up PDF Management.
 ====================================================================================================
 
 <div class='together'>
-So far I have the `ray_color()` function create two hard-coded `pdf`s:
+So far I have the `ray_color()` function create two hard-coded PDFs:
 
 1. `p0()` related to the shape of the light
 2. `p1()` related to the normal vector and type of surface
@@ -1713,7 +1713,7 @@ So far I have the `ray_color()` function create two hard-coded `pdf`s:
 </div>
 
 We can pass information about the light (or whatever `hittable` we want to sample) into the
-`ray_color()` function, and we can ask the `material` function for a `pdf` (we would have to
+`ray_color()` function, and we can ask the `material` function for a PDF (we would have to
 instrument it to do that). We can also either ask `hit` function or the `material` class to supply
 whether there is a specular vector.
 
@@ -1721,9 +1721,9 @@ One thing we would like to allow for is a material like varnished wood that is p
 specular (the polish) and partially diffuse (the wood). Some renderers have the material generate
 two rays: one specular and one diffuse. I am not fond of branching, so I would rather have the
 material randomly decide whether it is diffuse or specular. The catch with that approach is that we
-need to be careful when we ask for the `pdf` value and be aware of whether for this evaluation of
-`ray_color()` it is diffuse or specular. Fortunately, we know that we should only call the `pdf
-value()` if it is diffuse so we can handle that implicitly.
+need to be careful when we ask for the PDF value and be aware of whether for this evaluation of
+`ray_color()` it is diffuse or specular. Fortunately, we know that we should only call the
+`pdf_value()` if it is diffuse so we can handle that implicitly.
 
 <div class='together'>
 We can redesign `material` and stuff all the new arguments into a `struct` like we did for
@@ -1947,7 +1947,7 @@ not sampled with more density.
 </div>
 
 <div class='together'>
-We could make the pdf include the block. Let’s do that instead with a glass sphere because it’s
+We could make the PDF include the block. Let’s do that instead with a glass sphere because it’s
 easier. When we sample a sphere’s solid angle uniformly from a point outside the sphere, we are
 really just sampling a cone uniformly (the cone is tangent to the sphere). Let’s say the code has
 `theta_max`. Recall from Chapter 9, that to sample $\theta$ we have:
@@ -1997,7 +1997,7 @@ We can see from the figure that $\sin(\theta_{max}) = R / length(\mathbf{c} - \m
 </div>
 
 <div class='together'>
-We also need to evaluate the _pdf_ of directions. For directions toward the sphere this is
+We also need to evaluate the PDF of directions. For directions toward the sphere this is
 $1/solid\_angle$. What is the solid angle of the sphere? It has something to do with the $C$ above.
 It, by definition, is the area on the unit sphere, so the integral is
 
@@ -2011,7 +2011,7 @@ $\cos(\theta_{max}) = 0$, and that works. For a sphere tangent at $\mathbf{p}$,
 $\cos(\theta_{max}) = 0$, and $2\pi$ is the area of a hemisphere, so that works too.
 
 <div class='together'>
-The sphere class needs the two `pdf`-related functions:
+The sphere class needs the two PDF-related functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     double sphere::pdf_value(const vec3& o, const vec3& v) const {
@@ -2033,7 +2033,7 @@ The sphere class needs the two `pdf`-related functions:
         return uvw.local(random_to_sphere(radius, distance_squared));
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [sphere-pdf]: <kbd>[sphere.h]</kbd> Sphere with pdf]
+    [Listing [sphere-pdf]: <kbd>[sphere.h]</kbd> Sphere with PDF]
 </div>
 
 <div class='together'>
@@ -2086,7 +2086,7 @@ expensive!
 <div class='together'>
 We should probably just sample both the sphere and the light. We can do that by creating a mixture
 density of their two densities. We could do that in the `ray_color()` function by passing a list of
-hittables in and building a mixture `pdf`, or we could add `pdf` functions to `hittable_list`. I
+hittables in and building a mixture PDF, or we could add PDF functions to `hittable_list`. I
 think both tactics would work fine, but I will go with instrumenting `hittable_list`.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
