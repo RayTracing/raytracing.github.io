@@ -1,15 +1,15 @@
 #ifndef PDF_H
 #define PDF_H
-//==================================================================================================
+//==============================================================================================
 // Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
-// neighboring rights to this software to the public domain worldwide. This software is distributed
-// without any warranty.
+// neighboring rights to this software to the public domain worldwide. This software is
+// distributed without any warranty.
 //
-// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication along
-// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-//==================================================================================================
+// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication
+// along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==============================================================================================
 
 #include "common/rtweekend.h"
 #include "onb.h"
@@ -81,7 +81,7 @@ class hittable_pdf : public pdf {
 
 class mixture_pdf : public pdf {
     public:
-        mixture_pdf(pdf *p0, pdf *p1 ) { p[0] = p0; p[1] = p1; }
+        mixture_pdf(pdf *p0, pdf *p1) { p[0] = p0; p[1] = p1; }
         virtual double value(const vec3& direction) const {
             return 0.5 * p[0]->value(direction) + 0.5 *p[1]->value(direction);
         }

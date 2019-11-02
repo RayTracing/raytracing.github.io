@@ -1,15 +1,15 @@
 #ifndef BVH_H
 #define BVH_H
-//==================================================================================================
+//==============================================================================================
 // Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
-// neighboring rights to this software to the public domain worldwide. This software is distributed
-// without any warranty.
+// neighboring rights to this software to the public domain worldwide. This software is
+// distributed without any warranty.
 //
-// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication along
-// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-//==================================================================================================
+// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication
+// along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==============================================================================================
 
 #include "common/rtweekend.h"
 #include "hittable.h"
@@ -19,13 +19,14 @@ class bvh_node : public hittable  {
     public:
         bvh_node() {}
         bvh_node(hittable **l, int n, double time0, double time1);
+
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
+
         hittable *left;
         hittable *right;
         aabb box;
 };
-
 
 bool bvh_node::bounding_box(double t0, double t1, aabb& output_box) const {
     output_box = box;
@@ -62,9 +63,10 @@ int box_x_compare (const void * a, const void * b) {
     aabb box_left, box_right;
     hittable *ah = *(hittable**)a;
     hittable *bh = *(hittable**)b;
-    if(!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
+
+    if (!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
         std::cerr << "no bounding box in bvh_node constructor\n";
-    if ( box_left.min().x() - box_right.min().x() < 0.0  )
+    if (box_left.min().x() - box_right.min().x() < 0.0)
         return -1;
     else
         return 1;
@@ -75,9 +77,11 @@ int box_y_compare (const void * a, const void * b)
     aabb box_left, box_right;
     hittable *ah = *(hittable**)a;
     hittable *bh = *(hittable**)b;
-    if(!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
+
+    if (!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
         std::cerr << "no bounding box in bvh_node constructor\n";
-    if ( box_left.min().y() - box_right.min().y() < 0.0  )
+
+    if (box_left.min().y() - box_right.min().y() < 0.0)
         return -1;
     else
         return 1;
@@ -88,14 +92,15 @@ int box_z_compare (const void * a, const void * b)
     aabb box_left, box_right;
     hittable *ah = *(hittable**)a;
     hittable *bh = *(hittable**)b;
-    if(!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
+
+    if (!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
         std::cerr << "no bounding box in bvh_node constructor\n";
-    if ( box_left.min().z() - box_right.min().z() < 0.0  )
+
+    if (box_left.min().z() - box_right.min().z() < 0.0)
         return -1;
     else
         return 1;
 }
-
 
 bvh_node::bvh_node(hittable **l, int n, double time0, double time1) {
     aabb *boxes = new aabb[n];

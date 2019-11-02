@@ -1,15 +1,15 @@
 #ifndef BOX_H
 #define BOX_H
-//==================================================================================================
+//==============================================================================================
 // Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
-// neighboring rights to this software to the public domain worldwide. This software is distributed
-// without any warranty.
+// neighboring rights to this software to the public domain worldwide. This software is
+// distributed without any warranty.
 //
-// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication along
-// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-//==================================================================================================
+// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication
+// along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==============================================================================================
 
 #include "common/rtweekend.h"
 #include "aarect.h"
@@ -19,12 +19,16 @@
 class box: public hittable  {
     public:
         box() {}
+
         box(const vec3& p0, const vec3& p1, material *ptr);
+
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
+
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
            output_box = aabb(pmin, pmax);
            return true;
         }
+
         vec3 pmin, pmax;
         hittable *list_ptr;
 };

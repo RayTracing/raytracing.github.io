@@ -1,13 +1,13 @@
-//==================================================================================================
+//==============================================================================================
 // Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
-// neighboring rights to this software to the public domain worldwide. This software is distributed
-// without any warranty.
+// neighboring rights to this software to the public domain worldwide. This software is
+// distributed without any warranty.
 //
-// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication along
-// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-//==================================================================================================
+// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication
+// along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==============================================================================================
 
 #include "common/rtweekend.h"
 #include "common/rtw_stb_image.h"
@@ -52,10 +52,10 @@ vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) 
 }
 
 void cornell_box(hittable **scene, camera **cam, double aspect) {
-    material *red = new lambertian( new constant_texture(vec3(0.65, 0.05, 0.05)) );
-    material *white = new lambertian( new constant_texture(vec3(0.73, 0.73, 0.73)) );
-    material *green = new lambertian( new constant_texture(vec3(0.12, 0.45, 0.15)) );
-    material *light = new diffuse_light( new constant_texture(vec3(15, 15, 15)) );
+    material *red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
+    material *white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
+    material *green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
+    material *light = new diffuse_light(new constant_texture(vec3(15, 15, 15)));
 
     hittable **list = new hittable*[8];
     int i = 0;
