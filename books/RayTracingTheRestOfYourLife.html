@@ -751,7 +751,7 @@ our Cornell Box scene again, and let’s generate the camera in the function tha
 <div class='together'>
 At 500×500 my code produces this image in 10min on 1 core of my Macbook:
 
-  ![Figure 6-1](../images/img-3-06-1.jpg)
+  ![Cornell box, refactored](../images/img.cornell-refactor1.jpg)
 
 Reducing that noise is our goal. We’ll do that by constructing a pdf that sends more rays to the
 light.
@@ -874,7 +874,7 @@ hemisphere that is above the surface. This would be $p(direction) = \frac{1}{2\p
 <div class='together'>
 And again I _should_ get the same picture except with different variance, but I don’t!
 
-  ![Figure 6-2](../images/img-3-06-2.jpg)
+  ![Cornell box, with different sampling strategy](../images/img.cornell-refactor2.jpg)
 
 </div>
 
@@ -1207,7 +1207,7 @@ We can rewrite our Lambertian material using this to get:
 <div class='together'>
 Which produces:
 
-  ![Image 8-1](../images/img-3-08-1.jpg)
+  ![Cornell box, with orthonormal basis scatter function](../images/img.cornell-ortho.jpg)
 
 Is that right? We still don’t know for sure. Tracking down bugs is hard in the absence of reliable
 reference solutions. Let’s table that for now and move on to get rid of some of that noise.
@@ -1298,7 +1298,7 @@ that math and get the concept, we can add it (see the highlighted region):
 <div class='together'>
 With 10 samples per pixel this yields:
 
-  ![Image 9-1](../images/img-3-09-1.jpg)
+  ![Cornell box, sampling only the light, 10 samples per pixel](../images/img.cornell-samplight.jpg)
 
 </div>
 
@@ -1324,7 +1324,7 @@ down. We can do that by letting the emitted member function of hittable take ext
 <div class='together'>
 We also need to flip the light so its normals point in the -y direction and we get:
 
-  ![Image 9-2](../images/img-3-09-2.jpg)
+  ![Cornell box, light emitted only in the downward direction](../images/img.cornell-lightdown.jpg)
 
 </div>
 
@@ -1449,7 +1449,7 @@ This yields an apparently matching result so all we’ve done so far is refactor
 </div>
 computed:
 
-  ![Image 10-1](../images/img-3-10-1.jpg)
+  ![Cornell box with a cosine density _pdf_](../images/img.cornell-cospdf.jpg)
 
 </div>
 
@@ -1570,7 +1570,7 @@ And then change `ray_color()`:
 <div class='together'>
 At 10 samples per pixel we get:
 
-  ![Image 10-2](../images/img-3-10-2.jpg)
+  ![Cornell box, sampling a hittable light, 10 samples per pixel](../images/img.cornell-samphit.jpg)
 
 </div>
 
@@ -1635,7 +1635,7 @@ And plugging it into `ray_color()`:
 <div class='together'>
 1000 samples per pixel yields:
 
-  ![Image 10-3](../images/img-3-10-3.jpg)
+  ![Cornell box, mixture density of cosine and light sampling](../images/img.cornell-coslight.jpg)
 
 </div>
 
@@ -1925,7 +1925,7 @@ We also need to change the block to metal.
 The resulting image has a noisy reflection on the ceiling because the directions toward the box are
 not sampled with more density.
 
-  ![Image 12-1](../images/img-3-12-1.jpg)
+  ![Cornell box with arbitrary PDF functions](../images/img.cornell-flexpdf.jpg)
 
 </div>
 
@@ -2062,7 +2062,7 @@ This yields a noisy box, but the caustic under the sphere is good. It took five 
 sampling the light did for my code. This is probably because those rays that hit the glass are
 expensive!
 
-  ![Image 12-2](../images/img-3-12-2.jpg)
+  ![Cornell box with glass sphere, using new PDF functions](../images/img.cornell-glass.jpg)
 
 </div>
 
@@ -2106,7 +2106,7 @@ We assemble a list to pass in to `ray_color()`.
 <div class='together'>
 And we get a decent image with 1000 samples as before:
 
-  ![Image 12-3](../images/img-3-12-3.jpg)
+  ![Cornell box, using a mixture of glass & light PDFs](../images/img.cornell-glasslight.jpg)
 
 </div>
 
@@ -2159,7 +2159,7 @@ for `NaN`s is that any `if` test with a `NaN` in it is false. Using this trick, 
 <div class='together'>
 Happily, the black specks are gone:
 
-  ![Image 12-4](../images/img-3-12-4.jpg)
+  ![Cornell box with anti-acne color function](../images/img.book3-final.jpg)
 
 </div>
 
