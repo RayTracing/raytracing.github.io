@@ -124,11 +124,12 @@ to camera because for now it is not allowed to move; it just sends out rays over
                 vec3 offset = u * rd.x() + v * rd.y();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 auto time = time0 + random_double()*(time1-time0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return ray(
                     origin + offset,
                     lower_left_corner + s*horizontal + t*vertical - origin - offset,
-                    time);
+                    time
+                );
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
             vec3 origin;
@@ -157,8 +158,7 @@ times need not match up with the camera aperture open and close.
                 vec3 cen0, vec3 cen1, double t0, double t1, double r, material *m)
               : center0(cen0), center1(cen1), time0(t0), time1(t1), radius(r), mat_ptr(m)
             {};
-            virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const;
+            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
             vec3 center(double time) const;
             vec3 center0, center1;
@@ -312,10 +312,7 @@ And with these viewing parameters:
     auto dist_to_focus = 10.0;
     auto aperture = 0.0;
 
-    camera cam(
-        lookfrom, lookat, vec3(0,1,0), 20, double(nx)/ny, aperture,
-        dist_to_focus, 0.0, 1.0
-    );
+    camera cam(lookfrom, lookat, vec3(0,1,0), 20, double(nx)/ny, aperture, dist_to_focus, 0.0, 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-spheres-moving-camera]: <kbd>[main.cc]</kbd> Viewing parameters]
 
@@ -692,8 +689,7 @@ a class:
             bvh_node() {}
             bvh_node(hittable **l, int n, double time0, double time1);
 
-            virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const;
+            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
 
             hittable *left;
@@ -979,8 +975,7 @@ With camera:
     auto dist_to_focus = 10.0;
     auto aperture = 0.0;
 
-    camera cam(lookfrom, lookat, vec3(0,1,0), 20, double(nx)/ny, aperture, dist_to_focus,
-        0.0, 1.0);
+    camera cam(lookfrom, lookat, vec3(0,1,0), 20, double(nx)/ny, aperture, dist_to_focus, 0.0, 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-two-checker-view]: <kbd>[main.cc]</kbd> Viewing parameters]
 
@@ -1115,8 +1110,7 @@ With the same camera as before:
     vec3 lookat(0,0,0);
     auto dist_to_focus = 10.0;
     auto aperture = 0.0;
-    camera cam(lookfrom, lookat, vec3(0,1,0), 20, double(nx)/ny,
-               aperture, dist_to_focus, 0.0, 1.0);
+    camera cam(lookfrom, lookat, vec3(0,1,0), 20, double(nx)/ny, aperture, dist_to_focus, 0.0, 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-perlin-view]: <kbd>[main.cc]</kbd> Viewing parameters]
 </div>
@@ -1320,9 +1314,10 @@ And the interpolation becomes a bit more complicated:
             for (int j=0; j < 2; j++)
                 for (int k=0; k < 2; k++) {
                     vec3 weight_v(u-i, v-j, w-k);
-                    accum += (i*uu + (1-i)*(1-uu))*
-                        (j*vv + (1-j)*(1-vv))*
-                        (k*ww + (1-k)*(1-ww))*dot(c[i][j][k], weight_v);
+                    accum += (i*uu + (1-i)*(1-uu))
+                           * (j*vv + (1-j)*(1-vv))
+                           * (k*ww + (1-k)*(1-ww))
+                           * dot(c[i][j][k], weight_v);
                 }
         return accum;
     }
@@ -1559,11 +1554,17 @@ the ray what color it is and performs no reflection. It’s very simple:
     class diffuse_light : public material {
         public:
             diffuse_light(texture *a) : emit(a) {}
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                vec3& attenuation, ray& scattered) const { return false; }
+
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
+                return false;
+            }
+
             virtual vec3 emitted(double u, double v, const vec3& p) const {
                 return emit->value(u, v, p);
             }
+
             texture *emit;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1577,8 +1578,10 @@ class return black:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material {
         public:
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                vec3& attenuation, ray& scattered) const = 0;
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const = 0;
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             virtual vec3 emitted(double u, double v, const vec3& p) const {
                 return vec3(0,0,0);
@@ -1647,15 +1650,17 @@ The actual `xy_rect` class is thus:
     class xy_rect: public hittable {
         public:
             xy_rect() {}
-            xy_rect(
-                double _x0, double _x1, double _y0, double _y1, double _k, material *mat)
-                : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat)
-            {};
+
+            xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, material *mat)
+                : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
+
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
+
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
                 output_box =  aabb(vec3(x0,y0, k-0.0001), vec3(x1, y1, k+0.0001));
                 return true;
             }
+
             material *mp;
             double x0, x1, y0, y1, k;
     };
@@ -1731,15 +1736,17 @@ This is xz and yz:
     class xz_rect: public hittable {
         public:
             xz_rect() {}
-            xz_rect(
-                double _x0, double _x1, double _z0, double _z1, double _k, material *mat)
-                : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat)
-            {};
+
+            xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, material *mat)
+                : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
+
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
                 output_box =  aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
                 return true;
             }
+
             material *mp;
             double x0, x1, z0, z1, k;
     };
@@ -1747,15 +1754,17 @@ This is xz and yz:
     class yz_rect: public hittable {
         public:
             yz_rect() {}
-            yz_rect(
-                double _y0, double _y1, double _z0, double _z1, double _k, material *mat)
-                : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat)
-            {};
+
+            yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, material *mat)
+                : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
+
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
                 output_box =  aabb(vec3(k-0.0001, y0, z0), vec3(k+0.0001, y1, z1));
                 return true;
             }
+
             material  *mp;
             double y0, y1, z0, z1, k;
     };
@@ -1861,9 +1870,7 @@ another hittable, but reverses the normals:
         public:
             flip_normals(hittable *p) : ptr(p) {}
 
-            virtual bool hit(
-                const ray& r, double t_min, double t_max, hit_record& rec) const {
-
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
                 if (ptr->hit(r, t_min, t_max, rec)) {
                     rec.normal = -rec.normal;
                     return true;
@@ -1933,11 +1940,14 @@ make an axis-aligned block primitive that holds 6 rectangles:
         public:
             box() {}
             box(const vec3& p0, const vec3& p1, material *ptr);
+
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
+
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
                 output_box =  aabb(pmin, pmax);
                 return true;
             }
+
             vec3 pmin, pmax;
             hittable *list_ptr;
     };
@@ -1947,14 +1957,11 @@ make an axis-aligned block primitive that holds 6 rectangles:
         pmax = p1;
         hittable **list = new hittable*[6];
         list[0] = new xy_rect(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr);
-        list[1] = new flip_normals(
-            new xy_rect(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr));
+        list[1] = new flip_normals(new xy_rect(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr));
         list[2] = new xz_rect(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), ptr);
-        list[3] = new flip_normals(
-            new xz_rect(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr));
+        list[3] = new flip_normals(new xz_rect(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr));
         list[4] = new yz_rect(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr);
-        list[5] = new flip_normals(
-            new yz_rect(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
+        list[5] = new flip_normals(new yz_rect(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
         list_ptr = new hittable_list(list,6);
     }
 
@@ -2004,9 +2011,11 @@ move any underlying hittable is a _translate_ instance.
         public:
             translate(hittable *p, const vec3& displacement)
                 : ptr(p), offset(displacement) {}
-            virtual bool hit(
-                const ray& r, double t_min, double t_max, hit_record& rec) const;
+
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
+
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
+
             hittable *ptr;
             vec3 offset;
     };
@@ -2081,12 +2090,14 @@ For a y-rotation class we have:
     class rotate_y : public hittable {
         public:
             rotate_y(hittable *p, double angle);
-            virtual bool hit(
-                const ray& r, double t_min, double t_max, hit_record& rec) const;
+
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
+
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
                 output_box = bbox;
                 return hasbox;
             }
+
             hittable *ptr;
             double sin_theta;
             double cos_theta;
@@ -2224,11 +2235,13 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
             constant_medium(hittable *b, double d, texture *a) : boundary(b), density(d) {
                 phase_function = new isotropic(a);
             }
-            virtual bool hit(
-                const ray& r, double t_min, double t_max, hit_record& rec) const;
+
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
+
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
                 return boundary->bounding_box(t0, t1, output_box);
             }
+
             hittable *boundary;
             double density;
             material *phase_function;
@@ -2244,16 +2257,15 @@ The scattering function of isotropic picks a uniform random direction:
     class isotropic : public material {
         public:
             isotropic(texture *a) : albedo(a) {}
-            virtual bool scatter(
-                const ray& r_in,
-                const hit_record& rec,
-                vec3& attenuation,
-                ray& scattered) const {
 
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
                 scattered = ray(rec.p, random_in_unit_sphere());
                 attenuation = albedo->value(rec.u, rec.v, rec.p);
                 return true;
             }
+
             texture *albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2264,9 +2276,7 @@ The scattering function of isotropic picks a uniform random direction:
 And the hit function is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool constant_medium::hit(const ray& r, double t_min, double t_max, hit_record& rec)
-    const {
-
+    bool constant_medium::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         // Print occasional samples when debugging. To enable, set enableDebug true.
         const enableDebug = false;
         bool debugging = enableDebug && random_double() < 0.00001;
@@ -2342,15 +2352,15 @@ If we replace the two blocks with smoke and fog (dark and light particles) and m
 
         hittable *b1 = new translate(
             new rotate_y(new box(vec3(0, 0, 0), vec3(165, 165, 165), white), -18),
-            vec3(130,0,65));
+            vec3(130,0,65)
+        );
         hittable *b2 = new translate(
             new rotate_y(new box(vec3(0, 0, 0), vec3(165, 330, 165), white),  15),
-            vec3(265,0,295));
+            vec3(265,0,295)
+        );
 
-        list[i++] = new constant_medium(
-            b1, 0.01, new constant_texture(vec3(1.0, 1.0, 1.0)));
-        list[i++] = new constant_medium(
-            b2, 0.01, new constant_texture(vec3(0.0, 0.0, 0.0)));
+        list[i++] = new constant_medium(b1, 0.01, new constant_texture(vec3(1.0, 1.0, 1.0)));
+        list[i++] = new constant_medium(b2, 0.01, new constant_texture(vec3(0.0, 0.0, 0.0)));
 
         return new hittable_list(list,i);
     }
@@ -2419,14 +2429,17 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         list[l++] = new sphere(vec3(400, 200, 400), 100, emat);
         texture *pertext = new noise_texture(0.1);
         list[l++] =  new sphere(vec3(220, 280, 300), 80, new lambertian(pertext));
+
         int ns = 1000;
         for (int j = 0; j < ns; j++) {
             boxlist2[j] = new sphere(
                 vec3(165*random_double(), 165*random_double(), 165*random_double()),
                 10, white);
         }
-        list[l++] = new translate(new rotate_y(
-            new bvh_node(boxlist2, ns, 0.0, 1.0), 15), vec3(-100,270,395));
+
+        list[l++] = new translate(
+            new rotate_y(new bvh_node(boxlist2, ns, 0.0, 1.0), 15), vec3(-100,270,395));
+
         return new hittable_list(list,l);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
