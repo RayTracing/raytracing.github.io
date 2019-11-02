@@ -1,15 +1,15 @@
 #ifndef MOVING_SPHERE_H
 #define MOVING_SPHERE_H
-//==================================================================================================
+//==============================================================================================
 // Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
-// neighboring rights to this software to the public domain worldwide. This software is distributed
-// without any warranty.
+// neighboring rights to this software to the public domain worldwide. This software is
+// distributed without any warranty.
 //
-// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication along
-// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-//==================================================================================================
+// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication
+// along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==============================================================================================
 
 #include "common/rtweekend.h"
 #include "hittable.h"
@@ -37,8 +37,12 @@ vec3 moving_sphere::center(double time) const{
 
 
 bool moving_sphere::bounding_box(double t0, double t1, aabb& output_box) const {
-    aabb box0(center(t0) - vec3(radius, radius, radius), center(t0) + vec3(radius, radius, radius));
-    aabb box1(center(t1) - vec3(radius, radius, radius), center(t1) + vec3(radius, radius, radius));
+    aabb box0(
+        center(t0) - vec3(radius, radius, radius),
+        center(t0) + vec3(radius, radius, radius));
+    aabb box1(
+        center(t1) - vec3(radius, radius, radius),
+        center(t1) + vec3(radius, radius, radius));
     output_box = surrounding_box(box0, box1);
     return true;
 }

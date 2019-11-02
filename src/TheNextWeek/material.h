@@ -1,15 +1,15 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
-//==================================================================================================
+//==============================================================================================
 // Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
-// neighboring rights to this software to the public domain worldwide. This software is distributed
-// without any warranty.
+// neighboring rights to this software to the public domain worldwide. This software is
+// distributed without any warranty.
 //
-// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication along
-// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-//==================================================================================================
+// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication
+// along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==============================================================================================
 
 #include "common/rtweekend.h"
 #include "hittable.h"
@@ -60,16 +60,28 @@ vec3 random_in_unit_sphere() {
 
 class material  {
     public:
-        virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const = 0;
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+        ) const = 0;
+
         virtual vec3 emitted(double u, double v, const vec3& p) const {
-            return vec3(0,0,0); }
+            return vec3(0,0,0);
+        }
 };
 
 class diffuse_light : public material  {
     public:
         diffuse_light(texture *a) : emit(a) {}
-        virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const { return false; }
-        virtual vec3 emitted(double u, double v, const vec3& p) const { return emit->value(u, v, p); }
+
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+        ) const {
+            return false;
+        }
+
+        virtual vec3 emitted(double u, double v, const vec3& p) const {
+            return emit->value(u, v, p);
+        }
         texture *emit;
 };
 
@@ -77,17 +89,22 @@ class diffuse_light : public material  {
 class isotropic : public material {
     public:
         isotropic(texture *a) : albedo(a) {}
-        virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const  {
-             scattered = ray(rec.p, random_in_unit_sphere(), r_in.time());
-             attenuation = albedo->value(rec.u, rec.v, rec.p);
-             return true;
+
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+        ) const  {
+            scattered = ray(rec.p, random_in_unit_sphere(), r_in.time());
+            attenuation = albedo->value(rec.u, rec.v, rec.p);
+            return true;
         }
+
         texture *albedo;
 };
 
 class lambertian : public material {
     public:
         lambertian(texture *a) : albedo(a) {}
+
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
         ) const {
@@ -102,13 +119,22 @@ class lambertian : public material {
 
 class metal : public material {
     public:
-        metal(const vec3& a, double f) : albedo(a) { if (f < 1) fuzz = f; else fuzz = 1; }
-        virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const  {
+        metal(const vec3& a, double f) : albedo(a) {
+            if (f < 1)
+                fuzz = f;
+            else
+                fuzz = 1;
+        }
+
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+        ) const  {
             vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
             scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
             attenuation = albedo;
             return (dot(scattered.direction(), rec.normal) > 0);
         }
+
         vec3 albedo;
         double fuzz;
 };
@@ -116,41 +142,46 @@ class metal : public material {
 class dielectric : public material {
     public:
         dielectric(double ri) : ref_idx(ri) {}
-        virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const  {
-             vec3 outward_normal;
-             vec3 reflected = reflect(r_in.direction(), rec.normal);
-             double ni_over_nt;
-             attenuation = vec3(1.0, 1.0, 1.0);
-             vec3 refracted;
-             double reflect_prob;
-             double cosine;
-             if (dot(r_in.direction(), rec.normal) > 0) {
-                  outward_normal = -rec.normal;
-                  ni_over_nt = ref_idx;
-                  cosine = ref_idx * dot(r_in.direction(), rec.normal) / r_in.direction().length();
-             }
-             else {
-                  outward_normal = rec.normal;
-                  ni_over_nt = 1.0 / ref_idx;
-                  cosine = -dot(r_in.direction(), rec.normal) / r_in.direction().length();
-             }
 
-             if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
-                reflect_prob = schlick(cosine, ref_idx);
-             }
-             else {
-                scattered = ray(rec.p, reflected, r_in.time());
-                reflect_prob = 1.0;
-             }
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+        ) const {
+            vec3 outward_normal;
+            vec3 reflected = reflect(r_in.direction(), rec.normal);
+            double ni_over_nt;
+            attenuation = vec3(1.0, 1.0, 1.0);
+            vec3 refracted;
+            double reflect_prob;
+            double cosine;
 
-             if (random_double() < reflect_prob) {
-                scattered = ray(rec.p, reflected, r_in.time());
-             }
-             else {
-                scattered = ray(rec.p, refracted, r_in.time());
-             }
+            if (dot(r_in.direction(), rec.normal) > 0) {
+                 outward_normal = -rec.normal;
+                 ni_over_nt = ref_idx;
+                 cosine = ref_idx * dot(r_in.direction(), rec.normal)
+                        / r_in.direction().length();
+            }
+            else {
+                 outward_normal = rec.normal;
+                 ni_over_nt = 1.0 / ref_idx;
+                 cosine = -dot(r_in.direction(), rec.normal) / r_in.direction().length();
+            }
 
-             return true;
+            if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
+               reflect_prob = schlick(cosine, ref_idx);
+            }
+            else {
+               scattered = ray(rec.p, reflected, r_in.time());
+               reflect_prob = 1.0;
+            }
+
+            if (random_double() < reflect_prob) {
+               scattered = ray(rec.p, reflected, r_in.time());
+            }
+            else {
+               scattered = ray(rec.p, refracted, r_in.time());
+            }
+
+            return true;
         }
 
         double ref_idx;

@@ -1,15 +1,15 @@
 #ifndef HITTABLE_H
 #define HITTABLE_H
-//==================================================================================================
+//==============================================================================================
 // Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
-// neighboring rights to this software to the public domain worldwide. This software is distributed
-// without any warranty.
+// neighboring rights to this software to the public domain worldwide. This software is
+// distributed without any warranty.
 //
-// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication along
-// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-//==================================================================================================
+// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication
+// along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==============================================================================================
 
 #include "common/rtweekend.h"
 #include "common/vec3.h"
@@ -122,10 +122,10 @@ rotate_y::rotate_y(hittable *p, double angle) : ptr(p) {
                 auto newx = cos_theta*x + sin_theta*z;
                 auto newz = -sin_theta*x + cos_theta*z;
                 vec3 tester(newx, y, newz);
-                for ( int c = 0; c < 3; c++ ) {
-                    if ( tester[c] > max[c] )
+                for (int c = 0; c < 3; c++) {
+                    if (tester[c] > max[c])
                         max[c] = tester[c];
-                    if ( tester[c] < min[c] )
+                    if (tester[c] < min[c])
                         min[c] = tester[c];
                 }
             }
