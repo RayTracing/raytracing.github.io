@@ -28,8 +28,8 @@ terms you will need to study the others.
 As before, https://in1weekend.blogspot.com/ will have further readings and references.
 
 
-Acknowledgements
------------------
+Acknowledgments
+----------------
 Thanks to Dave Hart and Jean Buckley for help on the original manuscript.
 
 Thanks to Paul Melis, Nakata Daisuke, Filipe Scur, Vahan Sosoyan, and Matthew Heimlich for finding
@@ -300,7 +300,7 @@ this case
 </div>
 
 <div class='together'>
-Since $p(r)$ is proportional to $r$ , _i.e._, $p = C' \cdot r$ for some other constant $C'$
+Since $p(r)$ is proportional to $r$, _i.e._, $p = C' \cdot r$ for some other constant $C'$
 
   $$
   area(C'r, 0, 2) = \int_{0}^{2} C' r dr
@@ -317,7 +317,7 @@ Don’t worry this doesn’t go on forever!
 <div class='together'>
 Given a random number from `d = random_double()` that is uniform and between 0 and 1, we should be
 able to find some function $f(d)$ that gives us what we want. Suppose $e = f(d) = d^2$. That is no
-longer a uniform _pdf_ . The _pdf_ of $e$ will be bigger near 0 than it is near 1 (squaring a
+longer a uniform _pdf_. The _pdf_ of $e$ will be bigger near 0 than it is near 1 (squaring a
 number between 0 and 1 makes it smaller). To take this general observation to a function, we need
 the cumulative probability distribution function $P(x)$:
 
@@ -326,7 +326,7 @@ the cumulative probability distribution function $P(x)$:
 
 <div class='together'>
 Note that for $x$ where we didn’t define $p(x)$, $p(x) = 0$, _i.e._, the probability of an $x$ there
-is zero. For our example _pdf_ $p(r) = r/2$ , the $P(x)$ is:
+is zero. For our example _pdf_ $p(r) = r/2$, the $P(x)$ is:
 
   $$ P(x) = 0 : x < 0                 $$
   $$ P(x) = \frac{x^2}{4} : 0 < x < 2 $$
@@ -335,18 +335,18 @@ is zero. For our example _pdf_ $p(r) = r/2$ , the $P(x)$ is:
 
 <div class='together'>
 One question is, what’s up with $x$ versus $r$? They are dummy variables -- analogous to the
-function arguments in a program. If we evaluate $P$ at $x = 0.5$ , we get:
+function arguments in a program. If we evaluate $P$ at $x = 0.5$, we get:
 
   $$ P(1.0) = \frac{1}{4} $$
 </div>
 
 <div class='together'>
-This says _the probability that a random variable with our pdf is less than one is 25%_ . This
-gives rise to a clever observation that underlies many methods to generate non-uniform random
-numbers. We want a function `f()` that when we call it as `f(random_double())` we get a return value
-with a pdf $\frac{x^2}{4}$ . We don’t know what that is, but we do know that 25% of what it returns
-should be less than 1, and 75% should be above one. If $f()$ is increasing, then we would expect
-$f(0.25) = 1.0$. This can be generalized to figure out $f()$ for every possible input:
+This says _the probability that a random variable with our pdf is less than one is 25%_. This gives
+rise to a clever observation that underlies many methods to generate non-uniform random numbers. We
+want a function `f()` that when we call it as `f(random_double())` we get a return value with a pdf
+$\frac{x^2}{4}$. We don’t know what that is, but we do know that 25% of what it returns should be
+less than 1, and 75% should be above one. If $f()$ is increasing, then we would expect $f(0.25) =
+1.0$. This can be generalized to figure out $f()$ for every possible input:
 
   $$ f(P(x)) = x $$
 </div>
@@ -359,15 +359,15 @@ That means $f$ just undoes whatever $P$ does. So,
 
 <div class='together'>
 The -1 means “inverse function”. Ugly notation, but standard. For our purposes what this means is,
-if we have pdf $p()$ and its cumulative distribution function $P()$ , then if we do this to a random
+if we have pdf $p()$ and its cumulative distribution function $P()$, then if we do this to a random
 number we’ll get what we want:
 
   $$ e = P^{-1} (\text{random_double}()) $$
 </div>
 
 <div class='together'>
-For our _pdf_ $p(x) = x/2$ , and corresponding $P(x)$ , we need to compute the inverse of $P$. If
-we have
+For our _pdf_ $p(x) = x/2$, and corresponding $P(x)$, we need to compute the inverse of $P$. If we
+have
 
   $$ y = \frac{x^2}{4} $$
 
@@ -392,7 +392,7 @@ We can now sample our old integral
 <div class='together'>
 We need to account for the non-uniformity of the _pdf_ of $x$. Where we sample too much we should
 down-weight. The _pdf_ is a perfect measure of how much or little sampling is being done. So the
-weighting function should be proportional to $1/pdf$ . In fact it is exactly $1/pdf$ :
+weighting function should be proportional to $1/pdf$. In fact it is exactly $1/pdf$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     inline double pdf(double x) {
@@ -449,9 +449,9 @@ the machinery to get `x = 2*random_double()` and the code is:
 </div>
 
 <div class='together'>
-Note that we don’t need that 2 in the `2*sum/N` anymore -- that is handled by the _pdf_ , which is
-2 when you divide by it. You’ll note that importance sampling helps a little, but not a ton. We
-could make the pdf follow the integrand exactly:
+Note that we don’t need that 2 in the `2*sum/N` anymore -- that is handled by the _pdf_, which is 2
+when you divide by it. You’ll note that importance sampling helps a little, but not a ton. We could
+make the pdf follow the integrand exactly:
 
   $$ p(x) = \frac{3}{8}x^2 $$
 
@@ -501,7 +501,7 @@ Let’s review now because that was most of the concepts that underlie MC ray tr
 
   1. You have an integral of $f(x)$ over some domain $[a,b]$
   2. You pick a pdf $p$ that is non-zero over $[a,b]$
-  3. You average a whole ton of $f(r)/p(r)$ where $r$ is a random number $r$ with pdf $p$ .
+  3. You average a whole ton of $f(r)/p(r)$ where $r$ is a random number $r$ with pdf $p$.
 
 This will always converge to the right answer. The more $p$ follows $f$, the faster it converges.
 </div>
@@ -520,7 +520,7 @@ Suppose we have this integral over all directions:
 <div class='together'>
 By MC integration, we should just be able to sample $\cos^2(\theta) / p(\text{direction})$. But what
 is direction in that context? We could make it based on polar coordinates, so $p$ would be in terms
-of $(\theta, \phi)$ . However you do it, remember that a pdf has to integrate to 1 and represent the
+of $(\theta, \phi)$. However you do it, remember that a pdf has to integrate to 1 and represent the
 relative probability of that direction being sampled. We have a method from the last books to take
 uniform random samples in a unit sphere:
 
@@ -695,8 +695,8 @@ Importance Sampling Materials
 <div class='together'>
 Our goal over the next two chapters is to instrument our program to send a bunch of extra rays
 toward light sources so that our picture is less noisy. Let’s assume we can send a bunch of rays
-toward the light source using a pdf $pLight(direction)$ . Let’s also assume we have a pdf related to
-$s$, and let’s call that $pSurface(direction)$ . A great thing about pdfs is that you can just use
+toward the light source using a pdf $pLight(direction)$. Let’s also assume we have a pdf related to
+$s$, and let’s call that $pSurface(direction)$. A great thing about pdfs is that you can just use
 linear mixtures of them to form mixture densities that are also pdfs. For example, the simplest
 would be:
 
@@ -924,7 +924,7 @@ For $\theta$ we have:
 
 <div class='together'>
 Here, $t$ is a dummy variable. Let’s try some different functions for $f()$. Let’s first try a
-uniform density on the sphere. The area of the unit sphere is $4\pi$ , so a uniform $p(direction) =
+uniform density on the sphere. The area of the unit sphere is $4\pi$, so a uniform $p(direction) =
 \frac{1}{4\pi}$ on the unit sphere.
 
   $$ r_2 = \frac{-\cos(\theta)}{2} - \frac{-\cos(0)}{2} = \frac{1 - \cos(\theta)}{2} $$
@@ -1475,8 +1475,7 @@ Now we can try sampling directions toward a `hittable` like the light.
 
 <div class='together'>
 This assumes two as-yet not implemented functions in the `hittable` class. To avoid having to add
-instrumentation to all of `hittable` subclasses, we’ll add two dummy functions to the `hittable`
-class:
+instrumentation to all `hittable` subclasses, we’ll add two dummy functions to the `hittable` class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable {
@@ -1665,7 +1664,7 @@ Probably we should pass something into color about the lights. Unlike bvh constr
 careful about memory leaks as there are an unbounded number of samples.
 
 The specular rays (glass and metal) are no longer supported. The math would work out if we just made
-their scattering function a delta function . But that would be floating point disaster. We could
+their scattering function a delta function. But that would be floating point disaster. We could
 either separate out specular reflections, or have surface roughness never be zero and have
 almost-mirrors that look perfectly smooth but don’t generate NaNs. I don’t have an opinion on which
 way to do it -- I have tried both and they both have their advantages -- but we have smooth metal
@@ -1677,7 +1676,7 @@ more interesting functional background. Some environment maps are HDR (the R/G/B
 floats rather than 0–255 bytes usually interpreted as 0-1). Our output has been HDR all along and
 we’ve just been truncating it.
 
-Finally, our renderer is RGB and a more physically-based one -- like an automobile manufacturer
+Finally, our renderer is RGB and a more physically based one -- like an automobile manufacturer
 might use -- would probably need to use spectral colors and maybe even polarization. For a movie
 renderer, you would probably want RGB. You can make a hybrid renderer that has both modes, but that
 is of course harder. I’m going to stick to RGB for now, but I will revisit this near the end of the
@@ -1689,7 +1688,7 @@ Cleaning Up pdf Management.
 ====================================================================================================
 
 <div class='together'>
-So far I have the `ray_color()` function create two hard-coded `pdf`s :
+So far I have the `ray_color()` function create two hard-coded `pdf`s:
 
 1. `p0()` related to the shape of the light
 2. `p1()` related to the normal vector and type of surface
@@ -2169,7 +2168,7 @@ The Rest of Your Life
 ====================================================================================================
 
 The purpose of this book was to show the details of dotting all the i’s of the math on one way of
-organizing a physically-based renderer’s sampling approach. Now you can explore a lot of different
+organizing a physically based renderer’s sampling approach. Now you can explore a lot of different
 potential paths.
 
 If you want to explore Monte Carlo methods, look into bidirectional and path spaced approaches such
@@ -2185,8 +2184,8 @@ surprisingly open about their craft.
 If you want to do high-performance ray tracing, look first at papers from Intel and NVIDIA. Again,
 they are surprisingly open.
 
-If you want to do hard-core physically-based renderers, convert your renderer from RGB to spectral.
-I am a big fan of each ray having a random wavelength and almost all of the RGBs in your program
+If you want to do hard-core physically based renderers, convert your renderer from RGB to spectral.
+I am a big fan of each ray having a random wavelength and almost all the RGBs in your program
 turning into floats. It sounds inefficient, but it isn’t!
 
 Regardless of what direction you take, add a glossy BRDF model. There are many to choose from and
