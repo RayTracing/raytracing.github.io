@@ -19,23 +19,17 @@
 class hittable_list: public hittable  {
     public:
         hittable_list() {}
-        ~hittable_list();
+
         virtual bool hit(
             const ray& r, double tmin, double tmax, hit_record& rec) const;
 
-        void add(hittable*);
+        void add(object_ptr);
 
-        std::vector<hittable*> objects;
+        std::vector<object_ptr> objects;
 };
 
-hittable_list::~hittable_list() {
-    for (auto objectPtr : objects) {
-        delete objectPtr;
-    }
-}
-
-void hittable_list::add(hittable* objectPtr) {
-    objects.push_back(objectPtr);
+void hittable_list::add(object_ptr object) {
+    objects.push_back(object);
 }
 
 bool hittable_list::hit(

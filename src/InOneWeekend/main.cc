@@ -17,10 +17,13 @@
 
 #include <iostream>
 
+using std::shared_ptr;
+using std::make_shared;
 
-vec3 ray_color(const ray& r, hittable *world, int depth) {
+
+vec3 ray_color(const ray& r, const hittable_list &world, int depth) {
     hit_record rec;
-    if (world->hit(r, 0.001, infinity, rec)) {
+    if (world.hit(r, 0.001, infinity, rec)) {
         if (depth <= 0)
             return vec3(0,0,0);
         ray scattered;
@@ -36,49 +39,50 @@ vec3 ray_color(const ray& r, hittable *world, int depth) {
 }
 
 
-hittable *random_scene() {
+void create_random_scene(hittable_list& scene) {
     int n = 500;
-    hittable_list *scene = new hittable_list();
 
-    scene->add(
-        new sphere(vec3(0,-1000,0), 1000, new lambertian(vec3(0.5, 0.5, 0.5))));
+    auto floor_sphere_center = vec3(0, -1000, 0);
+    auto floor_sphere_material = make_shared<lambertian>(vec3(0.5, 0.5, 0.5));
+    scene.add(make_shared<sphere>(floor_sphere_center, 1000, floor_sphere_material));
 
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
+
             auto choose_mat = random_double();
             vec3 center(a+0.9*random_double(),0.2,b+0.9*random_double());
+
             if ((center-vec3(4,0.2,0)).length() > 0.9) {
-                if (choose_mat < 0.8) {  // diffuse
-                    scene->add(new sphere(
-                        center, 0.2,
-                        new lambertian(vec3(random_double()*random_double(),
-                                            random_double()*random_double(),
-                                            random_double()*random_double()))
-                    ));
+                auto radius = 0.2;
+                shared_ptr<material> sphere_material;
+
+                if (choose_mat < 0.8) {
+                    // diffuse
+                    auto albedo = vec3(random_double() * random_double(),
+                                       random_double() * random_double(),
+                                       random_double() * random_double());
+                    sphere_material = make_shared<lambertian>(albedo);
                 }
-                else if (choose_mat < 0.95) { // metal
-                    scene->add(new sphere(
-                        center, 0.2,
-                        new metal(vec3(0.5*(1 + random_double()),
-                                       0.5*(1 + random_double()),
-                                       0.5*(1 + random_double())),
-                                  0.5*random_double())
-                    ));
+                else if (choose_mat < 0.95) {
+                    // metal
+                    auto albedo = vec3(0.5 + 0.5*random_double(),
+                                       0.5 + 0.5*random_double(),
+                                       0.5 + 0.5*random_double());
+                    auto fuzz = 0.5 * random_double();
+                    sphere_material = make_shared<metal>(albedo, fuzz);
                 }
-                else {  // glass
-                    scene->add(new sphere(center, 0.2, new dielectric(1.5)));
+                else {
+                    // glass
+                    sphere_material = make_shared<dielectric>(1.5);
                 }
+                scene.add(make_shared<sphere>(center, radius, sphere_material));
             }
         }
     }
 
-    scene->add(new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5)));
-    scene->add(new sphere(
-        vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1))));
-    scene->add(new sphere(
-        vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0)));
-
-    return scene;
+    scene.add(make_shared<sphere>(vec3( 0,1,0), 1., make_shared<dielectric>(1.5)));
+    scene.add(make_shared<sphere>(vec3(-4,1,0), 1., make_shared<lambertian>(vec3(.4,.2,.1))));
+    scene.add(make_shared<sphere>(vec3( 4,1,0), 1., make_shared<metal>(vec3(.7,.6,.5), 0.)));
 }
 
 
@@ -90,7 +94,8 @@ int main() {
 
     std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
 
-    hittable *world = random_scene();
+    hittable_list scene;
+    create_random_scene(scene);
 
     vec3 lookfrom(13,2,3);
     vec3 lookat(0,0,0);
@@ -106,7 +111,7 @@ int main() {
                 auto u = double(i + random_double()) / double(nx);
                 auto v = double(j + random_double()) / double(ny);
                 ray r = cam.get_ray(u, v);
-                color += ray_color(r, world, max_depth);
+                color += ray_color(r, scene, max_depth);
             }
             color.write_color(std::cout, num_samples);
         }

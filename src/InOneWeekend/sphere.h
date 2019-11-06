@@ -18,11 +18,12 @@
 class sphere: public hittable  {
     public:
         sphere() {}
-        sphere(vec3 cen, double r, material *m) : center(cen), radius(r), mat_ptr(m)  {};
+        sphere(vec3 cen, double r, material_ptr m) : center(cen), radius(r), mat_ptr(m)  {};
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
-        vec3 center;
-        double radius;
-        material *mat_ptr;
+
+        vec3    center;
+        double  radius;
+        material_ptr mat_ptr;
 };
 
 
