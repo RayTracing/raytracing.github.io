@@ -29,13 +29,13 @@ class hittable_list: public hittable  {
 };
 
 hittable_list::~hittable_list() {
-    for (auto objectPtr : objects) {
-        delete objectPtr;
+    for (auto object_ptr : objects) {
+        delete object_ptr;
     }
 }
 
-void hittable_list::add(hittable* objectPtr) {
-    objects.push_back(objectPtr);
+void hittable_list::add(hittable* object_ptr) {
+    objects.push_back(object_ptr);
 }
 
 bool hittable_list::hit(
@@ -45,8 +45,8 @@ bool hittable_list::hit(
     bool hit_anything = false;
     double closest_so_far = t_max;
 
-    for (auto objectPtr : objects) {
-        if (objectPtr->hit(r, t_min, closest_so_far, temp_rec)) {
+    for (auto object_ptr : objects) {
+        if (object_ptr->hit(r, t_min, closest_so_far, temp_rec)) {
             hit_anything = true;
             closest_so_far = temp_rec.t;
             rec = temp_rec;

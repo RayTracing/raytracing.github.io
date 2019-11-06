@@ -18,9 +18,9 @@
 #include <iostream>
 
 
-vec3 ray_color(const ray& r, hittable *world, int depth) {
+vec3 ray_color(const ray& r, hittable &world, int depth) {
     hit_record rec;
-    if (world->hit(r, 0.001, infinity, rec)) {
+    if (world.hit(r, 0.001, infinity, rec)) {
         if (depth <= 0)
             return vec3(0,0,0);
         ray scattered;
@@ -36,49 +36,43 @@ vec3 ray_color(const ray& r, hittable *world, int depth) {
 }
 
 
-hittable *random_scene() {
+void create_random_scene(hittable_list &scene) {
     int n = 500;
-    hittable_list *scene = new hittable_list();
 
-    scene->add(
+    scene.add(
         new sphere(vec3(0,-1000,0), 1000, new lambertian(vec3(0.5, 0.5, 0.5))));
 
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
             auto choose_mat = random_double();
             vec3 center(a+0.9*random_double(),0.2,b+0.9*random_double());
+            auto radius = 0.2;
             if ((center-vec3(4,0.2,0)).length() > 0.9) {
-                if (choose_mat < 0.8) {  // diffuse
-                    scene->add(new sphere(
-                        center, 0.2,
-                        new lambertian(vec3(random_double()*random_double(),
-                                            random_double()*random_double(),
-                                            random_double()*random_double()))
-                    ));
+                material *mat;
+                if (choose_mat < 0.8) {// diffuse
+                    auto albedo = vec3(random_double()*random_double(),
+                                       random_double()*random_double(),
+                                       random_double()*random_double());
+                    mat = new lambertian(albedo);
                 }
                 else if (choose_mat < 0.95) { // metal
-                    scene->add(new sphere(
-                        center, 0.2,
-                        new metal(vec3(0.5*(1 + random_double()),
+                    auto albedo = vec3(0.5*(1 + random_double()),
                                        0.5*(1 + random_double()),
-                                       0.5*(1 + random_double())),
-                                  0.5*random_double())
-                    ));
+                                       0.5*(1 + random_double()));
+                    auto fuzz = 0.5*random_double();
+                    mat = new metal(albedo, fuzz);
                 }
                 else {  // glass
-                    scene->add(new sphere(center, 0.2, new dielectric(1.5)));
+                    mat = new dielectric(1.5);
                 }
+                scene.add(new sphere(center, radius, mat));
             }
         }
     }
 
-    scene->add(new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5)));
-    scene->add(new sphere(
-        vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1))));
-    scene->add(new sphere(
-        vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0)));
-
-    return scene;
+    scene.add(new sphere(vec3( 0, 1, 0), 1.0, new dielectric(1.5)));
+    scene.add(new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1))));
+    scene.add(new sphere(vec3( 4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0)));
 }
 
 
@@ -90,7 +84,8 @@ int main() {
 
     std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
 
-    hittable *world = random_scene();
+    hittable_list world;
+    create_random_scene(world);
 
     vec3 lookfrom(13,2,3);
     vec3 lookat(0,0,0);
