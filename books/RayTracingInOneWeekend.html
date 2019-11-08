@@ -1068,7 +1068,9 @@ surfaces that look matte. One of the simplest ways to do this turns out to be ex
 ideal diffuse surfaces. (I used to do it as a lazy hack that approximates mathematically ideal
 Lambertian.)
 
-(Reader Vassillen Chizhov proved that the lazy hack is indeed just a lazy hack and is inaccurate. The correct representation of ideal Lambertian isn't much more work and is presented at the end of the chapter.)
+(Reader Vassillen Chizhov proved that the lazy hack is indeed just a lazy hack and is inaccurate.
+The correct representation of ideal Lambertian isn't much more work and is presented at the end of
+the chapter.)
 
 <div class='together'>
 Pick a random point $s$ from the unit radius sphere that is tangent to the hitpoint, and send a ray
@@ -1224,6 +1226,14 @@ point approximation the sphere intersector gives us. So we need to ignore hits v
 This gets rid of the shadow acne problem. Yes it is really called that.
 </div>
 
+<div class='together'>
+The rejection method presented here produces random points in the unit ball offset along the surface
+normal. This corresponds to picking directions on the hemisphere with high probability close to the
+normal, and a lower probability of scattering rays at grazing angles. The distribution present scales by the $cos^2 (\phi)$ where $\phi$ is the angle from the normal. This is useful since light arriving at shallow angles spreads over a larger area, and thus has a lower contribution to the final color.
+
+However, we are interested in a Lambertian distribution, which has a distribution of $cos (\phi)$.
+True Lambertian has the probability higher for ray scattering close to the normal, but the distribution is more uniform. This is achieved by picking points on the surface of the unit sphere, offset along the surface normal. Picking points on the sphere can be achieved by picking points in the unit ball, and then normalizing those. Note the only difference between the first and third method: picking points **in** the unit ball, versus picking points **on** the unit ball.
+</div>
 
 
 Metal
