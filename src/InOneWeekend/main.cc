@@ -18,14 +18,14 @@
 #include <iostream>
 
 
-vec3 ray_color(const ray& r, hittable &world, int depth) {
+vec3 ray_color(const ray& r, hittable_list &world, int depth) {
     hit_record rec;
     if (world.hit(r, 0.001, infinity, rec)) {
         if (depth <= 0)
             return vec3(0,0,0);
         ray scattered;
         vec3 attenuation;
-        if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+        if (rec.mat->scatter(r, rec, attenuation, scattered))
             return attenuation * ray_color(scattered, world, depth-1);
         return vec3(0,0,0);
     }
@@ -39,8 +39,7 @@ vec3 ray_color(const ray& r, hittable &world, int depth) {
 void create_random_scene(hittable_list &scene) {
     int n = 500;
 
-    scene.add(
-        new sphere(vec3(0,-1000,0), 1000, new lambertian(vec3(0.5, 0.5, 0.5))));
+    scene.add(new sphere(vec3(0,-1000,0), 1000), new lambertian(vec3(0.5, 0.5, 0.5)));
 
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
@@ -65,14 +64,14 @@ void create_random_scene(hittable_list &scene) {
                 else {  // glass
                     mat = new dielectric(1.5);
                 }
-                scene.add(new sphere(center, radius, mat));
+                scene.add(new sphere(center, radius), mat);
             }
         }
     }
 
-    scene.add(new sphere(vec3( 0, 1, 0), 1.0, new dielectric(1.5)));
-    scene.add(new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1))));
-    scene.add(new sphere(vec3( 4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0)));
+    scene.add(new sphere(vec3( 0, 1, 0), 1.0), new dielectric(1.5));
+    scene.add(new sphere(vec3(-4, 1, 0), 1.0), new lambertian(vec3(0.4, 0.2, 0.1)));
+    scene.add(new sphere(vec3( 4, 1, 0), 1.0), new metal(vec3(0.7, 0.6, 0.5), 0.0));
 }
 
 
