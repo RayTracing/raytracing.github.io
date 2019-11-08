@@ -15,27 +15,28 @@
 
 #include <vector>
 
+struct scene_object {
+    hittable *surface;
+    material *mat;
+}
 
 class hittable_list: public hittable  {
     public:
-        hittable_list() {}
-        ~hittable_list();
-        virtual bool hit(
-            const ray& r, double tmin, double tmax, hit_record& rec) const;
+        ~hittable_list() {
+            for (auto object_ptr : objects) {
+                delete object_ptr;
+            }
+        }
 
-        void add(hittable*);
+        virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
 
-        std::vector<hittable*> objects;
+        void add(hittable*, material*);
+
+        std::vector<scene_object> objects;
 };
 
-hittable_list::~hittable_list() {
-    for (auto object_ptr : objects) {
-        delete object_ptr;
-    }
-}
-
-void hittable_list::add(hittable* object_ptr) {
-    objects.push_back(object_ptr);
+void hittable_list::add(hittable* object_ptr, material* mat_ptr) {
+    objects.push_back({surface,mat});
 }
 
 bool hittable_list::hit(
@@ -45,11 +46,12 @@ bool hittable_list::hit(
     bool hit_anything = false;
     double closest_so_far = t_max;
 
-    for (auto object_ptr : objects) {
-        if (object_ptr->hit(r, t_min, closest_so_far, temp_rec)) {
+    for (auto scene_object : objects) {
+        if (scene_object.surface->hit(r, t_min, closest_so_far, temp_rec)) {
             hit_anything = true;
             closest_so_far = temp_rec.t;
             rec = temp_rec;
+            rec.mat_ptr = scene_object.mat;
         }
     }
     return hit_anything;
