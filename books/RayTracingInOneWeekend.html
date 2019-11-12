@@ -1171,7 +1171,7 @@ depth, returning no light contribution at the maximum depth:
 <div class='together'>
 This gives us:
 
-  ![First render of a diffuse sphere](../images/img.first-diffuse.png)
+  ![First render of a diffuse sphere](../images/img.first-diffuse.jpg)
 
 </div>
 
@@ -1209,7 +1209,7 @@ square-root:
 <div class='together'>
 That yields light grey, as we desire:
 
-  ![Diffuse sphere, with gamma correction](../images/img.gamma-correct.png)
+  ![Diffuse sphere, with gamma correction](../images/img.gamma-correct.jpg)
 
 </div>
 
@@ -1229,10 +1229,16 @@ This gets rid of the shadow acne problem. Yes it is really called that.
 <div class='together'>
 The rejection method presented here produces random points in the unit ball offset along the surface
 normal. This corresponds to picking directions on the hemisphere with high probability close to the
-normal, and a lower probability of scattering rays at grazing angles. The distribution present scales by the $cos^2 (\phi)$ where $\phi$ is the angle from the normal. This is useful since light arriving at shallow angles spreads over a larger area, and thus has a lower contribution to the final color.
+normal, and a lower probability of scattering rays at grazing angles. The distribution present
+scales by the $cos^2 (\phi)$ where $\phi$ is the angle from the normal. This is useful since light
+arriving at shallow angles spreads over a larger area, and thus has a lower contribution to the
+final color.
 
 However, we are interested in a Lambertian distribution, which has a distribution of $cos (\phi)$.
-True Lambertian has the probability higher for ray scattering close to the normal, but the distribution is more uniform. This is achieved by picking points on the surface of the unit sphere, offset along the surface normal. Picking points on the sphere can be achieved by picking points in the unit ball, and then normalizing those.
+True Lambertian has the probability higher for ray scattering close to the normal, but the
+distribution is more uniform. This is achieved by picking points on the surface of the unit sphere,
+offset along the surface normal. Picking points on the sphere can be achieved by picking points in
+the unit ball, and then normalizing those.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_on_unit_sphere() {
@@ -1265,20 +1271,91 @@ function.
         return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-depth]: <kbd>[main.cc]</kbd> ray_color() with depth limiting]
+    [Listing [ray-color-unit-sphere]: <kbd>[main.cc]</kbd> ray_color() with replacement diffuse]
 </div>
 
 <div class='together'>
 After rendering we get a similar image:
 
-  ![Figure [correct-lambertian-sphere]: Correct rendering of a diffuse sphere](../images/img.correct-lambertian.jpg)
+  ![Correct rendering of Lambertian spheres]: ](../images/img.correct-lambertian.png)
 
 It's hard to tell what the difference between these two diffuse methods are, given that our scene of
-two spheres is so simple. You should be able to notice two important visual differences:
+two spheres is so simple. But, you should be able to notice two important visual differences:
 
-  1. 
-  2. 
+  1. The shadows are less pronounced after the change
+  2. Both spheres are lighter in appearance after the change
 
+Both of these changes are due to the more even scattering of the light rays, less rays are
+scattering toward the normal. This means that for diffuse objects they will appear _lighter_
+because more light bounces toward the camera. For the shadows, less of the light bounces
+straight-up, so the parts of the larger sphere directly underneath the smaller sphere are brighter.
+</div>
+
+<div class='together'>
+The initial hack presented in this book went a long time before it was proven to be an incorrect
+approximation of ideal Lambertian diffuse. A big reason that the error persisted for so long is
+that can be difficult to:
+
+  1. Mathematically prove that the probability distribution is incorrect
+  2. Intuitively explain why a $cos (\phi)$ distribution is desirable (and what it looks like it)
+
+Not a lot of common, everyday objects are perfectly diffuse, so our visual intuition of how these
+objects behave under light can be poorly formed.
+</div>
+
+<div class='together'>
+In the interest of learning, we are including an intuitive and easy to understand diffuse method.
+For the two methods above we had a random vector, first of random length and then of unit length,
+offset from the hitpoint by the normal. It may not be immediately obvious why the vectors should be
+displaced by the normal.
+
+A more intuitive approach is to have an equal probability of scattering in any direction. The
+distribution is truly uniform for all angles away from the hitpoint, with no dependence on the
+angle from the normal. Many of the first raytracing papers used this diffuse method (before
+adopting Lambertian diffuse).
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 random_in_hemisphere(const vec3& normal) {
+        vec3 in_unit_sphere = random_in_unit_sphere();
+        if(dot(in_unit_sphere, normal) > 0.0) // In the same hemisphere as the normal
+            return in_unit_sphere;
+        else
+            return -in_unit_sphere;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-in-hemisphere]: <kbd>[material.h]</kbd> The random_in_hemisphere(normal) function]
+
+And plugging the new formula into the `ray_color()` function:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
+        hit_record rec;
+        if (world->hit(r, 0.0, infinity, rec)) {
+            if (depth <= 0)
+                return vec3(0,0,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            vec3 target = rec.p + random_on_hemisphere(rec.normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
+        }
+
+        vec3 unit_direction = unit_vector(r.direction());
+        auto t = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-hemisphere]: <kbd>[main.cc]</kbd> ray_color() with hemispherical scattering]
+
+Gives us the following image:
+
+  ![Rendering of diffuse spheres with hemispherical scattering](../images/fig.rand-hemispherical.png)
+</div>
+
+<div class='together'>
+The rendering scenes will become more complicated over the course of the book. You are encouraged to
+switch between the different diffuse renderers presented here. Most scenes of interest will contain
+a disproportionate amount of diffuse materials. Understanding how changing your diffuse method
+changes your scene lighting is a valuable insight to gain.
 </div>
 
 Metal
