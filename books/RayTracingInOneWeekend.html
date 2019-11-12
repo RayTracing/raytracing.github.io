@@ -1086,7 +1086,7 @@ what is usually the easiest algorithm: a rejection method. First, we pick a rand
 cube where x, y, and z all range from -1 to +1. We reject this point and try again if the point is
 outside the sphere. A do/while construct is perfect for that:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_in_unit_sphere() {
         vec3 p;
         do {
@@ -1094,7 +1094,7 @@ outside the sphere. A do/while construct is perfect for that:
         } while (p.squared_length() >= 1.0);
         return p;
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-in-unit-sphere]: <kbd>[material.h]</kbd> The random_in_unit_sphere() function]
 </div>
 
@@ -1131,7 +1131,7 @@ depth, returning no light contribution at the maximum depth:
         if (world->hit(r, 0.0, infinity, rec)) {
             if (depth <= 0)
                 return vec3(0,0,0);
-            vec3 target = rec.p + rec.normal + random_unit_vector();
+            vec3 target = rec.p + rec.normal + random_in_unit_sphere();
             return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
@@ -1232,8 +1232,42 @@ normal. This corresponds to picking directions on the hemisphere with high proba
 normal, and a lower probability of scattering rays at grazing angles. The distribution present scales by the $cos^2 (\phi)$ where $\phi$ is the angle from the normal. This is useful since light arriving at shallow angles spreads over a larger area, and thus has a lower contribution to the final color.
 
 However, we are interested in a Lambertian distribution, which has a distribution of $cos (\phi)$.
-True Lambertian has the probability higher for ray scattering close to the normal, but the distribution is more uniform. This is achieved by picking points on the surface of the unit sphere, offset along the surface normal. Picking points on the sphere can be achieved by picking points in the unit ball, and then normalizing those. Note the only difference between the first and third method: picking points **in** the unit ball, versus picking points **on** the unit ball.
+True Lambertian has the probability higher for ray scattering close to the normal, but the distribution is more uniform. This is achieved by picking points on the surface of the unit sphere, offset along the surface normal. Picking points on the sphere can be achieved by picking points in the unit ball, and then normalizing those.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 random_on_unit_sphere() {
+        return unit_vector(random_in_unit_sphere());
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-on-unit-sphere]: <kbd>[material.h]</kbd> The random_on_unit_sphere() function]
+
+  ![Figure [rand-unit-vector]: Generating a random unit vector](../images/fig.rand-unitvector.png)
 </div>
+
+<div class='together'>
+This `random_on_unit_sphere()` is a drop-in replacement for the existing `random_on_unit_sphere()`
+function.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
+        hit_record rec;
+        if (world->hit(r, 0.0, infinity, rec)) {
+            if (depth <= 0)
+                return vec3(0,0,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            vec3 target = rec.p + rec.normal + random_on_unit_sphere();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
+        }
+
+        vec3 unit_direction = unit_vector(r.direction());
+        auto t = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-depth]: <kbd>[main.cc]</kbd> ray_color() with depth limiting]
+</div>
+
 
 
 Metal
