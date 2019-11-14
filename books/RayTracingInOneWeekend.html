@@ -1285,7 +1285,7 @@ two spheres is so simple. But, you should be able to notice two important visual
   1. The shadows are less pronounced after the change
   2. Both spheres are lighter in appearance after the change
 
-Both of these changes are due to the more even scattering of the light rays, less rays are
+Both of these changes are due to the more uniform scattering of the light rays, less rays are
 scattering toward the normal. This means that for diffuse objects they will appear _lighter_
 because more light bounces toward the camera. For the shadows, less of the light bounces
 straight-up, so the parts of the larger sphere directly underneath the smaller sphere are brighter.
@@ -1325,7 +1325,12 @@ adopting Lambertian diffuse).
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-in-hemisphere]: <kbd>[material.h]</kbd> The random_in_hemisphere(normal) function]
 
-And plugging the new formula into the `ray_color()` function:
+Note that the functionality should be identical between `random_in_unit_sphere()` and
+`random_on_unit_sphere()`
+</div>
+
+<div class='together'>
+Plugging the new formula into the `ray_color()` function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 ray_color(const ray& r, hittable *world, int depth) {
@@ -1334,7 +1339,7 @@ And plugging the new formula into the `ray_color()` function:
             if (depth <= 0)
                 return vec3(0,0,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            vec3 target = rec.p + random_on_hemisphere(rec.normal);
+            vec3 target = rec.p + random_in_hemisphere(rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
         }
