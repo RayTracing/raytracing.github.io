@@ -1326,6 +1326,26 @@ And the interpolation becomes a bit more complicated:
 </div>
 
 <div class='together'>
+The output of the perlin interpretation can return negative values. Negative light isn't physically realizable (and doesn't make a lot of sense). Plus, negative values of light will be passed to the `sqrt()` function of our gamma function and get turned into `NaN`s. We will cast the perlin output back to between 0 and 1.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class noise_texture : public texture {
+        public:
+            noise_texture() {}
+            noise_texture(double sc) : scale(sc) {}
+            virtual vec3 value(double u, double v, const vec3& p) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                return vec3(1,1,1) * 0.5 * (1.0 + noise.noise(scale * p));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            }
+            perlin noise;
+            double scale;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-smoothed-2]: <kbd>[perlin.h]</kbd> Perlin smoothed, higher frequency]
+</div>
+
+<div class='together'>
 This finally gives something more reasonable looking:
 
   ![Perlin texture, shifted off integer values](../images/img.perlin-shift.jpg)
@@ -1375,7 +1395,7 @@ effect is:
             noise_texture(double sc) : scale(sc) {}
             virtual vec3 value(double u, double v, const vec3& p) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none delete
-                return vec3(1,1,1) * noise.noise(scale * p);
+                return vec3(1,1,1) * 0.5 * (1.0 + noise.noise(scale * p));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 return vec3(1,1,1) * 0.5 * (1 + sin(scale*p.z() + 10*noise.turb(p)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
