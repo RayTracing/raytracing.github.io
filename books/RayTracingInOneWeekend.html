@@ -527,8 +527,8 @@ First, let’s get ourselves a surface normal so we can shade. This is a vector 
 to the surface, and by convention, points out. One design decision is whether these normals
 (again by convention) are unit length. That is convenient for shading so I will say yes, but I won’t
 enforce that in the code. This could allow subtle bugs, so be aware this is personal preference
-as are most design decisions like that. For a sphere, the normal is in the direction of the hitpoint
-minus the center:
+as are most design decisions like that. For a sphere, the normal is in the direction of the hit
+point minus the center:
 
   ![Figure [surf-normal]: Sphere surface-normal geometry](../images/fig.sphere-normal.jpg)
 
@@ -1073,18 +1073,19 @@ The correct representation of ideal Lambertian isn't much more work and is prese
 the chapter.)
 
 <div class='together'>
-Pick a random point s from the unit radius sphere that is tangent to the hitpoint, and send a ray
-from the hitpoint $p$ to the random point $s$. That sphere has center $(p + N)$:
+There are two unit radius spheres tangent to the hit point $p$ of a surface. These two spheres
+have a center of $(p + N)$ and $(p - N)$, where $N$ is the normal of the surface. The sphere with a
+center at $(p - N)$ is considered _inside_ the surface, whereas the sphere with center $(p + N)$ is considered _outside_ the surface. Pick a random point $s$ from the unit radius sphere outside the surface and send a ray from the hit point $p$ to the random point $s$:
 
   ![Figure [rand-vector]: Generating a random diffuse bounce ray](../images/fig.rand-vector.jpg)
 
 </div>
 
 <div class='together'>
-We also need a way to pick a random point in a unit radius sphere centered at the origin. We’ll use
-what is usually the easiest algorithm: a rejection method. First, we pick a random point in the unit
-cube where x, y, and z all range from -1 to +1. We reject this point and try again if the point is
-outside the sphere. A do/while construct is perfect for that:
+We need a way to pick a random point in a unit radius sphere. We’ll use what is usually the easiest
+algorithm: a rejection method. First, pick a random point in the unit cube where x, y, and z all
+range from -1 to +1. Reject this point and try again if the point is outside the sphere. A
+do-while construct is perfect for that:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_in_unit_sphere() {
@@ -1230,11 +1231,11 @@ This gets rid of the shadow acne problem. Yes it is really called that.
 The rejection method presented here produces random points in the unit ball offset along the surface
 normal. This corresponds to picking directions on the hemisphere with high probability close to the
 normal, and a lower probability of scattering rays at grazing angles. The distribution present
-scales by the $cos^3 (\phi)$ where $\phi$ is the angle from the normal. This is useful since light
+scales by the $\cos^3 (\phi)$ where $\phi$ is the angle from the normal. This is useful since light
 arriving at shallow angles spreads over a larger area, and thus has a lower contribution to the
 final color.
 
-However, we are interested in a Lambertian distribution, which has a distribution of $cos (\phi)$.
+However, we are interested in a Lambertian distribution, which has a distribution of $\cos (\phi)$.
 True Lambertian has the probability higher for ray scattering close to the normal, but the
 distribution is more uniform. This is achieved by picking points on the surface of the unit sphere,
 offset along the surface normal. Picking points on the sphere can be achieved by picking points in
@@ -1248,7 +1249,9 @@ the unit ball, and then normalizing those.
     [Listing [random-on-unit-sphere]: <kbd>[material.h]</kbd> The random_on_unit_sphere() function]
 
   ![Figure [rand-unit-vector]: Generating a random unit vector](../images/fig.rand-unitvector.png)
+  
 </div>
+
 
 <div class='together'>
 This `random_on_unit_sphere()` is a drop-in replacement for the existing `random_in_unit_sphere()`
@@ -1268,7 +1271,7 @@ function.
 
         vec3 unit_direction = unit_vector(r.direction());
         auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+        return (1-t)*vec3(1, 1, 1) + t*vec3(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-unit-sphere]: <kbd>[main.cc]</kbd> ray_color() with replacement diffuse]
@@ -1279,25 +1282,25 @@ After rendering we get a similar image:
 
   ![Correct rendering of Lambertian spheres](../images/img.correct-lambertian.png)
 
-It's hard to tell what the difference between these two diffuse methods are, given that our scene of
-two spheres is so simple. But, you should be able to notice two important visual differences:
+It's hard to tell the difference between these two diffuse methods, given that our scene of two
+spheres is so simple, but you should be able to notice two important visual differences:
 
   1. The shadows are less pronounced after the change
   2. Both spheres are lighter in appearance after the change
 
-Both of these changes are due to the more uniform scattering of the light rays, less rays are
-scattering toward the normal. This means that for diffuse objects they will appear _lighter_
-because more light bounces toward the camera. For the shadows, less of the light bounces
-straight-up, so the parts of the larger sphere directly underneath the smaller sphere are brighter.
+Both of these changes are due to the more uniform scattering of the light rays, fewer rays are
+scattering toward the normal. This means that for diffuse objects, they will appear _lighter_
+because more light bounces toward the camera. For the shadows, less light bounces straight-up, so
+the parts of the larger sphere directly underneath the smaller sphere are brighter.
 </div>
 
 <div class='together'>
-The initial hack presented in this book went a long time before it was proven to be an incorrect
+The initial hack presented in this book lasted a long time before it was proven to be an incorrect
 approximation of ideal Lambertian diffuse. A big reason that the error persisted for so long is
-that can be difficult to:
+that it can be difficult to:
 
   1. Mathematically prove that the probability distribution is incorrect
-  2. Intuitively explain why a $cos (\phi)$ distribution is desirable (and what it looks like it)
+  2. Intuitively explain why a $\cos (\phi)$ distribution is desirable (and what it would look like)
 
 Not a lot of common, everyday objects are perfectly diffuse, so our visual intuition of how these
 objects behave under light can be poorly formed.
@@ -1306,18 +1309,17 @@ objects behave under light can be poorly formed.
 <div class='together'>
 In the interest of learning, we are including an intuitive and easy to understand diffuse method.
 For the two methods above we had a random vector, first of random length and then of unit length,
-offset from the hitpoint by the normal. It may not be immediately obvious why the vectors should be
+offset from the hit point by the normal. It may not be immediately obvious why the vectors should be
 displaced by the normal.
 
-A more intuitive approach is to have an equal probability of scattering in any direction. The
-distribution is truly uniform for all angles away from the hitpoint, with no dependence on the
-angle from the normal. Many of the first raytracing papers used this diffuse method (before
-adopting Lambertian diffuse).
+A more intuitive approach is to have a uniform scatter direction for all angles away from the hit
+point, with no dependence on the angle from the normal. Many of the first raytracing papers used
+this diffuse method (before adopting Lambertian diffuse).
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_in_hemisphere(const vec3& normal) {
         vec3 in_unit_sphere = random_in_unit_sphere();
-        if(dot(in_unit_sphere, normal) > 0.0) // In the same hemisphere as the normal
+        if (dot(in_unit_sphere, normal) > 0.0) // In the same hemisphere as the normal
             return in_unit_sphere;
         else
             return -in_unit_sphere;
@@ -1357,10 +1359,9 @@ Gives us the following image:
 </div>
 
 <div class='together'>
-The rendering scenes will become more complicated over the course of the book. You are encouraged to
+Scenes will become more complicated over the course of the book. You are encouraged to
 switch between the different diffuse renderers presented here. Most scenes of interest will contain
-a disproportionate amount of diffuse materials. Understanding how changing your diffuse method
-changes your scene lighting is a valuable insight to gain.
+a disproportionate amount of diffuse materials. You can gain valuable insight by understanding the effect of different diffuse methods on the lighting of the scene.
 </div>
 
 Metal
