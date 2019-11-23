@@ -332,10 +332,11 @@ int main() {
     camera cam(
         lookfrom, lookat, vec3(0,1,0), vfov, double(nx)/ny, aperture, dist_to_focus, 0.0, 1.0);
 
-    for (int j = ny-1; j >= 0; j--) {
-        for (int i = 0; i < nx; i++) {
+    for (int j = ny-1; j >= 0; --j) {
+        std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+        for (int i = 0; i < nx; ++i) {
             vec3 color;
-            for (int s = 0; s < num_samples; s++) {
+            for (int s = 0; s < num_samples; ++s) {
                 auto u = (i + random_double()) / nx;
                 auto v = (j + random_double()) / ny;
                 ray r = cam.get_ray(u, v);
@@ -345,4 +346,6 @@ int main() {
             color.write_color(std::cout, num_samples);
         }
     }
+
+    std::cerr << "\nDone.\n";
 }
