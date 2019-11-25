@@ -75,8 +75,8 @@ Let’s make some C++ code to output such a thing:
 
         std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
 
-        for (int j = ny-1; j >= 0; j--) {
-            for (int i = 0; i < nx; i++) {
+        for (int j = ny-1; j >= 0; --j) {
+            for (int i = 0; i < nx; ++i) {
                 auto r = double(i) / nx;
                 auto g = double(j) / ny;
                 auto b = 0.2;
@@ -105,9 +105,23 @@ There are some things to note in that code:
      fully on at the top. Red and green together make yellow so we should expect the upper right
      corner to be yellow.
 
+Because the file is written to the program output, you'll need to capture the program output.
+Typically this is done from the command-line by redirecting output into a file (using the `>`
+redirection operator), like so:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    build\Release\inOneWeekend.exe > image.ppm
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is how things would look on Windows. On Mac or Linux, it would look like this:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    build/Release/inOneWeekend > image.ppm
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 <div class='together'>
-Opening the output file (in ToyViewer on my mac, but try it in your favorite viewer and google “ppm
-viewer” if your viewer doesn’t support it) shows:
+Opening the output file (in `ToyViewer` on my Mac, but try it in your favorite viewer and Google
+“ppm viewer” if your viewer doesn’t support it) shows this result:
 
   ![First PPM image](../images/img.first-ppm-image.png)
 
@@ -145,6 +159,39 @@ If it doesn’t, then you probably just have some newlines or something similar 
 image reader.
 
 If you want to produce more image types than PPM, I am a fan of `stb_image.h` available on github.
+
+
+Adding a Progress Indicator
+----------------------------
+Before we continue, let's add a progress indicator to our output. This is a handy way to track the
+progress of a long render, and also to possibly identify a run that's stalled out due to an infinite
+loop or other problem.
+
+<div class='together'>
+Our program outputs the image to the standard output stream (`std::cout`), so leave that alone and
+instead write to the error output stream (`std::cerr`):
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        for (int j = ny-1; j >= 0; --j) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            for (int i = 0; i < nx; ++i) {
+                auto r = double(i) / nx;
+                auto g = double(j) / ny;
+                auto b = 0.2;
+                int ir = static_cast<int>(255.999 * r);
+                int ig = static_cast<int>(255.999 * g);
+                int ib = static_cast<int>(255.999 * b);
+                std::cout << ir << ' ' << ig << ' ' << ib << '\n';
+            }
+        }
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        std::cerr << "\nDone.\n";
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-progress]: <kbd>[main.cc]</kbd> Main render loop with progress reporting]
+</div>
 
 
 
@@ -283,14 +330,17 @@ Now we can change our main to use this:
 
         std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
 
-        for (int j = ny-1; j >= 0; j--) {
-            for (int i = 0; i < nx; i++) {
+        for (int j = ny-1; j >= 0; --j) {
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (int i = 0; i < nx; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 color(double(i)/nx, double(j)/ny, 0.2);
                 color.write_color(std::cout);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
         }
+
+        std::cerr << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-gradient]: <kbd>[main.cc]</kbd> Creating a color gradient image]
@@ -379,8 +429,9 @@ for now because we’ll add antialiasing later):
         vec3 vertical(0.0, 2.0, 0.0);
         vec3 origin(0.0, 0.0, 0.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        for (int j = ny-1; j >= 0; j--) {
-            for (int i = 0; i < nx; i++) {
+        for (int j = ny-1; j >= 0; --j) {
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (int i = 0; i < nx; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 auto u = double(i) / nx;
                 auto v = double(j) / ny;
@@ -390,6 +441,8 @@ for now because we’ll add antialiasing later):
                 color.write_color(std::cout);
             }
         }
+
+        std::cerr << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-blue-white-blend]: <kbd>[main.cc]</kbd> Rendering a blue-to-white gradient]
@@ -840,8 +893,9 @@ And the new main:
         hittable *world = new hittable_list(list,2);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        for (int j = ny-1; j >= 0; j--) {
-            for (int i = 0; i < nx; i++) {
+        for (int j = ny-1; j >= 0; --j) {
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (int i = 0; i < nx; ++i) {
                 auto u = double(i) / nx;
                 auto v = double(j) / ny;
                 ray r(origin, lower_left_corner + u*horizontal + v*vertical);
@@ -855,6 +909,8 @@ And the new main:
                 color.write_color(std::cout);
             }
         }
+
+        std::cerr << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-with-rtweekend-h]: <kbd>[main.cc]</kbd> desc]
@@ -1013,11 +1069,12 @@ Main is also changed:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         camera cam;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        for (int j = ny-1; j >= 0; j--) {
-            for (int i = 0; i < nx; i++) {
+        for (int j = ny-1; j >= 0; --j) {
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (int i = 0; i < nx; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 color(0, 0, 0);
-                for (int s = 0; s < num_samples; s++) {
+                for (int s = 0; s < num_samples; ++s) {
                     auto u = (i + random_double()) / nx;
                     auto v = (j + random_double()) / ny;
                     ray r = cam.get_ray(u, v);
@@ -1027,6 +1084,8 @@ Main is also changed:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
         }
+
+        std::cerr << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-multi-sample]: <kbd>[main.cc]</kbd> Rendering with multi-sampled pixels]
@@ -1153,10 +1212,11 @@ depth, returning no light contribution at the maximum depth:
         int max_depth = 50;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
-        for (int j = ny-1; j >= 0; j--) {
-            for (int i = 0; i < nx; i++) {
+        for (int j = ny-1; j >= 0; --j) {
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (int i = 0; i < nx; ++i) {
                 vec3 color(0, 0, 0);
-                for (int s = 0; s < num_samples; s++) {
+                for (int s = 0; s < num_samples; ++s) {
                     auto u = (i + random_double()) / nx;
                     auto v = (j + random_double()) / ny;
                     ray r = cam.get_ray(u, v);
@@ -1167,6 +1227,8 @@ depth, returning no light contribution at the maximum depth:
                 color.write_color(std::cout, num_samples);
             }
         }
+
+        std::cerr << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-depth]: <kbd>[main.cc]</kbd> ray_color() with depth limiting]
@@ -1608,10 +1670,11 @@ metal spheres:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         camera cam;
-        for (int j = ny-1; j >= 0; j--) {
-            for (int i = 0; i < nx; i++) {
+        for (int j = ny-1; j >= 0; --j) {
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (int i = 0; i < nx; ++i) {
                 vec3 color(0, 0, 0);
-                for (int s = 0; s < num_samples; s++) {
+                for (int s = 0; s < num_samples; ++s) {
                     auto u = (i + random_double()) / nx;
                     auto v = (j + random_double()) / ny;
                     ray r = cam.get_ray(u, v);
@@ -1620,6 +1683,8 @@ metal spheres:
                 color.write_color(std::cout, num_samples);
             }
         }
+
+        std::cerr << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-with-metal]: <kbd>[main.cc]</kbd> Scene with metal spheres]

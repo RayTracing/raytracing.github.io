@@ -2061,10 +2061,11 @@ We can first try just sampling the sphere rather than the light:
     hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
     hittable *glass_sphere = new sphere(vec3(190, 90, 190), 90, 0);
 
-    for (int j = ny-1; j >= 0; j--) {
-        for (int i = 0; i < nx; i++) {
+    for (int j = ny-1; j >= 0; --j) {
+        std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+        for (int i = 0; i < nx; ++i) {
             vec3 col(0, 0, 0);
-            for (int s=0; s < ns; s++) {
+            for (int s=0; s < ns; ++s) {
                 auto u = (i + random_double()) / nx;
                 auto v = (j + random_double()) / ny;
                 ray r = cam->get_ray(u, v);
