@@ -13,24 +13,25 @@
 
 #include "common/rtweekend.h"
 
-
 class ray
 {
     public:
         ray() {}
-        ray(const vec3& a, const vec3& b, double ti = 0.0) {
-            A = a;
-            B = b;
-            _time = ti;
-        }
-        vec3 origin() const    { return A; }
-        vec3 direction() const { return B; }
-        double time() const    { return _time; }
-        vec3 point_at_parameter(double t) const { return A + t*B; }
+        ray(const vec3& origin, const vec3& direction, double time = 0.0)
+            : orig(origin), dir(direction), tm(time)
+        {}
 
-        vec3 A;
-        vec3 B;
-        double _time;
+        vec3 origin() const    { return orig; }
+        vec3 direction() const { return dir; }
+        double time() const    { return tm; }
+
+        vec3 point_at_parameter(double t) const {
+            return orig + t*dir;
+        }
+
+        vec3 orig;
+        vec3 dir;
+        double tm;
 };
 
 #endif
