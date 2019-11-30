@@ -12,7 +12,6 @@
 //==============================================================================================
 
 #include "common/rtweekend.h"
-#include "common/vec3.h"
 #include "hittable.h"
 #include "onb.h"
 #include "pdf.h"
@@ -21,7 +20,7 @@
 class sphere: public hittable  {
     public:
         sphere() {}
-        sphere(vec3 cen, double r, material *m) : center(cen), radius(r), mat_ptr(m)  {};
+        sphere(vec3 cen, double r, material *m) : center(cen), radius(r), mat_ptr(m) {};
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
         virtual double  pdf_value(const vec3& o, const vec3& v) const;
@@ -67,6 +66,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
 
     if (discriminant > 0) {
         auto root = sqrt(discriminant);
+
         auto temp = (-half_b - root)/a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
@@ -76,6 +76,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
             rec.mat_ptr = mat_ptr;
             return true;
         }
+
         temp = (-half_b + root)/a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;

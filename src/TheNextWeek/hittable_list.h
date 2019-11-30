@@ -11,6 +11,7 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
+#include "common/rtweekend.h"
 #include "hittable.h"
 
 
@@ -20,6 +21,7 @@ class hittable_list: public hittable  {
         hittable_list(hittable **l, int n) {list = l; list_size = n; }
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
+
         hittable **list;
         int list_size;
 };

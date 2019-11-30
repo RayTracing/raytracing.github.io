@@ -15,17 +15,17 @@
 #include "hittable.h"
 
 
-class xy_rect: public hittable  {
+class xy_rect: public hittable {
     public:
         xy_rect() {}
+
         xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, material *mat)
-            : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat)
-        {};
+            : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
 
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
-            output_box =  aabb(vec3(x0,y0, k-0.0001), vec3(x1, y1, k+0.0001));
+            output_box = aabb(vec3(x0,y0, k-0.0001), vec3(x1, y1, k+0.0001));
             return true;
         }
 
@@ -33,22 +33,21 @@ class xy_rect: public hittable  {
         double x0, x1, y0, y1, k;
 };
 
-
-class xz_rect: public hittable  {
+class xz_rect: public hittable {
     public:
         xz_rect() {}
+
         xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, material *mat)
-            : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat)
-        {};
+            : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
-            output_box =  aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
+            output_box = aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
             return true;
         }
 
-        virtual double  pdf_value(const vec3& o, const vec3& v) const {
+        virtual double pdf_value(const vec3& o, const vec3& v) const {
             hit_record rec;
             if (this->hit(ray(o, v), 0.001, infinity, rec)) {
                 auto area = (x1-x0)*(z1-z0);
@@ -73,18 +72,17 @@ class xz_rect: public hittable  {
         double x0, x1, z0, z1, k;
 };
 
-
-class yz_rect: public hittable  {
+class yz_rect: public hittable {
     public:
         yz_rect() {}
+
         yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, material *mat)
-            : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat)
-        {};
+            : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
-            output_box =  aabb(vec3(k-0.0001, y0, z0), vec3(k+0.0001, y1, z1));
+            output_box = aabb(vec3(k-0.0001, y0, z0), vec3(k+0.0001, y1, z1));
             return true;
         }
 

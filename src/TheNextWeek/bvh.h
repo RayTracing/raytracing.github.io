@@ -11,6 +11,7 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
+#include "common/rtweekend.h"
 #include "hittable.h"
 
 
@@ -107,11 +108,11 @@ bvh_node::bvh_node(hittable **l, int n, double time0, double time1) {
     int axis = int(3*random_double());
 
     if (axis == 0)
-       qsort(l, n, sizeof(hittable *), box_x_compare);
+        qsort(l, n, sizeof(hittable *), box_x_compare);
     else if (axis == 1)
-       qsort(l, n, sizeof(hittable *), box_y_compare);
+        qsort(l, n, sizeof(hittable *), box_y_compare);
     else
-       qsort(l, n, sizeof(hittable *), box_z_compare);
+        qsort(l, n, sizeof(hittable *), box_z_compare);
 
     if (n == 1) {
         left = right = l[0];

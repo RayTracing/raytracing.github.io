@@ -118,8 +118,7 @@ rotate_y::rotate_y(hittable *p, double angle) : ptr(p) {
                 auto newx = cos_theta*x + sin_theta*z;
                 auto newz = -sin_theta*x + cos_theta*z;
                 vec3 tester(newx, y, newz);
-                for (int c = 0; c < 3; c++)
-                {
+                for (int c = 0; c < 3; c++) {
                     if (tester[c] > max[c])
                         max[c] = tester[c];
                     if (tester[c] < min[c])

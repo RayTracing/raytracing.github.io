@@ -25,8 +25,8 @@ class box: public hittable  {
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
-           output_box = aabb(pmin, pmax);
-           return true;
+            output_box = aabb(pmin, pmax);
+            return true;
         }
 
         vec3 pmin, pmax;

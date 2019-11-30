@@ -12,7 +12,6 @@
 //==============================================================================================
 
 #include "common/rtweekend.h"
-#include "common/vec3.h"
 #include "aabb.h"
 
 
@@ -26,8 +25,7 @@ void get_sphere_uv(const vec3& p, double& u, double& v) {
 }
 
 
-struct hit_record
-{
+struct hit_record {
     double t;
     double u;
     double v;
