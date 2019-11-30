@@ -26,15 +26,17 @@ class image_texture : public texture {
 };
 
 vec3 image_texture::value(double u, double v, const vec3& p) const {
-     int i = static_cast<int>((  u)*nx);
-     int j = static_cast<int>((1-v)*ny - 0.001);
+     auto i = static_cast<int>((  u)*nx);
+     auto j = static_cast<int>((1-v)*ny-0.001);
+
      if (i < 0) i = 0;
      if (j < 0) j = 0;
      if (i > nx-1) i = nx-1;
      if (j > ny-1) j = ny-1;
-     auto r = int(data[3*i + 3*nx*j+0]) / 255.0;
-     auto g = int(data[3*i + 3*nx*j+1]) / 255.0;
-     auto b = int(data[3*i + 3*nx*j+2]) / 255.0;
+
+     auto r = static_cast<int>(data[3*i + 3*nx*j+0]) / 255.0;
+     auto g = static_cast<int>(data[3*i + 3*nx*j+1]) / 255.0;
+     auto b = static_cast<int>(data[3*i + 3*nx*j+2]) / 255.0;
      return vec3(r, g, b);
 }
 

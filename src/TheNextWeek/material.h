@@ -35,11 +35,9 @@ bool refract(const vec3& v, const vec3& n, double ni_over_nt, vec3& refracted) {
         return false;
 }
 
-
 vec3 reflect(const vec3& v, const vec3& n) {
      return v - 2*dot(v,n)*n;
 }
-
 
 vec3 random_unit_vector() {
     auto a = 2*pi * random_double();

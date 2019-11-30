@@ -36,9 +36,9 @@ class perlin {
             auto u = p.x() - floor(p.x());
             auto v = p.y() - floor(p.y());
             auto w = p.z() - floor(p.z());
-            int i = static_cast<int>(floor(p.x()));
-            int j = static_cast<int>(floor(p.y()));
-            int k = static_cast<int>(floor(p.z()));
+            auto i = static_cast<int>(floor(p.x()));
+            auto j = static_cast<int>(floor(p.y()));
+            auto k = static_cast<int>(floor(p.z()));
             vec3 c[2][2][2];
             for (int di=0; di < 2; di++)
                 for (int dj=0; dj < 2; dj++)
@@ -66,11 +66,13 @@ class perlin {
 };
 
 static vec3* perlin_generate() {
-    vec3 * p = new vec3[256];
-    for (int i = 0; i < 256; ++i)
-        p[i] = unit_vector(
-            vec3(-1 + 2*random_double(), -1 + 2*random_double(), -1 + 2*random_double())
-        );
+    vec3 *p = new vec3[256];
+    for (int i = 0; i < 256; ++i) {
+        double x_random = 2*random_double() - 1;
+        double y_random = 2*random_double() - 1;
+        double z_random = 2*random_double() - 1;
+        p[i] = unit_vector(vec3(x_random, y_random, z_random));
+    }
     return p;
 }
 

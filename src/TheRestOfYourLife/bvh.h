@@ -38,6 +38,7 @@ bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
         hit_record left_rec, right_rec;
         bool hit_left = left->hit(r, t_min, t_max, left_rec);
         bool hit_right = right->hit(r, t_min, t_max, right_rec);
+
         if (hit_left && hit_right) {
             if (left_rec.t < right_rec.t)
                 rec = left_rec;
@@ -66,6 +67,7 @@ int box_x_compare (const void * a, const void * b) {
 
     if (!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
         std::cerr << "no bounding box in bvh_node constructor\n";
+
     if (box_left.min().x() - box_right.min().x() < 0.0)
         return -1;
     else
