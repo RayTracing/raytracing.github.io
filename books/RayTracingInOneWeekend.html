@@ -31,8 +31,8 @@ don’t need to. However, I suggest you do, because it’s fast, portable, and m
 video game renderers are written in C++. Note that I avoid most “modern features” of C++, but
 inheritance and operator overloading are too useful for ray tracers to pass on. I do not provide the
 code online, but the code is real and I show all of it except for a few straightforward operators in
-the vec3 class. I am a big believer in typing in code to learn it, but when code is available I use
-it, so I only practice what I preach when the code is not available. So don’t ask!
+the `vec3` class. I am a big believer in typing in code to learn it, but when code is available I
+use it, so I only practice what I preach when the code is not available. So don’t ask!
 
 I have left that last part in because it is funny what a 180 I have done. Several readers ended up
 with subtle errors that were helped when we compared code. So please do type in the code, but if you
@@ -45,7 +45,7 @@ don’t know that, do a little review. If you need that review, or to learn it f
 check out Marschner’s and my graphics text, Foley, Van Dam, _et al._, or McGuire’s graphics codex.
 
 If you run into trouble, or do something cool you’d like to show somebody, send me some email at
-ptrshrl@gmail.com
+ptrshrl@gmail.com.
 
 I’ll be maintaining a site related to the book including further reading and links to resources at a
 blog https://in1weekend.blogspot.com/ related to this book.
@@ -61,31 +61,34 @@ Whenever you start a renderer, you need a way to see an image. The most straight
 write it to a file. The catch is, there are so many formats and many of those are complex. I always
 start with a plain text ppm file. Here’s a nice description from Wikipedia:
 
-  ![Image 2-1: PPM Example](../images/img-1-02-1.jpg)
+  ![](../images/img.ppm-example.jpg)
 
 <div class='together'>
 Let’s make some C++ code to output such a thing:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include <iostream>
 
     int main() {
         int nx = 200;
         int ny = 100;
-        std::cout << "P3\n" << nx << " " << ny << "\n255\n";
-        for (int j = ny-1; j >= 0; j--) {
-            for (int i = 0; i < nx; i++) {
-                float r = float(i) / float(nx);
-                float g = float(j) / float(ny);
-                float b = 0.2;
-                int ir = int(255.99*r);
-                int ig = int(255.99*g);
-                int ib = int(255.99*b);
-                std::cout << ir << " " << ig << " " << ib << "\n";
+
+        std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
+
+        for (int j = ny-1; j >= 0; --j) {
+            for (int i = 0; i < nx; ++i) {
+                auto r = double(i) / nx;
+                auto g = double(j) / ny;
+                auto b = 0.2;
+                int ir = static_cast<int>(255.999 * r);
+                int ig = static_cast<int>(255.999 * g);
+                int ib = static_cast<int>(255.999 * b);
+                std::cout << ir << ' ' << ig << ' ' << ib << '\n';
             }
         }
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-initial]: <kbd>[main.cc]</kbd> Creating your first image]
 </div>
 
 There are some things to note in that code:
@@ -103,10 +106,25 @@ There are some things to note in that code:
      corner to be yellow.
 
 <div class='together'>
-Opening the output file (in ToyViewer on my mac, but try it in your favorite viewer and google “ppm
-viewer” if your viewer doesn’t support it) shows:
+Because the file is written to the program output, you'll need to redirect it to an image file.
+Typically this is done from the command-line by using the `>` redirection operator, like so:
 
-  ![Image 2-2](../images/img-1-02-2.jpg)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    build\Release\inOneWeekend.exe > image.ppm
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is how things would look on Windows. On Mac or Linux, it would look like this:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    build/inOneWeekend > image.ppm
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
+
+<div class='together'>
+Opening the output file (in `ToyViewer` on my Mac, but try it in your favorite viewer and Google
+“ppm viewer” if your viewer doesn’t support it) shows this result:
+
+  ![First PPM image](../images/img.first-ppm-image.png)
 
 </div>
 
@@ -114,7 +132,7 @@ viewer” if your viewer doesn’t support it) shows:
 Hooray! This is the graphics “hello world”. If your image doesn’t look like that, open the output
 file in a text editor and see what it looks like. It should start something like this:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     P3
     200 100
     255
@@ -134,13 +152,47 @@ file in a text editor and see what it looks like. It should start something like
     13 253 51
     14 253 51
     15 253 51
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [first-img]: First image output]
 </div>
 
 If it doesn’t, then you probably just have some newlines or something similar that is confusing the
 image reader.
 
 If you want to produce more image types than PPM, I am a fan of `stb_image.h` available on github.
+
+
+Adding a Progress Indicator
+----------------------------
+Before we continue, let's add a progress indicator to our output. This is a handy way to track the
+progress of a long render, and also to possibly identify a run that's stalled out due to an infinite
+loop or other problem.
+
+<div class='together'>
+Our program outputs the image to the standard output stream (`std::cout`), so leave that alone and
+instead write to the error output stream (`std::cerr`):
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        for (int j = ny-1; j >= 0; --j) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            for (int i = 0; i < nx; ++i) {
+                auto r = double(i) / nx;
+                auto g = double(j) / ny;
+                auto b = 0.2;
+                int ir = static_cast<int>(255.999 * r);
+                int ig = static_cast<int>(255.999 * g);
+                int ib = static_cast<int>(255.999 * b);
+                std::cout << ir << ' ' << ig << ' ' << ib << '\n';
+            }
+        }
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        std::cerr << "\nDone.\n";
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-progress]: <kbd>[main.cc]</kbd> Main render loop with progress reporting]
+</div>
 
 
 
@@ -155,180 +207,144 @@ because it doesn’t prevent you from doing something silly, like adding a color
 have a good point, but we’re going to always take the “less code” route when not obviously wrong.
 
 <div class='together'>
-Here’s the top part of my vec3 class:
+Here’s the top part of my `vec3` class:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include <iostream>
-    #include <math.h>
-    #include <stdlib.h>
+    #include <cmath>
 
     class vec3 {
-    public:
-        vec3() {}
-        vec3(float e0, float e1, float e2) { e[0] = e0; e[1] = e1; e[2] = e2; }
-        inline float x() const { return e[0]; }
-        inline float y() const { return e[1]; }
-        inline float z() const { return e[2]; }
-        inline float r() const { return e[0]; }
-        inline float g() const { return e[1]; }
-        inline float b() const { return e[2]; }
+        public:
+            vec3() : e{0,0,0} {}
+            vec3(double e0, double e1, double e2) : e{e0, e1, e2} {}
 
-        inline const vec3& operator+() const { return *this; }
-        inline vec3 operator-() const { return vec3(-e[0], -e[1], -e[2]); }
-        inline float operator[](int i) const { return e[i]; }
-        inline float& operator[](int i) { return e[i]; }
+            double x() const { return e[0]; }
+            double y() const { return e[1]; }
+            double z() const { return e[2]; }
 
-        inline vec3& operator+=(const vec3 &v2);
-        inline vec3& operator-=(const vec3 &v2);
-        inline vec3& operator*=(const vec3 &v2);
-        inline vec3& operator/=(const vec3 &v2);
-        inline vec3& operator*=(const float t);
-        inline vec3& operator/=(const float t);
+            vec3 operator-() const { return vec3(-e[0], -e[1], -e[2]); }
+            double operator[](int i) const { return e[i]; }
+            double& operator[](int i) { return e[i]; }
 
-        inline float length() const { return sqrt(e[0]*e[0] + e[1]*e[1] + e[2]*e[2]); }
-        inline float squared_length() const { return e[0]*e[0] + e[1]*e[1] + e[2]*e[2]; }
-        inline void make_unit_vector();
+            vec3& vec3::operator+=(const vec3 &v) {
+                e[0] += v.e[0];
+                e[1] += v.e[1];
+                e[2] += v.e[2];
+                return *this;
+            }
 
-        float e[3];
+            vec3& vec3::operator*=(const double t) {
+                e[0] *= t;
+                e[1] *= t;
+                e[2] *= t;
+                return *this;
+            }
+
+            vec3& vec3::operator/=(const double t) {
+                return *this *= 1/t;
+            }
+
+            double length() const {
+                return sqrt(squared_length());
+            }
+
+            double squared_length() const {
+                return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
+            }
+
+            void write_color(std::ostream &out) {
+                // Write the translated [0,255] value of each color component.
+                out << static_cast<int>(255.999 * e[0]) << ' '
+                    << static_cast<int>(255.999 * e[1]) << ' '
+                    << static_cast<int>(255.999 * e[2]) << '\n';
+            }
+
+            double e[3];
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [vec3-class]: <kbd>[vec3.h]</kbd> `vec3` class]
 </div>
 
-I use floats here, but in some ray tracers I have used doubles. Neither is correct -- follow your
-own tastes. Everything is in the header file, and later on in the file are lots of vector
-operations:
+We use `double` here, but some ray tracers use `float`. Either one is fine -- follow your own
+tastes. The second part of the header file contains vector utility functions:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline std::istream& operator>>(std::istream &is, vec3 &t) {
-        is >> t.e[0] >> t.e[1] >> t.e[2];
-        return is;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    // vec3 Utility Functions
+
+    inline std::ostream& operator<<(std::ostream &out, const vec3 &v) {
+        return out << v.e[0] << ' ' << v.e[1] << ' ' << v.e[2];
     }
 
-    inline std::ostream& operator<<(std::ostream &os, const vec3 &t) {
-        os << t.e[0] << " " << t.e[1] << " " << t.e[2];
-        return os;
+    inline vec3 operator+(const vec3 &u, const vec3 &v) {
+        return vec3(u.e[0] + v.e[0], u.e[1] + v.e[1], u.e[2] + v.e[2]);
     }
 
-    inline void vec3::make_unit_vector() {
-        float k = 1.0 / sqrt(e[0]*e[0] + e[1]*e[1] + e[2]*e[2]);
-        e[0] *= k; e[1] *= k; e[2] *= k;
+    inline vec3 operator-(const vec3 &u, const vec3 &v) {
+        return vec3(u.e[0] - v.e[0], u.e[1] - v.e[1], u.e[2] - v.e[2]);
     }
 
-    inline vec3 operator+(const vec3 &v1, const vec3 &v2) {
-        return vec3(v1.e[0] + v2.e[0], v1.e[1] + v2.e[1], v1.e[2] + v2.e[2]);
+    inline vec3 operator*(const vec3 &u, const vec3 &v) {
+        return vec3(u.e[0] * v.e[0], u.e[1] * v.e[1], u.e[2] * v.e[2]);
     }
 
-    inline vec3 operator-(const vec3 &v1, const vec3 &v2) {
-        return vec3(v1.e[0] - v2.e[0], v1.e[1] - v2.e[1], v1.e[2] - v2.e[2]);
-    }
-
-    inline vec3 operator*(const vec3 &v1, const vec3 &v2) {
-        return vec3(v1.e[0] * v2.e[0], v1.e[1] * v2.e[1], v1.e[2] * v2.e[2]);
-    }
-
-    inline vec3 operator*(float t, const vec3 &v) {
+    inline vec3 operator*(double t, const vec3 &v) {
         return vec3(t*v.e[0], t*v.e[1], t*v.e[2]);
     }
 
-    inline vec3 operator*(const vec3 &v, float t) {
-        return vec3(t*v.e[0], t*v.e[1], t*v.e[2]);
+    inline vec3 operator*(const vec3 &v, double t) {
+        return t * v;
     }
 
-    inline vec3 operator/(const vec3 &v1, const vec3 &v2) {
-        return vec3(v1.e[0] / v2.e[0], v1.e[1] / v2.e[1], v1.e[2] / v2.e[2]);
+    inline vec3 operator/(vec3 v, double t) {
+        return (1/t) * v;
     }
 
-    inline vec3 operator/(vec3 v, float t) {
-        return vec3(v.e[0]/t, v.e[1]/t, v.e[2]/t);
+    inline double dot(const vec3 &u, const vec3 &v) {
+        return u.e[0] * v.e[0]
+             + u.e[1] * v.e[1]
+             + u.e[2] * v.e[2];
     }
 
-    inline float dot(const vec3 &v1, const vec3 &v2) {
-        return v1.e[0]*v2.e[0]
-             + v1.e[1]*v2.e[1]
-             + v1.e[2]*v2.e[2];
-    }
-
-    inline vec3 cross(const vec3 &v1, const vec3 &v2) {
-        return vec3(v1.e[1] * v2.e[2] - v1.e[2] * v2.e[1],
-                    v1.e[2] * v2.e[0] - v1.e[0] * v2.e[2],
-                    v1.e[0] * v2.e[1] - v1.e[1] * v2.e[0]);
-    }
-
-    inline vec3& vec3::operator+=(const vec3 &v) {
-        e[0] += v.e[0];
-        e[1] += v.e[1];
-        e[2] += v.e[2];
-        return *this;
-    }
-
-    inline vec3& vec3::operator-=(const vec3& v) {
-        e[0] -= v.e[0];
-        e[1] -= v.e[1];
-        e[2] -= v.e[2];
-        return *this;
-    }
-
-    inline vec3& vec3::operator*=(const vec3 &v) {
-        e[0] *= v.e[0];
-        e[1] *= v.e[1];
-        e[2] *= v.e[2];
-        return *this;
-    }
-
-    inline vec3& vec3::operator*=(const float t) {
-        e[0] *= t;
-        e[1] *= t;
-        e[2] *= t;
-        return *this;
-    }
-
-    inline vec3& vec3::operator/=(const vec3 &v) {
-        e[0] /= v.e[0];
-        e[1] /= v.e[1];
-        e[2] /= v.e[2];
-        return *this;
-    }
-
-    inline vec3& vec3::operator/=(const float t) {
-        float k = 1.0/t;
-
-        e[0] *= k;
-        e[1] *= k;
-        e[2] *= k;
-        return *this;
+    inline vec3 cross(const vec3 &u, const vec3 &v) {
+        return vec3(u.e[1] * v.e[2] - u.e[2] * v.e[1],
+                    u.e[2] * v.e[0] - u.e[0] * v.e[2],
+                    u.e[0] * v.e[1] - u.e[1] * v.e[0]);
     }
 
     inline vec3 unit_vector(vec3 v) {
         return v / v.length();
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [vec3-utility]: <kbd>[vec3.h]</kbd> vec3 utility functions]
 
 <div class='together'>
 Now we can change our main to use this:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "vec3.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "common/vec3.h"
 
     #include <iostream>
 
     int main() {
         int nx = 200;
         int ny = 100;
-        std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
-        for (int j = ny-1; j >= 0; j--) {
-            for (int i = 0; i < nx; i++) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                vec3 col(float(i) / float(nx), float(j) / float(ny), 0.2);
-                int ir = int(255.99*col[0]);
-                int ig = int(255.99*col[1]);
-                int ib = int(255.99*col[2]);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                std::cout << ir << " " << ig << " " << ib << "\n";
+        std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
+
+        for (int j = ny-1; j >= 0; --j) {
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (int i = 0; i < nx; ++i) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                vec3 color(double(i)/nx, double(j)/ny, 0.2);
+                color.write_color(std::cout);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
         }
+
+        std::cerr << "\nDone.\n";
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-gradient]: <kbd>[main.cc]</kbd> Creating a color gradient image]
 </div>
 
 
@@ -337,46 +353,47 @@ Rays, a Simple Camera, and Background
 ====================================================================================================
 
 The one thing that all ray tracers have is a ray class, and a computation of what color is seen
-along a ray. Let’s think of a ray as a function $p(t) = A + t*B$. Here $p$ is a 3D position along a
-line in 3D. $A$ is the ray origin and $B$ is the ray direction. The ray parameter $t$ is a real
-number (float in the code). Plug in a different $t$ and $p(t)$ moves the point along the ray. Add in
-negative $t$ and you can go anywhere on the 3D line. For positive $t$, you get only the parts in
-front of $A$, and this is what is often called a half-line or ray. The example $C = p(2)$ is shown
-here:
+along a ray. Let’s think of a ray as a function $p(t) = \mathbf{a} + t \vec{\mathbf{b}}$. Here
+$\mathbf{p}$ is a 3D position along a line in 3D. $\mathbf{a}$ is the ray origin and
+$\vec{\mathbf{b}}$ is the ray direction. The ray parameter $t$ is a real number (`double` in the
+code). Plug in a different $t$ and $p(t)$ moves the point along the ray. Add in negative $t$ and you
+can go anywhere on the 3D line. For positive $t$, you get only the parts in front of $\mathbf{a}$,
+and this is what is often called a half-line or ray. The example $\mathbf{c} = p(2)$ is shown here:
 
-  ![Figure 4-1](../images/fig-1-04-1.jpg)
+  ![Figure [lerp]: Linear interpolation](../images/fig.lerp.jpg)
 
 <div class='together'>
-The function $p(t)$ in more verbose code form I call “point_at_parameter(t)”:
+The function $p(t)$ in more verbose code form I call `point_at_parameter(t)`:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef RAYH
-    #define RAYH
-    #include "vec3.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef RAY_H
+    #define RAY_H
 
-    class ray
-    {
+    #include "common/vec3.h"
+
+    class ray {
         public:
             ray() {}
             ray(const vec3& a, const vec3& b) { A = a; B = b; }
-            vec3 origin() const       { return A; }
-            vec3 direction() const    { return B; }
-            vec3 point_at_parameter(float t) const { return A + t*B; }
+            vec3 origin() const    { return A; }
+            vec3 direction() const { return B; }
+            vec3 point_at_parameter(double t) const { return A + t*B; }
 
             vec3 A;
             vec3 B;
     };
 
     #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-initial]: <kbd>[main.cc]</kbd> The ray class]
 </div>
 
-Now we are ready to turn the corner and make a ray tracer. At the core of a ray tracer is to send
-rays through pixels and compute what color is seen in the direction of those rays. This is of the
-form calculate which ray goes from the eye to a pixel, compute what that ray intersects, and compute
-a color for that intersection point. When first developing a ray tracer, I always do a simple camera
-for getting the code up and running. I also make a simple `color(ray)` function that returns the
-color of the background (a simple gradient).
+Now we are ready to turn the corner and make a ray tracer. At the core, the ray tracer sends rays
+through pixels and computes the color seen in the direction of those rays. The involved steps are
+(1) calculate the ray from the eye to the pixel, (2) determine which objects the ray intersects, and
+(3) compute a color for that intersection point. When first developing a ray tracer, I always do a
+simple camera for getting the code up and running. I also make a simple `color(ray)` function that
+returns the color of the background (a simple gradient).
 
 I’ve often gotten into trouble using square images for debugging because I transpose $x$ and $y$ too
 often, so I’ll stick with a 200×100 image. I’ll put the “eye” (or camera center if you think of a
@@ -386,20 +403,20 @@ traverse the screen from the lower left hand corner and use two offset vectors a
 sides to move the ray endpoint across the screen. Note that I do not make the ray direction a unit
 length vector because I think not doing that makes for simpler and slightly faster code.
 
-  ![Figure 4-2](../images/fig-1-04-2.jpg)
+  ![Figure [cam-geom]: Camera geometry](../images/fig.cam-geom.jpg)
 
 <div class='together'>
-Below in code, the ray $r$ goes to approximately the pixel centers (I won’t worry about exactness
+Below in code, the ray `r` goes to approximately the pixel centers (I won’t worry about exactness
 for now because we’ll add antialiasing later):
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "ray.h"
 
     #include <iostream>
 
-    vec3 color(const ray& r) {
+    vec3 ray_color(const ray& r) {
         vec3 unit_direction = unit_vector(r.direction());
-        float t = 0.5*(unit_direction.y() + 1.0);
+        auto t = 0.5*(unit_direction.y() + 1.0);
         return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
     }
 
@@ -407,43 +424,43 @@ for now because we’ll add antialiasing later):
         int nx = 200;
         int ny = 100;
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         vec3 lower_left_corner(-2.0, -1.0, -1.0);
         vec3 horizontal(4.0, 0.0, 0.0);
         vec3 vertical(0.0, 2.0, 0.0);
         vec3 origin(0.0, 0.0, 0.0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        for (int j = ny-1; j >= 0; j--) {
-            for (int i = 0; i < nx; i++) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                float u = float(i) / float(nx);
-                float v = float(j) / float(ny);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        for (int j = ny-1; j >= 0; --j) {
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (int i = 0; i < nx; ++i) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                auto u = double(i) / nx;
+                auto v = double(j) / ny;
                 ray r(origin, lower_left_corner + u*horizontal + v*vertical);
-                vec3 col = color(r);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                int ir = int(255.99*col[0]);
-                int ig = int(255.99*col[1]);
-                int ib = int(255.99*col[2]);
-
-                std::cout << ir << " " << ig << " " << ib << "\n";
+                vec3 color = ray_color(r);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                color.write_color(std::cout);
             }
         }
+
+        std::cerr << "\nDone.\n";
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-blue-white-blend]: <kbd>[main.cc]</kbd> Rendering a blue-to-white gradient]
 </div>
 
 <div class='together'>
-The `color(ray)` function linearly blends white and blue depending on the up/downess of the $y$
+The `ray_color(ray)` function linearly blends white and blue depending on the up/downess of the $y$
 coordinate. I first made it a unit vector so $-1.0 < y < 1.0$. I then did a standard graphics trick
-of scaling that to $0.0 < t < 1.0$. When $t = 1.0$ I want blue. When $t = 0.0$ I want white. In
+of scaling that to $0.0 ≤ t ≤ 1.0$. When $t = 1.0$ I want blue. When $t = 0.0$ I want white. In
 between, I want a blend. This forms a “linear blend”, or “linear interpolation”, or “lerp” for
 short, between two things. A lerp is always of the form
 
-  $$ blendedValue = (1-t)*startValue + t*endValue, $$
+  $$ \text{blendedValue} = (1-t)\cdot\text{startValue} + t\cdot\text{endValue}, $$
 
 with $t$ going from zero to one. In our case this produces:
 
-  ![Image 4-1](../images/img-1-04-1.jpg)
+  ![A blue-to-white gradient depending on ray Y coordinate](../images/img.blue-to-white.png)
 
 </div>
 
@@ -457,43 +474,50 @@ Let’s add a single object to our ray tracer. People often use spheres in ray t
 calculating whether a ray hits a sphere is pretty straightforward. Recall that the equation for a
 sphere centered at the origin of radius $R$ is $x^2 + y^2 + z^2 = R^2$. The way you can read that
 equation is “for any $(x, y, z)$, if $x^2 + y^2 + z^2 = R^2$ then $(x,y,z)$ is on the sphere, and
-otherwise it is not”. It gets uglier if the sphere center is at $(C_x, C_y, C_z)$:
+otherwise it is not”. It gets uglier if the sphere center is at
+$(\mathbf{c}_x, \mathbf{c}_y, \mathbf{c}_z)$:
 
-  $$ (x-C_x)^2 + (y-C_y)^2 + (z-C_z)^2 = R^2 $$
+  $$ (x-\mathbf{c}_x)^2 + (y-\mathbf{c}_y)^2 + (z-\mathbf{c}_z)^2 = R^2 $$
 </div>
 
 <div class='together'>
 In graphics, you almost always want your formulas to be in terms of vectors so all the x/y/z stuff
 is under the hood in the `vec3` class. You might note that the vector from center
-$C = (C_x,C_y,C_z)$ to point $P = (x,y,z)$ is $(p - C)$, and therefore
+$\mathbf{c} = (\mathbf{c}_x,\mathbf{c}_y,\mathbf{c}_z)$ to point $\mathbf{P} = (x,y,z)$ is
+$(\mathbf{p} - \mathbf{c})$, and therefore
 
-  $$ dot((p - C),(p - C)) = (x-C_x)^2 + (y-C_y)^2 + (z-C_z)^2 $$
+  $$ (\mathbf{p} - \mathbf{c}) \cdot (\mathbf{p} - \mathbf{c})
+     = (x-\mathbf{c}_x)^2 + (y-\mathbf{c}_y)^2 + (z-\mathbf{c}_z)^2
+  $$
 </div>
 
 <div class='together'>
 So the equation of the sphere in vector form is:
 
-  $$ dot((p - C),(p - C)) = R^2 $$
+  $$ (\mathbf{p} - \mathbf{c}) \cdot (\mathbf{p} - \mathbf{c}) = R^2 $$
 </div>
 
 <div class='together'>
-We can read this as “any point p that satisfies this equation is on the sphere”. We want to know
-if our ray $p(t) = A + t*B$ ever hits the sphere anywhere. If it does hit the sphere, there is
-some $t$ for which $p(t)$ satisfies the sphere equation. So we are looking for any $t$ where this
-is true:
+We can read this as “any point $\mathbf{p}$ that satisfies this equation is on the sphere”. We want
+to know if our ray $p(t) = \mathbf{a} + t\vec{\mathbf{b}}$ ever hits the sphere anywhere. If it does
+hit the sphere, there is some $t$ for which $p(t)$ satisfies the sphere equation. So we are looking
+for any $t$ where this is true:
 
-  $$ dot((p(t) - C),(p(t) - C)) = R^2 $$
+  $$ (p(t) - \mathbf{c})\cdot(p(t) - \mathbf{c}) = R^2 $$
 
 or expanding the full form of the ray $p(t)$:
 
-  $$ dot((A + t*B - C), (A + t*B - C)) = R^2 $$
+  $$ (\mathbf{a} + t \vec{\mathbf{b}} - \mathbf{c}) \cdot = R^2 $$
 </div>
 
 <div class='together'>
 The rules of vector algebra are all that we would want here, and if we expand that equation and
 move all the terms to the left hand side we get:
 
-  $$ t^2 \cdot dot(B,B) + 2t \cdot dot(B,A-C) + dot(A-C,A-C) - R^2 = 0 $$
+  $$ t^2 \vec{\mathbf{b}}\cdot\vec{\mathbf{b}}
+     + 2t \vec{\mathbf{b}} \cdot \vec{(\mathbf{a}-\mathbf{c})}
+     + \vec{(\mathbf{a}-\mathbf{c})} \cdot \vec{(\mathbf{a}-\mathbf{c})} - R^2 = 0
+  $$
 </div>
 
 <div class='together'>
@@ -503,7 +527,7 @@ and there is a square root part that is either positive (meaning two real soluti
 (meaning no real solutions), or zero (meaning one real solution). In graphics, the algebra almost
 always relates very directly to the geometry. What we have is:
 
-  ![Figure 5-1](../images/fig-1-05-1.jpg)
+  ![Figure [ray-sphere]: Ray-sphere intersection results](../images/fig.ray-sphere.jpg)
 
 </div>
 
@@ -511,33 +535,34 @@ always relates very directly to the geometry. What we have is:
 If we take that math and hard-code it into our program, we can test it by coloring red any pixel
 that hits a small sphere we place at -1 on the z-axis:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool hit_sphere(const vec3& center, float radius, const ray& r) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool hit_sphere(const vec3& center, double radius, const ray& r) {
         vec3 oc = r.origin() - center;
-        float a = dot(r.direction(), r.direction());
-        float b = 2.0 * dot(oc, r.direction());
-        float c = dot(oc, oc) - radius*radius;
-        float discriminant = b*b - 4*a*c;
+        auto a = dot(r.direction(), r.direction());
+        auto b = 2.0 * dot(oc, r.direction());
+        auto c = dot(oc, oc) - radius*radius;
+        auto discriminant = b*b - 4*a*c;
         return (discriminant > 0);
     }
 
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    vec3 color(const ray& r) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    vec3 ray_color(const ray& r) {
         if (hit_sphere(vec3(0,0,-1), 0.5, r))
             return vec3(1, 0, 0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 unit_direction = unit_vector(r.direction());
-        float t = 0.5*(unit_direction.y() + 1.0);
+        auto t = 0.5*(unit_direction.y() + 1.0);
         return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-red-sphere]: <kbd>[main.cc]</kbd> Rendering a red sphere]
 </div>
 
 <div class='together'>
 What we get is this:
 
-  ![Image 5-1](../images/img-1-05-1.jpg)
+  ![A simple red sphere](../images/img.red-sphere.png)
 
 </div>
 
@@ -556,61 +581,106 @@ First, let’s get ourselves a surface normal so we can shade. This is a vector 
 to the surface, and by convention, points out. One design decision is whether these normals
 (again by convention) are unit length. That is convenient for shading so I will say yes, but I won’t
 enforce that in the code. This could allow subtle bugs, so be aware this is personal preference
-as are most design decisions like that. For a sphere, the normal is in the direction of the hitpoint
-minus the center:
+as are most design decisions like that. For a sphere, the normal is in the direction of the hit
+point minus the center:
 
-  ![Figure 6-1](../images/fig-1-06-1.jpg)
+  ![Figure [surf-normal]: Sphere surface-normal geometry](../images/fig.sphere-normal.jpg)
 
 <div class='together'>
 On the earth, this implies that the vector from the earth’s center to you points straight up. Let’s
 throw that into the code now, and shade it. We don’t have any lights or anything yet, so let’s just
 visualize the normals with a color map. A common trick used for visualizing normals (because it’s
-easy and somewhat intuitive to assume $N$ is a unit length vector -- so each component is between -1
-and 1) is to map each component to the interval from 0 to 1, and then map x/y/z to r/g/b. For the
-normal, we need the hit point, not just whether we hit or not. Let’s assume the closest hit point
-(smallest $t$). These changes in the code let us compute and visualize $N$:
+easy and somewhat intuitive to assume $\vec{\mathbf{N}}$ is a unit length vector -- so each
+component is between -1 and 1) is to map each component to the interval from 0 to 1, and then map
+x/y/z to r/g/b. For the normal, we need the hit point, not just whether we hit or not. Let’s assume
+the closest hit point (smallest $t$). These changes in the code let us compute and visualize
+$\vec{\mathbf{N}}$:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    float hit_sphere(const vec3& center, float radius, const ray& r) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    double hit_sphere(const vec3& center, double radius, const ray& r) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 oc = r.origin() - center;
-        float a = dot(r.direction(), r.direction());
-        float b = 2.0 * dot(oc, r.direction());
-        float c = dot(oc, oc) - radius*radius;
-        float discriminant = b*b - 4*a*c;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto a = dot(r.direction(), r.direction());
+        auto b = 2.0 * dot(oc, r.direction());
+        auto c = dot(oc, oc) - radius*radius;
+        auto discriminant = b*b - 4*a*c;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (discriminant < 0) {
             return -1.0;
         }
         else {
             return (-b - sqrt(discriminant) ) / (2.0*a);
         }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
 
-    vec3 color(const ray& r) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        float t = hit_sphere(vec3(0,0,-1), 0.5, r);
+    vec3 ray_color(const ray& r) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto t = hit_sphere(vec3(0,0,-1), 0.5, r);
         if (t > 0.0) {
             vec3 N = unit_vector(r.point_at_parameter(t) - vec3(0,0,-1));
             return 0.5*vec3(N.x()+1, N.y()+1, N.z()+1);
         }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 unit_direction = unit_vector(r.direction());
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         t = 0.5*(unit_direction.y() + 1.0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [render-surface-normal]: <kbd>[main.cc]</kbd> Rendering surface normals on a sphere]
 </div>
 
 <div class='together'>
 And that yields this picture:
 
-  ![Image 6-1](../images/img-1-06-1.jpg)
+  ![A sphere colored according to its normal vectors](../images/img.normals-sphere.png)
 
 </div>
+
+Let’s revisit the ray-sphere equation:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 oc = r.origin() - center;
+    auto a = dot(r.direction(), r.direction());
+    auto b = 2.0 * dot(oc, r.direction());
+    auto c = dot(oc, oc) - radius*radius;
+    auto discriminant = b*b - 4*a*c;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-sphere-before]: <kbd>[main.cc]</kbd> Ray-sphere intersection code (before)]
+
+First, recall that a vector dotted with itself is equal to the squared length of that vector.
+
+Second, notice how the equation for `b` has a factor of two in it. Consider what happens to the
+quadratic equation if $b = 2h$:
+
+  $$ \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} $$
+
+  $$ = \frac{-2h \pm \sqrt{(2h)^2 - 4ac}}{2a} $$
+
+  $$ = \frac{-2h \pm 2\sqrt{h^2 - ac}}{2a} $$
+
+  $$ = \frac{-h \pm \sqrt{h^2 - ac}}{a} $$
+
+Using these observations, we can now simplify the sphere-intersection code to this:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 oc = r.origin() - center;
+    auto a = r.direction().squared_length();
+    auto half_b = dot(oc, r.direction());
+    auto c = oc.squared_length() - radius*radius;
+    auto discriminant = half_b*half_b - a*c;
+
+    if (discriminant < 0) {
+        return -1.0;
+    }
+    else {
+        return (-half_b - sqrt(discriminant) ) / a;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-sphere-after]: <kbd>[main.cc]</kbd> Ray-sphere intersection code (after)]
+
 
 Now, how about several spheres? While it is tempting to have an array of spheres, a very clean
 solution is the make an “abstract class” for anything a ray might hit and make both a sphere and a
@@ -629,61 +699,65 @@ something closer as we do our search, and we will only need the normal of the cl
 go with the simple solution and compute a bundle of stuff I will store in some structure. I know
 we’ll want motion blur at some point, so I’ll add a time input variable. Here’s the abstract class:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef HITTABLEH
-    #define HITTABLEH
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef HITTABLE_H
+    #define HITTABLE_H
 
     #include "ray.h"
 
     struct hit_record {
-        float t;
+        double t;
         vec3 p;
         vec3 normal;
     };
 
-    class hittable  {
+    class hittable {
         public:
-            virtual bool hit(
-                const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
     };
 
     #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hittable-initial]: <kbd>[hittable.h]</kbd> The hittable class]
 </div>
 
 <div class='together'>
-And here’s the sphere (note that I eliminated a bunch of redundant 2’s that cancel each other out):
+And here’s the sphere:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef SPHEREH
-    #define SPHEREH
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef SPHERE_H
+    #define SPHERE_H
 
+    #include "common/vec3.h"
     #include "hittable.h"
 
-    class sphere: public hittable  {
+    class sphere: public hittable {
         public:
             sphere() {}
-            sphere(vec3 cen, float r) : center(cen), radius(r)  {};
-            virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
+            sphere(vec3 cen, double r) : center(cen), radius(r) {};
+            virtual bool hit(
+                const ray& r, double tmin, double tmax, hit_record& rec) const;
             vec3 center;
-            float radius;
+            double radius;
     };
 
-    bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+    bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         vec3 oc = r.origin() - center;
-        float a = dot(r.direction(), r.direction());
-        float b = dot(oc, r.direction());
-        float c = dot(oc, oc) - radius*radius;
-        float discriminant = b*b - a*c;
+        auto a = r.direction().squared_length();
+        auto half_b = dot(oc, r.direction());
+        auto c = oc.squared_length() - radius*radius;
+        auto discriminant = half_b*half_b - a*c;
+
         if (discriminant > 0) {
-            float temp = (-b - sqrt(discriminant))/a;
+            auto root = sqrt(discriminant);
+            auto temp = (-half_b - root)/a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
                 rec.normal = (rec.p - center) / radius;
                 return true;
             }
-            temp = (-b + sqrt(discriminant)) / a;
+            temp = (-half_b + root) / a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
@@ -696,16 +770,17 @@ And here’s the sphere (note that I eliminated a bunch of redundant 2’s that 
 
 
     #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [sphere-initial]: <kbd>[sphere.h]</kbd> The sphere class]
 
 </div>
 
 <div class='together'>
 And a list of objects:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef HITTABLELISTH
-    #define HITTABLELISTH
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef HITTABLE_LIST_H
+    #define HITTABLE_LIST_H
 
     #include "hittable.h"
 
@@ -713,15 +788,12 @@ And a list of objects:
         public:
             hittable_list() {}
             hittable_list(hittable **l, int n) {list = l; list_size = n; }
-            virtual bool hit(
-                const ray& r, float tmin, float tmax, hit_record& rec) const;
+            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
             hittable **list;
             int list_size;
     };
 
-    bool hittable_list::hit(const ray& r, float t_min, float t_max,
-                            hit_record& rec) const {
-
+    bool hittable_list::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         hit_record temp_rec;
         bool hit_anything = false;
         double closest_so_far = t_max;
@@ -736,81 +808,120 @@ And a list of objects:
     }
 
     #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hittable-list-initial]: <kbd>[hittable_list.h]</kbd> The hittable_list class]
+</div>
+
+<div class='together'></div>
+We need some math constants that we conveniently define in their own header file. For now we only
+need infinity, but we will also throw our own definition of pi in there, which we will need later.
+There is no standard portable definition of pi, so we just define our own constant for it. We'll
+throw common useful constants and future utility functions in `rtweekend.h`, our general main header
+file.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef RTWEEKEND_H
+    #define RTWEEKEND_H
+
+    #include <limits>
+    #include <cmath>
+
+    // Constants
+
+    const double infinity = std::numeric_limits<double>::infinity();
+    const double pi = 3.1415926535897932385;
+
+    // Utility Functions
+
+    inline double degrees_to_radians(double degrees) {
+        return degrees * pi / 180;
+    }
+
+    inline double clamp(double x, double min, double max) {
+        if (x < min) return min;
+        if (x > max) return max;
+        return x;
+    }
+
+    // Common Headers
+
+    #include "common/vec3.h"
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rtweekend-initial]: <kbd>[common/rtweekend.h]</kbd> The rtweekend.h common header]
 </div>
 
 <div class='together'>
 And the new main:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "float.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "common/rtweekend.h"
     #include "hittable_list.h"
     #include "sphere.h"
 
     #include <iostream>
 
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    vec3 color(const ray& r, hittable *world) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    vec3 ray_color(const ray& r, hittable *world) {
         hit_record rec;
-        if (world->hit(r, 0.0, MAXFLOAT, rec)) {
+        if (world->hit(r, 0.0, infinity, rec)) {
             return 0.5*vec3(rec.normal.x()+1, rec.normal.y()+1, rec.normal.z()+1);
         }
-        else {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            vec3 unit_direction = unit_vector(r.direction());
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            float t = 0.5*(unit_direction.y() + 1.0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
-        }
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        vec3 unit_direction = unit_vector(r.direction());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto t = 0.5*(unit_direction.y() + 1.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
     }
 
     int main() {
         int nx = 200;
         int ny = 100;
-        std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+        std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
         vec3 lower_left_corner(-2.0, -1.0, -1.0);
         vec3 horizontal(4.0, 0.0, 0.0);
         vec3 vertical(0.0, 2.0, 0.0);
         vec3 origin(0.0, 0.0, 0.0);
 
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         hittable *list[2];
         list[0] = new sphere(vec3(0,0,-1), 0.5);
         list[1] = new sphere(vec3(0,-100.5,-1), 100);
         hittable *world = new hittable_list(list,2);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        for (int j = ny-1; j >= 0; j--) {
-            for (int i = 0; i < nx; i++) {
-                float u = float(i) / float(nx);
-                float v = float(j) / float(ny);
+        for (int j = ny-1; j >= 0; --j) {
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (int i = 0; i < nx; ++i) {
+                auto u = double(i) / nx;
+                auto v = double(j) / ny;
                 ray r(origin, lower_left_corner + u*horizontal + v*vertical);
 
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 p = r.point_at_parameter(2.0);
-                vec3 col = color(r, world);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                vec3 color = ray_color(r, world);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-                int ir = int(255.99*col[0]);
-                int ig = int(255.99*col[1]);
-                int ib = int(255.99*col[2]);
-
-                std::cout << ir << " " << ig << " " << ib << "\n";
+                color.write_color(std::cout);
             }
         }
+
+        std::cerr << "\nDone.\n";
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-with-rtweekend-h]: <kbd>[main.cc]</kbd> desc]
 </div>
 
 <div class='together'>
 This yields a picture that is really just a visualization of where the spheres are along with their
 surface normal. This is often a great way to look at your model for flaws and characteristics.
 
-  ![Image 6-2](../images/img-1-06-2.jpg)
+  ![Resulting render of normals-colored sphere with ground](../images/img.normals-sphere-ground.png)
 
 </div>
 
@@ -828,25 +939,22 @@ a bit so we can make a cooler camera later.
 
 One thing we need is a random number generator that returns real random numbers. We need a function
 that returns a canonical random number which by convention returns random real in the range
-$0 ≤ ran < 1$. The “less than” before the 1 is important as we will sometimes take advantage of
-that.
+$0 ≤ r < 1$. The “less than” before the 1 is important as we will sometimes take advantage of that.
 
 <div class='together'>
 A simple approach to this is to use the `rand()` function that can be found in `<cstdlib>`. This
-function returns a random integer in the range 0 and RANDMAX. Hence we can get a real random number
-as desired with the following code snippet:
+function returns a random integer in the range 0 and `RAND_MAX`. Hence we can get a real random
+number as desired with the following code snippet, added to `common/rtweekend.h`:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef RANDOMH
-    #define RANDOMH
-
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include <cstdlib>
+    ...
 
     inline double random_double() {
         return rand() / (RAND_MAX + 1.0);
     }
-    #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-double]: <kbd>[rtweekend.h]</kbd> random_double() function]
 </div>
 
 <div class='together'>
@@ -854,10 +962,7 @@ C++ did not traditionally have a standard random number generator, but newer ver
 addressed this issue with the `<random>` header (if imperfectly according to some experts).
 If you want to use this, you can obtain a random number with the conditions we need as follows:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef RANDOMH
-    #define RANDOMH
-
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include <functional>
     #include <random>
 
@@ -865,18 +970,18 @@ If you want to use this, you can obtain a random number with the conditions we n
         static std::uniform_real_distribution<double> distribution(0.0, 1.0);
         static std::mt19937 generator;
         static std::function<double()> rand_generator =
-          std::bind(distribution, generator);
+            std::bind(distribution, generator);
         return rand_generator();
-      }
-    #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-double-alt]: <kbd>[file]</kbd> random_double(), alternate implemenation]
 </div>
 
 <div class='together'>
 For a given pixel we have several samples within that pixel and send rays through each of the
 samples. The colors of these rays are then averaged:
 
-  ![Figure 7-1](../images/fig-1-07-1.jpg)
+  ![Figure [pixel-samples]: Pixel samples](../images/fig.pixel-samples.jpg)
 
 </div>
 
@@ -884,10 +989,11 @@ samples. The colors of these rays are then averaged:
 Putting that all together yields a camera class encapsulating our simple axis-aligned camera from
 before:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef CAMERAH
-    #define CAMERAH
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef CAMERA_H
+    #define CAMERA_H
 
+    #include "common/rtweekend.h"
     #include "ray.h"
 
     class camera {
@@ -898,9 +1004,9 @@ before:
                 vertical = vec3(0.0, 2.0, 0.0);
                 origin = vec3(0.0, 0.0, 0.0);
             }
-            ray get_ray(float u, float v) {
-                return ray(origin,
-                           lower_left_corner + u*horizontal + v*vertical - origin);
+
+            ray get_ray(double u, double v) {
+                return ray(origin, lower_left_corner + u*horizontal + v*vertical - origin);
             }
 
             vec3 origin;
@@ -909,19 +1015,51 @@ before:
             vec3 vertical;
     };
     #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [camera-initial]: <kbd>[camera.h]</kbd> The camera class]
 </div>
+
+To handle the multi-sampled color computation, we update the `vec3::write_color()` function. Rather
+than adding in a fractional contribution each time we accumulate more light to the color, just add
+the full color each iteration, and then perform a single divide at the end (by the number of
+samples) when writing out the color. In addition, we'll add a handy utility function to the
+`rtweekend.h` utility header: `clamp(x,min,max)`, which clamps the value `x` to the range [min,max]:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline double clamp(double x, double min, double max) {
+        if (x < min) return min;
+        if (x > max) return max;
+        return x;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [clamp]: <kbd>[rtweekend.h]</kbd> The clamp() utility function]
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    void write_color(std::ostream &out, int num_samples) {
+        // Divide the color total by the number of samples.
+        auto scale = 1.0 / num_samples;
+        auto r = scale * e[0];
+        auto g = scale * e[1];
+        auto b = scale * e[2];
+
+        // Write the translated [0,255] value of each color component.
+        out << static_cast<int>(256.0 * clamp(r, 0.0, 0.999999)) << ' '
+            << static_cast<int>(256.0 * clamp(g, 0.0, 0.999999)) << ' '
+            << static_cast<int>(256.0 * clamp(b, 0.0, 0.999999)) << '\n';
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [write-color-clamped]: <kbd>[vec3.h]</kbd> The write_color() function]
 
 <div class='together'>
 Main is also changed:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
         int nx = 200;
         int ny = 100;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        int ns = 100;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        int num_samples = 100;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
         hittable *list[2];
@@ -929,38 +1067,36 @@ Main is also changed:
         list[1] = new sphere(vec3(0,-100.5,-1), 100);
         hittable *world = new hittable_list(list,2);
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         camera cam;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        for (int j = ny-1; j >= 0; j--) {
-            for (int i = 0; i < nx; i++) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                vec3 col(0, 0, 0);
-                for (int s = 0; s < ns; s++) {
-                    float u = float(i + random_double()) / float(nx);
-                    float v = float(j + random_double()) / float(ny);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        for (int j = ny-1; j >= 0; --j) {
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (int i = 0; i < nx; ++i) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                vec3 color(0, 0, 0);
+                for (int s = 0; s < num_samples; ++s) {
+                    auto u = (i + random_double()) / nx;
+                    auto v = (j + random_double()) / ny;
                     ray r = cam.get_ray(u, v);
-                    col += color(r, world);
+                    color += ray_color(r, world);
                 }
-                col /= float(ns);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-                int ir = int(255.99*col[0]);
-                int ig = int(255.99*col[1]);
-                int ib = int(255.99*col[2]);
-
-                std::cout << ir << " " << ig << " " << ib << "\n";
+                color.write_color(std::cout, num_samples);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
         }
+
+        std::cerr << "\nDone.\n";
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-multi-sample]: <kbd>[main.cc]</kbd> Rendering with multi-sampled pixels]
 </div>
 
 <div class='together'>
 Zooming into the image that is produced, the big change is in edge pixels that are part background
 and part foreground:
 
-  ![Image 7-1](../images/img-1-07-1.jpg)
+  ![Close-up of antialiased pixels](../images/img.antialias.png)
 
 </div>
 
@@ -982,7 +1118,7 @@ modulate that with their own intrinsic color. Light that reflects off a diffuse 
 direction randomized. So, if we send three rays into a crack between two diffuse surfaces they will
 each have different random behavior:
 
-  ![Figure 8-1](../images/fig-1-08-1.jpg)
+  ![Figure [light-bounce]: Light ray bounces](../images/fig.light-bounce.jpg)
 
 </div>
 
@@ -992,21 +1128,29 @@ surfaces that look matte. One of the simplest ways to do this turns out to be ex
 ideal diffuse surfaces. (I used to do it as a lazy hack that approximates mathematically ideal
 Lambertian.)
 
-<div class='together'>
-Pick a random point s from the unit radius sphere that is tangent to the hitpoint, and send a ray
-from the hitpoint $p$ to the random point $s$. That sphere has center $(p + N)$:
+(Reader Vassillen Chizhov proved that the lazy hack is indeed just a lazy hack and is inaccurate.
+The correct representation of ideal Lambertian isn't much more work and is presented at the end of
+the chapter.)
 
-  ![Figure 8-2](../images/fig-1-08-2.jpg)
+<div class='together'>
+There are two unit radius spheres tangent to the hit point $p$ of a surface. These two spheres
+have a center of $(p + N)$ and $(p - N)$, where $N$ is the normal of the surface. The sphere with a
+center at $(p - N)$ is considered _inside_ the surface, whereas the sphere with center $(p + N)$ is
+considered _outside_ the surface. Select the tangent unit radius sphere that is on the same side of
+the surface as the ray origin. Pick a random point $s$ inside this unit radius sphere and send a
+ray from the hit point $p$ to the random point $s$:
+
+  ![Figure [rand-vector]: Generating a random diffuse bounce ray](../images/fig.rand-vector.jpg)
 
 </div>
 
 <div class='together'>
-We also need a way to pick a random point in a unit radius sphere centered at the origin. We’ll use
-what is usually the easiest algorithm: a rejection method. First, we pick a random point in the unit
-cube where x, y, and z all range from -1 to +1. We reject this point and try again if the point is
-outside the sphere. A do/while construct is perfect for that:
+We need a way to pick a random point in a unit radius sphere. We’ll use what is usually the easiest
+algorithm: a rejection method. First, pick a random point in the unit cube where x, y, and z all
+range from -1 to +1. Reject this point and try again if the point is outside the sphere. A
+do-while construct is perfect for that:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_in_unit_sphere() {
         vec3 p;
         do {
@@ -1014,34 +1158,87 @@ outside the sphere. A do/while construct is perfect for that:
         } while (p.squared_length() >= 1.0);
         return p;
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-in-unit-sphere]: <kbd>[material.h]</kbd> The random_in_unit_sphere() function]
 </div>
 
 <div class='together'>
-Then update the `color()` function to use the new random direction generator:
+Then update the `ray_color()` function to use the new random direction generator:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 ray_color(const ray& r, hittable *world) {
         hit_record rec;
-        if (world->hit(r, 0.0, MAXFLOAT, rec)) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        if (world->hit(r, 0.0, infinity, rec)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-            return 0.5 * color(ray(rec.p, target - rec.p), world);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            return 0.5 * ray_color(ray(rec.p, target - rec.p), world);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-        else {
-            vec3 unit_direction = unit_vector(r.direction());
-            float t = 0.5*(unit_direction.y() + 1.0);
-            return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
-        }
+
+        vec3 unit_direction = unit_vector(r.direction());
+        auto t = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-random-unit]: <kbd>[main.cc]</kbd> ray_color() using a random ray direction]
+</div>
+
+<div class='together'>
+There's one potential problem lurking here. Notice that the `ray_color` function is recursive. When
+will it stop recursing? When it fails to hit anything. In some cases, however, that may be a long
+time — long enough to blow the stack. To guard against that, let's limit the maximum recursion
+depth, returning no light contribution at the maximum depth:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
+        hit_record rec;
+        if (world->hit(r, 0.0, infinity, rec)) {
+            if (depth <= 0)
+                return vec3(0,0,0);
+            vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+            return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+
+        vec3 unit_direction = unit_vector(r.direction());
+        auto t = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+    }
+    ...
+    int main() {
+        int nx = 200;
+        int ny = 100;
+        int num_samples = 100;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        int max_depth = 50;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+        for (int j = ny-1; j >= 0; --j) {
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (int i = 0; i < nx; ++i) {
+                vec3 color(0, 0, 0);
+                for (int s = 0; s < num_samples; ++s) {
+                    auto u = (i + random_double()) / nx;
+                    auto v = (j + random_double()) / ny;
+                    ray r = cam.get_ray(u, v);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                    color += ray_color(r, world, max_depth);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                }
+                color.write_color(std::cout, num_samples);
+            }
+        }
+
+        std::cerr << "\nDone.\n";
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-depth]: <kbd>[main.cc]</kbd> ray_color() with depth limiting]
 </div>
 
 <div class='together'>
 This gives us:
 
-  ![Image 8-1](../images/img-1-08-1.jpg)
+  ![First render of a diffuse sphere](../images/img.first-diffuse.jpg)
 
 </div>
 
@@ -1055,20 +1252,31 @@ for our purposes we just need to be aware of it. To a first approximation, we ca
 which means raising the color to the power $1/gamma$, or in our simple case ½, which is just
 square-root:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    col /= float(ns);
-    col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
-    int ir = int(255.99*col[0]);
-    int ig = int(255.99*col[1]);
-    int ib = int(255.99*col[2]);
-    std::cout << ir << " " << ig << " " << ib << "\n";
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    void write_color(std::ostream &out, int num_samples) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        // Divide the color total by the number of samples and gamma-correct
+        // for a gamma value of 2.0.
+        auto scale = 1.0 / num_samples;
+        auto r = sqrt(scale * e[0]);
+        auto g = sqrt(scale * e[1]);
+        auto b = sqrt(scale * e[2]);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        // Write the translated [0,255] value of each color component.
+        out << static_cast<int>(256.0 * clamp(r, 0.0, 0.999999)) << ' '
+            << static_cast<int>(256.0 * clamp(g, 0.0, 0.999999)) << ' '
+            << static_cast<int>(256.0 * clamp(b, 0.0, 0.999999)) << '\n';
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [write-color-gamma]: <kbd>[vec3.h]</kbd> write_color(), with gamma correction]
+
 </div>
 
 <div class='together'>
 That yields light grey, as we desire:
 
-  ![Image 8-2](../images/img-1-08-2.jpg)
+  ![Diffuse sphere, with gamma correction](../images/img.gamma-correct.jpg)
 
 </div>
 
@@ -1077,14 +1285,150 @@ There’s also a subtle bug in there. Some of the reflected rays hit the object 
 off of not at exactly $t=0$, but instead at $t=-0.0000001$ or $t=0.00000001$ or whatever floating
 point approximation the sphere intersector gives us. So we need to ignore hits very near zero:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    if (world->hit(r, 0.001, MAXFLOAT, rec)) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    if (world->hit(r, 0.001, infinity, rec)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [reflect-tolerance]: <kbd>[main.cc]</kbd> Calculating reflected ray origins with tolerance]
 
 This gets rid of the shadow acne problem. Yes it is really called that.
 </div>
 
+<div class='together'>
+The rejection method presented here produces random points in the unit ball offset along the surface
+normal. This corresponds to picking directions on the hemisphere with high probability close to the
+normal, and a lower probability of scattering rays at grazing angles. The distribution present
+scales by the $\cos^3 (\phi)$ where $\phi$ is the angle from the normal. This is useful since light
+arriving at shallow angles spreads over a larger area, and thus has a lower contribution to the
+final color.
 
+However, we are interested in a Lambertian distribution, which has a distribution of $\cos (\phi)$.
+True Lambertian has the probability higher for ray scattering close to the normal, but the
+distribution is more uniform. This is achieved by picking points on the surface of the unit sphere,
+offset along the surface normal. Picking points on the sphere can be achieved by picking points in
+the unit ball, and then normalizing those.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 random_on_unit_sphere() {
+        return unit_vector(random_in_unit_sphere());
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-on-unit-sphere]: <kbd>[material.h]</kbd> The random_on_unit_sphere() function]
+
+  ![Figure [rand-unit-vector]: Generating a random unit vector](../images/fig.rand-unitvector.png)
+  
+</div>
+
+
+<div class='together'>
+This `random_on_unit_sphere()` is a drop-in replacement for the existing `random_in_unit_sphere()`
+function.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
+        hit_record rec;
+        if (world->hit(r, 0.0, infinity, rec)) {
+            if (depth <= 0)
+                return vec3(0,0,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            vec3 target = rec.p + rec.normal + random_on_unit_sphere();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
+        }
+
+        vec3 unit_direction = unit_vector(r.direction());
+        auto t = 0.5*(unit_direction.y() + 1.0);
+        return (1-t)*vec3(1, 1, 1) + t*vec3(0.5, 0.7, 1.0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-unit-sphere]: <kbd>[main.cc]</kbd> ray_color() with replacement diffuse]
+</div>
+
+<div class='together'>
+After rendering we get a similar image:
+
+  ![Correct rendering of Lambertian spheres](../images/img.correct-lambertian.png)
+
+It's hard to tell the difference between these two diffuse methods, given that our scene of two
+spheres is so simple, but you should be able to notice two important visual differences:
+
+  1. The shadows are less pronounced after the change
+  2. Both spheres are lighter in appearance after the change
+
+Both of these changes are due to the more uniform scattering of the light rays, fewer rays are
+scattering toward the normal. This means that for diffuse objects, they will appear _lighter_
+because more light bounces toward the camera. For the shadows, less light bounces straight-up, so
+the parts of the larger sphere directly underneath the smaller sphere are brighter.
+</div>
+
+<div class='together'>
+The initial hack presented in this book lasted a long time before it was proven to be an incorrect
+approximation of ideal Lambertian diffuse. A big reason that the error persisted for so long is
+that it can be difficult to:
+
+  1. Mathematically prove that the probability distribution is incorrect
+  2. Intuitively explain why a $\cos (\phi)$ distribution is desirable (and what it would look like)
+
+Not a lot of common, everyday objects are perfectly diffuse, so our visual intuition of how these
+objects behave under light can be poorly formed.
+</div>
+
+<div class='together'>
+In the interest of learning, we are including an intuitive and easy to understand diffuse method.
+For the two methods above we had a random vector, first of random length and then of unit length,
+offset from the hit point by the normal. It may not be immediately obvious why the vectors should be
+displaced by the normal.
+
+A more intuitive approach is to have a uniform scatter direction for all angles away from the hit
+point, with no dependence on the angle from the normal. Many of the first raytracing papers used
+this diffuse method (before adopting Lambertian diffuse).
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 random_in_hemisphere(const vec3& normal) {
+        vec3 in_unit_sphere = random_in_unit_sphere();
+        if (dot(in_unit_sphere, normal) > 0.0) // In the same hemisphere as the normal
+            return in_unit_sphere;
+        else
+            return -in_unit_sphere;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-in-hemisphere]: <kbd>[material.h]</kbd> The random_in_hemisphere(normal) function]
+
+Note that the functionality should be identical between `random_in_unit_sphere()` and
+`random_on_unit_sphere()`
+</div>
+
+<div class='together'>
+Plugging the new formula into the `ray_color()` function:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
+        hit_record rec;
+        if (world->hit(r, 0.0, infinity, rec)) {
+            if (depth <= 0)
+                return vec3(0,0,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            vec3 target = rec.p + random_in_hemisphere(rec.normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
+        }
+
+        vec3 unit_direction = unit_vector(r.direction());
+        auto t = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-hemisphere]: <kbd>[main.cc]</kbd> ray_color() with hemispherical scattering]
+
+Gives us the following image:
+
+  ![Rendering of diffuse spheres with hemispherical scattering](../images/fig.rand-hemispherical.png)
+</div>
+
+<div class='together'>
+Scenes will become more complicated over the course of the book. You are encouraged to
+switch between the different diffuse renderers presented here. Most scenes of interest will contain
+a disproportionate amount of diffuse materials. You can gain valuable insight by understanding the effect of different diffuse methods on the lighting of the scene.
+</div>
 
 Metal
 ====================================================================================================
@@ -1101,14 +1445,15 @@ two things:
 <div class='together'>
 This suggests the abstract class:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class material  {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class material {
         public:
             virtual bool scatter(
-                const ray& r_in, const hit_record& rec, vec3& attenuation,
-                ray& scattered) const = 0;
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const = 0;
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [material-initial]: <kbd>[material.h]</kbd> The material class]
 </div>
 
 <div class='together'>
@@ -1117,28 +1462,34 @@ You can use arguments instead; it’s a matter of taste. Hittables and materials
 other so there is some circularity of the references. In C++ you just need to alert the compiler
 that the pointer is to a class, which the “class material” in the hittable class below does:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef HITTABLEH
-    #define HITTABLEH
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef HITTABLE_H
+    #define HITTABLE_H
+
+    #include "common/rtweekend.h"
     #include "ray.h"
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     class material;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     struct hit_record {
-        float t;
+        double t;
         vec3 p;
         vec3 normal;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         material *mat_ptr;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
 
-    class hittable  {
+    class hittable {
         public:
-            virtual bool hit(
-                const ray& r, float t_min, float t_max, hit_record& rec) const = 0;
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
     };
 
     #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hit-with-material]: <kbd>[hittable.h]</kbd> Hit record with added material pointer]
 </div>
 
 What we have set up here is that material will tell us how rays interact with the surface.
@@ -1150,47 +1501,55 @@ functions of the material pointer to find out what ray, if any, is scattered.
 
 <div class='together'>
 To achieve this, we must have a reference to the material for our sphere class to returned
-within `hit_record`. See the lines below marked with **`/* NEW */`**.
+within `hit_record`. See the highlighted lines below:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class sphere: public hittable  {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class sphere: public hittable {
         public:
             sphere() {}
-            sphere(vec3 cen, float r, material *m)
-                : center(cen), radius(r), mat_ptr(m)  {};
-            virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
+            sphere(vec3 cen, double r, material *m) : center(cen), radius(r), mat_ptr(m) {};
+            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
             vec3 center;
-            float radius;
-            material *mat_ptr; /* NEW */
+            double radius;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            material *mat_ptr;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
 
-    bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+    bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         vec3 oc = r.origin() - center;
-        float a = dot(r.direction(), r.direction());
-        float b = dot(oc, r.direction());
-        float c = dot(oc, oc) - radius*radius;
-        float discriminant = b*b - a*c;
+        auto a = r.direction().squared_length();
+        auto half_b = dot(oc, r.direction());
+        auto c = oc.squared_length() - radius*radius;
+        auto discriminant = half_b*half_b - a*c;
+
         if (discriminant > 0) {
-            float temp = (-b - sqrt(discriminant))/a;
+            auto root = sqrt(discriminant);
+            auto temp = (-half_b - root)/a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
                 rec.normal = (rec.p - center) / radius;
-                rec.mat_ptr = mat_ptr; /* NEW */
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                rec.mat_ptr = mat_ptr;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return true;
             }
-            temp = (-b + sqrt(discriminant)) / a;
+            temp = (-half_b + root) / a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.point_at_parameter(rec.t);
                 rec.normal = (rec.p - center) / radius;
-                rec.mat_ptr = mat_ptr; /* NEW */
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                rec.mat_ptr = mat_ptr;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return true;
             }
         }
         return false;
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [sphere-material]: <kbd>[sphere.h]</kbd> Ray-sphere intersection with added material information]
 </div>
 
 <div class='together'>
@@ -1198,13 +1557,14 @@ For the Lambertian (diffuse) case we already have, it can either scatter always 
 reflectance $R$, or it can scatter with no attenuation but absorb the fraction $1-R$ of the rays. Or
 it could be a mixture of those strategies. For Lambertian materials we get this simple class:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
         public:
             lambertian(const vec3& a) : albedo(a) {}
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                                 vec3& attenuation, ray& scattered) const {
-                vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
+                vec3 target = rec.p + rec.normal + random_unit_vector();
                 scattered = ray(rec.p, target-rec.p);
                 attenuation = albedo;
                 return true;
@@ -1212,7 +1572,8 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
 
             vec3 albedo;
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [lambertian-initial]: <kbd>[material.h]</kbd> The lambertian material class]
 </div>
 
 Note we could just as well only scatter with some probability $p$ and have attenuation be
@@ -1222,31 +1583,34 @@ $albedo/p$. Your choice.
 For smooth metals the ray won’t be randomly scattered. The key math is: how does a ray get
 reflected from a metal mirror? Vector math is our friend here:
 
-  ![Figure 9-1](../images/fig-1-09-1.jpg)
+  ![Figure [reflection]: Ray reflection](../images/fig.ray-reflect.jpg)
 
 </div>
 
 <div class='together'>
-The reflected ray direction in red is just $(v + 2B)$. In our design, $N$ is a unit vector, but $v$
-may not be. The length of $B$ should be $dot(v,N)$. Because $v$ points in, we will need a minus
-sign, yielding:
+The reflected ray direction in red is just $\vec{\mathbf{V}} + 2\vec{\mathbf{B}}$. In our design,
+$\vec{\mathbf{N}}$ is a unit vector, but $\vec{\mathbf{V}}$ may not be. The length of
+$\vec{\mathbf{B}}$ should be $\vec{\mathbf{V}} \cdot \vec{\mathbf{N}}$. Because $\vec{\mathbf{V}}$
+points in, we will need a minus sign, yielding:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 reflect(const vec3& v, const vec3& n) {
         return v - 2*dot(v,n)*n;
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [vec3-reflect]: <kbd>[material.h]</kbd> vec3 reflection function]
 </div>
 
 <div class='together'>
 The metal material just reflects rays using that formula:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class metal : public material {
         public:
             metal(const vec3& a) : albedo(a) {}
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                                 vec3& attenuation, ray& scattered) const {
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
                 scattered = ray(rec.p, reflected);
                 attenuation = albedo;
@@ -1254,87 +1618,83 @@ The metal material just reflects rays using that formula:
             }
             vec3 albedo;
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [metal-material]: <kbd>[material.h]</kbd> Metal material with reflectance function]
 </div>
 
 <div class='together'>
 We need to modify the color function to use this:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, int depth) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
         hit_record rec;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        if (world->hit(r, 0.001, infinity, rec)) {
+            if (depth <= 0)
+                return vec3(0,0,0);
             ray scattered;
             vec3 attenuation;
-            if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
-                return attenuation*color(scattered, world, depth+1);
-            }
-            else {
-                return vec3(0,0,0);
-            }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+                return attenuation * ray_color(scattered, world, depth-1);
+            return vec3(0,0,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-        else {
-            vec3 unit_direction = unit_vector(r.direction());
-            float t = 0.5*(unit_direction.y() + 1.0);
-            return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
-        }
+
+        vec3 unit_direction = unit_vector(r.direction());
+        auto t = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-scatter]: <kbd>[main.cc]</kbd> Ray color with scattered reflectance]
 </div>
 
 <div class='together'>
 You will also need to modify the sphere class to have a material pointer to it. And add some
 metal spheres:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
         int nx = 200;
         int ny = 100;
-        int ns = 100;
+        int num_samples = 100;
+        int max_depth = 50;
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         hittable *list[4];
-        list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.8, 0.3, 0.3)));
+        list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.7, 0.3, 0.3)));
         list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
         list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2)));
         list[3] = new sphere(vec3(-1,0,-1), 0.5, new metal(vec3(0.8, 0.8, 0.8)));
         hittable *world = new hittable_list(list,4);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         camera cam;
-        for (int j = ny-1; j >= 0; j--) {
-            for (int i = 0; i < nx; i++) {
-                vec3 col(0, 0, 0);
-                for (int s = 0; s < ns; s++) {
-                    float u = float(i + random_double()) / float(nx);
-                    float v = float(j + random_double()) / float(ny);
+        for (int j = ny-1; j >= 0; --j) {
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (int i = 0; i < nx; ++i) {
+                vec3 color(0, 0, 0);
+                for (int s = 0; s < num_samples; ++s) {
+                    auto u = (i + random_double()) / nx;
+                    auto v = (j + random_double()) / ny;
                     ray r = cam.get_ray(u, v);
-                    col += color(r, world, 0);
+                    color += ray_color(r, world, max_depth);
                 }
-                col /= float(ns);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                col = vec3( sqrt(col[0]), sqrt(col[1]), sqrt(col[2]) );
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-                int ir = int(255.99*col[0]);
-                int ig = int(255.99*col[1]);
-                int ib = int(255.99*col[2]);
-
-                std::cout << ir << " " << ig << " " << ib << "\n";
+                color.write_color(std::cout, num_samples);
             }
         }
+
+        std::cerr << "\nDone.\n";
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-with-metal]: <kbd>[main.cc]</kbd> Scene with metal spheres]
 </div>
 
 <div class='together'>
 Which gives:
 
-  ![Image 9-1](../images/img-1-09-1.jpg)
+  ![Shiny metal](../images/img.metal-shiny.png)
 
 </div>
 
@@ -1342,7 +1702,7 @@ Which gives:
 We can also randomize the reflected direction by using a small sphere and choosing a new endpoint
 for the ray:
 
-  ![Figure 9-2](../images/fig-1-09-2.jpg)
+  ![Figure [reflect-fuzzy]: Generating fuzzed reflection rays](../images/fig.reflect-fuzzy.jpg)
 
 </div>
 
@@ -1352,35 +1712,52 @@ parameter that is just the radius of the sphere (so zero is no perturbation). Th
 big spheres or grazing rays, we may scatter below the surface. We can just have the surface
 absorb those. We’ll put a maximum of 1 on the radius of the sphere which yields:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    vec3 random_in_unit_sphere() {
+        vec3 p;
+        do {
+            p = 2*vec3(random_double(), random_double(), random_double()) - vec3(1,1,1);
+        } while (p.squared_length() >= 1);
+        return p;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     class metal : public material {
         public:
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            metal(const vec3& a, float f) : albedo(a) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            metal(const vec3& a, double f) : albedo(a) {
                 if (f < 1) fuzz = f; else fuzz = 1;
             }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                                 vec3& attenuation, ray& scattered) const {
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 attenuation = albedo;
                 return (dot(scattered.direction(), rec.normal) > 0);
             }
             vec3 albedo;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            float fuzz;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            double fuzz;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [metal-fuzz]: <kbd>[main.cc]</kbd> Metal spheres with fuzziness]
 
+In order to generate a random point inside a unit sphere (`random_in_unit_sphere()`), we used one of
+the easiest algorithms: a rejection method. First, pick a random point in the unit cube where x, y,
+and z all range from -1 to +1. If the generated point is outside the unit sphere, repeat until we
+get one on the inside. A do/while construct is perfect for that.
 </div>
 
 <div class='together'>
 We can try that out by adding fuzziness 0.3 and 1.0 to the metals:
 
-  ![Image 9-2](../images/img-1-09-2.jpg)
+  ![Fuzzed metal](../images/img.metal-fuzz.png)
 
 </div>
 
@@ -1398,7 +1775,7 @@ The hardest part to debug is the refracted ray. I usually first just have all th
 there is a refraction ray at all. For this project, I tried to put two glass balls in our scene, and
 I got this (I have not told you how to do this right or wrong yet, but soon!):
 
-  ![Image 10-1](../images/img-1-10-1.jpg)
+  ![Image 10-1](../images/img.glass-first.png)
 
 </div>
 
@@ -1409,12 +1786,12 @@ of the image and it was clearly wrong. That often does the job.
 <div class='together'>
 The refraction is described by Snell’s law:
 
-  $$ n \cdot sin(theta) = n' \cdot sin(theta') $$
+  $$ n \cdot \sin\theta = n' \cdot \sin\theta' $$
 
 Where $n$ and $n'$ are the refractive indices (typically air = 1, glass = 1.3–1.7, diamond = 2.4)
 and the geometry is:
 
-  ![Figure 10-1](../images/fig-1-10-1.jpg)
+  ![Figure [ray-refract]: Refracted ray geometry](../images/fig.ray-refract.jpg)
 
 </div>
 
@@ -1425,11 +1802,11 @@ the light is reflected, and because in practice that is usually inside solid obj
 “total internal reflection”. This is why sometimes the water-air boundary acts as a perfect mirror
 when you are submerged. The code for refraction is thus a bit more complicated than for reflection:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool refract(const vec3& v, const vec3& n, float ni_over_nt, vec3& refracted) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool refract(const vec3& v, const vec3& n, double ni_over_nt, vec3& refracted) {
         vec3 uv = unit_vector(v);
-        float dt = dot(uv, n);
-        float discriminant = 1.0 - ni_over_nt*ni_over_nt*(1-dt*dt);
+        auto dt = dot(uv, n);
+        auto discriminant = 1.0 - ni_over_nt*ni_over_nt*(1-dt*dt);
         if (discriminant > 0) {
             refracted = ni_over_nt*(uv - n*dt) - n*sqrt(discriminant);
             return true;
@@ -1437,21 +1814,23 @@ when you are submerged. The code for refraction is thus a bit more complicated t
         else
             return false;
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [refract]: <kbd>[material.h]</kbd> Refraction function]
 </div>
 
 <div class='together'>
 And the dielectric material that always refracts when possible is:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class dielectric : public material {
         public:
-            dielectric(float ri) : ref_idx(ri) {}
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                                 vec3& attenuation, ray& scattered) const {
+            dielectric(double ri) : ref_idx(ri) {}
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
                 vec3 outward_normal;
                 vec3 reflected = reflect(r_in.direction(), rec.normal);
-                float ni_over_nt;
+                double ni_over_nt;
                 attenuation = vec3(1.0, 1.0, 0.0);
                 vec3 refracted;
 
@@ -1475,9 +1854,10 @@ And the dielectric material that always refracts when possible is:
                 return true;
             }
 
-            float ref_idx;
+            double ref_idx;
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [dielectric]: <kbd>[material.h]</kbd> Dielectric material class]
 </div>
 
 Attenuation is always 1 -- the glass surface absorbs nothing. The `attenuation = vec3(1.0, 1.0,
@@ -1488,79 +1868,82 @@ Attenuation is always 1 -- the glass surface absorbs nothing. The `attenuation =
 <div class='together'>
 If we try that out with these parameters:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
     list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
     list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2), 0.0));
     list[3] = new sphere(vec3(-1,0,-1), 0.5, new dielectric(1.5));
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-dielectric]: <kbd>[main.cc]</kbd> Scene with dielectric sphere]
 
 We get:
 
-  ![Image 10-2](../images/img-1-10-2.jpg)
+  ![Glass sphere with a subtle bug](../images/img.glass-no-reflect.png)
 
 </div>
 
 (The reader Becker has pointed out that when there is a reflection ray the function returns `false`
-so there are no reflections. He is right, and that is why there are none in the image above. I
-am leaving this in rather than correcting this because it is a very interesting example of a major
-bug that still leaves a reasonably plausible image. These sleeper bugs are the hardest bugs to
-find because we humans are not designed to find fault with what we see.)
+so there are no reflections. He is right, and that is why there are none in the image above. I am
+leaving this in rather than correcting it because it is an interesting example of a major bug that
+still leaves a reasonably plausible image. These sleeper bugs are the hardest bugs to find because
+we humans are not designed to find fault with what we see.)
 
 <div class='together'>
 Now real glass has reflectivity that varies with angle -- look at a window at a steep angle and it
 becomes a mirror. There is a big ugly equation for that, but almost everybody uses a simple and
 surprisingly simple polynomial approximation by Christophe Schlick:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    float schlick(float cosine, float ref_idx) {
-        float r0 = (1-ref_idx) / (1+ref_idx);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    double schlick(double cosine, double ref_idx) {
+        auto r0 = (1-ref_idx) / (1+ref_idx);
         r0 = r0*r0;
         return r0 + (1-r0)*pow((1 - cosine),5);
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [schlick]: <kbd>[material.h]</kbd> Schlick approximation]
 </div>
 
 <div class='together'>
 This yields our full glass material:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class dielectric : public material {
         public:
-            dielectric(float ri) : ref_idx(ri) {}
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                                 vec3& attenuation, ray& scattered) const {
+            dielectric(double ri) : ref_idx(ri) {}
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
                 vec3 outward_normal;
                 vec3 reflected = reflect(r_in.direction(), rec.normal);
-                float ni_over_nt;
+                double ni_over_nt;
                 attenuation = vec3(1.0, 1.0, 1.0);
                 vec3 refracted;
 
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                float reflect_prob;
-                float cosine;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                double reflect_prob;
+                double cosine;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
                 if (dot(r_in.direction(), rec.normal) > 0) {
                      outward_normal = -rec.normal;
                      ni_over_nt = ref_idx;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                      cosine = ref_idx * dot(r_in.direction(), rec.normal)
                             / r_in.direction().length();
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 }
                 else {
                      outward_normal = rec.normal;
                      ni_over_nt = 1.0 / ref_idx;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                      cosine = -dot(r_in.direction(), rec.normal)
                             / r_in.direction().length();
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 }
 
                 if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                    reflect_prob = schlick(cosine, ref_idx);
                 }
                 else {
@@ -1573,14 +1956,15 @@ This yields our full glass material:
                 else {
                    scattered = ray(rec.p, refracted);
                 }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
                 return true;
             }
 
-            float ref_idx;
+            double ref_idx;
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [glass]: <kbd>[material.h]</kbd> Full glass material]
 </div>
 
 <div class='together'>
@@ -1588,19 +1972,20 @@ An interesting and easy trick with dielectric spheres is to note that if you use
 the geometry is unaffected but the surface normal points inward, so it can be used as a bubble
 to make a hollow glass sphere:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
     list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
     list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2), 0.3));
     list[3] = new sphere(vec3(-1,0,-1), 0.5, new dielectric(1.5));
     list[4] = new sphere(vec3(-1,0,-1), -0.45, new dielectric(1.5));
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-hollow-glass]: <kbd>[main.cc]</kbd> Scene with hollow glass sphere]
 </div>
 
 <div class='together'>
 This gives:
 
-  ![Image 10-3](../images/img-1-10-3.jpg)
+  ![A hollow glass sphere](../images/img.glass-hollow.png)
 
 </div>
 
@@ -1619,34 +2004,33 @@ personal taste.
 I first keep the rays coming from the origin and heading to the $z = -1$ plane. We could make it the
 $z = -2$ plane, or whatever, as long as we made $h$ a ratio to that distance. Here is our setup:
 
-  ![Figure 11-1](../images/fig-1-11-1.jpg)
+  ![Figure [cam-view-geom]: Camera viewing geometry](../images/fig.cam-view-geom.jpg)
 
 </div>
 
 <div class='together'>
-This implies $h = tan(\theta/2)$. Our camera now becomes:
+This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef CAMERAH
-    #define CAMERAH
-
-    #include "ray.h"
-
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
         public:
-            camera(float vfov, float aspect) { // vfov is top to bottom in degrees
-                float theta = vfov*M_PI/180;
-                float half_height = tan(theta/2);
-                float half_width = aspect * half_height;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            camera(
+                double vfov, // vfov is top to bottom in degrees
+                double aspect
+            ) {
+                auto theta = degrees_to_radians(vfov);
+                auto half_height = tan(theta/2);
+                auto half_width = aspect * half_height;
                 lower_left_corner = vec3(-half_width, -half_height, -1.0);
                 horizontal = vec3(2*half_width, 0.0, 0.0);
                 vertical = vec3(0.0, 2*half_height, 0.0);
                 origin = vec3(0.0, 0.0, 0.0);
             }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            ray get_ray(float u, float v) {
-                return ray(origin,
-                           lower_left_corner + u*horizontal + v*vertical - origin);
+            ray get_ray(double u, double v) {
+                return ray(origin, lower_left_corner + u*horizontal + v*vertical - origin);
             }
 
             vec3 origin;
@@ -1654,23 +2038,24 @@ This implies $h = tan(\theta/2)$. Our camera now becomes:
             vec3 horizontal;
             vec3 vertical;
     };
-    #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [camera-fov]: <kbd>[camera.h]</kbd> Camera with adjustable field-of-view (fov)]
 </div>
 
 <div class='together'>
-When calling it with camera `cam(90, float(nx)/float(ny))` and these spheres:
+When calling it with camera `cam(90, double(nx)/ny)` and these spheres:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    float R = cos(M_PI/4);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    auto R = cos(pi/4);
     list[0] = new sphere(vec3(-R,0,-1), R, new lambertian(vec3(0, 0, 1)));
     list[1] = new sphere(vec3( R,0,-1), R, new lambertian(vec3(1, 0, 0)));
     hittable *world = new hittable_list(list,2);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-wide-angle]: <kbd>[main.cc]</kbd> Scene with wide-angle camera]
 
 gives:
 
-  ![Image 11-1](../images/img-1-11-1.jpg)
+  ![A wide-angle view](../images/img.wide-view.png)
 
 </div>
 
@@ -1684,36 +2069,34 @@ constant, you can still rotate your head around your nose. What we need is a way
 vector for the camera. Notice we already we already have a plane that the up vector should be in,
 the plane orthogonal to the view direction.
 
-  ![Figure 11-2](../images/fig-1-11-2.jpg)
+  ![Figure [cam-look]: Camera view direction](../images/fig.cam-look.jpg)
 
 We can actually use any up vector we want, and simply project it onto this plane to get an up vector
 for the camera. I use the common convention of naming a “view up” (_vup_) vector. A couple of cross
 products, and we now have a complete orthonormal basis (u,v,w) to describe our camera’s orientation.
 
-  ![Figure 11-3](../images/fig-1-11-3.jpg)
+  ![Figure [cam-up]: Camera view up direction](../images/fig.cam-up.jpg)
 
 Remember that `vup`, `v`, and `w` are all in the same plane. Note that, like before when our fixed
 camera faced -Z, our arbitrary view camera faces -w. And keep in mind that we can -- but we don’t
 have to -- use world up (0,1,0) to specify vup. This is convenient and will naturally keep your
 camera horizontally level until you decide to experiment with crazy camera angles.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef CAMERAH
-    #define CAMERAH
-
-    #include "ray.h"
-
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
         public:
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            camera(vec3 lookfrom, vec3 lookat, vec3 vup, float vfov, float aspect) {
-                // vfov is top to bottom in degrees
+            camera(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                vec3 lookfrom, vec3 lookat, vec3 vup,
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                double vfov, // vfov is top to bottom in degrees
+                double aspect
+            ) {
                 vec3 u, v, w;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                float theta = vfov*M_PI/180;
-                float half_height = tan(theta/2);
-                float half_width = aspect * half_height;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                auto theta = degrees_to_radians(vfov);
+                auto half_height = tan(theta/2);
+                auto half_width = aspect * half_height;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 origin = lookfrom;
                 w = unit_vector(lookfrom - lookat);
                 u = unit_vector(cross(vup, w));
@@ -1721,12 +2104,11 @@ camera horizontally level until you decide to experiment with crazy camera angle
                 lower_left_corner = origin - half_width*u - half_height*v - w;
                 horizontal = 2*half_width*u;
                 vertical = 2*half_height*v;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
-            ray get_ray(float s, float t) {
-                return ray(origin,
-                           lower_left_corner + s*horizontal + t*vertical - origin);
+            ray get_ray(double s, double t) {
+                return ray(origin, lower_left_corner + s*horizontal + t*vertical - origin);
             }
 
             vec3 origin;
@@ -1734,23 +2116,24 @@ camera horizontally level until you decide to experiment with crazy camera angle
             vec3 horizontal;
             vec3 vertical;
     };
-    #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [camera-orient]: <kbd>[camera.h]</kbd> Positionable and orientable camera]
 
 <div class='together'>
 This allows us to change the viewpoint:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    camera cam(vec3(-2,2,1), vec3(0,0,-1), vec3(0,1,0), 90, float(nx)/float(ny));
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    camera cam(vec3(-2,2,1), vec3(0,0,-1), vec3(0,1,0), 90, double(nx)/ny);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-free-view]: <kbd>[main.cc]</kbd> Scene with alternate viewpoint]
 
 to get:
 
-  ![Image 11-2](../images/img-1-11-2.jpg)
+  ![A distant view](../images/img.view-distant.png)
 
 And we can change field of view to get:
 
-  ![Image 11-3](../images/img-1-11-3.jpg)
+  ![Zooming in](../images/img.view-zoom.png)
 
 </div>
 
@@ -1777,26 +2160,20 @@ sensor, then lens, then aperture, and figure out where to send the rays and flip
 computed (the image is projected upside down on the film). Graphics people usually use a thin lens
 approximation.
 
-  ![Figure 12-1](../images/fig-1-12-1.jpg)
+  ![Figure [cam-lens]: Camera lens model](../images/fig.cam-lens.jpg)
 
 We also don’t need to simulate any of the inside of the camera. For the purposes of rendering an
 image outside the camera, that would be unnecessary complexity. Instead I usually start rays from
 the surface of the lens, and send them toward a virtual film plane, by finding the projection of the
 film on the plane that is in focus (at the distance `focus_dist`).
 
-  ![Figure 12-2](../images/fig-1-12-2.jpg)
+  ![Figure [cam-film-plane]: Camera focus plane](../images/fig.cam-film-plane.jpg)
 
 <div class='together'>
 For that we just need to have the ray origins be on a disk around `lookfrom` rather than from a
 point:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef CAMERAH
-    #define CAMERAH
-
-    #include "random.h"
-    #include "ray.h"
-
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_in_unit_disk() {
         vec3 p;
         do {
@@ -1807,67 +2184,72 @@ point:
 
     class camera {
         public:
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            camera(vec3 lookfrom, vec3 lookat, vec3 vup, float vfov, float aspect,
-                   float aperture, float focus_dist) {
+            camera(
+                vec3 lookfrom, vec3 lookat, vec3 vup,
+                double vfov, // vfov is top to bottom in degrees
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                double aspect, double aperture, double focus_dist
+            ) {
                 lens_radius = aperture / 2;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                float theta = vfov*M_PI/180;
-                float half_height = tan(theta/2);
-                float half_width = aspect * half_height;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                auto theta = degrees_to_radians(vfov);
+                auto half_height = tan(theta/2);
+                auto half_width = aspect * half_height;
                 origin = lookfrom;
                 w = unit_vector(lookfrom - lookat);
                 u = unit_vector(cross(vup, w));
                 v = cross(w, u);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 lower_left_corner = origin
                                   - half_width * focus_dist * u
                                   - half_height * focus_dist * v
                                   - focus_dist * w;
                 horizontal = 2*half_width*focus_dist*u;
                 vertical = 2*half_height*focus_dist*v;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
-            ray get_ray(float s, float t) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            ray get_ray(double s, double t) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 rd = lens_radius*random_in_unit_disk();
                 vec3 offset = u * rd.x() + v * rd.y();
-                return ray(origin + offset,
-                           lower_left_corner + s*horizontal + t*vertical
-                               - origin - offset);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+                return ray(
+                    origin + offset,
+                    lower_left_corner + s*horizontal + t*vertical - origin - offset
+                );
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
             vec3 origin;
             vec3 lower_left_corner;
             vec3 horizontal;
             vec3 vertical;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 u, v, w;
-            float lens_radius;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            double lens_radius;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
-    #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [camera-dof]: <kbd>[camera.h]</kbd> Camera with adjustable depth-of-field (dof)]
 </div>
 
 <div class='together'>
 Using a big aperture:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 lookfrom(3,3,2);
     vec3 lookat(0,0,-1);
-    float dist_to_focus = (lookfrom-lookat).length();
-    float aperture = 2.0;
+    auto dist_to_focus = (lookfrom-lookat).length();
+    auto aperture = 2.0;
 
-    camera cam(lookfrom, lookat, vec3(0,1,0), 20,
-               float(nx)/float(ny), aperture, dist_to_focus);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    camera cam(lookfrom, lookat, vec3(0,1,0), 20, double(nx)/ny, aperture, dist_to_focus);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-camera-dof]: <kbd>[main.cc]</kbd> Scene camera with depth-of-field]
 
 We get:
 
-  ![Image 12-1](../images/img-1-12-1.jpg)
+  ![Spheres with depth-of-field](../images/img.depth-of-field.png)
 
 </div>
 
@@ -1879,7 +2261,7 @@ Where Next?
 <div class='together'>
 First let’s make the image on the cover of this book -- lots of random spheres:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable *random_scene() {
         int n = 500;
         hittable **list = new hittable*[n+1];
@@ -1887,7 +2269,7 @@ First let’s make the image on the cover of this book -- lots of random spheres
         int i = 1;
         for (int a = -11; a < 11; a++) {
             for (int b = -11; b < 11; b++) {
-                float choose_mat = random_double();
+                auto choose_mat = random_double();
                 vec3 center(a+0.9*random_double(),0.2,b+0.9*random_double());
                 if ((center-vec3(4,0.2,0)).length() > 0.9) {
                     if (choose_mat < 0.8) {  // diffuse
@@ -1918,13 +2300,14 @@ First let’s make the image on the cover of this book -- lots of random spheres
 
         return new hittable_list(list,i);
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-final]: <kbd>[main.cc]</kbd> Final scene]
 </div>
 
 <div class='together'>
 This gives:
 
-  ![Image 13-1](../images/img-1-13-1.jpg)
+  ![Final scene](../images/img.book1-final.jpg)
 
 </div>
 
@@ -1964,7 +2347,7 @@ Have fun, and please send me your cool images!
 
 
 
-Acknowledgements
+Acknowledgments
 ====================================================================================================
 
 Thanks to readers Apoorva Joshi, Jason Stone, Becker, Matthew Heimlich, Frank He, Benjamin

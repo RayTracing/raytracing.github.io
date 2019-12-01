@@ -1,24 +1,24 @@
-#ifndef PERLINH
-#define PERLINH
-//==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+#ifndef PERLIN_H
+#define PERLIN_H
+//==============================================================================================
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
-// neighboring rights to this software to the public domain worldwide. This software is distributed
-// without any warranty.
+// neighboring rights to this software to the public domain worldwide. This software is
+// distributed without any warranty.
 //
-// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication along
-// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-//==================================================================================================
+// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication
+// along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==============================================================================================
 
-#include "vec3.h"
-#include "random.h"
+#include "common/rtweekend.h"
 
-inline float perlin_interp(vec3 c[2][2][2], float u, float v, float w) {
-    float uu = u*u*(3-2*u);
-    float vv = v*v*(3-2*v);
-    float ww = w*w*(3-2*w);
-    float accum = 0;
+
+inline double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
+    auto uu = u*u*(3-2*u);
+    auto vv = v*v*(3-2*v);
+    auto ww = w*w*(3-2*w);
+    auto accum = 0.0;
     for (int i=0; i < 2; i++)
         for (int j=0; j < 2; j++)
             for (int k=0; k < 2; k++) {
@@ -32,24 +32,26 @@ inline float perlin_interp(vec3 c[2][2][2], float u, float v, float w) {
 
 class perlin {
     public:
-        float noise(const vec3& p) const {
-            float u = p.x() - floor(p.x());
-            float v = p.y() - floor(p.y());
-            float w = p.z() - floor(p.z());
-            int i = floor(p.x());
-            int j = floor(p.y());
-            int k = floor(p.z());
+        double noise(const vec3& p) const {
+            auto u = p.x() - floor(p.x());
+            auto v = p.y() - floor(p.y());
+            auto w = p.z() - floor(p.z());
+            auto i = static_cast<int>(floor(p.x()));
+            auto j = static_cast<int>(floor(p.y()));
+            auto k = static_cast<int>(floor(p.z()));
             vec3 c[2][2][2];
             for (int di=0; di < 2; di++)
                 for (int dj=0; dj < 2; dj++)
                     for (int dk=0; dk < 2; dk++)
-                        c[di][dj][dk] = ranvec[perm_x[(i+di) & 255] ^ perm_y[(j+dj) & 255] ^ perm_z[(k+dk) & 255]];
+                        c[di][dj][dk] = ranvec[
+                            perm_x[(i+di) & 255] ^ perm_y[(j+dj) & 255] ^ perm_z[(k+dk) & 255]
+                        ];
             return perlin_interp(c, u, v, w);
         }
-        float turb(const vec3& p, int depth=7) const {
-            float accum = 0;
+        double turb(const vec3& p, int depth=7) const {
+            auto accum = 0.0;
             vec3 temp_p = p;
-            float weight = 1.0;
+            auto weight = 1.0;
             for (int i = 0; i < depth; i++) {
                 accum += weight*noise(temp_p);
                 weight *= 0.5;
@@ -97,6 +99,4 @@ int *perlin::perm_x = perlin_generate_perm();
 int *perlin::perm_y = perlin_generate_perm();
 int *perlin::perm_z = perlin_generate_perm();
 
-
 #endif
-

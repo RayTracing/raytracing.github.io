@@ -28,8 +28,8 @@ terms you will need to study the others.
 As before, https://in1weekend.blogspot.com/ will have further readings and references.
 
 
-Acknowledgements
------------------
+Acknowledgments
+----------------
 Thanks to Dave Hart and Jean Buckley for help on the original manuscript.
 
 Thanks to Paul Melis, Nakata Daisuke, Filipe Scur, Vahan Sosoyan, and Matthew Heimlich for finding
@@ -55,7 +55,7 @@ As an example, let’s estimate $\pi$. There are many ways to do this, with the 
 problem being a classic case study. We’ll do a variation inspired by that. Suppose you have a circle
 inscribed inside a square:
 
-  ![Figure 2-1](../images/fig-3-02-1.jpg)
+  ![Figure [circ-sq]: Estimating π with a circle inside a square](../images/fig.circ-sq.jpg)
 
 </div>
 
@@ -64,15 +64,15 @@ Now, suppose you pick random points inside the square. The fraction of those ran
 up inside the circle should be proportional to the area of the circle. The exact fraction should in
 fact be the ratio of the circle area to the square area. Fraction:
 
-  $$ \frac{Pi \cdot R^2}{(2R)^2} = \frac{Pi}{4} $$
+  $$ \frac{\pi r^2}{(2r)^2} = \frac{\pi}{4} $$
 </div>
 
 <div class='together'>
-Since the *R* cancels out, we can pick whatever is computationally convenient. Let’s go with R=1
+Since the $r$ cancels out, we can pick whatever is computationally convenient. Let’s go with $r=1$,
 centered at the origin:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "random.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "common/rtweekend.h"
 
     #include <iostream>
     #include <math.h>
@@ -82,14 +82,15 @@ centered at the origin:
         int N = 1000;
         int inside_circle = 0;
         for (int i = 0; i < N; i++) {
-            float x = 2*random_double() - 1;
-            float y = 2*random_double() - 1;
+            auto x = 2*random_double() - 1;
+            auto y = 2*random_double() - 1;
             if(x*x + y*y < 1)
                 inside_circle++;
         }
-        std::cout << "Estimate of Pi = " << 4*float(inside_circle) / N << "\n";
+        std::cout << "Estimate of Pi = " << 4*double(inside_circle) / N << '\n';
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [estpi-1]: <kbd>[pi.cc]</kbd> Estimating π]
 </div>
 
 This gives me the answer `Estimate of Pi = 3.196`
@@ -97,8 +98,8 @@ This gives me the answer `Estimate of Pi = 3.196`
 <div class='together'>
 If we change the program to run forever and just print out a running estimate:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "random.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "common/rtweekend.h"
 
     #include <iostream>
     #include <math.h>
@@ -109,17 +110,20 @@ If we change the program to run forever and just print out a running estimate:
         int runs = 0;
         while (true) {
             runs++;
-            float x = 2*random_double() - 1;
-            float y = 2*random_double() - 1;
-            if(x*x + y*y < 1)
+            auto x = 2*random_double() - 1;
+            auto y = 2*random_double() - 1;
+            if (x*x + y*y < 1)
                 inside_circle++;
 
-            if(runs% 100000 == 0)
-                std::cout << "Estimate of Pi = " << 4*float(inside_circle) / runs << "\n";
+            if (runs % 100000 == 0)
+                std::cout << "Estimate of Pi = "
+                          << 4*double(inside_circle) / runs
+                          << '\n';
 
         }
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [estpi-2]: <kbd>[pi.cc]</kbd> Estimating π, v2]
 </div>
 
 <div class='together'>
@@ -128,7 +132,7 @@ of Diminishing Returns*, where each sample helps less than the last. This is the
 We can mitigate this diminishing return by *stratifying* the samples (often called *jittering*),
 where instead of taking random samples, we take a grid and take one sample within each:
 
-  ![Figure 2-2](../images/fig-3-02-2.jpg)
+  ![Figure [jitter]: Sampling areas with jittered points](../images/fig.jitter.jpg)
 
 </div>
 
@@ -136,8 +140,8 @@ where instead of taking random samples, we take a grid and take one sample withi
 This changes the sample generation, but we need to know how many samples we are taking in advance
 because we need to know the grid. Let’s take a hundred million and try it both ways:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "random.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "common/rtweekend.h"
 
     #include <iostream>
 
@@ -147,8 +151,8 @@ because we need to know the grid. Let’s take a hundred million and try it both
         int sqrt_N = 10000;
         for (int i = 0; i < sqrt_N; i++) {
             for (int j = 0; j < sqrt_N; j++) {
-                float x = 2*random_double() - 1;
-                float y = 2*random_double() - 1;
+                auto x = 2*random_double() - 1;
+                auto y = 2*random_double() - 1;
                 if (x*x + y*y < 1)
                     inside_circle++;
                 x = 2*((i + random_double()) / sqrt_N) - 1;
@@ -157,19 +161,23 @@ because we need to know the grid. Let’s take a hundred million and try it both
                     inside_circle_stratified++;
             }
         }
-        std::cout << "Regular    Estimate of Pi = " <<
-              4*float(inside_circle) / (sqrt_N*sqrt_N) << "\n";
-        std::cout << "Stratified Estimate of Pi = " <<
-              4*float(inside_circle_stratified) / (sqrt_N*sqrt_N) << "\n";
+
+        auto N = static_cast<double>(sqrt_N) * sqrt_N;
+        std::cout
+            << "Regular    Estimate of Pi = "
+            << 4*double(inside_circle) / (sqrt_N*sqrt_N) << '\n'
+            << "Stratified Estimate of Pi = "
+            << 4*double(inside_circle_stratified) / (sqrt_N*sqrt_N) << '\n';
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [estpi-3]: <kbd>[pi.cc]</kbd> Estimating π, v3]
 
 I get:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Regular Estimate of Pi = 3.1415
     Stratified Estimate of Pi = 3.14159
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
 Interestingly, the stratified method is not only better, it converges with a better asymptotic rate!
@@ -184,47 +192,54 @@ definitely want to stratify.
 One Dimensional MC Integration
 ====================================================================================================
 
-Integration is all about computing areas and volumes, so we could have framed Chapter 2 in an
-integral form if we wanted to make it maximally confusing. But sometimes integration is the most
-natural and clean way to formulate things. Rendering is often such a problem. Let’s look at a
-classic integral:
+Integration is all about computing areas and volumes, so we could have framed
+chapter [A Simple Monte Carlo Program] in an integral form if we wanted to make it maximally
+confusing. But sometimes integration is the most natural and clean way to formulate things.
+Rendering is often such a problem. Let’s look at a classic integral:
 
 $$ I = \int_{0}^{2} x^2 dx $$
 
 <div class='together'>
 In computer sciency notation, we might write this as:
 
-$$ I = area( x^2, 0, 2 ) $$
+$$ I = \text{area}( x^2, 0, 2 ) $$
 
 We could also write it as:
 
-$$ I = 2 \cdot average(x^2, 0, 2) $$
+$$ I = 2 \cdot \text{average}(x^2, 0, 2) $$
 </div>
 
 <div class='together'>
 This suggests a MC approach:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "common/rtweekend.h"
+
+    #include <iostream>
+    #include <math.h>
+    #include <stdlib.h>
+
     int main() {
         int inside_circle = 0;
         int inside_circle_stratified = 0;
         int N = 1000000;
-        float sum;
+        double sum;
         for (int i = 0; i < N; i++) {
-            float x = 2*random_double();
+            auto x = 2*random_double();
             sum += x*x;
         }
         std::cout << "I =" << 2*sum/N << "\n";
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [integ-xsq-1]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$]
 </div>
 
 This, as expected, produces approximately the exact answer we get with algebra, $I = 8/3$. But we
-could also do it for functions that we can’t analytically integrate like $log(sin(x))$. In graphics,
-we often have functions we can evaluate but can’t write down explicitly, or functions we can only
-probabilistically evaluate. That is in fact what the ray tracing `color()` function of the last two
-books is -- we don’t know what color is seen in every direction, but we can statistically estimate
-it in any given dimension.
+could also do it for functions that we can’t analytically integrate like $\log(\sin(x))$. In
+graphics, we often have functions we can evaluate but can’t write down explicitly, or functions we
+can only probabilistically evaluate. That is in fact what the ray tracing `ray_color()` function of
+the last two books is -- we don’t know what color is seen in every direction, but we can
+statistically estimate it in any given dimension.
 
 One problem with the random program we wrote in the first two books is small light sources create
 too much noise because our uniform sampling doesn’t sample the light often enough. We could lessen
@@ -236,7 +251,7 @@ the concept of a _probability density function_.
 First, what is a _density function_? It’s just a continuous form of a histogram. Here’s an example
 from the histogram Wikipedia page:
 
-  ![Figure 3-1](../images/fig-3-03-1.jpg)
+  ![Figure [histogram]: Histogram example](../images/fig.histogram.jpg)
 
 </div>
 
@@ -249,31 +264,31 @@ height of all the bins would drop to zero. A density function is one where we ta
 adjust them so they don’t get shorter as we add more bins. For the case of the tree histogram above
 we might try:
 
-  $$ \text{Bin-height} = \frac{(\text{Fraction of trees between height }H\text{ and }H’)}{(H-H’)} $$
+  $$ \text{bin-height} = \frac{(\text{Fraction of trees between height }H\text{ and }H’)}{(H-H’)} $$
 </div>
 
 <div class='together'>
 That would work! We could interpret that as a statistical predictor of a tree’s height:
 
-  $$ \text{Probability a random tree is between } H \text{ and } H’ = \text{Bin-height}\cdot(H-H’)$$
+  $$ \text{Probability a random tree is between } H \text{ and } H’ = \text{bin-height}\cdot(H-H’)$$
 </div>
 
 If we wanted to know about the chances of being in a span of multiple bins, we would sum.
 
-A _probability density function_, henceforth pdf, is that fractional histogram made continuous.
+A _probability density function_, henceforth _PDF_, is that fractional histogram made continuous.
 
-Let’s make a _pdf_ and use it a bit to understand it more. Suppose I want a random number $r$
-between 0 and 2 whose probability is proportional to itself: $r$. We would expect the pdf $p(r)$
-to look something like the figure below. But how high should it be?
+Let’s make a _PDF_ and use it a bit to understand it more. Suppose I want a random number $r$
+between 0 and 2 whose probability is proportional to itself: $r$. We would expect the PDF $p(r)$ to
+look something like the figure below. But how high should it be?
 
-  ![Figure 3-2](../images/fig-3-03-2.jpg)
+  ![Figure [linear-pdf]: A linear PDF](../images/fig.linear-pdf.jpg)
 
 <div class='together'>
 The height is just $p(2)$. What should that be? We could reasonably make it anything by
 convention, and we should pick something that is convenient. Just as with histograms we can sum up
-(integrate) the region to figure out the probability that $r$ is in some interval $(x0,x1)$:
+(integrate) the region to figure out the probability that $r$ is in some interval $(x_0,x_1)$:
 
-  $$ \text{Probability } x0 < r < x1 = C \cdot area(p(r), x0, x1) $$
+  $$ \text{Probability } x_0 < r < x_1 = C \cdot \text{area}(p(r), x_0, x_1) $$
 </div>
 
 <div class='together'>
@@ -281,37 +296,37 @@ where $C$ is a scaling constant. We may as well make $C = 1$ for cleanliness, an
 what is done in probability. And we know the probability $r$ has the value 1 somewhere, so for
 this case
 
-  $$ area(p(r), 0, 2) = 1 $$
+  $$ \text{area}(p(r), 0, 2) = 1 $$
 </div>
 
 <div class='together'>
-Since $p(r)$ is proportional to $r$ , _i.e._, $p = C’ \cdot r$ for some other constant $C’$
+Since $p(r)$ is proportional to $r$, _i.e._, $p = C' \cdot r$ for some other constant $C'$
 
   $$
-  area(C’r, 0, 2) = \int_{0}^{2} C’ r dr
-                  = \frac{C’r^2}{2}(2) - \frac{C’r^2}{2}(0)
-                  = 2C’
+  area(C'r, 0, 2) = \int_{0}^{2} C' r dr
+                  = \frac{C'r^2}{2}(2) - \frac{C'r^2}{2}(0)
+                  = 2C'
   $$
 
 So $p(r) = r/2$.
 </div>
 
-How do we generate a random number with that pdf $p(r)$? For that we will need some more machinery.
+How do we generate a random number with that PDF $p(r)$? For that we will need some more machinery.
 Don’t worry this doesn’t go on forever!
 
 <div class='together'>
 Given a random number from `d = random_double()` that is uniform and between 0 and 1, we should be
-able to find some function $f(d)$ that gives us what we want. Suppose $e = f(d) = d^2$. That is no
-longer a uniform _pdf_ . The _pdf_ of $e$ will be bigger near 0 than it is near 1 (squaring a
-number between 0 and 1 makes it smaller). To take this general observation to a function, we need
-the cumulative probability distribution function $P(x)$:
+able to find some function $f(d)$ that gives us what we want. Suppose $e = f(d) = d^2$. This is no
+longer a uniform PDF. The PDF of $e$ will be bigger near 0 than it is near 1 (squaring a number
+between 0 and 1 makes it smaller). To convert this general observation to a function, we need the
+cumulative probability distribution function $P(x)$:
 
-  $$ P(x) = area(p, -\infty, x) $$
+  $$ P(x) = \text{area}(p, -\infty, x) $$
 </div>
 
 <div class='together'>
-Note that for x where we didn’t define $p(x)$, $p(x) = 0$, _i.e._, the probability of an $x$ there
-is zero. For our example _pdf_ $p(r) = r/2$ , the $P(x)$ is:
+Note that for $x$ where we didn’t define $p(x)$, $p(x) = 0$, _i.e._, the probability of an $x$ there
+is zero. For our example PDF $p(r) = r/2$, the $P(x)$ is:
 
   $$ P(x) = 0 : x < 0                 $$
   $$ P(x) = \frac{x^2}{4} : 0 < x < 2 $$
@@ -320,18 +335,18 @@ is zero. For our example _pdf_ $p(r) = r/2$ , the $P(x)$ is:
 
 <div class='together'>
 One question is, what’s up with $x$ versus $r$? They are dummy variables -- analogous to the
-function arguments in a program. If we evaluate $P$ at $x = 0.5$ , we get:
+function arguments in a program. If we evaluate $P$ at $x = 0.5$, we get:
 
   $$ P(1.0) = \frac{1}{4} $$
 </div>
 
 <div class='together'>
-This says _the probability that a random variable with our pdf is less than one is 25%_ . This
-gives rise to a clever observation that underlies many methods to generate non-uniform random
-numbers. We want a function `f()` that when we call it as `f(random_double())` we get a return value
-with a pdf $\frac{x^2}{4}$ . We don’t know what that is, but we do know that 25% of what it returns
-should be less than 1, and 75% should be above one. If $f()$ is increasing, then we would expect
-$f(0.25) = 1.0$. This can be generalized to figure out $f()$ for every possible input:
+This says _the probability that a random variable with our PDF is less than one is 25%_. This gives
+rise to a clever observation that underlies many methods to generate non-uniform random numbers. We
+want a function `f()` that when we call it as `f(random_double())` we get a return value with a pdf
+$\frac{x^2}{4}$. We don’t know what that is, but we do know that 25% of what it returns should be
+less than 1, and 75% should be above one. If $f()$ is increasing, then we would expect $f(0.25) =
+1.0$. This can be generalized to figure out $f()$ for every possible input:
 
   $$ f(P(x)) = x $$
 </div>
@@ -339,20 +354,20 @@ $f(0.25) = 1.0$. This can be generalized to figure out $f()$ for every possible 
 <div class='together'>
 That means $f$ just undoes whatever $P$ does. So,
 
-  $$ f(x) = P^-1 (x) $$
+  $$ f(x) = P^{-1}(x) $$
 </div>
 
 <div class='together'>
 The -1 means “inverse function”. Ugly notation, but standard. For our purposes what this means is,
-if we have pdf $p()$ and its cumulative distribution function $P()$ , then if we do this to a random
+if we have PDF $p()$ and its cumulative distribution function $P()$, then if we do this to a random
 number we’ll get what we want:
 
-  $$ e = P^-1 (\text{random_double}()) $$
+  $$ e = P^{-1} (\text{random_double}()) $$
 </div>
 
 <div class='together'>
-For our _pdf_ $p(x) = x/2$ , and corresponding $P(x)$ , we need to compute the inverse of $P$. If
-we have
+For our PDF $p(x) = x/2$, and corresponding $P(x)$, we need to compute the inverse of $P$. If we
+have
 
   $$ y = \frac{x^2}{4} $$
 
@@ -362,7 +377,7 @@ we get the inverse by solving for $x$ in terms of $y$:
 
 Thus our random number with density $p$ we get by:
 
-  $$ e = \sqrt{4*\text{random_double}()} $$
+  $$ e = \sqrt{4\cdot\text{random_double}()} $$
 </div>
 
 Note that does range 0 to 2 as hoped, and if we send in $1/4$ for `random_double()` we get 1 as
@@ -375,72 +390,68 @@ We can now sample our old integral
 </div>
 
 <div class='together'>
-We need to account for the non-uniformity of the _pdf_ of $x$. Where we sample too much we should
-down-weight. The _pdf_ is a perfect measure of how much or little sampling is being done. So the
-weighting function should be proportional to $1/pdf$ . In fact it is exactly $1/pdf$ :
+We need to account for the non-uniformity of the PDF of $x$. Where we sample too much we should
+down-weight. The PDF is a perfect measure of how much or little sampling is being done. So the
+weighting function should be proportional to $1/pdf$. In fact it is exactly $1/pdf$:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "random.h"
-
-    #include <iostream>
-    #include <math.h>
-    #include <stdlib.h>
-
-    inline float pdf(float x) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    inline double pdf(double x) {
         return 0.5*x;
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
         int inside_circle = 0;
         int inside_circle_stratified = 0;
         int N = 1000000;
-        float sum;
+        auto sum = 0.0;
         for (int i = 0; i < N; i++) {
-            float x = sqrt(4*random_double());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            auto x = sqrt(4*random_double());
             sum += x*x / pdf(x);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-        std::cout << "I =" << sum/N << "\n";
+        std::cout << "I = " << sum/N << '\n';
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [integ-xsq-2]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$ with PDF]
 </div>
 
 Since we are sampling more where the integrand is big, we might expect less noise and thus faster
-convergence. This is why using a carefully chosen non-uniform pdf is usually called _importance
+convergence. This is why using a carefully chosen non-uniform PDF is usually called _importance
 sampling_.
 
 <div class='together'>
-If we take that same code with uniform samples so the pdf = $1/2$ over the range [0,2] we can use
+If we take that same code with uniform samples so the PDF = $1/2$ over the range [0,2] we can use
 the machinery to get `x = 2*random_double()` and the code is:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "random.h"
-
-    #include <iostream>
-    #include <math.h>
-    #include <stdlib.h>
-
-    inline float pdf(float x) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    inline double pdf(double x) {
         return 0.5;
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
         int inside_circle = 0;
         int inside_circle_stratified = 0;
         int N = 1000000;
-        float sum;
+        auto sum = 0.0;
         for (int i = 0; i < N; i++) {
-            float x = 2*random_double();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            auto x = 2*random_double();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             sum += x*x / pdf(x);
         }
-        std::cout << "I =" << sum/N << "\n";
+        std::cout << "I = " << sum/N << '\n';
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [integ-xsq-3]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$, v3]
 </div>
 
 <div class='together'>
-Note that we don’t need that 2 in the `2*sum/N` anymore -- that is handled by the _pdf_ , which is
-2 when you divide by it. You’ll note that importance sampling helps a little, but not a ton. We
-could make the pdf follow the integrand exactly:
+Note that we don’t need that 2 in the `2*sum/N` anymore -- that is handled by the PDF, which is 2
+when you divide by it. You’ll note that importance sampling helps a little, but not a ton. We could
+make the PDF follow the integrand exactly:
 
   $$ p(x) = \frac{3}{8}x^2 $$
 
@@ -458,29 +469,29 @@ This perfect importance sampling is only possible when we already know the answe
 integrating $p$ analytically), but it’s a good exercise to make sure our code works. For just 1
 sample we get:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "random.h"
-
-    #include <iostream>
-    #include <math.h>
-    #include <stdlib.h>
-
-    inline float pdf(float x) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    inline double pdf(double x) {
         return 3*x*x/8;
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
         int inside_circle = 0;
         int inside_circle_stratified = 0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         int N = 1;
-        float sum;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        auto sum = 0.0;
         for (int i = 0; i < N; i++) {
-            float x = pow(8*random_double(), 1./3.);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            auto x = pow(8*random_double(), 1./3.);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             sum += x*x / pdf(x);
         }
-        std::cout << "I =" << sum/N << "\n";
+        std::cout << "I = " << sum/N << '\n';
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [integ-xsq-4]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$, final version]
 </div>
 
 Which always returns the exact answer.
@@ -489,8 +500,8 @@ Which always returns the exact answer.
 Let’s review now because that was most of the concepts that underlie MC ray tracers.
 
   1. You have an integral of $f(x)$ over some domain $[a,b]$
-  2. You pick a pdf $p$ that is non-zero over $[a,b]$
-  3. You average a whole ton of $f(r)/p(r)$ where $r$ is a random number $r$ with pdf $p$ .
+  2. You pick a PDF $p$ that is non-zero over $[a,b]$
+  3. You average a whole ton of $f(r)/p(r)$ where $r$ is a random number $r$ with PDF $p$.
 
 This will always converge to the right answer. The more $p$ follows $f$, the faster it converges.
 </div>
@@ -501,63 +512,71 @@ MC Integration on the Sphere of Directions
 ====================================================================================================
 
 In our ray tracer we pick random directions, and directions can be represented as points on the
-unit-sphere. The same methodology as before applies. But now we need to have a pdf defined over 2D.
+unit sphere. The same methodology as before applies, but now we need to have a PDF defined over 2D.
 Suppose we have this integral over all directions:
 
   $$ \int cos^2(\theta) $$
 
 <div class='together'>
-By MC integration, we should just be able to sample $cos^2(\theta) / p(direction)$. But what is
-direction in that context? We could make it based on polar coordinates, so $p$ would be in terms of
-$(\theta, \phi)$ . However you do it, remember that a pdf has to integrate to 1 and represent the
+By MC integration, we should just be able to sample $\cos^2(\theta) / p(\text{direction})$. But what
+is direction in that context? We could make it based on polar coordinates, so $p$ would be in terms
+of $(\theta, \phi)$. However you do it, remember that a PDF has to integrate to 1 and represent the
 relative probability of that direction being sampled. We have a method from the last books to take
 uniform random samples in a unit sphere:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_in_unit_sphere() {
         vec3 p;
         do {
-            p = 2.0*vec3(random_double(),random_double(),random_double()) - vec3(1,1,1);
-        } while (dot(p,p) >= 1.0);
+            p = 2*vec3(random_double(),random_double(),random_double()) - vec3(1,1,1);
+        } while (p.squared_length() >= 1);
         return p;
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rand-unit-sphere]: <kbd>[pdf.h]</kbd> Random point in unit sphere]
 </div>
 
 <div class='together'>
 To get points on a unit sphere we can just normalize the vector to those points:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_on_unit_sphere() {
         vec3 p;
+        double len_squared;
         do {
-            p = 2.0*vec3(random_double(),random_double(),random_double()) - vec3(1,1,1);
-        } while (dot(p,p) >= 1.0);
-        return unit_vector(p);
+            p = 2*vec3(random_double(),random_double(),random_double()) - vec3(1,1,1);
+            len_squared = p.squared_length();
+        } while (len_squared >= 1);
+        return p / sqrt(len_squared);
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rand-on-sphere]: <kbd>[sphere_importance.cc]</kbd>
+    Random point on the surface of the unit sphere, importance sampled]
 </div>
 
 <div class='together'>
-Now what is the pdf of these uniform points? As a density on the unit sphere, it is $1/area$ of the
-sphere or $1/(4\pi)$. If the integrand is $cos^2(\theta)$ and $\theta$ is the angle with the z axis:
+Now what is the PDF of these uniform points? As a density on the unit sphere, it is $1/\text{area}$
+of the sphere or $1/(4\pi)$. If the integrand is $\cos^2(\theta)$ and $\theta$ is the angle with the
+z axis:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline float pdf(const vec3& p) {
-        return 1 / (4*M_PI);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline double pdf(const vec3& p) {
+        return 1 / (4*pi);
     }
 
     int main() {
         int N = 1000000;
-        float sum;
+        auto sum = 0.0;
         for (int i = 0; i < N; i++) {
-                vec3 d = random_on_unit_sphere();
-                float cosine_squared = d.z()*d.z();
-                sum += cosine_squared / pdf(d);
+            vec3 d = random_on_unit_sphere();
+            auto cosine_squared = d.z()*d.z();
+            sum += cosine_squared / pdf(d);
         }
-        std::cout << "I =" << sum/N << "\n";
+        std::cout << "I = " << sum/N << '\n';
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-sphereimp]: <kbd>[sphere_importance.cc]</kbd>
+    Generating importance-sampled points on the unit sphere]
 </div>
 
 The analytic answer (if you remember enough advanced calc, check me!) is $\frac{4}{3} \pi$, and the
@@ -570,7 +589,7 @@ that, great! If not, do what I do and imagine the area on the unit sphere that a
 goes through. The solid angle $\omega$ and the projected area $A$ on the unit sphere are the same
 thing.
 
-  ![Figure 4-1](../images/fig-3-04-1.jpg)
+  ![Figure [solid-angle]: Solid angle / projected area of a sphere](../images/fig.solid-angle.jpg)
 
 Now let’s go on to the light transport equation we are solving.
 
@@ -597,15 +616,15 @@ based renderers, we would use a set of wavelengths for the light color rather th
 almost always harness our intuition by thinking of R, G, and B as specific long, medium, and short
 wavelengths.
 
-If the light does scatter, it will have a directional distribution that we can describe as a pdf
-over solid angle. I will refer to this as its _scattering pdf_: $s(direction)$. The scattering pdf
+If the light does scatter, it will have a directional distribution that we can describe as a PDF
+over solid angle. I will refer to this as its _scattering PDF_: $s(direction)$. The scattering PDF
 can also vary with incident direction, as you will notice when you look at reflections off a road --
 they become mirror-like as your viewing angle approaches grazing.
 
 <div class='together'>
 The color of a surface in terms of these quantities is:
 
-  $$ Color = \int A \cdot s(direction) \cdot color(direction) $$
+  $$ Color = \int A \cdot s(direction) \cdot \text{color}(direction) $$
 </div>
 
 Note that $A$ and $s()$ might depend on the view direction, so of course color can vary with view
@@ -614,42 +633,42 @@ direction. Also $A$ and $s()$ may vary with position on the surface or within th
 <div class='together'>
 If we apply the MC basic formula we get the following statistical estimate:
 
-  $$ Color = (A \cdot s(direction) \cdot color(direction)) / p(direction) $$
+  $$ Color = \frac{A \cdot s(direction) \cdot \text{color}(direction)}{p(direction)} $$
 
-where $p(direction)$ is the pdf of whatever direction we randomly generate.
+where $p(direction)$ is the PDF of whatever direction we randomly generate.
 </div>
 
 For a Lambertian surface we already implicitly implemented this formula for the special case where
-$p()$ is a cosine density. The $s()$ of a Lambertian surface is proportional to $cos(\theta)$, where
-$\theta$ is the angle relative to the surface normal. Remember that all pdf need to integrate to
-one. For $cos(\theta) < 0$ we have $s(direction) = 0$, and the integral of cos over the hemisphere
-is $\pi$.
+$p()$ is a cosine density. The $s()$ of a Lambertian surface is proportional to $\cos(\theta)$,
+where $\theta$ is the angle relative to the surface normal. Remember that all PDF need to integrate
+to one. For $\cos(\theta) < 0$ we have $s(direction) = 0$, and the integral of cos over the
+hemisphere is $\pi$.
 
 <div class='together'>
-To see that remember that in spherical coordinates remember that:
+To see that, remember that in spherical coordinates:
 
-  $$ \delta A = sin(\theta) \delta \theta \delta \phi $$
+  $$ dA = \sin(\theta) d\theta d\phi $$
 
 So:
 
-  $$ Area = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} cos(\theta)sin(\theta) \delta \theta \delta \phi =
-    2 \pi \cdot \frac{1}{2} = \pi $$
+  $$ Area = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} cos(\theta) sin(\theta) d\theta d\phi =
+    2 \pi \frac{1}{2} = \pi $$
 </div>
 
 <div class='together'>
-So for a Lambertian surface the scattering pdf is:
+So for a Lambertian surface the scattering PDF is:
 
-  $$ s(direction) = cos(\theta) / \pi $$
+  $$ s(direction) = \frac{\cos(\theta)}{\pi} $$
 </div>
 
 <div class='together'>
-If we sample using the same pdf, so $p(direction) = cos(\theta) / \pi$, the numerator and
+If we sample using the same PDF, so $p(direction) = \cos(\theta) / \pi$, the numerator and
 denominator cancel out and we get:
 
-  $$ Color = A * color(direction) $$
+  $$ Color = A \cdot color(direction) $$
 
-This is exactly what we had in our original color() function! But we need to generalize now so we
-can send extra rays in important directions such as toward the lights.
+This is exactly what we had in our original `ray_color()` function! But we need to generalize now so
+we can send extra rays in important directions such as toward the lights.
 
 The treatment above is slightly non-standard because I want the same math to work for surfaces and
 volumes. To do otherwise will make some ugly code.
@@ -659,13 +678,13 @@ volumes. To do otherwise will make some ugly code.
 If you read the literature, you’ll see reflection described by the bidirectional reflectance
 distribution function (BRDF). It relates pretty simply to our terms:
 
-  $$ BRDF = A * s(direction) / cos(\theta) $$
+  $$ BRDF = \frac{A \cdot s(direction)}{\cos(\theta)} $$
 
 So for a Lambertian surface for example, $BRDF = A / \pi$. Translation between our terms and BRDF is
 easy.
 
 For participation media (volumes), our albedo is usually called _scattering albedo_, and our
-scattering pdf is usually called _phase function_.
+scattering PDF is usually called _phase function_.
 </div>
 
 
@@ -676,18 +695,18 @@ Importance Sampling Materials
 <div class='together'>
 Our goal over the next two chapters is to instrument our program to send a bunch of extra rays
 toward light sources so that our picture is less noisy. Let’s assume we can send a bunch of rays
-toward the light source using a pdf $pLight(direction)$ . Let’s also assume we have a pdf related to
-$s$, and let’s call that $pSurface(direction)$ . A great thing about pdfs is that you can just use
-linear mixtures of them to form mixture densities that are also pdfs. For example, the simplest
+toward the light source using a PDF $pLight(direction)$. Let’s also assume we have a PDF related to
+$s$, and let’s call that $pSurface(direction)$. A great thing about PDFs is that you can just use
+linear mixtures of them to form mixture densities that are also PDFs. For example, the simplest
 would be:
 
-  $$ p(direction) = 0.5 \cdot pLight(direction) + 0.5* \cdot pSurface(direction) $$
+  $$ p(direction) = \frac{1}{2}\cdotp Light(direction) + \frac{1}{2}\cdot pSurface(direction) $$
 </div>
 
-As long as the weights are positive and add up to one, any such mixture of pdfs is a pdf. And
-remember, we can use any pdf -- it doesn’t change the answer we converge to! So, the game is to
-figure out how to make the pdf larger where the product $s(direction)*color(direction)$ is large.
-For diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is high.
+As long as the weights are positive and add up to one, any such mixture of PDFs is a PDF. And
+remember, we can use any PDF -- it doesn’t change the answer we converge to! So, the game is to
+figure out how to make the PDF larger where the product $s(direction) \cdot color(direction)$ is
+large. For diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is high.
 
 For a mirror, $s()$ is huge only near one direction, so it matters a lot more. Most renderers in
 fact make mirrors a special case and just make the $s/p$ implicit -- our code currently does that.
@@ -696,14 +715,15 @@ fact make mirrors a special case and just make the $s/p$ implicit -- our code cu
 Let’s do simple refactoring and temporarily remove all materials that aren’t Lambertian. We can use
 our Cornell Box scene again, and let’s generate the camera in the function that generates the model:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void cornell_box(hittable **scene, camera **cam, float aspect) {
-        int i = 0;
-        hittable **list = new hittable*[8];
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    void cornell_box(hittable **scene, camera **cam, double aspect) {
         material *red = new lambertian( new constant_texture(vec3(0.65, 0.05, 0.05)) );
         material *white = new lambertian( new constant_texture(vec3(0.73, 0.73, 0.73)) );
         material *green = new lambertian( new constant_texture(vec3(0.12, 0.45, 0.15)) );
         material *light = new diffuse_light( new constant_texture(vec3(15, 15, 15)) );
+
+        hittable **list = new hittable*[8];
+        int i = 0;
         list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
         list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
         list[i++] = new xz_rect(213, 343, 227, 332, 554, light);
@@ -715,134 +735,148 @@ our Cornell Box scene again, and let’s generate the camera in the function tha
         list[i++] = new translate(new rotate_y(
             new box(vec3(0, 0, 0), vec3(165, 330, 165), white),  15), vec3(265,0,295));
         *scene = new hittable_list(list,i);
+
         vec3 lookfrom(278, 278, -800);
         vec3 lookat(278, 278, 0);
-        float dist_to_focus = 10.0;
-        float aperture = 0.0;
-        float vfov = 40.0;
-        *cam = new camera(lookfrom, lookat, vec3(0,1,0),
-                          vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
+        auto dist_to_focus = 10.0;
+        auto aperture = 0.0;
+        auto vfov = 40.0;
+        *cam = new camera(
+            lookfrom, lookat, vec3(0,1,0), vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [cornell-box]: <kbd>[main.cc]</kbd> Cornell box, refactored]
 </div>
 
 <div class='together'>
-At 500x500 my code produces this image in 10min on 1 core of my Macbook:
+At 500×500 my code produces this image in 10min on 1 core of my Macbook:
 
-  ![Figure 6-1](../images/img-3-06-1.jpg)
+  ![Cornell box, refactored](../images/img.cornell-refactor1.jpg)
 
-Reducing that noise is our goal. We’ll do that by constructing a pdf that sends more rays to the
+Reducing that noise is our goal. We’ll do that by constructing a PDF that sends more rays to the
 light.
 </div>
 
-First, let’s instrument the code so that it explicitly samples some pdf and then normalizes for
-that. Remember MC basics: $\int f(x) \approx f(r)/p(r)$. For the Lambertian material,
-let’s sample like we do now: $p(direction) = cos(\theta) / \pi$.
+First, let’s instrument the code so that it explicitly samples some PDF and then normalizes for
+that. Remember MC basics: $\int f(x) \approx f(r)/p(r)$. For the Lambertian material, let’s sample
+like we do now: $p(direction) = \cos(\theta) / \pi$.
 
 <div class='together'>
-We modify the base-class _material_ to enable this importance sampling:
+We modify the base-class `material` to enable this importance sampling:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class material  {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class material {
         public:
 
-            virtual bool scatter(const ray& r_in,
-                const hit_record& rec, vec3& albedo, ray& scattered, float& pdf) const {
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& albedo, ray& scattered, double& pdf
+            ) const {
                 return false;
             }
 
-            virtual float scattering_pdf(const ray& r_in, const hit_record& rec,
-                                         const ray& scattered) const {
+            virtual double scattering_pdf(
+                const ray& r_in, const hit_record& rec, const ray& scattered
+            ) const {
                 return 0;
             }
 
-            virtual vec3 emitted(float u, float v, const vec3& p) const {
+            virtual vec3 emitted(double u, double v, const vec3& p) const {
                 return vec3(0,0,0);
             }
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-material]: <kbd>[material.h]</kbd>
+    The material class, adding importance sampling]
 </div>
 
 <div class='together'>
 And _Lambertian_ material becomes:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
         public:
             lambertian(texture *a) : albedo(a) {}
 
-            float scattering_pdf(const ray& r_in,
-                const hit_record& rec, const ray& scattered) const {
-                float cosine = dot(rec.normal, unit_vector(scattered.direction()));
+            double scattering_pdf(
+                const ray& r_in, const hit_record& rec, const ray& scattered
+            ) const {
+                auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
                 if (cosine < 0)
                     return 0;
-                return cosine / M_PI;
+                return cosine / pi;
             }
 
-            bool scatter(const ray& r_in,
-                const hit_record& rec, vec3& alb, ray& scattered, float& pdf) const {
-                vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+            bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& alb, ray& scattered, double& pdf
+            ) const {
+                vec3 target = rec.p + rec.normal + random_unit_vector();
                 scattered = ray(rec.p, unit_vector(target-rec.p), r_in.time());
                 alb = albedo->value(rec.u, rec.v, rec.p);
-                pdf = dot(rec.normal, scattered.direction()) / M_PI;
+                pdf = dot(rec.normal, scattered.direction()) / pi;
                 return true;
             }
 
             texture *albedo;
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-lambertian-impsample]: <kbd>[material.h]</kbd>
+    Lambertian material, modified for importance sampling]
 </div>
 
 <div class='together'>
 And the color function gets a minor modification:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, int depth) {
-        hit_record rec;
-        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
-            ray scattered;
-            vec3 attenuation;
-            vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
-            float pdf;
-            vec3 albedo;
-            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf)) {
-                return emitted + albedo*rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                    *color(scattered, world, depth+1) / pdf;
-            }
-            else
-                return emitted;
-        }
-        else
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
+        hit_record hrec;
+        if (depth <= 0 || !world->hit(r, 0.001, infinity, hrec))
             return vec3(0,0,0);
+
+        ray scattered;
+        vec3 attenuation;
+        vec3 emitted = hrec.mat_ptr->emitted(hrec.u, hrec.v, hrec.p);
+        double pdf;
+        vec3 albedo;
+
+        if (!hrec.mat_ptr->scatter(r, hrec, albedo, scattered, pdf))
+            return emitted;
+
+        return emitted
+             + albedo * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+                      * ray_color(scattered, world, depth-1) / pdf;
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-impsample]: <kbd>[main.cc]</kbd>
+    The ray_color function, modified for importance sampling]
 </div>
 
 You should get exactly the same picture.
 
 <div class='together'>
 Now, just for the experience, try a different sampling strategy. Let’s choose randomly from the
-hemisphere that is above the surface. This would be $p(direction) = 1/(2* \pi)$ .
+hemisphere that is above the surface. This would be $p(direction) = \frac{1}{2\pi}$.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool scatter(const ray& r_in,
-        const hit_record& rec, vec3& alb, ray& scattered, float& pdf) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool scatter(
+        const ray& r_in, const hit_record& rec, vec3& alb, ray& scattered, double& pdf
+    ) const {
         vec3 direction;
         do {
             direction = random_in_unit_sphere();
         } while (dot(direction, rec.normal) < 0);
         scattered = ray(rec.p, unit_vector(direction), r_in.time());
         alb = albedo->value(rec.u, rec.v, rec.p);
-        pdf = 0.5 / M_PI;
+        pdf = 0.5 / pi;
         return true;
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scatter-mod]: <kbd>[material.h]</kbd> Modified scatter function]
 </div>
 
 <div class='together'>
 And again I _should_ get the same picture except with different variance, but I don’t!
 
-  ![Figure 6-2](../images/img-3-06-2.jpg)
+  ![Cornell box, with different sampling strategy](../images/img.cornell-refactor2.jpg)
 
 </div>
 
@@ -868,16 +902,17 @@ $dA = \sin(\theta) \cdot d\theta \cdot d\phi$. If you haven’t, you’ll have t
 next step, but you’ll get it when you take advanced calc.
 
 <div class='together'>
-Given a directional pdf, $p(direction) = f(\theta)$ on the sphere, the 1D pdfs on $\theta$ and
+Given a directional PDF, $p(direction) = f(\theta)$ on the sphere, the 1D PDFs on $\theta$ and
 $\phi$ are:
 
   $$ a(\phi) = \frac{1}{2\pi} $$
 (uniform)
-  $$ b(\theta) = 2*\pi*f(\theta)\sin(\theta) $$
+  $$ b(\theta) = 2\pi f(\theta)\sin(\theta) $$
 </div>
 
 <div class='together'>
-For uniform random numbers $r_1$ and $r_2$, the material presented in Chapter 3 leads to:
+For uniform random numbers $r_1$ and $r_2$, the material presented in the
+One Dimensional MC Integration chapter leads to:
 
   $$ r_1 = \int_{0}^{\phi} \frac{1}{2\pi} = \frac{\phi}{2\pi} $$
 
@@ -892,7 +927,7 @@ For $\theta$ we have:
 
 <div class='together'>
 Here, $t$ is a dummy variable. Let’s try some different functions for $f()$. Let’s first try a
-uniform density on the sphere. The area of the unit sphere is $4\pi$ , so a uniform $p(direction) =
+uniform density on the sphere. The area of the unit sphere is $4\pi$, so a uniform $p(direction) =
 \frac{1}{4\pi}$ on the unit sphere.
 
   $$ r_2 = \frac{-\cos(\theta)}{2} - \frac{-\cos(0)}{2} = \frac{1 - \cos(\theta)}{2} $$
@@ -929,25 +964,25 @@ Simplifying a little, $(1 - 2 r_2)^2 = 1 - 4r_2 + 4r_2^2$, so:
 <div class='together'>
 We can output some of these:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
         for (int i = 0; i < 200; i++) {
-            float r1 = random_double();
-            float r2 = random_double();
-            float x = cos(2*M_PI*r1)*2*sqrt(r2*(1-r2));
-            float y = sin(2*M_PI*r1)*2*sqrt(r2*(1-r2));
-            float z = 1 - 2*r2;
-
-            std::cout << x << " " << y << " " << z << "\n";
+            auto r1 = random_double();
+            auto r2 = random_double();
+            auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
+            auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
+            auto z = 1 - 2*r2;
+            std::cout << x << " " << y << " " << z << '\n';
         }
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rand-unit-sphere-plot]: <kbd>[sphere_plot.cc]</kbd> Random points on the unit sphere]
 </div>
 
 <div class='together'>
 And plot them for free on plot.ly (a great site with 3D scatterplot support):
 
-  ![Image 7-1](../images/fig-3-07-1.jpg)
+  ![Figure [pt-uni-sphere]: Random points on the unit sphere](../images/fig.pt-uni-sphere.jpg)
 
 </div>
 
@@ -955,7 +990,7 @@ On the plot.ly website you can rotate that around and see that it appears unifor
 
 <div class='together'>
 Now let’s derive uniform on the hemisphere. The density being uniform on the hemisphere means
-$p(direction) = 1 / (2 \pi)$ and just changing the constant in the theta equations yields:
+$p(direction) = \frac{1}{2\pi}$ and just changing the constant in the theta equations yields:
 
   $$ \cos(\theta) = 1 - r_2 $$
 </div>
@@ -970,25 +1005,26 @@ it by hand:
 </div>
 
 <div class='together'>
-Now for integration with importance sampling. $p(direction) = 1/(2 \pi)$, so we average $f/p$
+Now for integration with importance sampling. $p(direction) = \frac{1}{2\pi}$, so we average $f/p$
 which is $\cos^3 / (1/(2 \pi))$, and we can test this:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
         int N = 1000000;
-        float sum = 0.0;
+        auto sum = 0.0;
         for (int i = 0; i < N; i++) {
-            float r1 = random_double();
-            float r2 = random_double();
-            float x = cos(2*M_PI*r1)*2*sqrt(r2*(1-r2));
-            float y = sin(2*M_PI*r1)*2*sqrt(r2*(1-r2));
-            float z = 1 - r2;
-            sum += z*z*z / (1.0/(2.0*M_PI));
+            auto r1 = random_double();
+            auto r2 = random_double();
+            auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
+            auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
+            auto z = 1 - r2;
+            sum += z*z*z / (1.0/(2.0*pi));
         }
-        std::cout << "PI/2 = " << M_PI/2 << "\n";
-        std::cout << "Estimate = " << sum/N << "\n";
+        std::cout << "PI/2 = " << pi/2 << '\n';
+        std::cout << "Estimate = " << sum/N << '\n';
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [cos-cubed]: <kbd>[cos_cubed.cc]</kbd> Integration using $cos^3(x)$]
 </div>
 
 <div class='together'>
@@ -1010,28 +1046,34 @@ We can save a little algebra on specific cases by noting
 <div class='together'>
 Let’s also start generating them as random vectors:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "common/rtweekend.h"
+
+    #include <iostream>
+    #include <math.h>
+
     inline vec3 random_cosine_direction() {
-        float r1 = random_double();
-        float r2 = random_double();
-        float z = sqrt(1-r2);
-        float phi = 2*M_PI*r1;
-        float x = cos(phi)*sqrt(r2);
-        float y = sin(phi)*sqrt(r2);
+        auto r1 = random_double();
+        auto r2 = random_double();
+        auto z = sqrt(1-r2);
+        auto phi = 2*pi*r1;
+        auto x = cos(phi)*sqrt(r2);
+        auto y = sin(phi)*sqrt(r2);
         return vec3(x, y, z);
     }
 
     int main() {
         int N = 1000000;
-        float sum = 0.0;
+        auto sum = 0.0;
         for (int i = 0; i < N; i++) {
             vec3 v = random_cosine_direction();
-            sum += v.z()*v.z()*v.z() / (v.z()/(M_PI));
+            sum += v.z()*v.z()*v.z() / (v.z()/(pi));
         }
-        std::cout << "PI/2 = " << M_PI/2 << "\n";
-        std::cout << "Estimate = " << sum/N << "\n";
+        std::cout << "PI/2 = " << pi/2 << '\n';
+        std::cout << "Estimate = " << sum/N << '\n';
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [cos-density]: <kbd>[cos_density.cc]</kbd> Integration with cosine density function]
 </div>
 
 We can generate other densities later as we need them. In the next chapter we’ll get them aligned to
@@ -1051,47 +1093,53 @@ relative positions/orientations of the camera and scene, so as long as the camer
 described in the same coordinate system, all is well.
 
 <div class='together'>
-Suppose we have an origin $\mathbf{O}$ and cartesian unit vectors $\vec{x}$, $\vec{y}$, and
-$\vec{z}$. When we say a location is (3, -2, 7), we really are saying:
+Suppose we have an origin $\mathbf{o}$ and cartesian unit vectors $\vec{\mathbf{x}}$,
+$\vec{\mathbf{y}}$, and $\vec{\mathbf{z}}$. When we say a location is (3, -2, 7), we really are
+saying:
 
-  $$ \text{Location is } \mathbf{O} + 3\vec{x} - 2\vec{y} + 7\vec{z} $$
+  $$ \text{Location is } \mathbf{o} + 3\vec{\mathbf{x}} - 2\vec{\mathbf{y}} + 7\vec{\mathbf{z}} $$
 </div>
 
 <div class='together'>
-If we want to measure coordinates in another coordinate system with origin $\mathbf{O}’$ and basis
-vectors $\vec{U}$, $\vec{V}$, and $\vec{W}$, we can just find the numbers $(u, v, w)$ such that:
+If we want to measure coordinates in another coordinate system with origin $\mathbf{o}'$ and basis
+vectors $\vec{\mathbf{u}}$, $\vec{\mathbf{v}}$, and $\vec{\mathbf{w}}$, we can just find the numbers
+$(u, v, w)$ such that:
 
-  $$ \text{Location is } \mathbf{O}’ + u\vec{U} + v\vec{V} + w\vec{W} $$
+  $$ \text{Location is } \mathbf{o}' + u\vec{\mathbf{u}} + v\vec{\mathbf{v}} + w\vec{\mathbf{w}} $$
 </div>
 
 If you take an intro graphics course, there will be a lot of time spent on coordinate systems and
 4×4 coordinate transformation matrices. Pay attention, it’s important stuff in graphics! But we
 won’t need it. What we need to is generate random directions with a set distribution relative to
-$\vec{n}$. We don’t need an origin because a direction is relative to no specified origin. We do
-need two cotangent vectors that are mutually perpendicular to $\vec{n}$ and each other.
+$\vec{\mathbf{n}}$. We don’t need an origin because a direction is relative to no specified origin.
+We do need two cotangent vectors that are mutually perpendicular to $\vec{\mathbf{n}}$ and each
+other.
 
 <div class='together'>
 Some models will come with at least one cotangent vector. The hard case of making an ONB is when we
-just have one vector. Suppose we have any vector $\vec{a}$ that is not zero length or parallel to
-$\vec{n}$. We can get to vectors $\vec{s}$ and $\vec{t}$ parallel to $\vec{n}$ by using the property
-of the cross product that $\vec{c} \times \vec{d}$ is perpendicular to both $\vec{c}$ and $\vec{d}$:
+just have one vector. Suppose we have any vector $\vec{\mathbf{a}}$ that is not zero length or
+parallel to $\vec{\mathbf{n}}$. We can get to vectors $\vec{\mathbf{s}}$ and $\vec{\mathbf{t}}$
+parallel to $\vec{\mathbf{n}}$ by using the property of the cross product that
+$\vec{\mathbf{c}} \times \vec{\mathbf{d}}$ is perpendicular to both $\vec{\mathbf{c}}$ and
+$\vec{\mathbf{d}}$:
 
-  $$ \vec{t} = \text{unit_vector}(\vec{a} \times \vec{n}) $$
+  $$ \vec{\mathbf{t}} = \text{unit_vector}(\vec{\mathbf{a}} \times \vec{\mathbf{n}}) $$
 
-  $$ \vec{s} = \vec{t} \times \vec{n} $$
+  $$ \vec{\mathbf{s}} = \vec{\mathbf{t}} \times \vec{\mathbf{n}} $$
 </div>
 
 <div class='together'>
-The catch is, we don’t have an $\vec{a}$ and if we pick a particular one at some point we will get
-an $\vec{n}$ parallel to $\vec{a}$. A common method is to use an if-statement to determine whether
-$\vec{n}$ is a particular axis, and if not, use that axis.
+The catch is, we don’t have an $\vec{\mathbf{a}}$ and if we pick a particular one at some point we
+will get an $\vec{\mathbf{n}}$ parallel to $\vec{\mathbf{a}}$. A common method is to use an
+if-statement to determine whether $\vec{\mathbf{n}}$ is a particular axis, and if not, use that
+axis.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if absolute(n.x > 0.9)
         a ← (0, 1, 0)
     else
         a ← (1, 0, 0)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
 <div class='together'>
@@ -1099,7 +1147,9 @@ Once we have an ONB and we have a $random(x,y,z)$ relative the the Z-axis we can
 relative to $\vec{n}$ as:
 
   $$
-  \text{Random vector} = (\vec{x} \cdot \vec{s}) + (\vec{y} \cdot \vec{t}) + (\vec{z} \cdot \vec{n})
+  \text{Random vector} = (\vec{\mathbf{x}} \cdot \vec{\mathbf{s}})
+                       + (\vec{\mathbf{y}} \cdot \vec{\mathbf{t}})
+                       + (\vec{\mathbf{z}} \cdot \vec{\mathbf{n}})
   $$
 </div>
 
@@ -1109,17 +1159,23 @@ the camera’s natural coordinate system. Should we make a class for ONBs or are
 enough? I’m not sure, but let’s make a class because it won't really be more complicated than
 utility functions:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class onb
-    {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class onb {
         public:
             onb() {}
             inline vec3 operator[](int i) const { return axis[i]; }
-            vec3 u() const       { return axis[0]; }
-            vec3 v() const       { return axis[1]; }
-            vec3 w() const       { return axis[2]; }
-            vec3 local(float a, float b, float c) const { return a*u() + b*v() + c*w(); }
-            vec3 local(const vec3& a) const { return a.x()*u() + a.y()*v() + a.z()*w(); }
+            vec3 u() const { return axis[0]; }
+            vec3 v() const { return axis[1]; }
+            vec3 w() const { return axis[2]; }
+
+            vec3 local(double a, double b, double c) const {
+                return a*u() + b*v() + c*w();
+            }
+
+            vec3 local(const vec3& a) const {
+                return a.x()*u() + a.y()*v() + a.z()*w();
+            }
+
             void build_from_w(const vec3&);
             vec3 axis[3];
     };
@@ -1135,35 +1191,33 @@ utility functions:
         axis[1] = unit_vector(cross(w(), a));
         axis[0] = cross(w(), v());
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-onb]: <kbd>[onb.h]</kbd> Ortho-normal basis class]
 </div>
 
 <div class='together'>
 We can rewrite our Lambertian material using this to get:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool scatter(
-        const ray& r_in,
-        const hit_record& rec,
-        vec3& alb,
-        ray& scattered,
-        float& pdf) const
-    {
+        const ray& r_in, const hit_record& rec, vec3& alb, ray& scattered, double& pdf
+    ) const {
         onb uvw;
         uvw.build_from_w(rec.normal);
         vec3 direction = uvw.local(random_cosine_direction());
         scattered = ray(rec.p, unit_vector(direction), r_in.time());
         alb = albedo->value(rec.u, rec.v, rec.p);
-        pdf = dot(uvw.w(), scattered.direction()) / M_PI;
+        pdf = dot(uvw.w(), scattered.direction()) / pi;
         return true;
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scatter-onb]: <kbd>[material.h]</kbd> Scatter function, with ortho-normal basis]
 </div>
 
 <div class='together'>
 Which produces:
 
-  ![Image 8-1](../images/img-3-08-1.jpg)
+  ![Cornell box, with orthonormal basis scatter function](../images/img.cornell-ortho.jpg)
 
 Is that right? We still don’t know for sure. Tracking down bugs is hard in the absence of reliable
 reference solutions. Let’s table that for now and move on to get rid of some of that noise.
@@ -1180,12 +1234,12 @@ direction we want.
 
 <div class='together'>
 It’s really easy to pick a random direction toward the light; just pick a random point on the light
-and send a ray in that direction. But we also need to know the _pdf(direction)_. What is that? For a
-light of area $A$, if we sample uniformly on that light, the _pdf_ on the surface of the light is
+and send a ray in that direction. But we also need to know the PDF(direction). What is that? For a
+light of area $A$, if we sample uniformly on that light, the PDF on the surface of the light is
 $1/A$. But what is it on the area of the unit sphere that defines directions? Fortunately, there is
 a simple correspondence, as outlined in the diagram:
 
-  ![Figure 9-1](../images/fig-3-09-1.jpg)
+  ![Figure [light-pdf]: Projection of light shape onto PDF](../images/fig.light-pdf.jpg)
 
 </div>
 
@@ -1194,68 +1248,70 @@ If we look at a small area $dA$ on the light, the probability of sampling it is 
 On the sphere, the probability of sampling the small area $dw$ on the sphere is $p(direction) \cdot
 dw$. There is a geometric relationship between $dw$ and $dA$:
 
-  $$ dw = \frac{dA \cdot cos(alpha)}{distance(p,q)^2} $$
+  $$ dw = \frac{dA \cdot \cos(alpha)}{distance^2(p,q)} $$
 
 Since the probability of sampling dw and dA must be the same, we have
 
-  $$ \frac{p(direction) \cdot cos(alpha)}{distance(p,q)^2} \cdot dA
+  $$ \frac{p(direction) \cdot \cos(alpha)}{distance^2(p,q)} \cdot dA
      = p_q(q) \cdot dA
      = \frac{dA}{A}
   $$
 
 So
 
-  $$ p(direction) = \frac{distance(p,q)^2}{cos(alpha) \cdot A} $$
+  $$ p(direction) = \frac{distance^2(p,q)}{\cos(alpha) \cdot A} $$
 </div>
 
 <div class='together'>
-If we hack our color function to sample the light in a very hard-coded fashion just to check that
-math and get the concept, we can add it (see the highlighted region):
+If we hack our `ray_color()` function to sample the light in a very hard-coded fashion just to check
+that math and get the concept, we can add it (see the highlighted region):
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, int depth) {
-        hit_record rec;
-        if (world->hit(r, 0,001, MAXFLOAT, rec)) {
-            ray scattered;
-            vec3 attenuation;
-            vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
-            float pdf;
-            vec3 albedo;
-            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf)) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                vec3 on_light = vec3(213 + random_double()*(343-213),
-                                     554,
-                                     227 + random_double()*(332-227));
-                vec3 to_light = on_light - rec.p;
-                float distance_squared = to_light.squared_length();
-                to_light.make_unit_vector();
-                if (dot(to_light, rec.normal) < 0)
-                    return emitted;
-                float light_area = (343-213)*(332-227);
-                float light_cosine = fabs(to_light.y());
-                if (light_cosine < 0.000001)
-                    return emitted;
-                pdf = distance_squared / (light_cosine * light_area);
-                scattered = ray(rec.p, to_light, r.time());
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-                return emitted
-                     + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                              * color(scattered, world, depth+1) / pdf;
-            }
-            else
-                return emitted;
-        }
-        else
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
+        hit_record hrec;
+        if (depth <= 0 || !world->hit(r, 0,001, infinity, hrec))
             return vec3(0,0,0);
+
+        ray scattered;
+        vec3 attenuation;
+        vec3 emitted = hrec.mat_ptr->emitted(hrec.u, hrec.v, hrec.p);
+        double pdf;
+        vec3 albedo;
+        if (!hrec.mat_ptr->scatter(r, hrec, albedo, scattered, pdf))
+            return emitted;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        vec3 on_light = vec3(213 + random_double()*(343-213),
+                             554,
+                             227 + random_double()*(332-227));
+        vec3 to_light = on_light - hrec.p;
+        auto distance_squared = to_light.squared_length();
+        to_light.make_unit_vector();
+
+        if (dot(to_light, hrec.normal) < 0)
+            return emitted;
+
+        double light_area = (343-213)*(332-227);
+        auto light_cosine = fabs(to_light.y());
+        if (light_cosine < 0.000001)
+            return emitted;
+
+        pdf = distance_squared / (light_cosine * light_area);
+        scattered = ray(hrec.p, to_light, r.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        return emitted
+             + albedo * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+                      * ray_color(scattered, world, depth-1) / pdf;
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-lights]: <kbd>[main.cc]</kbd> Ray color with light sampling]
 </div>
 
 <div class='together'>
 With 10 samples per pixel this yields:
 
-  ![Image 9-1](../images/img-3-09-1.jpg)
+  ![Cornell box, sampling only the light, 10 samples per pixel](../images/img.cornell-samplight.jpg)
 
 </div>
 
@@ -1265,8 +1321,8 @@ appears to work. The noisy pops around the light on the ceiling are because the 
 and there is a small space between light and ceiling. We probably want to have the light just emit
 down. We can do that by letting the emitted member function of hittable take extra information:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    virtual vec3 emitted(const ray& r_in, const hit_record& rec, float u, float v,
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    virtual vec3 emitted(const ray& r_in, const hit_record& rec, double u, double v,
         const vec3& p) const {
 
         if (dot(rec.normal, r_in.direction()) < 0.0)
@@ -1274,13 +1330,14 @@ down. We can do that by letting the emitted member function of hittable take ext
         else
             return vec3(0,0,0);
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [emitted-directional]: <kbd>[material.h]</kbd> Material emission, directional]
 </div>
 
 <div class='together'>
 We also need to flip the light so its normals point in the -y direction and we get:
 
-  ![Image 9-2](../images/img-3-09-2.jpg)
+  ![Cornell box, light emitted only in the downward direction](../images/img.cornell-lightdown.jpg)
 
 </div>
 
@@ -1290,10 +1347,10 @@ Mixture Densities
 ====================================================================================================
 
 <div class='together'>
-We have used a _pdf_ related to $cosine(\theta)$, and a _pdf_ related to sampling the light. We
-would like a _pdf_ that combines these. A common tool in probability is to mix the densities to
-form a mixture density. Any weighted average of _pdf_ s is a _pdf_. For example, we could just
-average the two densities:
+We have used a PDF related to $\cos(\theta)$, and a PDF related to sampling the light. We would like
+a PDF that combines these. A common tool in probability is to mix the densities to form a mixture
+density. Any weighted average of PDFs is a PDF. For example, we could just average the two
+densities:
 
   $$ pdf\_mixture(direction) = \frac{1}{2} pdf\_reflection(direction) +
         \frac{1}{2}pdf\_light(direction)
@@ -1304,20 +1361,20 @@ average the two densities:
 How would we instrument our code to do that? There is a very important detail that makes this not
 quite as easy as one might expect. Choosing the random direction is simple:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if (random_double() < 0.5)
         Pick direction according to pdf_reflection
     else
         Pick direction according to pdf_light
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
 But evaluating $pdf\_mixture$ is slightly more subtle. We need to evaluate both $pdf\_reflection$
-and $pdf\_light$ because there are some directions where either _pdf_ could have generated the
+and $pdf\_light$ because there are some directions where either PDF could have generated the
 direction. For example, we might generate a direction toward the light using $pdf\_reflection$.
 
 <div class='together'>
-If we step back a bit, we see that there are two functions a _pdf_ needs to support:
+If we step back a bit, we see that there are two functions a PDF needs to support:
 
 1. What is your value at this location?
 2. Return a random number that is distributed appropriately.
@@ -1328,15 +1385,16 @@ If we step back a bit, we see that there are two functions a _pdf_ needs to supp
 The details of how this is done under the hood varies for the $pdf\_reflection$ and the $pdf\_light$
 and the mixture density of the two of them, but that is exactly what class hierarchies were invented
 for! It’s never obvious what goes in an abstract class, so my approach is to be greedy and hope a
-minimal interface works, and for the _pdf_ this implies:
+minimal interface works, and for the PDF this implies:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class pdf  {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class pdf {
         public:
-            virtual float value(const vec3& direction) const = 0;
+            virtual double value(const vec3& direction) const = 0;
             virtual vec3 generate() const = 0;
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-pdf]: <kbd>[pdf.h]</kbd> The `pdf` class]
 </div>
 
 We’ll see if that works by fleshing out the subclasses. For sampling the light, we will need
@@ -1347,177 +1405,186 @@ bounding box that works with all its subclasses.
 <div class='together'>
 First, let’s try a cosine density:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class cosine_pdf : public pdf {
         public:
             cosine_pdf(const vec3& w) { uvw.build_from_w(w); }
-            virtual float value(const vec3& direction) const {
-                float cosine = dot(unit_vector(direction), uvw.w());
+            virtual double value(const vec3& direction) const {
+                auto cosine = dot(unit_vector(direction), uvw.w());
                 if (cosine > 0)
-                    return cosine/M_PI;
+                    return cosine/pi;
                 else
                     return 0;
             }
-            virtual vec3 generate() const  {
+            virtual vec3 generate() const {
                 return uvw.local(random_cosine_direction());
             }
             onb uvw;
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-cos-pdf]: <kbd>[pdf.h]</kbd> The cosine_pdf class]
 </div>
 
 <div class='together'>
-We can try this in the `color()` function, with the main changes highlighted. We also need to change
-variable `pdf` to some other variable name to avoid a name conflict with the new `pdf` class.
+We can try this in the `ray_color()` function, with the main changes highlighted. We also need to
+change variable `pdf` to some other variable name to avoid a name conflict with the new `pdf` class.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, int depth) {
-        hit_record rec;
-        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
-            ray scattered;
-            vec3 attenuation;
-            vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
-            float pdf_val;
-            vec3 albedo;
-            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val)) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                cosine_pdf p(rec.normal);
-                scattered = ray(rec.p, p.generate(), r.time());
-                pdf_val = p.value(scattered.direction());
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                return emitted
-                     + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                              * color(scattered, world, depth+1)
-                              / pdf_val;
-            }
-            else
-                return emitted;
-        }
-        else
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
+        hit_record hrec;
+        if (depth <= 0 || !world->hit(r, 0.001, infinity, hrec))
             return vec3(0,0,0);
+
+        ray scattered;
+        vec3 attenuation;
+        vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
+        double pdf_val;
+        vec3 albedo;
+        if (!hrec.mat_ptr->scatter(r, hrec, albedo, scattered, pdf_val))
+            return emitted;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cosine_pdf p(hrec.normal);
+        scattered = ray(hrec.p, p.generate(), r.time());
+        pdf_val = p.value(scattered.direction());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        return emitted
+             + albedo * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+                      * ray_color(scattered, world, depth-1)
+                      / pdf_val;
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-cos-pdf]: <kbd>[main.cc]</kbd> The ray_color function, using cosine pdf]
 </div>
 
+<div class='together'>
 This yields an apparently matching result so all we’ve done so far is refactor where `pdf` is
-</div>
 computed:
 
-  ![Image 10-1](../images/img-3-10-1.jpg)
+  ![Cornell box with a cosine density _pdf_](../images/img.cornell-cospdf.jpg)
 
 </div>
 
 <div class='together'>
 Now we can try sampling directions toward a `hittable` like the light.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable_pdf : public pdf {
         public:
             hittable_pdf(hittable *p, const vec3& origin) : ptr(p), o(origin) {}
-            virtual float value(const vec3& direction) const {
+
+            virtual double value(const vec3& direction) const {
                 return ptr->pdf_value(o, direction);
             }
+
             virtual vec3 generate() const {
                 return ptr->random(o);
             }
+
             vec3 o;
             hittable *ptr;
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-hittable-pdf]: <kbd>[pdf.h]</kbd> The hittable_pdf class]
 </div>
 
 <div class='together'>
 This assumes two as-yet not implemented functions in the `hittable` class. To avoid having to add
-instrumentation to all of `hittable` subclasses, we’ll add two dummy functions to the `hittable`
-class:
+instrumentation to all `hittable` subclasses, we’ll add two dummy functions to the `hittable` class:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class hittable  {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class hittable {
         public:
-            virtual bool hit(const ray& r, float t_min, float t_max,
-                hit_record& rec) const = 0;
-            virtual bool bounding_box(float t0, float t1, aabb& box) const = 0;
-            virtual float  pdf_value(const vec3& o, const vec3& v) const  {return 0.0;}
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const = 0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            virtual double pdf_value(const vec3& o, const vec3& v) const { return 0.0; }
             virtual vec3 random(const vec3& o) const {return vec3(1, 0, 0);}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hittable-plus2]: <kbd>[hittable.h]</kbd> The hittable class, with two new methods]
 </div>
 
 <div class='together'>
 And we change `xz_rect` to implement those functions:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class xz_rect: public hittable  {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class xz_rect: public hittable {
         public:
             xz_rect() {}
-            xz_rect(float _x0, float _x1, float _z0, float _z1, float _k, material *mat)
+            xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, material *mat)
                 : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
-            virtual bool hit(const ray& r, float t0, float t1, hit_record& rec) const;
-            virtual bool bounding_box(float t0, float t1, aabb& box) const {
-                box =  aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
+            virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+                output_box = aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
                 return true;
             }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual float  pdf_value(const vec3& o, const vec3& v) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            virtual double pdf_value(const vec3& o, const vec3& v) const {
                 hit_record rec;
-                if (this->hit(ray(o, v), 0.001, FLT_MAX, rec)) {
-                    float area = (x1-x0)*(z1-z0);
-                    float distance_squared = rec.t * rec.t * v.squared_length();
-                    float cosine = fabs(dot(v, rec.normal) / v.length());
-                    return  distance_squared / (cosine * area);
+                if (this->hit(ray(o, v), 0.001, infinity, rec)) {
+                    auto area = (x1-x0)*(z1-z0);
+                    auto distance_squared = rec.t * rec.t * v.squared_length();
+                    auto cosine = fabs(dot(v, rec.normal) / v.length());
+                    return distance_squared / (cosine * area);
                 }
                 else
                     return 0;
             }
             virtual vec3 random(const vec3& o) const {
-                vec3 random_point = vec3(x0 + random_double()*(x1-x0), k,
+                vec3 random_point = vec3(
+                    x0 + random_double()*(x1-x0),
+                    k,
                     z0 + random_double()*(z1-z0));
                 return random_point - o;
             }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            material  *mp;
-            float x0, x1, z0, z1, k;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            material *mp;
+            double x0, x1, z0, z1, k;
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [xz-rect-pdf]: <kbd>[aarect.h]</kbd> XZ rect with pdf]
 </div>
 
 <div class='together'>
-And then change `color()`:
+And then change `ray_color()`:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, int depth) {
-        hit_record rec;
-        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
-            ray scattered;
-            vec3 attenuation;
-            vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
-            float pdf_val;
-            vec3 albedo;
-            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val)) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
-                hittable_pdf p(light_shape, rec.p);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                scattered = ray(rec.p, p.generate(), r.time());
-                pdf_val = p.value(scattered.direction());
-                return emitted
-                     + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                              * color(scattered, world, depth+1)
-                              / pdf_val;
-            }
-            else
-                return emitted;
-        }
-        else
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 ray_color(const ray& r, hittable *world, int depth) {
+        hit_record hrec;
+        if (depth <= 0 || !world->hit(r, 0.001, infinity, hrec))
             return vec3(0,0,0);
+
+        ray scattered;
+        vec3 attenuation;
+        vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
+        double pdf_val;
+        vec3 albedo;
+        if (!hrec.mat_ptr->scatter(r, hrec, albedo, scattered, pdf_val))
+            return emitted;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
+        hittable_pdf p(light_shape, hrec.p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        scattered = ray(hrec.p, p.generate(), r.time());
+        pdf_val = p.value(scattered.direction());
+
+        return emitted
+             + albedo * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+                      * ray_color(scattered, world, depth-1)
+                      / pdf_val;
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-hittable-pdf]: <kbd>[main.cc]</kbd> ray_color function with hittable PDF]
 </div>
 
 <div class='together'>
 At 10 samples per pixel we get:
 
-  ![Image 10-2](../images/img-3-10-2.jpg)
+  ![Cornell box, sampling a hittable light, 10 samples per pixel](../images/img.cornell-samphit.jpg)
 
 </div>
 
@@ -1525,61 +1592,67 @@ At 10 samples per pixel we get:
 Now we would like to do a mixture density of the cosine and light sampling. The mixture density
 class is straightforward:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class mixture_pdf : public pdf {
         public:
             mixture_pdf(pdf *p0, pdf *p1 ) { p[0] = p0; p[1] = p1; }
-            virtual float value(const vec3& direction) const {
+
+            virtual double value(const vec3& direction) const {
                 return 0.5 * p[0]->value(direction) + 0.5 *p[1]->value(direction);
             }
+
             virtual vec3 generate() const {
                 if (random_double() < 0.5)
                     return p[0]->generate();
                 else
                     return p[1]->generate();
             }
+
             pdf *p[2];
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-mixturep-df]: <kbd>[pdf.h]</kbd> The `mixture_pdf` class]
 </div>
 
 <div class='together'>
-And plugging it into `color()`:
+And plugging it into `ray_color()`:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
-        hit_record rec;
-        if (world->hit(r, 0.001, MAXFLOAT, rec)) {
-            ray scattered;
-            vec3 attenuation;
-            vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
-            float pdf_val;
-            vec3 albedo;
-            if (depth < 50 && rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
-                hittable_pdf p0(light_shape, rec.p);
-                cosine_pdf p1(rec.normal);
-                mixture_pdf p(&p0, &p1);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                scattered = ray(rec.p, p.generate(), r.time());
-                pdf_val = p.value(scattered.direction());
-                return emitted + albedo*rec.mat_ptr->scattering_pdf(r, rec, scattered)*
-                    color(scattered, world, depth+1) / pdf_val;
-            }
-            else
-                return emitted;
-        }
-        else
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) {
+        hit_record hrec;
+        if (depth <= 0 || !world->hit(r, 0.001, infinity, hrec))
             return vec3(0,0,0);
+
+        ray scattered;
+        vec3 attenuation;
+        vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
+        double pdf_val;
+        vec3 albedo;
+        if (!hrec.mat_ptr->scatter(r, hrec, albedo, scattered, pdf_val))
+            return emitted;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
+        hittable_pdf p0(light_shape, hrec.p);
+        cosine_pdf p1(hrec.normal);
+        mixture_pdf p(&p0, &p1);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        scattered = ray(hrec.p, p.generate(), r.time());
+        pdf_val = p.value(scattered.direction());
+
+        return emitted
+             + albedo * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+                      * ray_color(scattered, world, depth-1)
+                      / pdf_val;
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-mixture]: <kbd>[main.cc]</kbd> The ray_color function, using mixture PDF]
 </div>
 
 <div class='together'>
 1000 samples per pixel yields:
 
-  ![Image 10-3](../images/img-3-10-3.jpg)
+  ![Cornell box, mixture density of cosine and light sampling](../images/img.cornell-coslight.jpg)
 
 </div>
 
@@ -1604,12 +1677,12 @@ rays; that’s a personal design preference.
 
 There are some other issues with the code.
 
-The pdf construction is hard coded in the color() function and we should clean that up. Probably we
-should pass something into color about the lights. Unlike bvh construction, we should be careful
-about memory leaks as there are an unbounded number of samples.
+The PDF construction is hard coded in the `ray_color()` function and we should clean that up.
+Probably we should pass something into color about the lights. Unlike BVH construction, we should be
+careful about memory leaks as there are an unbounded number of samples.
 
 The specular rays (glass and metal) are no longer supported. The math would work out if we just made
-their scattering function a delta function . But that would be floating point disaster. We could
+their scattering function a delta function. But that would be floating point disaster. We could
 either separate out specular reflections, or have surface roughness never be zero and have
 almost-mirrors that look perfectly smooth but don’t generate NaNs. I don’t have an opinion on which
 way to do it -- I have tried both and they both have their advantages -- but we have smooth metal
@@ -1618,10 +1691,10 @@ calculations.
 
 We also lack a real background function infrastructure in case we want to add an environment map or
 more interesting functional background. Some environment maps are HDR (the R/G/B components are
-floats rather than 0-255 bytes usually interpreted as 0-1). Our output has been HDR all along and
+floats rather than 0–255 bytes usually interpreted as 0-1). Our output has been HDR all along and
 we’ve just been truncating it.
 
-Finally, our renderer is RGB and a more physically-based one -- like an automobile manufacturer
+Finally, our renderer is RGB and a more physically based one -- like an automobile manufacturer
 might use -- would probably need to use spectral colors and maybe even polarization. For a movie
 renderer, you would probably want RGB. You can make a hybrid renderer that has both modes, but that
 is of course harder. I’m going to stick to RGB for now, but I will revisit this near the end of the
@@ -1629,122 +1702,134 @@ book.
 
 
 
-Cleaning Up pdf Management.
+Cleaning Up PDF Management.
 ====================================================================================================
 
 <div class='together'>
-So far I have the color function create two hard-coded `pdf`s :
+So far I have the `ray_color()` function create two hard-coded PDFs:
 
 1. `p0()` related to the shape of the light
 2. `p1()` related to the normal vector and type of surface
 
 </div>
 
-We can pass information about the light (or whatever `hittable` we want to sample) into the `color`
-function, and we can ask the `material` function for a `pdf` (we would have to instrument it to do
-that). We can also either ask `hit` function or the `material` class to supply whether there is a
-specular vector.
+We can pass information about the light (or whatever `hittable` we want to sample) into the
+`ray_color()` function, and we can ask the `material` function for a PDF (we would have to
+instrument it to do that). We can also either ask `hit` function or the `material` class to supply
+whether there is a specular vector.
 
 One thing we would like to allow for is a material like varnished wood that is partially ideal
 specular (the polish) and partially diffuse (the wood). Some renderers have the material generate
 two rays: one specular and one diffuse. I am not fond of branching, so I would rather have the
 material randomly decide whether it is diffuse or specular. The catch with that approach is that we
-need to be careful when we ask for the `pdf` value and be aware of whether for this evaluation of
-`color()` it is diffuse or specular. Fortunately, we know that we should only call the `pdf value()`
-if it is diffuse so we can handle that implicitly.
+need to be careful when we ask for the PDF value and be aware of whether for this evaluation of
+`ray_color()` it is diffuse or specular. Fortunately, we know that we should only call the
+`pdf_value()` if it is diffuse so we can handle that implicitly.
 
 <div class='together'>
 We can redesign `material` and stuff all the new arguments into a `struct` like we did for
 `hittable`:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    struct scatter_record
-    {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    struct scatter_record {
         ray specular_ray;
         bool is_specular;
         vec3 attenuation;
         pdf *pdf_ptr;
     };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-    class material  {
+    class material {
         public:
-            virtual bool scatter(const ray& r_in, const hit_record& hrec,
-                                 scatter_record& srec) const {
+            virtual bool scatter(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                const ray& r_in, const hit_record& hrec, scatter_record& srec
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            ) const {
                 return false;
             }
 
-            virtual float scattering_pdf(const ray& r_in, const hit_record& rec,
-                                         const ray& scattered) const {
+            virtual double scattering_pdf(
+                const ray& r_in, const hit_record& rec, const ray& scattered
+            ) const {
                 return 0;
             }
 
-            virtual vec3 emitted(const ray& r_in, const hit_record& rec,
-                float u, float v, const vec3& p) const { return vec3(0,0,0); }
+            virtual vec3 emitted(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                const ray& r_in, const hit_record& rec, double u, double v, const vec3& p
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            ) const {
+                return vec3(0,0,0);
+            }
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [material-refactor]: <kbd>[material.h]</kbd> Refactoring the material class]
 </div>
 
 <div class='together'>
 The Lambertian material becomes simpler:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
         public:
 
             lambertian(texture *a) : albedo(a) {}
 
-            float scattering_pdf(const ray& r_in, const hit_record& rec,
-                                 const ray& scattered) const {
-                float cosine = dot(rec.normal, unit_vector(scattered.direction()));
+            double scattering_pdf(
+                const ray& r_in, const hit_record& rec, const ray& scattered
+            ) const {
+                auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
                 if (cosine < 0)
                     return 0;
-                return cosine / M_PI;
+                return cosine / pi;
             }
 
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            bool scatter(const ray& r_in, const hit_record& hrec,
-                scatter_record& srec) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            bool scatter(const ray& r_in, const hit_record& hrec, scatter_record& srec) const {
                 srec.is_specular = false;
                 srec.attenuation = albedo->value(hrec.u, hrec.v, hrec.p);
                 srec.pdf_ptr = new cosine_pdf(hrec.normal);
                 return true;
             }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             texture *albedo;
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [lambertian-scatter]: <kbd>[material.h]</kbd> New lambertian scatter() method]
 </div>
 
 <div class='together'>
-And `color()` changes are small:
+And `ray_color()` changes are small:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) {
         hit_record hrec;
-        if (world->hit(r, 0.001, MAXFLOAT, hrec)) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            scatter_record srec;
-            vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
-            if (depth < 50 && hrec.mat_ptr->scatter(r, hrec, srec)) {
-                hittable_pdf plight(light_shape, hrec.p);
-                mixture_pdf p(&plight, srec.pdf_ptr);
-                ray scattered = ray(hrec.p, p.generate(), r.time());
-                float pdf_val = p.value(scattered.direction());
-                return emitted
-                    + srec.attenuation * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
-                                       * color(scattered, world, light_shape, depth+1)
-                                       / pdf_val;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            }
-            else
-                return emitted;
-        }
-        else
+        if (depth <= 0 || !world->hit(r, 0.001, infinity, hrec))
             return vec3(0,0,0);
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        scatter_record srec;
+        vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
+        if (!hrec.mat_ptr->scatter(r, hrec, srec))
+            return emitted;
+
+        hittable_pdf plight(light_shape, hrec.p);
+        mixture_pdf p(&plight, srec.pdf_ptr);
+        ray scattered = ray(hrec.p, p.generate(), r.time());
+        auto pdf_val = p.value(scattered.direction());
+
+        return emitted
+            + srec.attenuation * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+                               * ray_color(scattered, world, light_shape, depth-1)
+                               / pdf_val;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-scatter]: <kbd>[main.cc]</kbd> Ray color with scatter]
 </div>
 
 <div class='together'>
@@ -1752,14 +1837,14 @@ We have not yet dealt with specular surfaces, nor instances that mess with the s
 we have added a memory leak by calling `new` in Lambertian material. But this design is clean
 overall, and those are all fixable. For now, I will just fix `specular`. Metal is easy to fix.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class metal : public material {
         public:
-            metal(const vec3& a, float f) : albedo(a)
-                { if (f < 1) fuzz = f; else fuzz = 1; }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool scatter(const ray& r_in, const hit_record& hrec,
-                scatter_record& srec) const {
+            metal(const vec3& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            virtual bool scatter(
+                const ray& r_in, const hit_record& hrec, scatter_record& srec
+            ) const {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), hrec.normal);
                 srec.specular_ray = ray(hrec.p, reflected+fuzz*random_in_unit_sphere());
                 srec.attenuation = albedo;
@@ -1767,58 +1852,58 @@ overall, and those are all fixable. For now, I will just fix `specular`. Metal i
                 srec.pdf_ptr = 0;
                 return true;
             }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             vec3 albedo;
-            float fuzz;
+            double fuzz;
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [metal-scatter]: <kbd>[material.h]</kbd> The metal class scatter method]
 </div>
 
 Note that if fuzziness is high, this surface isn’t ideally specular, but the implicit sampling works
 just like it did before.
 
 <div class='together'>
-`Color` just needs a new case to generate an implicitly sampled ray:
+`ray_color()` just needs a new case to generate an implicitly sampled ray:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 color(const ray& r, hittable *world, hittable *light_shape, int depth) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) {
         hit_record hrec;
-        if (world->hit(r, 0.001, MAXFLOAT, hrec)) {
-            scatter_record srec;
-            vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
-            if (depth < 50 && hrec.mat_ptr->scatter(r, hrec, srec)) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                if (srec.is_specular) {
-                    return srec.attenuation
-                         * color(srec.specular_ray, world, light_shape, depth+1);
-                }
-                else {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                    hittable_pdf plight(light_shape, hrec.p);
-                    mixture_pdf p(&plight, srec.pdf_ptr);
-                    ray scattered = ray(hrec.p, p.generate(), r.time());
-                    float pdf_val = p.value(scattered.direction());
-                    delete srec.pdf_ptr;
-                    return emitted + srec.attenuation
-                                   * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
-                                   * color(scattered, world, light_shape, depth+1)
-                                   / pdf_val;
-                }
-            }
-            else
-                return emitted;
-        }
-        else
+        if (depth <= 0 || !world->hit(r, 0.001, infinity, hrec))
             return vec3(0,0,0);
+
+        scatter_record srec;
+        vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
+        if (!hrec.mat_ptr->scatter(r, hrec, srec))
+            return emitted;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        if (srec.is_specular) {
+            return srec.attenuation
+                 * ray_color(srec.specular_ray, world, light_shape, depth-1);
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        hittable_pdf plight(light_shape, hrec.p);
+        mixture_pdf p(&plight, srec.pdf_ptr);
+        ray scattered = ray(hrec.p, p.generate(), r.time());
+        auto pdf_val = p.value(scattered.direction());
+        delete srec.pdf_ptr;
+
+        return emitted + srec.attenuation
+                       * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+                       * ray_color(scattered, world, light_shape, depth-1)
+                       / pdf_val;
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-implicit]: <kbd>[main.cc]</kbd>
+    Ray color function with implicitly-sampled rays]
 </div>
 
 <div class='together'>
 We also need to change the block to metal.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void cornell_box(hittable **scene, camera **cam, float aspect) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    void cornell_box(hittable **scene, camera **cam, double aspect) {
         int i = 0;
         hittable **list = new hittable*[8];
         material *red = new lambertian( new constant_texture(vec3(0.65, 0.05, 0.05)) );
@@ -1834,106 +1919,108 @@ We also need to change the block to metal.
         list[i++] = new translate(
             new rotate_y(new box(vec3(0, 0, 0), vec3(165, 165, 165), white),  -18),
             vec3(130,0,65));
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         material *aluminum = new metal(vec3(0.8, 0.85, 0.88), 0.0);
         list[i++] = new translate(
             new rotate_y(new box(vec3(0, 0, 0), vec3(165, 330, 165), aluminum),  15),
             vec3(265,0,295));
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         *scene = new hittable_list(list,i);
+
         vec3 lookfrom(278, 278, -800);
         vec3 lookat(278,278,0);
-        float dist_to_focus = 10.0;
-        float aperture = 0.0;
-        float vfov = 40.0;
-        *cam = new camera(lookfrom, lookat, vec3(0,1,0),
-                          vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
+        auto dist_to_focus = 10.0;
+        auto aperture = 0.0;
+        auto vfov = 40.0;
+        *cam = new camera(
+            lookfrom, lookat, vec3(0,1,0), vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-cornell-al]: <kbd>[main.cc]</kbd> Cornell box scene with aluminum material]
 </div>
 
 <div class='together'>
 The resulting image has a noisy reflection on the ceiling because the directions toward the box are
 not sampled with more density.
 
-  ![Image 12-1](../images/img-3-12-1.jpg)
+  ![Cornell box with arbitrary PDF functions](../images/img.cornell-flexpdf.jpg)
 
 </div>
 
 <div class='together'>
-We could make the pdf include the block. Let’s do that instead with a glass sphere because it’s
+We could make the PDF include the block. Let’s do that instead with a glass sphere because it’s
 easier. When we sample a sphere’s solid angle uniformly from a point outside the sphere, we are
 really just sampling a cone uniformly (the cone is tangent to the sphere). Let’s say the code has
-`theta_max`. Recall from Chapter 9, that to sample $\theta$ we have:
+`theta_max`. Recall from the Generating Random Directions chapter that to sample $\theta$ we have:
 
-  $$ r2 = \int_{0}^{\theta} 2 \pi \cdot f(t) \cdot sin(t) dt $$
+  $$ r_2 = \int_{0}^{\theta} 2\pi \cdot f(t) \cdot \sin(t) dt $$
 
 Here $f(t)$ is an as yet uncalculated constant $C$, so:
 
-  $$ r2 = \int_{0}^{\theta} 2 \pi \cdot C \cdot sin(t) dt $$
+  $$ r_2 = \int_{0}^{\theta} 2\pi \cdot C \cdot \sin(t) dt $$
 
 Doing some algebra/calculus this yields:
 
-  $$ r2 = 2 \pi \cdot C \cdot (1-cos(\theta)) $$
+  $$ r_2 = 2\pi \cdot C \cdot (1-\cos(\theta)) $$
 </div>
 
 <div class='together'>
 So
 
-  $$ cos(\theta) = 1 - r2/(2 \pi \cdot C) $$
+  $$ cos(\theta) = 1 - \frac{r_2}{2 \pi \cdot C} $$
 </div>
 
 <div class='together'>
-We know that for $r2 = 1$ we should get $\theta_{max}$, so we can solve for $C$:
+We know that for $r_2 = 1$ we should get $\theta_{max}$, so we can solve for $C$:
 
-  $$ cos(\theta) = 1 + r2 \cdot (cos(\theta_{max})-1) $$
+  $$ \cos(\theta) = 1 + r_2 \cdot (\cos(\theta_{max})-1) $$
 </div>
 
 <div class='together'>
 $\phi$ we sample like before, so:
 
-  $$ z = cos(\theta) = 1 + r2 \cdot (cos(\theta_{max})-1) $$
-  $$ x = cos(\phi) \cdot sin(\theta) = cos(2 \pi \cdot r1) \cdot \sqrt{1-z^2} $$
-  $$ y = sin(\phi) \cdot sin(\theta) = sin(2 \pi \cdot r1) \cdot \sqrt{1-z^2} $$
+  $$ z = \cos(\theta) = 1 + r_2 \cdot (\cos(\theta_{max}) - 1) $$
+  $$ x = \cos(\phi) \cdot \sin(\theta) = \cos(2\pi \cdot r_1) \cdot \sqrt{1-z^2} $$
+  $$ y = \sin(\phi) \cdot \sin(\theta) = \sin(2\pi \cdot r_1) \cdot \sqrt{1-z^2} $$
 </div>
 
 <div class='together'>
 Now what is $\theta_{max}$?
 
-  ![Figure 12-1](../images/fig-3-12-1.jpg)
+  ![Figure [sphere-cone]: A sphere enclosing cone](../images/fig.sphere-cone.jpg)
 
 </div>
 
 <div class='together'>
-We can see from the figure that $sin(\theta_{max}) = R / length( c - p )$. So:
+We can see from the figure that $\sin(\theta_{max}) = R / length(\mathbf{c} - \mathbf{p})$. So:
 
-  $$ cos(\theta_{max}) = \sqrt{1- (R / length( c - p ))^2} $$
+  $$ \cos(\theta_{max}) = \sqrt{1 - \frac{R^2}{length^2(\mathbf{c} - \mathbf{p})}} $$
 </div>
 
 <div class='together'>
-We also need to evaluate the _pdf_ of directions. For directions toward the sphere this is
+We also need to evaluate the PDF of directions. For directions toward the sphere this is
 $1/solid\_angle$. What is the solid angle of the sphere? It has something to do with the $C$ above.
 It, by definition, is the area on the unit sphere, so the integral is
 
-  $$ solid\_angle = \int_{0}^{2 \pi} \int_{0}^{\theta_{max}} sin(\theta) d \theta d \phi
-       = 2 \pi \cdot (1-cos(\theta_{max})) $$
+  $$ solid\_angle = \int_{0}^{2\pi} \int_{0}^{\theta_{max}} \sin(\theta)
+       = 2 \pi \cdot (1-\cos(\theta_{max})) $$
 </div>
 
 It’s good to check the math on all such calculations. I usually plug in the extreme cases (thank you
 for that concept, Mr. Horton -- my high school physics teacher). For a zero radius sphere
-$cos(\theta_{max}) = 0$, and that works. For a sphere tangent at $p$, $cos(\theta_{max}) = 0$, and
-$2 \pi$ is the area of a hemisphere, so that works too.
+$\cos(\theta_{max}) = 0$, and that works. For a sphere tangent at $\mathbf{p}$,
+$\cos(\theta_{max}) = 0$, and $2\pi$ is the area of a hemisphere, so that works too.
 
 <div class='together'>
-The sphere class needs the two `pdf`-related functions:
+The sphere class needs the two PDF-related functions:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    float sphere::pdf_value(const vec3& o, const vec3& v) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    double sphere::pdf_value(const vec3& o, const vec3& v) const {
         hit_record rec;
-        if (this->hit(ray(o, v), 0.001, FLT_MAX, rec)) {
-            float cos_theta_max = sqrt(1 - radius*radius/(center-o).squared_length());
-            float solid_angle = 2*M_PI*(1-cos_theta_max);
-            return  1 / solid_angle;
+        if (this->hit(ray(o, v), 0.001, infinity, rec)) {
+            auto cos_theta_max = sqrt(1 - radius*radius/(center-o).squared_length());
+            auto solid_angle = 2*pi*(1-cos_theta_max);
+            return 1 / solid_angle;
         }
         else
             return 0;
@@ -1941,48 +2028,52 @@ The sphere class needs the two `pdf`-related functions:
 
     vec3 sphere::random(const vec3& o) const {
         vec3 direction = center - o;
-        float distance_squared = direction.squared_length();
+        auto distance_squared = direction.squared_length();
         onb uvw;
         uvw.build_from_w(direction);
         return uvw.local(random_to_sphere(radius, distance_squared));
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [sphere-pdf]: <kbd>[sphere.h]</kbd> Sphere with PDF]
 </div>
 
 <div class='together'>
 With the utility function:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline vec3 random_to_sphere(float radius, float distance_squared) {
-        float r1 = random_double();
-        float r2 = random_double();
-        float z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
-        float phi = 2*M_PI*r1;
-        float x = cos(phi)*sqrt(1-z*z);
-        float y = sin(phi)*sqrt(1-z*z);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline vec3 random_to_sphere(double radius, double distance_squared) {
+        auto r1 = random_double();
+        auto r2 = random_double();
+        auto z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
+        auto phi = 2*pi*r1;
+        auto x = cos(phi)*sqrt(1-z*z);
+        auto y = sin(phi)*sqrt(1-z*z);
         return vec3(x, y, z);
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rand-to-sphere]: <kbd>[pdf.h]</kbd> The random_to_sphere utility function]
 </div>
 
 <div class='together'>
 We can first try just sampling the sphere rather than the light:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
     hittable *glass_sphere = new sphere(vec3(190, 90, 190), 90, 0);
 
-    for (int j = ny-1; j >= 0; j--) {
-        for (int i = 0; i < nx; i++) {
+    for (int j = ny-1; j >= 0; --j) {
+        std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+        for (int i = 0; i < nx; ++i) {
             vec3 col(0, 0, 0);
-            for (int s=0; s < ns; s++) {
-                float u = float(i+random_double())/ float(nx);
-                float v = float(j+random_double())/ float(ny);
+            for (int s=0; s < ns; ++s) {
+                auto u = (i + random_double()) / nx;
+                auto v = (j + random_double()) / ny;
                 ray r = cam->get_ray(u, v);
                 vec3 p = r.point_at_parameter(2.0);
-                col += color(r, world, glass_sphere, 0);
+                col += ray_color(r, world, glass_sphere, max_depth);
             }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [sampling-sphere]: <kbd>[main.cc]</kbd> Sampling just the sphere]
 </div>
 
 <div class='together'>
@@ -1990,20 +2081,20 @@ This yields a noisy box, but the caustic under the sphere is good. It took five 
 sampling the light did for my code. This is probably because those rays that hit the glass are
 expensive!
 
-  ![Image 12-2](../images/img-3-12-2.jpg)
+  ![Cornell box with glass sphere, using new PDF functions](../images/img.cornell-glass.jpg)
 
 </div>
 
 <div class='together'>
 We should probably just sample both the sphere and the light. We can do that by creating a mixture
-density of their two densities. We could do that in the `color` function by passing a list of
-hittables in and building a mixture `pdf`, or we could add `pdf` functions to `hittable_list`. I
+density of their two densities. We could do that in the `ray_color()` function by passing a list of
+hittables in and building a mixture PDF, or we could add PDF functions to `hittable_list`. I
 think both tactics would work fine, but I will go with instrumenting `hittable_list`.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    float hittable_list::pdf_value(const vec3& o, const vec3& v) const {
-        float weight = 1.0/list_size;
-        float sum = 0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    double hittable_list::pdf_value(const vec3& o, const vec3& v) const {
+        auto weight = 1.0/list_size;
+        auto sum = 0.0;
         for (int i = 0; i < list_size; i++)
             sum += weight*list[i]->pdf_value(o, v);
         return sum;
@@ -2013,26 +2104,28 @@ think both tactics would work fine, but I will go with instrumenting `hittable_l
         int index = int(random_double() * list_size);
         return list[ index ]->random(o);
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [density-mixture]: <kbd>[hittable_list.h]</kbd> Creating a mixture of densities]
 </div>
 
 <div class='together'>
-We assemble a list to pass in to `color`.
+We assemble a list to pass in to `ray_color()`.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
     hittable *glass_sphere = new sphere(vec3(190, 90, 190), 90, 0);
     hittable *a[2];
     a[0] = light_shape;
     a[1] = glass_sphere;
     hittable_list hlist(a,2);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-density-mixture]: <kbd>[main.cc]</kbd> Updating the scene]
 </div>
 
 <div class='together'>
 And we get a decent image with 1000 samples as before:
 
-  ![Image 12-3](../images/img-3-12-3.jpg)
+  ![Cornell box, using a mixture of glass & light PDFs](../images/img.cornell-glasslight.jpg)
 
 </div>
 
@@ -2040,53 +2133,52 @@ And we get a decent image with 1000 samples as before:
 An astute reader pointed out there are some black specks in the image above. All Monte Carlo Ray
 Tracers have this as a main loop:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     pixel_color = average(many many samples)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
 If you find yourself getting some form of acne in the images, and this acne is white or black, so
 one "bad" sample seems to kill the whole pixel, that sample is probably a huge number or a `NaN`.
-This particular acne is probably a `NaN`. Mine seems to come up once in every 10-100 million rays
+This particular acne is probably a `NaN`. Mine seems to come up once in every 10–100 million rays
 or so.
 
 <div class='together'>
 So big decision: sweep this bug under the rug and check for `NaN`s, or just kill `NaN`s and hope
 this doesn't come back to bite us later. I will always opt for the lazy strategy, especially when I
 know floating point is hard. First, how do we check for a `NaN`? The one thing I always remember
-for `NaN`s is that any `if` test with a `NaN` in it is false. This leads to the common trick:
+for `NaN`s is that any `if` test with a `NaN` in it is false. Using this trick, we update the
+`vec3::write_color()` function to replace any NaN components with zero:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline vec3 de_nan(const vec3& c) {
-        vec3 temp = c;
-        if (!(temp[0] == temp[0])) temp[0] = 0;
-        if (!(temp[1] == temp[1])) temp[1] = 0;
-        if (!(temp[2] == temp[2])) temp[2] = 0;
-        return temp;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    void write_color(std::ostream &out, int num_samples) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        // Replace NaN component values with zero.
+        if (e[0] != e[0]) e[0] = 0.0;
+        if (e[1] != e[1]) e[1] = 0.0;
+        if (e[2] != e[2]) e[2] = 0.0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        // Divide the color total by the number of samples and gamma-correct
+        // for a gamma value of 2.0.
+        auto scale = 1.0 / num_samples;
+        auto r = sqrt(scale * e[0]);
+        auto g = sqrt(scale * e[1]);
+        auto b = sqrt(scale * e[2]);
+
+        // Write the translated [0,255] value of each color component.
+        out << static_cast<int>(255.999 * clamp(r, 0.0, 1.0)) << ' '
+            << static_cast<int>(255.999 * clamp(g, 0.0, 1.0)) << ' '
+            << static_cast<int>(255.999 * clamp(b, 0.0, 1.0)) << '\n';
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</div>
-
-<div class='together'>
-And we can insert that in the main loop:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    for (int s=0; s < ns; s++) {
-        float u = float(i+random_double())/ float(nx);
-        float v = float(j+random_double())/ float(ny);
-        ray r = cam->get_ray(u, v);
-        vec3 p = r.point_at_parameter(2.0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        col += de_nan(color(r, world, &hlist, 0));
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [write-color-nan]: <kbd>[common/vec3.h]</kbd> NaN-tolerant write_color function]
 </div>
 
 <div class='together'>
 Happily, the black specks are gone:
 
-  ![Image 12-4](../images/img-3-12-4.jpg)
+  ![Cornell box with anti-acne color function](../images/img.book3-final.jpg)
 
 </div>
 
@@ -2096,7 +2188,7 @@ The Rest of Your Life
 ====================================================================================================
 
 The purpose of this book was to show the details of dotting all the i’s of the math on one way of
-organizing a physically-based renderer’s sampling approach. Now you can explore a lot of different
+organizing a physically based renderer’s sampling approach. Now you can explore a lot of different
 potential paths.
 
 If you want to explore Monte Carlo methods, look into bidirectional and path spaced approaches such
@@ -2112,8 +2204,8 @@ surprisingly open about their craft.
 If you want to do high-performance ray tracing, look first at papers from Intel and NVIDIA. Again,
 they are surprisingly open.
 
-If you want to do hard-core physically-based renderers, convert your renderer from RGB to spectral.
-I am a big fan of each ray having a random wavelength and almost all of the RGBs in your program
+If you want to do hard-core physically based renderers, convert your renderer from RGB to spectral.
+I am a big fan of each ray having a random wavelength and almost all the RGBs in your program
 turning into floats. It sounds inefficient, but it isn’t!
 
 Regardless of what direction you take, add a glossy BRDF model. There are many to choose from and

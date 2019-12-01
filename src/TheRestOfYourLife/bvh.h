@@ -1,41 +1,44 @@
-#ifndef BVHH
-#define BVHH
-//==================================================================================================
-// Written in 2016 by Peter Shirley <ptrshrl@gmail.com>
+#ifndef BVH_H
+#define BVH_H
+//==============================================================================================
+// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
 //
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
-// neighboring rights to this software to the public domain worldwide. This software is distributed
-// without any warranty.
+// neighboring rights to this software to the public domain worldwide. This software is
+// distributed without any warranty.
 //
-// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication along
-// with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-//==================================================================================================
+// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication
+// along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+//==============================================================================================
 
+#include "common/rtweekend.h"
 #include "hittable.h"
 
 
 class bvh_node : public hittable  {
     public:
         bvh_node() {}
-        bvh_node(hittable **l, int n, float time0, float time1);
-        virtual bool hit(const ray& r, float tmin, float tmax, hit_record& rec) const;
-        virtual bool bounding_box(float t0, float t1, aabb& box) const;
+        bvh_node(hittable **l, int n, double time0, double time1);
+
+        virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
+
         hittable *left;
         hittable *right;
         aabb box;
 };
 
-
-bool bvh_node::bounding_box(float t0, float t1, aabb& b) const {
-    b = box;
+bool bvh_node::bounding_box(double t0, double t1, aabb& output_box) const {
+    output_box = box;
     return true;
 }
 
-bool bvh_node::hit(const ray& r, float t_min, float t_max, hit_record& rec) const {
+bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
     if (box.hit(r, t_min, t_max)) {
         hit_record left_rec, right_rec;
         bool hit_left = left->hit(r, t_min, t_max, left_rec);
         bool hit_right = right->hit(r, t_min, t_max, right_rec);
+
         if (hit_left && hit_right) {
             if (left_rec.t < right_rec.t)
                 rec = left_rec;
@@ -57,14 +60,15 @@ bool bvh_node::hit(const ray& r, float t_min, float t_max, hit_record& rec) cons
     else return false;
 }
 
-
 int box_x_compare (const void * a, const void * b) {
     aabb box_left, box_right;
     hittable *ah = *(hittable**)a;
     hittable *bh = *(hittable**)b;
-    if(!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
+
+    if (!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
         std::cerr << "no bounding box in bvh_node constructor\n";
-    if ( box_left.min().x() - box_right.min().x() < 0.0  )
+
+    if (box_left.min().x() - box_right.min().x() < 0.0)
         return -1;
     else
         return 1;
@@ -75,36 +79,40 @@ int box_y_compare (const void * a, const void * b)
     aabb box_left, box_right;
     hittable *ah = *(hittable**)a;
     hittable *bh = *(hittable**)b;
-    if(!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
+
+    if (!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
         std::cerr << "no bounding box in bvh_node constructor\n";
-    if ( box_left.min().y() - box_right.min().y() < 0.0  )
+
+    if (box_left.min().y() - box_right.min().y() < 0.0)
         return -1;
     else
         return 1;
 }
+
 int box_z_compare (const void * a, const void * b)
 {
     aabb box_left, box_right;
     hittable *ah = *(hittable**)a;
     hittable *bh = *(hittable**)b;
-    if(!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
+
+    if (!ah->bounding_box(0,0, box_left) || !bh->bounding_box(0,0, box_right))
         std::cerr << "no bounding box in bvh_node constructor\n";
-    if ( box_left.min().z() - box_right.min().z() < 0.0  )
+
+    if (box_left.min().z() - box_right.min().z() < 0.0)
         return -1;
     else
         return 1;
 }
 
-
-bvh_node::bvh_node(hittable **l, int n, float time0, float time1) {
+bvh_node::bvh_node(hittable **l, int n, double time0, double time1) {
     aabb *boxes = new aabb[n];
-    float *left_area = new float[n];
-    float *right_area = new float[n];
+    auto *left_area = new double[n];
+    auto *right_area = new double[n];
     aabb main_box;
-    bool dummy = l[0]->bounding_box(time0,time1,main_box);
+    bool dummy = l[0]->bounding_box(time0, time1, main_box);
     for (int i = 1; i < n; i++) {
         aabb new_box;
-        bool dummy = l[i]->bounding_box(time0,time1,new_box);
+        bool dummy = l[i]->bounding_box(time0, time1, new_box);
         main_box = surrounding_box(new_box, main_box);
     }
     int axis = main_box.longest_axis();
@@ -115,7 +123,7 @@ bvh_node::bvh_node(hittable **l, int n, float time0, float time1) {
     else
         qsort(l, n, sizeof(hittable *), box_z_compare);
     for (int i = 0; i < n; i++)
-        bool dummy = l[i]->bounding_box(time0,time1,boxes[i]);
+        bool dummy = l[i]->bounding_box(time0, time1, boxes[i]);
     left_area[0] = boxes[0].area();
     aabb left_box = boxes[0];
     for (int i = 1; i < n-1; i++) {
@@ -128,10 +136,10 @@ bvh_node::bvh_node(hittable **l, int n, float time0, float time1) {
         right_box = surrounding_box(right_box, boxes[i]);
         right_area[i] = right_box.area();
     }
-    float min_SAH = FLT_MAX;
+    auto min_SAH = infinity;
     int min_SAH_idx;
     for (int i = 0; i < n-1; i++) {
-        float SAH = i*left_area[i] + (n-i-1)*right_area[i+1];
+        auto SAH = i*left_area[i] + (n-i-1)*right_area[i+1];
         if (SAH < min_SAH) {
             min_SAH_idx = i;
             min_SAH = SAH;
@@ -165,4 +173,3 @@ bvh_node::bvh_node(hittable **l, int n, float time0, float time1) {
 }
 
 #endif
-

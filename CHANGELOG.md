@@ -1,8 +1,17 @@
 Change Log
-================================================================================
+====================================================================================================
+
+vNext (version TBD)
+--------------------
+Common
+- New: CMake configuration & build
+- New: File constants.h with portable math constants. Fixes #151.
+- Change: Replace pi with portable version. Fixes #207.
+- Change: Replace MAXFLOAT with (portable) infinity. Fixes #195.
+
 
 v2.0.0 (2019-10-07)
----------------------
+--------------------
 Common
 - New: General release to web
 - New: Created single monolithic raytracing.github.io repo
