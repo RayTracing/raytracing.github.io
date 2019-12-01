@@ -43,11 +43,19 @@ please include the file, function/class, and line number(s) if that applies.
 
 Pull Requests
 --------------
-If you have a change that you think would be worthwhile, start with creating an issue, and indicate
-whether you're willing to submit the change yourself. We'll let you know if it sounds like a good
-idea, whether it duplicates another issue or work already planned. If you get the green light,
-create your own fork of the project, make the changes, and then create a standard GitHub pull
-request for us to review.
+To contribute a change to the project, please follow these steps:
+
+  1. [Create a GitHub issue](https://github.com/RayTracing/raytracing.github.io/issues)
+
+  2. Participate in the discussion as needed. We'll ensure that the work doesn't conflict with or
+     duplicate other work planned or in progress, and makes sense for the next release.
+
+  3. Create your changes in a feature branch (or fork) from the `development` branch (_not_ from
+     master).
+
+  4. Follow existing code style.
+
+  5. When ready, create a pull request and assign it to "rt-contributors".
 
 New to GitHub? We'll walk you through the process above. Just mention that you'd like a little
 guidance in the proposal issue.
