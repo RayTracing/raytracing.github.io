@@ -29,5 +29,5 @@ int main() {
             auto x = pow(8*random_double(), 1./3.);
             sum += x*x / pdf(x);
     }
-    std::cout << "I = " << sum/N << "\n";
+    printf("I = %1.8f\n", sum/N);
 }
