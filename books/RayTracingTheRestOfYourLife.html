@@ -1083,7 +1083,9 @@ Ortho-normal Bases
 ====================================================================================================
 
 In the last chapter we developed methods to generate random directions relative to the Z-axis. We’d
-like to do that relative to a surface normal vector. An ortho-normal basis (ONB) is a collection of
+like to be able to do that relative to a surface normal vector.
+
+An ortho-normal basis (ONB) is a collection of
 three mutually orthogonal unit vectors. The Cartesian XYZ axes are one such ONB, and I sometimes
 forget that it has to sit in some real place with real orientation to have meaning in the real
 world, and some virtual place and orientation in the virtual world. A picture is a result of the
@@ -1110,16 +1112,16 @@ If you take an intro graphics course, there will be a lot of time spent on coord
 4×4 coordinate transformation matrices. Pay attention, it’s important stuff in graphics! But we
 won’t need it. What we need to is generate random directions with a set distribution relative to
 $\vec{\mathbf{n}}$. We don’t need an origin because a direction is relative to no specified origin.
-We do need two cotangent vectors that are mutually perpendicular to $\vec{\mathbf{n}}$ and each
+We do need two cotangent vectors that are mutually perpendicular to $\vec{\mathbf{n}}$ and to each
 other.
 
 <div class='together'>
-Some models will come with at least one cotangent vector. The hard case of making an ONB is when we
-just have one vector. Suppose we have any vector $\vec{\mathbf{a}}$ that is not zero length or
-parallel to $\vec{\mathbf{n}}$. We can get to vectors $\vec{\mathbf{s}}$ and $\vec{\mathbf{t}}$
-parallel to $\vec{\mathbf{n}}$ by using the property of the cross product that
-$\vec{\mathbf{c}} \times \vec{\mathbf{d}}$ is perpendicular to both $\vec{\mathbf{c}}$ and
-$\vec{\mathbf{d}}$:
+Some models will come with one or more cotangent vectors. If our model has only one cotangent
+vector then the process of making an ONB is a nontrivial one. Suppose we have any vector
+$\vec{\mathbf{a}}$ that is of nonzero length and that is nonparallel to $\vec{\mathbf{n}}$. We can
+get vectors $\vec{\mathbf{s}}$ and $\vec{\mathbf{t}}$ perpendicular to $\vec{\mathbf{n}}$ by using
+the property of the cross product that $\vec{\mathbf{c}} \times \vec{\mathbf{d}}$ is perpendicular
+to both $\vec{\mathbf{c}}$ and $\vec{\mathbf{d}}$:
 
   $$ \vec{\mathbf{t}} = \text{unit_vector}(\vec{\mathbf{a}} \times \vec{\mathbf{n}}) $$
 
@@ -1127,8 +1129,10 @@ $\vec{\mathbf{d}}$:
 </div>
 
 <div class='together'>
-The catch is, we don’t have an $\vec{\mathbf{a}}$ and if we pick a particular one at some point we
-will get an $\vec{\mathbf{n}}$ parallel to $\vec{\mathbf{a}}$. A common method is to use an
+This is all well and good, but the catch is that we may not be given an $\vec{\mathbf{a}}$ when we
+load a model, and we don't have an $\vec{\mathbf{a}}$ with our existing program. If we went ahead
+and picked an arbitrary $\vec{\mathbf{a}}$ to use as our initial vector we may get an
+$\vec{\mathbf{a}}$ that is parallel to $\vec{\mathbf{n}}$. A common method is to use an
 if-statement to determine whether $\vec{\mathbf{n}}$ is a particular axis, and if not, use that
 axis.
 
@@ -1141,8 +1145,8 @@ axis.
 </div>
 
 <div class='together'>
-Once we have an ONB and we have a $random(x,y,z)$ relative the the Z-axis we can get the vector
-relative to $\vec{n}$ as:
+Once we have an ONB of $\vec{\mathbf{s}}$, $\vec{\mathbf{t}}$, and $\vec{\mathbf{n}}$ and we have a
+$random(x,y,z)$ relative to the Z-axis we can get the vector relative to $\vec{n}$ as:
 
   $$
   \text{Random vector} = (\vec{\mathbf{x}} \cdot \vec{\mathbf{s}})
