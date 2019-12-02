@@ -87,13 +87,13 @@ centered at the origin:
             if(x*x + y*y < 1)
                 inside_circle++;
         }
-        printf("Estimate of Pi = %1.10f\n", 4 * double(inside_circle) / N);
+        printf("Estimate of Pi = %1.8f\n", 4 * double(inside_circle) / N);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estpi-1]: <kbd>[pi.cc]</kbd> Estimating π]
 </div>
 
-This gives me the answer `Estimate of Pi = 3.0880000000`
+This gives me the answer `Estimate of Pi = 3.08800000`
 
 <div class='together'>
 If we change the program to run forever and just print out a running estimate:
@@ -116,10 +116,7 @@ If we change the program to run forever and just print out a running estimate:
                 inside_circle++;
 
             if (runs % 100000 == 0)
-                std::cout << "Estimate of Pi = "
-                          << 4*double(inside_circle) / runs
-                          << '\n';
-
+                printf("Estimate of Pi = %1.8f\n", 4 * double(inside_circle) / runs);
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -163,11 +160,10 @@ because we need to know the grid. Let’s take a hundred million and try it both
         }
 
         auto N = static_cast<double>(sqrt_N) * sqrt_N;
-        std::cout
-            << "Regular    Estimate of Pi = "
-            << 4*double(inside_circle) / (sqrt_N*sqrt_N) << '\n'
-            << "Stratified Estimate of Pi = "
-            << 4*double(inside_circle_stratified) / (sqrt_N*sqrt_N) << '\n';
+        printf("Regular    Estimate of Pi = %1.8f\n",
+            4 * double(inside_circle) / (sqrt_N*sqrt_N));
+        printf("Stratified Estimate of Pi = %1.8f\n",
+            4 * double(inside_circle_stratified) / (sqrt_N*sqrt_N));
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estpi-3]: <kbd>[pi.cc]</kbd> Estimating π, v3]
@@ -175,8 +171,8 @@ because we need to know the grid. Let’s take a hundred million and try it both
 I get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Regular Estimate of Pi = 3.14151
-    Stratified Estimate of Pi = 3.14159
+    Regular    Estimate of Pi = 3.14151480
+    Stratified Estimate of Pi = 3.14158948
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
