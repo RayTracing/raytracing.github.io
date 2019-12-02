@@ -585,8 +585,7 @@ Now let’s go on to the light transport equation we are solving.
 Light Scattering
 ====================================================================================================
 
-In this chapter we won't actually implement anything. We will set up for a big lighting change in
-our program in the next chapter.
+In this chapter we won't actually program anything. We will set up for a big lighting change in the next chapter.
 
 Our program from the last books already scatters rays from a surface or volume. This is the commonly
 used model for light interacting with a surface. One natural way to model this is with probability.
@@ -597,16 +596,19 @@ Probability of light scattering: $A$
 Probability of light being absorbed: $1-A$
 
 Here $A$ stands for _albedo_ (latin for _whiteness_). Albedo is a precise technical term in some
-disciplines, but in all uses it means some form of fractional reflectance. As we implemented for
-glass, the albedo may vary with incident direction, and it varies with color. In the most physically
-based renderers, we would use a set of wavelengths for the light color rather than RGB. We can
-almost always harness our intuition by thinking of R, G, and B as specific long, medium, and short
-wavelengths.
+disciplines, but in all cases it is used to define some form of _fractional reflectance_. This
+_fractional reflectance_ (or albedo) will vary with color and (as we implemented for our glass in
+book one) can vary with incident direction. 
+
+In most physically based renderers, we would use a set of wavelengths for the light color rather
+than RGB. We can extend our intuition by thinking of R, G, and B as specific algebraic mixtures of
+long, medium, and short wavelengths.
 
 If the light does scatter, it will have a directional distribution that we can describe as a PDF
 over solid angle. I will refer to this as its _scattering PDF_: $s(direction)$. The scattering PDF
-can also vary with incident direction, as you will notice when you look at reflections off a road --
-they become mirror-like as your viewing angle approaches grazing.
+can also vary with _incident direction_, which is the direction of the incoming ray. You can see
+this varying with incident direction when you look at reflections off a road -- they become
+mirror-like as your viewing angle (incident angle) approaches grazing.
 
 <div class='together'>
 The color of a surface in terms of these quantities is:
@@ -614,8 +616,9 @@ The color of a surface in terms of these quantities is:
   $$ Color = \int A \cdot s(direction) \cdot \text{color}(direction) $$
 </div>
 
-Note that $A$ and $s()$ might depend on the view direction, so of course color can vary with view
-direction. Also $A$ and $s()$ may vary with position on the surface or within the volume.
+Note that $A$ and $s()$ may depend on the view direction and may depend on the scattering position
+(position on a surface or position within a volume). Therefore, the output color may also vary with
+view direction or scattering position.
 
 <div class='together'>
 If we apply the MC basic formula we get the following statistical estimate:
@@ -649,8 +652,11 @@ So for a Lambertian surface the scattering PDF is:
 </div>
 
 <div class='together'>
-If we sample using the same PDF, so $p(direction) = \cos(\theta) / \pi$, the numerator and
-denominator cancel out and we get:
+If we sample using a PDF that equals the scattering PDF:
+
+  $$ p(direction) = s(direction) = \frac{\cos(\theta)}{\pi} $$
+
+The numerator and denominator cancel out and we get:
 
   $$ Color = A \cdot color(direction) $$
 
