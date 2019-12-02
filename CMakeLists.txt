@@ -62,7 +62,6 @@ set ( SOURCE_REST_OF_YOUR_LIFE
   src/TheRestOfYourLife/box.h
   src/TheRestOfYourLife/bvh.h
   src/TheRestOfYourLife/camera.h
-  src/TheRestOfYourLife/constant_medium.h
   src/TheRestOfYourLife/hittable.h
   src/TheRestOfYourLife/hittable_list.h
   src/TheRestOfYourLife/material.h
