@@ -15,15 +15,16 @@
 #include <math.h>
 #include <stdlib.h>
 
+vec3 random_in_unit_sphere() {
+    vec3 p;
+    do {
+        p = 2*vec3(random_double(),random_double(),random_double()) - vec3(1,1,1);
+    } while (p.squared_length() >= 1);
+    return p;
+}
 
 vec3 random_on_unit_sphere() {
-    vec3 p;
-    double len_squared;
-    do {
-        p = 2*vec3(random_double(), random_double(), random_double()) - vec3(1,1,1);
-        len_squared = p.squared_length();
-    } while (len_squared >= 1);
-    return p / sqrt(len_squared);
+    return unit_vector(random_in_unit_sphere());
 }
 
 inline double pdf(const vec3& p) {
@@ -38,5 +39,6 @@ int main() {
         auto cosine_squared = d.z()*d.z();
         sum += cosine_squared / pdf(d);
     }
-    std::cout << "I = " << sum/N << '\n';
+    printf("I = %1.8f\n", sum/N);;
+
 }

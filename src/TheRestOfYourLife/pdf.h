@@ -43,6 +43,10 @@ vec3 random_in_unit_sphere() {
     return p;
 }
 
+vec3 random_on_unit_sphere() {
+    return unit_vector(random_in_unit_sphere());
+}
+
 class pdf  {
     public:
         virtual double value(const vec3& direction) const = 0;
