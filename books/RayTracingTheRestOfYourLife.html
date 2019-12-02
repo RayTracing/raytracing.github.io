@@ -823,21 +823,21 @@ And the color function gets a minor modification:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 ray_color(const ray& r, hittable *world, int depth) {
-        hit_record hrec;
-        if (depth <= 0 || !world->hit(r, 0.001, infinity, hrec))
+        hit_record rec;
+        if (depth <= 0 || !world->hit(r, 0.001, infinity, rec))
             return vec3(0,0,0);
 
         ray scattered;
         vec3 attenuation;
-        vec3 emitted = hrec.mat_ptr->emitted(hrec.u, hrec.v, hrec.p);
+        vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
         double pdf;
         vec3 albedo;
 
-        if (!hrec.mat_ptr->scatter(r, hrec, albedo, scattered, pdf))
+        if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf))
             return emitted;
 
         return emitted
-             + albedo * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+             + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
                       * ray_color(scattered, world, depth-1) / pdf;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1271,27 +1271,27 @@ that math and get the concept, we can add it (see the highlighted region):
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 ray_color(const ray& r, hittable *world, int depth) {
-        hit_record hrec;
-        if (depth <= 0 || !world->hit(r, 0,001, infinity, hrec))
+        hit_record rec;
+        if (depth <= 0 || !world->hit(r, 0,001, infinity, rec))
             return vec3(0,0,0);
 
         ray scattered;
         vec3 attenuation;
-        vec3 emitted = hrec.mat_ptr->emitted(hrec.u, hrec.v, hrec.p);
+        vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
         double pdf;
         vec3 albedo;
-        if (!hrec.mat_ptr->scatter(r, hrec, albedo, scattered, pdf))
+        if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf))
             return emitted;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         vec3 on_light = vec3(213 + random_double()*(343-213),
                              554,
                              227 + random_double()*(332-227));
-        vec3 to_light = on_light - hrec.p;
+        vec3 to_light = on_light - rec.p;
         auto distance_squared = to_light.squared_length();
         to_light.make_unit_vector();
 
-        if (dot(to_light, hrec.normal) < 0)
+        if (dot(to_light, rec.normal) < 0)
             return emitted;
 
         double light_area = (343-213)*(332-227);
@@ -1300,11 +1300,11 @@ that math and get the concept, we can add it (see the highlighted region):
             return emitted;
 
         pdf = distance_squared / (light_cosine * light_area);
-        scattered = ray(hrec.p, to_light, r.time());
+        scattered = ray(rec.p, to_light, r.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         return emitted
-             + albedo * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+             + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
                       * ray_color(scattered, world, depth-1) / pdf;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1434,26 +1434,26 @@ change variable `pdf` to some other variable name to avoid a name conflict with 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 ray_color(const ray& r, hittable *world, int depth) {
-        hit_record hrec;
-        if (depth <= 0 || !world->hit(r, 0.001, infinity, hrec))
+        hit_record rec;
+        if (depth <= 0 || !world->hit(r, 0.001, infinity, rec))
             return vec3(0,0,0);
 
         ray scattered;
         vec3 attenuation;
-        vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
+        vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
         double pdf_val;
         vec3 albedo;
-        if (!hrec.mat_ptr->scatter(r, hrec, albedo, scattered, pdf_val))
+        if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
             return emitted;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        cosine_pdf p(hrec.normal);
-        scattered = ray(hrec.p, p.generate(), r.time());
+        cosine_pdf p(rec.normal);
+        scattered = ray(rec.p, p.generate(), r.time());
         pdf_val = p.value(scattered.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         return emitted
-             + albedo * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+             + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
                       * ray_color(scattered, world, depth-1)
                       / pdf_val;
     }
@@ -1556,27 +1556,27 @@ And then change `ray_color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 ray_color(const ray& r, hittable *world, int depth) {
-        hit_record hrec;
-        if (depth <= 0 || !world->hit(r, 0.001, infinity, hrec))
+        hit_record rec;
+        if (depth <= 0 || !world->hit(r, 0.001, infinity, rec))
             return vec3(0,0,0);
 
         ray scattered;
         vec3 attenuation;
-        vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
+        vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
         double pdf_val;
         vec3 albedo;
-        if (!hrec.mat_ptr->scatter(r, hrec, albedo, scattered, pdf_val))
+        if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
             return emitted;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
-        hittable_pdf p(light_shape, hrec.p);
+        hittable_pdf p(light_shape, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        scattered = ray(hrec.p, p.generate(), r.time());
+        scattered = ray(rec.p, p.generate(), r.time());
         pdf_val = p.value(scattered.direction());
 
         return emitted
-             + albedo * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+             + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
                       * ray_color(scattered, world, depth-1)
                       / pdf_val;
     }
@@ -1622,29 +1622,29 @@ And plugging it into `ray_color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) {
-        hit_record hrec;
-        if (depth <= 0 || !world->hit(r, 0.001, infinity, hrec))
+        hit_record rec;
+        if (depth <= 0 || !world->hit(r, 0.001, infinity, rec))
             return vec3(0,0,0);
 
         ray scattered;
         vec3 attenuation;
-        vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
+        vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
         double pdf_val;
         vec3 albedo;
-        if (!hrec.mat_ptr->scatter(r, hrec, albedo, scattered, pdf_val))
+        if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
             return emitted;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
-        hittable_pdf p0(light_shape, hrec.p);
-        cosine_pdf p1(hrec.normal);
+        hittable_pdf p0(light_shape, rec.p);
+        cosine_pdf p1(rec.normal);
         mixture_pdf p(&p0, &p1);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        scattered = ray(hrec.p, p.generate(), r.time());
+        scattered = ray(rec.p, p.generate(), r.time());
         pdf_val = p.value(scattered.direction());
 
         return emitted
-             + albedo * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+             + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
                       * ray_color(scattered, world, depth-1)
                       / pdf_val;
     }
@@ -1746,7 +1746,7 @@ We can redesign `material` and stuff all the new arguments into a `struct` like 
         public:
             virtual bool scatter(
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                const ray& r_in, const hit_record& hrec, scatter_record& srec
+                const ray& r_in, const hit_record& rec, scatter_record& srec
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ) const {
                 return false;
@@ -1790,10 +1790,10 @@ The Lambertian material becomes simpler:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            bool scatter(const ray& r_in, const hit_record& hrec, scatter_record& srec) const {
+            bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const {
                 srec.is_specular = false;
-                srec.attenuation = albedo->value(hrec.u, hrec.v, hrec.p);
-                srec.pdf_ptr = new cosine_pdf(hrec.normal);
+                srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
+                srec.pdf_ptr = new cosine_pdf(rec.normal);
                 return true;
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1809,24 +1809,24 @@ And `ray_color()` changes are small:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) {
-        hit_record hrec;
-        if (depth <= 0 || !world->hit(r, 0.001, infinity, hrec))
+        hit_record rec;
+        if (depth <= 0 || !world->hit(r, 0.001, infinity, rec))
             return vec3(0,0,0);
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         scatter_record srec;
-        vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
-        if (!hrec.mat_ptr->scatter(r, hrec, srec))
+        vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+        if (!rec.mat_ptr->scatter(r, rec, srec))
             return emitted;
 
-        hittable_pdf plight(light_shape, hrec.p);
+        hittable_pdf plight(light_shape, rec.p);
         mixture_pdf p(&plight, srec.pdf_ptr);
-        ray scattered = ray(hrec.p, p.generate(), r.time());
+        ray scattered = ray(rec.p, p.generate(), r.time());
         auto pdf_val = p.value(scattered.direction());
 
         return emitted
-            + srec.attenuation * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+            + srec.attenuation * rec.mat_ptr->scattering_pdf(r, rec, scattered)
                                * ray_color(scattered, world, light_shape, depth-1)
                                / pdf_val;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1846,10 +1846,10 @@ overall, and those are all fixable. For now, I will just fix `specular`. Metal i
             metal(const vec3& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             virtual bool scatter(
-                const ray& r_in, const hit_record& hrec, scatter_record& srec
+                const ray& r_in, const hit_record& rec, scatter_record& srec
             ) const {
-                vec3 reflected = reflect(unit_vector(r_in.direction()), hrec.normal);
-                srec.specular_ray = ray(hrec.p, reflected+fuzz*random_in_unit_sphere());
+                vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+                srec.specular_ray = ray(rec.p, reflected+fuzz*random_in_unit_sphere());
                 srec.attenuation = albedo;
                 srec.is_specular = true;
                 srec.pdf_ptr = 0;
@@ -1871,13 +1871,13 @@ just like it did before.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) {
-        hit_record hrec;
-        if (depth <= 0 || !world->hit(r, 0.001, infinity, hrec))
+        hit_record rec;
+        if (depth <= 0 || !world->hit(r, 0.001, infinity, rec))
             return vec3(0,0,0);
 
         scatter_record srec;
-        vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
-        if (!hrec.mat_ptr->scatter(r, hrec, srec))
+        vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+        if (!rec.mat_ptr->scatter(r, rec, srec))
             return emitted;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1886,14 +1886,14 @@ just like it did before.
                  * ray_color(srec.specular_ray, world, light_shape, depth-1);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        hittable_pdf plight(light_shape, hrec.p);
+        hittable_pdf plight(light_shape, rec.p);
         mixture_pdf p(&plight, srec.pdf_ptr);
-        ray scattered = ray(hrec.p, p.generate(), r.time());
+        ray scattered = ray(rec.p, p.generate(), r.time());
         auto pdf_val = p.value(scattered.direction());
         delete srec.pdf_ptr;
 
         return emitted + srec.attenuation
-                       * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+                       * rec.mat_ptr->scattering_pdf(r, rec, scattered)
                        * ray_color(scattered, world, light_shape, depth-1)
                        / pdf_val;
     }
