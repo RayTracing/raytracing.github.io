@@ -60,7 +60,6 @@ set ( SOURCE_REST_OF_YOUR_LIFE
   src/TheRestOfYourLife/aabb.h
   src/TheRestOfYourLife/aarect.h
   src/TheRestOfYourLife/box.h
-  src/TheRestOfYourLife/bucamera.h
   src/TheRestOfYourLife/bvh.h
   src/TheRestOfYourLife/camera.h
   src/TheRestOfYourLife/constant_medium.h
