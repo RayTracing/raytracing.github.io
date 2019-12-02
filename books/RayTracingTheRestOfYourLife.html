@@ -237,11 +237,14 @@ can only probabilistically evaluate. That is in fact what the ray tracing `ray_c
 the last two books is -- we don’t know what color is seen in every direction, but we can
 statistically estimate it in any given dimension.
 
-One problem with the random program we wrote in the first two books is small light sources create
-too much noise because our uniform sampling doesn’t sample the light often enough. We could lessen
-that problem if we sent more random samples toward the light, but then we would need to downweight
-those samples to adjust for the over-sampling. How we do that adjustment? To do that we will need
-the concept of a _probability density function_.
+One problem with the random program we wrote in the first two books is that small light sources
+create too much noise because our uniform sampling doesn’t sample these light sources often enough.
+These lights sources are only sampled if a ray scatters toward them, but this can be unlikely for a
+small light or a light that is far away. We could lessen this problem if we sent more random
+samples toward this light, but sending more random samples toward the light will cause the scene to
+be inaccurately bright. We can then remove this inaccuracy by downweighting these samples to adjust
+for the over-sampling. How we do that adjustment? To do that we will need the concept of a
+_probability density function_.
 
 <div class='together'>
 First, what is a _density function_? It’s just a continuous form of a histogram. Here’s an example
