@@ -585,7 +585,8 @@ Now let’s go on to the light transport equation we are solving.
 Light Scattering
 ====================================================================================================
 
-In this chapter we won't actually program anything. We will set up for a big lighting change in the next chapter.
+In this chapter we won't actually program anything. We will set up for a big lighting change in the
+next chapter.
 
 Our program from the last books already scatters rays from a surface or volume. This is the commonly
 used model for light interacting with a surface. One natural way to model this is with probability.
@@ -697,9 +698,10 @@ would be:
 </div>
 
 As long as the weights are positive and add up to one, any such mixture of PDFs is a PDF. And
-remember, we can use any PDF -- it doesn’t change the answer we converge to! So, the game is to
-figure out how to make the PDF larger where the product $s(direction) \cdot color(direction)$ is
-large. For diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is high.
+remember, we can use any PDF -- _all PDF eventually converge to the correct answer_. So, the game
+is to figure out how to make the PDF larger where the product $s(direction) \cdot color(direction)$
+is large. For diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is
+high.
 
 For a mirror, $s()$ is huge only near one direction, so it matters a lot more. Most renderers in
 fact make mirrors a special case and just make the $s/p$ implicit -- our code currently does that.
@@ -802,7 +804,7 @@ And _Lambertian_ material becomes:
             bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& alb, ray& scattered, double& pdf
             ) const {
-                vec3 target = rec.p + rec.normal + random_unit_vector();
+                vec3 target = rec.p + rec.normal + random_on_unit_sphere();
                 scattered = ray(rec.p, unit_vector(target-rec.p), r_in.time());
                 alb = albedo->value(rec.u, rec.v, rec.p);
                 pdf = dot(rec.normal, scattered.direction()) / pi;
@@ -846,17 +848,15 @@ And the color function gets a minor modification:
 You should get exactly the same picture.
 
 <div class='together'>
-Now, just for the experience, try a different sampling strategy. Let’s choose randomly from the
-hemisphere that is above the surface. This would be $p(direction) = \frac{1}{2\pi}$.
+Now, just for the experience, try a different sampling strategy. Just like in the first book, Let’s
+choose randomly from the hemisphere that is above the surface. This would be $p(direction) =
+\frac{1}{2\pi}$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool scatter(
         const ray& r_in, const hit_record& rec, vec3& alb, ray& scattered, double& pdf
     ) const {
-        vec3 direction;
-        do {
-            direction = random_in_unit_sphere();
-        } while (dot(direction, rec.normal) < 0);
+        vec3 direction = random_in_hemisphere(rec.normal);
         scattered = ray(rec.p, unit_vector(direction), r_in.time());
         alb = albedo->value(rec.u, rec.v, rec.p);
         pdf = 0.5 / pi;
