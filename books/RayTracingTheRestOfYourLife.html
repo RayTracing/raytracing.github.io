@@ -410,14 +410,15 @@ weighting function should be proportional to $1/pdf$. In fact it is exactly $1/p
             sum += x*x / pdf(x);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-        std::cout << "I = " << sum/N << '\n';
+        printf("I = %1.8f\n", sum/N);;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-xsq-2]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$ with PDF]
 </div>
 
 Since we are sampling more where the integrand is big, we might expect less noise and thus faster
-convergence. This is why using a carefully chosen non-uniform PDF is usually called _importance
+convergence. In effect, we are steering our samples toward the parts of the distribution that are
+more _important_. This is why using a carefully chosen non-uniform PDF is usually called _importance
 sampling_.
 
 <div class='together'>
@@ -441,7 +442,7 @@ the machinery to get `x = 2*random_double()` and the code is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             sum += x*x / pdf(x);
         }
-        std::cout << "I = " << sum/N << '\n';
+        printf("I = %1.8f\n", sum/N);;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-xsq-3]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$, v3]
@@ -487,7 +488,7 @@ sample we get:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             sum += x*x / pdf(x);
         }
-        std::cout << "I = " << sum/N << '\n';
+        printf("I = %1.8f\n", sum/N);;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-xsq-4]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$, final version]
@@ -500,9 +501,10 @@ Let’s review now because that was most of the concepts that underlie MC ray tr
 
   1. You have an integral of $f(x)$ over some domain $[a,b]$
   2. You pick a PDF $p$ that is non-zero over $[a,b]$
-  3. You average a whole ton of $f(r)/p(r)$ where $r$ is a random number $r$ with PDF $p$.
+  3. You average a whole ton of $\frac{f(r)}{p(r)}$ where $r$ is a random number with PDF $p$.
 
-This will always converge to the right answer. The more $p$ follows $f$, the faster it converges.
+Any choice of PDF $p$ will always converge to the right answer, but the closer that $p$
+approximates $f$, the faster that it will converge.
 </div>
 
 
