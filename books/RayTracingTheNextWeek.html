@@ -77,7 +77,7 @@ For this we will first need to have a ray store the time it exists at:
             double time() const    { return tm; }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            vec3 point_at_parameter(double t) const {
+            vec3 at(double t) const {
                 return orig + t*dir;
             }
 
@@ -203,7 +203,7 @@ intersection code barely needs a change: `center` just needs to become a functio
             auto temp = (-half_b - root)/a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
-                rec.p = r.point_at_parameter(rec.t);
+                rec.p = r.at(rec.t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 rec.normal = (rec.p - center(r.time())) / radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -213,7 +213,7 @@ intersection code barely needs a change: `center` just needs to become a functio
             temp = (-half_b + root) / a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
-                rec.p = r.point_at_parameter(rec.t);
+                rec.p = r.at(rec.t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 rec.normal = (rec.p - center(r.time())) / radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1709,7 +1709,7 @@ And the hit function is:
         rec.v = (y-y0)/(y1-y0);
         rec.t = t;
         rec.mat_ptr = mp;
-        rec.p = r.point_at_parameter(t);
+        rec.p = r.at(t);
         rec.normal = vec3(0, 0, 1);
         return true;
     }
@@ -1813,7 +1813,7 @@ With unsurprising hit functions:
         rec.v = (z-z0)/(z1-z0);
         rec.t = t;
         rec.mat_ptr = mp;
-        rec.p = r.point_at_parameter(t);
+        rec.p = r.at(t);
         rec.normal = vec3(0, 1, 0);
         return true;
     }
@@ -1830,7 +1830,7 @@ With unsurprising hit functions:
         rec.v = (z-z0)/(z1-z0);
         rec.t = t;
         rec.mat_ptr = mp;
-        rec.p = r.point_at_parameter(t);
+        rec.p = r.at(t);
         rec.normal = vec3(1, 0, 0);
         return true;
     }
@@ -2331,7 +2331,7 @@ And the hit function is:
                 if (hit_distance < distance_inside_boundary) {
 
                     rec.t = rec1.t + hit_distance / r.direction().length();
-                    rec.p = r.point_at_parameter(rec.t);
+                    rec.p = r.at(rec.t);
 
                     if (debugging) {
                         std::cerr << "hit_distance = " <<  hit_distance << '\n'

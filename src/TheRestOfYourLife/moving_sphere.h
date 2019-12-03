@@ -57,7 +57,7 @@ bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& re
         auto temp = (-b - sqrt(discriminant))/a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
-            rec.p = r.point_at_parameter(rec.t);
+            rec.p = r.at(rec.t);
             rec.normal = (rec.p - center(r.time())) / radius;
             rec.mat_ptr = mat_ptr;
             return true;
@@ -65,7 +65,7 @@ bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& re
         temp = (-b + sqrt(discriminant))/a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
-            rec.p = r.point_at_parameter(rec.t);
+            rec.p = r.at(rec.t);
             rec.normal = (rec.p - center(r.time())) / radius;
             rec.mat_ptr = mat_ptr;
             return true;

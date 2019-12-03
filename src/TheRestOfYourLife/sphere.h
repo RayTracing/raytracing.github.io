@@ -70,7 +70,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
         auto temp = (-half_b - root)/a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
-            rec.p = r.point_at_parameter(rec.t);
+            rec.p = r.at(rec.t);
             get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
             rec.normal = (rec.p - center) / radius;
             rec.mat_ptr = mat_ptr;
@@ -80,7 +80,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
         temp = (-half_b + root)/a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
-            rec.p = r.point_at_parameter(rec.t);
+            rec.p = r.at(rec.t);
             get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
             rec.normal = (rec.p - center) / radius;
             rec.mat_ptr = mat_ptr;
