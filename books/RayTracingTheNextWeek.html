@@ -721,29 +721,15 @@ check the children and sort out any details:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
-        if (box.hit(r, t_min, t_max)) {
-            hit_record left_rec, right_rec;
-            bool hit_left = left->hit(r, t_min, t_max, left_rec);
-            bool hit_right = right->hit(r, t_min, t_max, right_rec);
-            if (hit_left && hit_right) {
-                if (left_rec.t < right_rec.t)
-                    rec = left_rec;
-                else
-                    rec = right_rec;
+        if(box.hit(r, t_min, t_max)) {
+            if(left->hit(r, t_min, t_max, rec)) {
+                right->hit(r, t_min, rec.t, rec);
                 return true;
+            } else {
+                return right->hit(r, t_min, t_max, rec);
             }
-            else if (hit_left) {
-                rec = left_rec;
-                return true;
-            }
-            else if (hit_right) {
-                rec = right_rec;
-                return true;
-            }
-            else
-                return false;
         }
-        else return false;
+        return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [bvh-hit]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy hit function]
