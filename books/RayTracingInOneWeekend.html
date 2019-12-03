@@ -363,7 +363,7 @@ and this is what is often called a half-line or ray. The example $\mathbf{c} = p
   ![Figure [lerp]: Linear interpolation](../images/fig.lerp.jpg)
 
 <div class='together'>
-The function $p(t)$ in more verbose code form I call `point_at_parameter(t)`:
+The function $p(t)$ in more verbose code form I call `ray::at(t)`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef RAY_H
@@ -381,7 +381,7 @@ The function $p(t)$ in more verbose code form I call `point_at_parameter(t)`:
             vec3 origin() const    { return orig; }
             vec3 direction() const { return dir; }
 
-            vec3 point_at_parameter(double t) const {
+            vec3 at(double t) const {
                 return orig + t*dir;
             }
 
@@ -625,7 +625,7 @@ $\vec{\mathbf{N}}$:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto t = hit_sphere(vec3(0,0,-1), 0.5, r);
         if (t > 0.0) {
-            vec3 N = unit_vector(r.point_at_parameter(t) - vec3(0,0,-1));
+            vec3 N = unit_vector(r.at(t) - vec3(0,0,-1));
             return 0.5*vec3(N.x()+1, N.y()+1, N.z()+1);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -759,14 +759,14 @@ And here’s the sphere:
             auto temp = (-half_b - root)/a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
-                rec.p = r.point_at_parameter(rec.t);
+                rec.p = r.at(rec.t);
                 rec.normal = (rec.p - center) / radius;
                 return true;
             }
             temp = (-half_b + root) / a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
-                rec.p = r.point_at_parameter(rec.t);
+                rec.p = r.at(rec.t);
                 rec.normal = (rec.p - center) / radius;
                 return true;
             }
@@ -909,7 +909,7 @@ And the new main:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                vec3 p = r.point_at_parameter(2.0);
+                vec3 p = r.at(2.0);
                 vec3 color = ray_color(r, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -1534,7 +1534,7 @@ within `hit_record`. See the highlighted lines below:
             auto temp = (-half_b - root)/a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
-                rec.p = r.point_at_parameter(rec.t);
+                rec.p = r.at(rec.t);
                 rec.normal = (rec.p - center) / radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 rec.mat_ptr = mat_ptr;
@@ -1544,7 +1544,7 @@ within `hit_record`. See the highlighted lines below:
             temp = (-half_b + root) / a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
-                rec.p = r.point_at_parameter(rec.t);
+                rec.p = r.at(rec.t);
                 rec.normal = (rec.p - center) / radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 rec.mat_ptr = mat_ptr;
