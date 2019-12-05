@@ -33,12 +33,12 @@ set ( SOURCE_ONE_WEEKEND
 
 set ( SOURCE_NEXT_WEEK
   ${COMMON_ALL}
+  src/common/aabb.h
   src/common/external/stb_image.h
   src/common/perlin.h
   src/common/rtw_stb_image.h
   src/common/surface_texture.h
   src/common/texture.h
-  src/TheNextWeek/aabb.h
   src/TheNextWeek/aarect.h
   src/TheNextWeek/box.h
   src/TheNextWeek/bvh.h
@@ -53,12 +53,12 @@ set ( SOURCE_NEXT_WEEK
 
 set ( SOURCE_REST_OF_YOUR_LIFE
   ${COMMON_ALL}
+  src/common/aabb.h
   src/common/external/stb_image.h
   src/common/perlin.h
   src/common/rtw_stb_image.h
   src/common/surface_texture.h
   src/common/texture.h
-  src/TheRestOfYourLife/aabb.h
   src/TheRestOfYourLife/aarect.h
   src/TheRestOfYourLife/box.h
   src/TheRestOfYourLife/bvh.h
