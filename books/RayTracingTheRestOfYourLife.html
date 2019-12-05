@@ -247,13 +247,13 @@ the last two books is -- we don’t know what color is seen in every direction, 
 statistically estimate it in any given dimension.
 
 One problem with the random program we wrote in the first two books is that small light sources
-create too much noise because our uniform sampling doesn’t sample these light sources often enough.
-These lights sources are only sampled if a ray scatters toward them, but this can be unlikely for a
-small light or a light that is far away. We could lessen this problem if we sent more random
-samples toward this light, but sending more random samples toward the light will cause the scene to
-be inaccurately bright. We can then remove this inaccuracy by downweighting these samples to adjust
-for the over-sampling. How we do that adjustment? To do that we will need the concept of a
-_probability density function_.
+create too much noise, they create so much noise because our uniform sampling doesn’t sample these
+light sources often enough. These light sources are only sampled if a ray scatters toward them, but
+this can be unlikely for a small light, or a light that is far away. We could lessen this problem if
+we sent more random samples toward this light, but this will cause the scene to be inaccurately
+bright. We can remove this inaccuracy by downweighting these samples to adjust for the
+over-sampling. How we do that adjustment? To do that, we will need the concept of a _probability
+density function_.
 
 <div class='together'>
 First, what is a _density function_? It’s just a continuous form of a histogram. Here’s an example
@@ -353,7 +353,7 @@ This says _the probability that a random variable with our PDF is less than one 
 rise to a clever observation that underlies many methods to generate non-uniform random numbers. We
 want a function `f()` that when we call it as `f(random_double())` we get a return value with a PDF
 $\frac{x^2}{4}$. We don’t know what that is, but we do know that 25% of what it returns should be
-less than 1, and 75% should be above 1. If $f()$ is increasing, then we would expect $f(0.25) =
+less than 1.0, and 75% should be above 1.0. If $f()$ is increasing, then we would expect $f(0.25) =
 1.0$. This can be generalized to figure out $f()$ for every possible input:
 
   $$ f(P(x)) = x $$
@@ -367,8 +367,8 @@ That means $f$ just undoes whatever $P$ does. So,
 
 <div class='together'>
 The -1 means “inverse function”. Ugly notation, but standard. For our purposes what this means is,
-if we have PDF $p()$ and cumulative distribution function $P()$, then if we take this "inverse
-function" of a random number we’ll get what we want:
+if we have PDF $p()$ and cumulative distribution function $P()$, then if we use this "inverse
+function" with a random number we’ll get what we want:
 
   $$ e = P^{-1} (\text{random_double}()) $$
 </div>
@@ -550,7 +550,7 @@ uniform random samples on a unit sphere:
         return unit_vector(random_in_unit_sphere());
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [rand-unit-sphere]: <kbd>[pdf.h]</kbd> Random point on unit sphere]
+    [Listing [random-on-unit-sphere]: <kbd>[pdf.h]</kbd> Random point on the unit sphere]
 </div>
 
 <div class='together'>
