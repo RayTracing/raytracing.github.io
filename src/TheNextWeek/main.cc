@@ -10,11 +10,11 @@
 //==============================================================================================
 
 #include "common/rtweekend.h"
+#include "common/camera.h"
 #include "common/rtw_stb_image.h"
 #include "aarect.h"
 #include "box.h"
 #include "bvh.h"
-#include "camera.h"
 #include "constant_medium.h"
 #include "hittable_list.h"
 #include "material.h"

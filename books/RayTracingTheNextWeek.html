@@ -102,26 +102,31 @@ to camera because for now it is not allowed to move; it just sends out rays over
         public:
             camera(
                 vec3 lookfrom, vec3 lookat, vec3 vup,
-                double vfov, // vfov is top to bottom in degrees
-                double aspect, double aperture, double focus_dist,
+                double vfov, // top to bottom, in degrees
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                double t0, double t1
+                double aspect, double aperture, double focus_dist, double t0 = 0, double t1 = 0
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ) {
+                origin = lookfrom;
+                lens_radius = aperture / 2;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 time0 = t0;
                 time1 = t1;
-                lens_radius = aperture / 2;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 auto theta = degrees_to_radians(vfov);
                 auto half_height = tan(theta/2);
                 auto half_width = aspect * half_height;
-                origin = lookfrom;
+
                 w = unit_vector(lookfrom - lookat);
                 u = unit_vector(cross(vup, w));
                 v = cross(w, u);
+
                 lower_left_corner = origin
                                   - half_width*focus_dist*u
                                   - half_height*focus_dist*v
                                   - focus_dist*w;
+
                 horizontal = 2*half_width*focus_dist*u;
                 vertical = 2*half_height*focus_dist*v;
             }
@@ -144,10 +149,10 @@ to camera because for now it is not allowed to move; it just sends out rays over
             vec3 horizontal;
             vec3 vertical;
             vec3 u, v, w;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            double time0, time1;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             double lens_radius;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            double time0, time1;  // shutter open/close times
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
