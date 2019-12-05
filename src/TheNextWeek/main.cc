@@ -50,7 +50,7 @@ hittable *earth() {
 hittable *two_spheres() {
     texture *checker = new checker_texture(
         new constant_texture(vec3(0.2,0.3, 0.1)), new constant_texture(vec3(0.9, 0.9, 0.9)));
-    int n = 50;
+    size_t n = 50;
     hittable **list = new hittable*[n+1];
     list[0] = new sphere(vec3(0,-10, 0), 10, new lambertian(checker));
     list[1] = new sphere(vec3(0, 10, 0), 10, new lambertian(checker));
@@ -244,7 +244,7 @@ hittable *simple_light() {
 }
 
 hittable *random_scene() {
-    int n = 50000;
+    size_t n = 50000;
     hittable **list = new hittable*[n+1];
     texture *checker = new checker_texture(
         new constant_texture(vec3(0.2, 0.3, 0.1)),

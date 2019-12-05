@@ -37,7 +37,7 @@ vec3 ray_color(const ray& r, hittable *world, int depth) {
 
 
 hittable *random_scene() {
-    int n = 500;
+    size_t n = 500;
     hittable **list = new hittable*[n+1];
     list[0] = new sphere(vec3(0,-1000,0), 1000, new lambertian(vec3(0.5, 0.5, 0.5)));
     int i = 1;
