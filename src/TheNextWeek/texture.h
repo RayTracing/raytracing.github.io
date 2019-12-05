@@ -12,7 +12,7 @@
 //==============================================================================================
 
 #include "common/rtweekend.h"
-#include "perlin.h"
+#include "common/perlin.h"
 
 
 class texture  {
