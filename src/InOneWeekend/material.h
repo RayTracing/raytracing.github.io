@@ -13,7 +13,6 @@
 
 #include "common/rtweekend.h"
 #include "hittable.h"
-#include "ray.h"
 
 
 struct hit_record;

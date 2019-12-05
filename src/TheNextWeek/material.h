@@ -13,7 +13,6 @@
 
 #include "common/rtweekend.h"
 #include "hittable.h"
-#include "ray.h"
 #include "texture.h"
 
 

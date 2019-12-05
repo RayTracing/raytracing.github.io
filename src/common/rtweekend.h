@@ -29,6 +29,7 @@ inline double random_double() {
 
 // Common Headers
 
+#include "common/ray.h"
 #include "common/vec3.h"
 
 #endif
