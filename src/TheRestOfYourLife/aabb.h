@@ -13,7 +13,6 @@
 
 #include "common/rtweekend.h"
 #include "hittable.h"
-#include "ray.h"
 
 
 inline double ffmin(double a, double b) { return a < b ? a : b; }
