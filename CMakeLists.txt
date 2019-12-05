@@ -17,13 +17,13 @@ set ( CMAKE_CXX_STANDARD 11 )
 # Source
 set ( COMMON_ALL
   src/common/rtweekend.h
+  src/common/camera.h
   src/common/ray.h
   src/common/vec3.h
 )
 
 set ( SOURCE_ONE_WEEKEND
   ${COMMON_ALL}
-  src/InOneWeekend/camera.h
   src/InOneWeekend/hittable.h
   src/InOneWeekend/hittable_list.h
   src/InOneWeekend/material.h
@@ -40,7 +40,6 @@ set ( SOURCE_NEXT_WEEK
   src/TheNextWeek/aarect.h
   src/TheNextWeek/box.h
   src/TheNextWeek/bvh.h
-  src/TheNextWeek/camera.h
   src/TheNextWeek/constant_medium.h
   src/TheNextWeek/hittable.h
   src/TheNextWeek/hittable_list.h
@@ -61,7 +60,6 @@ set ( SOURCE_REST_OF_YOUR_LIFE
   src/TheRestOfYourLife/aarect.h
   src/TheRestOfYourLife/box.h
   src/TheRestOfYourLife/bvh.h
-  src/TheRestOfYourLife/camera.h
   src/TheRestOfYourLife/hittable.h
   src/TheRestOfYourLife/hittable_list.h
   src/TheRestOfYourLife/material.h

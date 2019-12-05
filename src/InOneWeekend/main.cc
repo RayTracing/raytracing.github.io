@@ -10,7 +10,7 @@
 //==============================================================================================
 
 #include "common/rtweekend.h"
-#include "camera.h"
+#include "common/camera.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"

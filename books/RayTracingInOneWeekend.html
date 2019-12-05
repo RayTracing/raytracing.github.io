@@ -851,6 +851,7 @@ file.
 
     // Common Headers
 
+    #include "common/ray.h"
     #include "common/vec3.h"
 
     #endif
@@ -1000,7 +1001,6 @@ before:
     #define CAMERA_H
 
     #include "common/rtweekend.h"
-    #include "ray.h"
 
     class camera {
         public:
@@ -2022,16 +2022,19 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
         public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             camera(
-                double vfov, // vfov is top to bottom in degrees
+                double vfov, // top to bottom, in degrees
                 double aspect
             ) {
+                origin = vec3(0.0, 0.0, 0.0);
+
                 auto theta = degrees_to_radians(vfov);
                 auto half_height = tan(theta/2);
                 auto half_width = aspect * half_height;
+
                 lower_left_corner = vec3(-half_width, -half_height, -1.0);
+
                 horizontal = vec3(2*half_width, 0.0, 0.0);
                 vertical = vec3(0.0, 2*half_height, 0.0);
-                origin = vec3(0.0, 0.0, 0.0);
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -2095,19 +2098,25 @@ camera horizontally level until you decide to experiment with crazy camera angle
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 lookfrom, vec3 lookat, vec3 vup,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                double vfov, // vfov is top to bottom in degrees
+                double vfov, // top to bottom, in degrees
                 double aspect
             ) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                origin = lookfrom;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 vec3 u, v, w;
+
                 auto theta = degrees_to_radians(vfov);
                 auto half_height = tan(theta/2);
                 auto half_width = aspect * half_height;
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                origin = lookfrom;
                 w = unit_vector(lookfrom - lookat);
                 u = unit_vector(cross(vup, w));
                 v = cross(w, u);
+
                 lower_left_corner = origin - half_width*u - half_height*v - w;
+
                 horizontal = 2*half_width*u;
                 vertical = 2*half_height*v;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2192,24 +2201,28 @@ point:
         public:
             camera(
                 vec3 lookfrom, vec3 lookat, vec3 vup,
-                double vfov, // vfov is top to bottom in degrees
+                double vfov, // top to bottom, in degrees
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 double aspect, double aperture, double focus_dist
             ) {
+                origin = lookfrom;
                 lens_radius = aperture / 2;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
                 auto theta = degrees_to_radians(vfov);
                 auto half_height = tan(theta/2);
                 auto half_width = aspect * half_height;
-                origin = lookfrom;
+
                 w = unit_vector(lookfrom - lookat);
                 u = unit_vector(cross(vup, w));
                 v = cross(w, u);
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 lower_left_corner = origin
                                   - half_width * focus_dist * u
                                   - half_height * focus_dist * v
                                   - focus_dist * w;
+
                 horizontal = 2*half_width*focus_dist*u;
                 vertical = 2*half_height*focus_dist*v;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++

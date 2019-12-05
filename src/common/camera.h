@@ -24,31 +24,33 @@ vec3 random_in_unit_disk() {
 
 class camera {
     public:
-        // new:  add t0 and t1
         camera(
             vec3 lookfrom, vec3 lookat, vec3 vup,
-            double vfov, // vfov is top to bottom in degrees
-            double aspect, double aperture, double focus_dist, double t0, double t1
+            double vfov, // top to bottom, in degrees
+            double aspect, double aperture, double focus_dist, double t0 = 0, double t1 = 0
         ) {
+            origin = lookfrom;
+            lens_radius = aperture / 2;
             time0 = t0;
             time1 = t1;
-            lens_radius = aperture / 2;
+
             auto theta = degrees_to_radians(vfov);
             auto half_height = tan(theta/2);
             auto half_width = aspect * half_height;
-            origin = lookfrom;
+
             w = unit_vector(lookfrom - lookat);
             u = unit_vector(cross(vup, w));
             v = cross(w, u);
+
             lower_left_corner = origin
                               - half_width*focus_dist*u
                               - half_height*focus_dist*v
                               - focus_dist*w;
+
             horizontal = 2*half_width*focus_dist*u;
             vertical = 2*half_height*focus_dist*v;
         }
 
-        // new: add time to construct ray
         ray get_ray(double s, double t) {
             vec3 rd = lens_radius*random_in_unit_disk();
             vec3 offset = u * rd.x() + v * rd.y();
@@ -65,8 +67,8 @@ class camera {
         vec3 horizontal;
         vec3 vertical;
         vec3 u, v, w;
-        double time0, time1;  // new variables for shutter open/close times
         double lens_radius;
+        double time0, time1;  // shutter open/close times
 };
 
 #endif
