@@ -11,16 +11,10 @@
 
 #include "common/rtweekend.h"
 #include "common/camera.h"
-#include "common/rtw_stb_image.h"
-#include "common/surface_texture.h"
-#include "common/texture.h"
 #include "aarect.h"
 #include "box.h"
-#include "bvh.h"
 #include "hittable_list.h"
 #include "material.h"
-#include "moving_sphere.h"
-#include "pdf.h"
 #include "sphere.h"
 
 #include <iostream>
