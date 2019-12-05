@@ -65,21 +65,28 @@ For this we will first need to have a ray store the time it exists at:
     class ray {
         public:
             ray() {}
-            ray(const vec3& a, const vec3& b, double ti = 0.0) {
-                A = a;
-                B = b;
-                _time = ti;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            ray(const vec3& origin, const vec3& direction, double time = 0.0)
+                : orig(origin), dir(direction), tm(time)
+            {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            vec3 origin() const    { return orig; }
+            vec3 direction() const { return dir; }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            double time() const    { return tm; }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            vec3 at(double t) const {
+                return orig + t*dir;
             }
-            vec3 origin() const    { return A; }
-            vec3 direction() const { return B; }
-            double time() const    { return _time; }
-            vec3 point_at_parameter(double t) const { return A + t*B; }
 
-            vec3 A;
-            vec3 B;
-            double _time;
+            vec3 orig;
+            vec3 dir;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            double tm;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [time-ray]: <kbd>[ray.h]</kbd> Ray with time information]
 </div>
@@ -196,7 +203,7 @@ intersection code barely needs a change: `center` just needs to become a functio
             auto temp = (-half_b - root)/a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
-                rec.p = r.point_at_parameter(rec.t);
+                rec.p = r.at(rec.t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 rec.normal = (rec.p - center(r.time())) / radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -206,7 +213,7 @@ intersection code barely needs a change: `center` just needs to become a functio
             temp = (-half_b + root) / a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
-                rec.p = r.point_at_parameter(rec.t);
+                rec.p = r.at(rec.t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 rec.normal = (rec.p - center(r.time())) / radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -714,29 +721,13 @@ check the children and sort out any details:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
-        if (box.hit(r, t_min, t_max)) {
-            hit_record left_rec, right_rec;
-            bool hit_left = left->hit(r, t_min, t_max, left_rec);
-            bool hit_right = right->hit(r, t_min, t_max, right_rec);
-            if (hit_left && hit_right) {
-                if (left_rec.t < right_rec.t)
-                    rec = left_rec;
-                else
-                    rec = right_rec;
-                return true;
-            }
-            else if (hit_left) {
-                rec = left_rec;
-                return true;
-            }
-            else if (hit_right) {
-                rec = right_rec;
-                return true;
-            }
-            else
-                return false;
-        }
-        else return false;
+        if (!box.hit(r, t_min, t_max))
+            return false;
+
+        bool hit_left = left->hit(r, t_min, t_max, rec);
+        bool hit_right = right->hit(r, t_min, hit_left ? rec.t : t_max, rec);
+
+        return hit_left || hit_right;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [bvh-hit]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy hit function]
@@ -1702,7 +1693,7 @@ And the hit function is:
         rec.v = (y-y0)/(y1-y0);
         rec.t = t;
         rec.mat_ptr = mp;
-        rec.p = r.point_at_parameter(t);
+        rec.p = r.at(t);
         rec.normal = vec3(0, 0, 1);
         return true;
     }
@@ -1806,7 +1797,7 @@ With unsurprising hit functions:
         rec.v = (z-z0)/(z1-z0);
         rec.t = t;
         rec.mat_ptr = mp;
-        rec.p = r.point_at_parameter(t);
+        rec.p = r.at(t);
         rec.normal = vec3(0, 1, 0);
         return true;
     }
@@ -1823,7 +1814,7 @@ With unsurprising hit functions:
         rec.v = (z-z0)/(z1-z0);
         rec.t = t;
         rec.mat_ptr = mp;
-        rec.p = r.point_at_parameter(t);
+        rec.p = r.at(t);
         rec.normal = vec3(1, 0, 0);
         return true;
     }
@@ -2324,7 +2315,7 @@ And the hit function is:
                 if (hit_distance < distance_inside_boundary) {
 
                     rec.t = rec1.t + hit_distance / r.direction().length();
-                    rec.p = r.point_at_parameter(rec.t);
+                    rec.p = r.at(rec.t);
 
                     if (debugging) {
                         std::cerr << "hit_distance = " <<  hit_distance << '\n'
