@@ -12,6 +12,7 @@
 #include "common/rtweekend.h"
 
 #include <iostream>
+#include <iomanip>
 #include <math.h>
 
 
@@ -33,6 +34,7 @@ int main() {
         vec3 v = random_cosine_direction();
         sum += v.z()*v.z()*v.z() / (v.z()/(pi));
     }
+    std::cout << std::fixed << std::setprecision(12);
     std::cout << "PI/2 = " << pi/2 << '\n';
     std::cout << "Estimate = " << sum/N << '\n';
 }

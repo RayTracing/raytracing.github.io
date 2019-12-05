@@ -11,7 +11,8 @@
 
 #include "common/rtweekend.h"
 
-#include <iostream>
+#include <iostream>    
+#include <iomanip>
 #include <math.h>
 #include <stdlib.h>
 
@@ -39,6 +40,6 @@ int main() {
         auto cosine_squared = d.z()*d.z();
         sum += cosine_squared / pdf(d);
     }
-    printf("I = %1.8f\n", sum/N);;
-
+    std::cout << std::fixed << std::setprecision(12);
+    std::cout << "I = " << sum/N << '\n';
 }

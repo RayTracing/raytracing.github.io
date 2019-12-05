@@ -75,6 +75,7 @@ centered at the origin:
     #include "common/rtweekend.h"
 
     #include <iostream>
+    #include <iomanip>
     #include <math.h>
     #include <stdlib.h>
 
@@ -87,13 +88,15 @@ centered at the origin:
             if(x*x + y*y < 1)
                 inside_circle++;
         }
-        printf("Estimate of Pi = %1.8f\n", 4 * double(inside_circle) / N);
+        std::cout << std::fixed << std::setprecision(12);
+        std::cout << "Estimate of Pi = " << 4*double(inside_circle) / N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estpi-1]: <kbd>[pi.cc]</kbd> Estimating π]
 </div>
 
-This gives me the answer `Estimate of Pi = 3.08800000`
+The answer of Pi found will vary from computer to computer based on the initial random seed.
+This computer gives me the answer `Estimate of Pi = 3.08800000`
 
 <div class='together'>
 If we change the program to run forever and just print out a running estimate:
@@ -101,13 +104,15 @@ If we change the program to run forever and just print out a running estimate:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "common/rtweekend.h"
 
-    #include <iostream>
+    #include <iostream>    
+    #include <iomanip>
     #include <math.h>
     #include <stdlib.h>
 
     int main() {
         int inside_circle = 0;
         int runs = 0;
+        std::cout << std::fixed << std::setprecision(12);
         while (true) {
             runs++;
             auto x = 2*random_double() - 1;
@@ -116,7 +121,7 @@ If we change the program to run forever and just print out a running estimate:
                 inside_circle++;
 
             if (runs % 100000 == 0)
-                printf("Estimate of Pi = %1.8f\n", 4 * double(inside_circle) / runs);
+                std::cout << "Estimate of Pi = " << 4 * double(inside_circle) / runs << '\n';
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -141,6 +146,7 @@ because we need to know the grid. Let’s take a hundred million and try it both
     #include "common/rtweekend.h"
 
     #include <iostream>
+    #include <iomanip>
 
     int main() {
         int inside_circle = 0;
@@ -160,15 +166,16 @@ because we need to know the grid. Let’s take a hundred million and try it both
         }
 
         auto N = static_cast<double>(sqrt_N) * sqrt_N;
-        printf("Regular    Estimate of Pi = %1.8f\n",
-            4 * double(inside_circle) / (sqrt_N*sqrt_N));
-        printf("Stratified Estimate of Pi = %1.8f\n",
-            4 * double(inside_circle_stratified) / (sqrt_N*sqrt_N));
+        std::cout << std::fixed << std::setprecision(12);
+        std::cout << "Regular    Estimate of Pi = " 
+            << 4 * double(inside_circle) / (sqrt_N*sqrt_N) << '\n';
+        std::cout << "Stratified Estimate of Pi = " 
+            << 4 * double(inside_circle_stratified) / (sqrt_N*sqrt_N) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estpi-3]: <kbd>[pi.cc]</kbd> Estimating π, v3]
 
-I get:
+On my computer, I get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Regular    Estimate of Pi = 3.14151480
@@ -212,6 +219,7 @@ This suggests a MC approach:
     #include "common/rtweekend.h"
 
     #include <iostream>
+    #include <iomanip>
     #include <math.h>
     #include <stdlib.h>
 
@@ -224,7 +232,8 @@ This suggests a MC approach:
             auto x = 2*random_double();
             sum += x*x;
         }
-        printf("I = %1.8f\n", sum/N);
+        std::cout << std::fixed << std::setprecision(12);
+        std::cout << "I = " << sum/N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-xsq-1]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$]
@@ -409,8 +418,9 @@ weighting function should be proportional to $1/pdf$. In fact it is exactly $1/p
             auto x = sqrt(4*random_double());
             sum += x*x / pdf(x);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        }
-        printf("I = %1.8f\n", sum/N);;
+        }    
+        std::cout << std::fixed << std::setprecision(12);
+        std::cout << "I = " << sum/N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-xsq-2]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$ with PDF]
@@ -442,7 +452,8 @@ the machinery to get `x = 2*random_double()` and the code is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             sum += x*x / pdf(x);
         }
-        printf("I = %1.8f\n", sum/N);;
+        std::cout << std::fixed << std::setprecision(12);
+        std::cout << "I = " << sum/N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-xsq-3]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$, v3]
@@ -488,7 +499,8 @@ sample we get:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             sum += x*x / pdf(x);
         }
-        printf("I = %1.8f\n", sum/N);;
+        std::cout << std::fixed << std::setprecision(12);
+        std::cout << "I = " << sum/N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-xsq-4]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$, final version]
@@ -559,7 +571,8 @@ z axis:
             auto cosine_squared = d.z()*d.z();
             sum += cosine_squared / pdf(d);
         }
-        printf("I = %1.8f\n", sum/N);;
+        std::cout << std::fixed << std::setprecision(12);
+        std::cout << "I = " << sum/N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-sphereimp]: <kbd>[sphere_importance.cc]</kbd>
@@ -968,7 +981,7 @@ We can output some of these:
             auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
             auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
             auto z = 1 - 2*r2;
-            printf("%f %f %f\n", x, y, z);
+            std::cout << x << " " << y << " " << z << '\n';
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1018,8 +1031,9 @@ which is $\cos^3(\theta) / (1/(2 \pi))$, and we can test this:
             auto z = 1 - r2;
             sum += z*z*z / (1.0/(2.0*pi));
         }
-        printf("Pi/2     = %1.8f\n", pi/2);
-        printf("Estimate = %1.8f\n", sum/N);
+        std::cout << std::fixed << std::setprecision(12);
+        std::cout << "Pi/2     = " << pi/2 << '\n';
+        std::cout << "Estimate = " << sum/N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [cos-cubed]: <kbd>[cos_cubed.cc]</kbd> Integration using $cos^3(x)$]
@@ -1067,8 +1081,9 @@ Let’s also start generating them as random vectors:
             vec3 v = random_cosine_direction();
             sum += v.z()*v.z()*v.z() / (v.z()/pi);
         }
-        printf("Pi/2     = %1.8f\n", pi/2);
-        printf("Estimate = %1.8f\n", sum/N);
+        std::cout << std::fixed << std::setprecision(12);
+        std::cout << "Pi/2     = " << pi/2 << '\n';
+        std::cout << "Estimate = " << sum/N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [cos-density]: <kbd>[cos_density.cc]</kbd> Integration with cosine density function]
