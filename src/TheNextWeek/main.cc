@@ -14,7 +14,6 @@
 #include "common/rtw_stb_image.h"
 #include "common/surface_texture.h"
 #include "common/texture.h"
-#include "aarect.h"
 #include "box.h"
 #include "bvh.h"
 #include "constant_medium.h"
