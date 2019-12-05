@@ -12,8 +12,6 @@
 //==============================================================================================
 
 #include "common/rtweekend.h"
-#include "hittable.h"
-#include "onb.h"
 #include "pdf.h"
 #include "texture.h"
 
