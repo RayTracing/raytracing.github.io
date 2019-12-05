@@ -33,8 +33,9 @@ set ( SOURCE_ONE_WEEKEND
 
 set ( SOURCE_NEXT_WEEK
   ${COMMON_ALL}
-  src/common/rtw_stb_image.h
   src/common/external/stb_image.h
+  src/common/perlin.h
+  src/common/rtw_stb_image.h
   src/TheNextWeek/aabb.h
   src/TheNextWeek/aarect.h
   src/TheNextWeek/box.h
@@ -45,7 +46,6 @@ set ( SOURCE_NEXT_WEEK
   src/TheNextWeek/hittable_list.h
   src/TheNextWeek/material.h
   src/TheNextWeek/moving_sphere.h
-  src/TheNextWeek/perlin.h
   src/TheNextWeek/sphere.h
   src/TheNextWeek/surface_texture.h
   src/TheNextWeek/texture.h
@@ -54,8 +54,9 @@ set ( SOURCE_NEXT_WEEK
 
 set ( SOURCE_REST_OF_YOUR_LIFE
   ${COMMON_ALL}
-  src/common/rtw_stb_image.h
   src/common/external/stb_image.h
+  src/common/perlin.h
+  src/common/rtw_stb_image.h
   src/TheRestOfYourLife/aabb.h
   src/TheRestOfYourLife/aarect.h
   src/TheRestOfYourLife/box.h
@@ -67,7 +68,6 @@ set ( SOURCE_REST_OF_YOUR_LIFE
   src/TheRestOfYourLife/moving_sphere.h
   src/TheRestOfYourLife/onb.h
   src/TheRestOfYourLife/pdf.h
-  src/TheRestOfYourLife/perlin.h
   src/TheRestOfYourLife/sphere.h
   src/TheRestOfYourLife/surface_texture.h
   src/TheRestOfYourLife/texture.h
