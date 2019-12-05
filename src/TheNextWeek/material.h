@@ -12,7 +12,6 @@
 //==============================================================================================
 
 #include "common/rtweekend.h"
-#include "hittable.h"
 #include "texture.h"
 
 

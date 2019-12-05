@@ -12,7 +12,6 @@
 //==============================================================================================
 
 #include "common/rtweekend.h"
-#include "hittable.h"
 
 
 inline double ffmin(double a, double b) { return a < b ? a : b; }

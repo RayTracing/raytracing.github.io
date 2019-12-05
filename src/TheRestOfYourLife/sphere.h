@@ -14,7 +14,6 @@
 #include "common/rtweekend.h"
 #include "hittable.h"
 #include "onb.h"
-#include "pdf.h"
 
 
 class sphere: public hittable  {
