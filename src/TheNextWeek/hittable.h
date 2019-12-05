@@ -12,7 +12,7 @@
 //==============================================================================================
 
 #include "common/rtweekend.h"
-#include "aabb.h"
+#include "common/aabb.h"
 
 
 class material;
