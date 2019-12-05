@@ -12,8 +12,8 @@
 //==============================================================================================
 
 #include "common/rtweekend.h"
+#include "common/texture.h"
 #include "pdf.h"
-#include "texture.h"
 
 
 double schlick(double cosine, double ref_idx) {

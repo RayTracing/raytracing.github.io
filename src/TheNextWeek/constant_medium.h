@@ -12,9 +12,9 @@
 //==============================================================================================
 
 #include "common/rtweekend.h"
+#include "common/texture.h"
 #include "hittable.h"
 #include "material.h"
-#include "texture.h"
 
 
 class constant_medium : public hittable  {

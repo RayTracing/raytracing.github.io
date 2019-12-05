@@ -12,6 +12,7 @@
 #include "common/rtweekend.h"
 #include "common/camera.h"
 #include "common/rtw_stb_image.h"
+#include "common/texture.h"
 #include "aarect.h"
 #include "box.h"
 #include "bvh.h"
@@ -21,7 +22,6 @@
 #include "pdf.h"
 #include "sphere.h"
 #include "surface_texture.h"
-#include "texture.h"
 
 #include <iostream>
 

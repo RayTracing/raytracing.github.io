@@ -12,7 +12,7 @@
 //==============================================================================================
 
 #include "common/rtweekend.h"
-#include "texture.h"
+#include "common/texture.h"
 
 
 class image_texture : public texture {

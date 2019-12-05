@@ -12,7 +12,7 @@
 //==============================================================================================
 
 #include "common/rtweekend.h"
-#include "texture.h"
+#include "common/texture.h"
 
 
 double schlick(double cosine, double ref_idx) {
