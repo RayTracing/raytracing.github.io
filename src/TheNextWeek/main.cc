@@ -12,7 +12,6 @@
 #include "common/rtweekend.h"
 #include "common/camera.h"
 #include "common/rtw_stb_image.h"
-#include "common/surface_texture.h"
 #include "common/texture.h"
 #include "box.h"
 #include "bvh.h"
@@ -44,7 +43,7 @@ hittable *earth() {
     //unsigned char *tex_data = stbi_load("tiled.jpg", &nx, &ny, &nn, 0);
     unsigned char *tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
     material *mat = new lambertian(new image_texture(tex_data, nx, ny));
-    return new sphere(vec3(0,0, 0), 2, mat);
+    return new sphere(vec3(0, 0, 0), 2, mat);
 }
 
 hittable *two_spheres() {
