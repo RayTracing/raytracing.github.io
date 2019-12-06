@@ -96,7 +96,7 @@ centered at the origin:
 </div>
 
 The answer of $\pi$ found will vary from computer to computer based on the initial random seed.
-This computer gives me the answer `Estimate of Pi = 3.08800000`
+On my computer, this gives me the answer `Estimate of Pi = 3.0880000000`
 
 <div class='together'>
 If we change the program to run forever and just print out a running estimate:
@@ -250,13 +250,12 @@ the last two books is -- we don’t know what color is seen in every direction, 
 statistically estimate it in any given dimension.
 
 One problem with the random program we wrote in the first two books is that small light sources
-create too much noise, they create so much noise because our uniform sampling doesn’t sample these
-light sources often enough. These light sources are only sampled if a ray scatters toward them, but
-this can be unlikely for a small light, or a light that is far away. We could lessen this problem if
-we sent more random samples toward this light, but this will cause the scene to be inaccurately
-bright. We can remove this inaccuracy by downweighting these samples to adjust for the
-over-sampling. How we do that adjustment? To do that, we will need the concept of a _probability
-density function_.
+create too much noise. This is because our uniform sampling doesn’t sample these light sources often
+enough. Light sources are only sampled if a ray scatters toward them, but this can be unlikely for a
+small light, or a light that is far away. We could lessen this problem if we sent more random
+samples toward this light, but this will cause the scene to be inaccurately bright. We can remove
+this inaccuracy by downweighting these samples to adjust for the over-sampling. How we do that
+adjustment? To do that, we will need the concept of a _probability density function_.
 
 <div class='together'>
 First, what is a _density function_? It’s just a continuous form of a histogram. Here’s an example
@@ -713,11 +712,10 @@ would be:
   $$ p(direction) = \frac{1}{2}\cdotp Light(direction) + \frac{1}{2}\cdot pSurface(direction) $$
 </div>
 
-As long as the weights are positive and add up to one, any such mixture of PDFs is a PDF. And
-remember, we can use any PDF -- _all PDF eventually converge to the correct answer_. So, the game
-is to figure out how to make the PDF larger where the product $s(direction) \cdot color(direction)$
-is large. For diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is
-high.
+As long as the weights are positive and add up to one, any such mixture of PDFs is a PDF. Remember,
+we can use any PDF: _all PDF eventually converge to the correct answer_. So, the game is to figure
+out how to make the PDF larger where the product $s(direction) \cdot color(direction)$ is large. For
+diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is high.
 
 For a mirror, $s()$ is huge only near one direction, so it matters a lot more. Most renderers in
 fact make mirrors a special case and just make the $s/p$ implicit -- our code currently does that.
@@ -864,9 +862,8 @@ And the color function gets a minor modification:
 You should get exactly the same picture.
 
 <div class='together'>
-Now, just for the experience, try a different sampling strategy. Just like in the first book, Let’s
-choose randomly from the hemisphere that is above the surface. This would be $p(direction) =
-\frac{1}{2\pi}$.
+Now, just for the experience, try a different sampling strategy. As in the first book, Let’s choose
+randomly from the hemisphere above the surface. This would be $p(direction) = \frac{1}{2\pi}$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool scatter(
@@ -1135,11 +1132,11 @@ other.
 
 <div class='together'>
 Some models will come with one or more cotangent vectors. If our model has only one cotangent
-vector then the process of making an ONB is a nontrivial one. Suppose we have any vector
-$\vec{\mathbf{a}}$ that is of nonzero length and that is nonparallel to $\vec{\mathbf{n}}$. We can
-get vectors $\vec{\mathbf{s}}$ and $\vec{\mathbf{t}}$ perpendicular to $\vec{\mathbf{n}}$ by using
-the property of the cross product that $\vec{\mathbf{c}} \times \vec{\mathbf{d}}$ is perpendicular
-to both $\vec{\mathbf{c}}$ and $\vec{\mathbf{d}}$:
+vector, then the process of making an ONB is a nontrivial one. Suppose we have any vector
+$\vec{\mathbf{a}}$ that is of nonzero length and not parallel to $\vec{\mathbf{n}}$. We can get
+vectors $\vec{\mathbf{s}}$ and $\vec{\mathbf{t}}$ perpendicular to $\vec{\mathbf{n}}$ by using the
+property of the cross product that $\vec{\mathbf{c}} \times \vec{\mathbf{d}}$ is perpendicular to
+both $\vec{\mathbf{c}}$ and $\vec{\mathbf{d}}$:
 
   $$ \vec{\mathbf{t}} = \text{unit_vector}(\vec{\mathbf{a}} \times \vec{\mathbf{n}}) $$
 
@@ -1244,17 +1241,17 @@ Sampling Lights Directly
 ====================================================================================================
 
 The problem with sampling almost uniformly over directions is that lights are not sampled any more
-than unimportant directions. We could use shadow rays and separate out direct lighting. But instead,
+than unimportant directions. We could use shadow rays and separate out direct lighting. Instead,
 I’ll just send more rays to the light. We can then use that later to send more rays in whatever
 direction we want.
 
 <div class='together'>
 It’s really easy to pick a random direction toward the light; just pick a random point on the light
-and send a ray in that direction. But we also need to know the PDF, $p(direction)$. What is that?
+and send a ray in that direction. We also need to know the PDF, $p(direction)$. What is that?
 
 For a light of area $A$, if we sample uniformly on that light, the PDF on the surface of the light
-is $1/A$. But what is it on the area of the unit sphere that defines directions? Fortunately, there
-is a simple correspondence, as outlined in the diagram:
+is $\frac{1}{A}$. But what is it on the area of the unit sphere that defines directions?
+Fortunately, there is a simple correspondence, as outlined in the diagram:
 
   ![Figure [light-pdf]: Projection of light shape onto PDF](../images/fig.light-pdf.jpg)
 
