@@ -14,9 +14,6 @@
 #include "common/rtweekend.h"
 
 
-inline double ffmin(double a, double b) { return a < b ? a : b; }
-inline double ffmax(double a, double b) { return a > b ? a : b; }
-
 class aabb {
     public:
         aabb() {}

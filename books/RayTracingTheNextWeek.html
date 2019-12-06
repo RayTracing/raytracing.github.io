@@ -536,8 +536,7 @@ because in a ray tracer all cases come up eventually). With all three dimensions
 passing in the interval $t_{min}$, $t_{max}$ we get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline double ffmin(double a, double b) { return a < b ? a : b; }
-    inline double ffmax(double a, double b) { return a > b ? a : b; }
+    #include "common/rtweekend.h"
 
     class aabb {
         public:
@@ -568,11 +567,14 @@ passing in the interval $t_{min}$, $t_{max}$ we get:
     [Listing [aabb]: <kbd>[aabb.h]</kbd> Axis-aligned bounding box class]
 </div>
 
+Note that we use the simple custom `ffmax()` function (defined in `rtweekend.h`) instead of the C++
+standard library `fmax()` utility. `ffmax()` is quite a bit faster because it doesn’t worry about
+`NaN`s and other exceptions.
+
 <div class='together'>
-Note that the built-in `fmax()` is replaced by `ffmax()` which is quite a bit faster because it
-doesn’t worry about `NaN`s and other exceptions. In reviewing this intersection method, Andrew
-Kensler at Pixar tried some experiments and has proposed this version of the code which works
-extremely well on many compilers, and I have adopted it as my go-to method:
+In reviewing this intersection method, Andrew Kensler at Pixar tried some experiments and has
+proposed this version of the code which works extremely well on many compilers, and I have adopted
+it as my go-to method:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline bool aabb::hit(const ray& r, double tmin, double tmax) const {
