@@ -12,6 +12,7 @@
 #include "common/rtweekend.h"
 
 #include <iostream>
+#include <iomanip>
 #include <math.h>
 #include <stdlib.h>
 
@@ -29,5 +30,6 @@ int main() {
             auto x = pow(8*random_double(), 1./3.);
             sum += x*x / pdf(x);
     }
-    std::cout << "I = " << sum/N << "\n";
+    std::cout << std::fixed << std::setprecision(12);
+    std::cout << "I = " << sum/N << '\n';
 }
