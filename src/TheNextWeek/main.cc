@@ -73,7 +73,7 @@ hittable *final() {
             auto z0 = -1000.0 + j*w;
             auto y0 = 0.0;
             auto x1 = x0 + w;
-            auto y1 = 100.0*(random_double()+0.01);
+            auto y1 = random_double(1,101);
             auto z1 = z0 + w;
             boxlist[b++] = new box(vec3(x0,y0,z0), vec3(x1,y1,z1), ground);
         }
@@ -100,13 +100,16 @@ hittable *final() {
     list[l++] = new sphere(vec3(400,200, 400), 100, emat);
     texture *pertext = new noise_texture(0.1);
     list[l++] = new sphere(vec3(220,280, 300), 80, new lambertian(pertext));
+
     int ns = 1000;
     for (int j = 0; j < ns; j++) {
         boxlist2[j] = new sphere(
-            vec3(165*random_double(), 165*random_double(), 165*random_double()), 10, white);
+            vec3(random_double(0,165), random_double(0,165), random_double(0,165)), 10, white);
     }
+
     list[l++] = new translate(
         new rotate_y(new bvh_node(boxlist2, ns, 0.0, 1.0), 15), vec3(-100,270,395));
+
     return new hittable_list(list,l);
 }
 
@@ -138,7 +141,7 @@ hittable *cornell_final() {
     int ns = 10000;
     for (int j = 0; j < ns; j++) {
         boxlist[j] = new sphere(
-            vec3(165*random_double(), 330*random_double(), 165*random_double()), 10, white);
+            vec3(random_double(0,165), random_double(0,330), random_double(0,165)), 10, white);
     }
     list[i++] = new translate(
         new rotate_y(new bvh_node(boxlist, ns, 0.0, 1.0), 15), vec3(265,0,295));
@@ -255,11 +258,11 @@ hittable *random_scene() {
     for (int a = -10; a < 10; a++) {
         for (int b = -10; b < 10; b++) {
             auto choose_mat = random_double();
-            vec3 center(a+0.9*random_double(),0.2,b+0.9*random_double());
-            if ((center-vec3(4,0.2,0)).length() > 0.9) {
+            vec3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
+            if ((center - vec3(4, .2, 0)).length() > 0.9) {
                 if (choose_mat < 0.8) {  // diffuse
                     list[i++] = new moving_sphere(
-                        center, center + vec3(0, 0.5*random_double(), 0), 0.0, 1.0, 0.2,
+                        center, center + vec3(0, random_double(0,.5), 0), 0.0, 1.0, 0.2,
                         new lambertian(
                             new constant_texture(
                                 vec3(random_double()*random_double(),
@@ -274,12 +277,10 @@ hittable *random_scene() {
                     list[i++] = new sphere(
                         center, 0.2,
                         new metal(
-                            vec3(
-                                0.5 * (1 + random_double()),
-                                0.5 * (1 + random_double()),
-                                0.5 * (1 + random_double())
-                            ),
-                            0.5*random_double()
+                            vec3(random_double(.5, 1),
+                                 random_double(.5, 1),
+                                 random_double(.5, 1)),
+                            random_double(0,.5)
                         )
                     );
                 }
