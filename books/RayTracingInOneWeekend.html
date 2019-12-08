@@ -1316,11 +1316,11 @@ offset along the surface normal. Picking points on the sphere can be achieved by
 the unit ball, and then normalizing those.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 random_on_unit_sphere() {
+    vec3 random_unit_vector() {
         return unit_vector(random_in_unit_sphere());
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-on-unit-sphere]: <kbd>[material.h]</kbd> The random_on_unit_sphere() function]
+    [Listing [random-unit-vector]: <kbd>[vec3.h]</kbd> The random_unit_vector() function]
 
   ![Figure [rand-unit-vector]: Generating a random unit vector](../images/fig.rand-unitvector.png)
   
@@ -1328,7 +1328,7 @@ the unit ball, and then normalizing those.
 
 
 <div class='together'>
-This `random_on_unit_sphere()` is a drop-in replacement for the existing `random_in_unit_sphere()`
+This `random_unit_vector()` is a drop-in replacement for the existing `random_in_unit_sphere()`
 function.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1338,7 +1338,7 @@ function.
             if (depth <= 0)
                 return vec3(0,0,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            vec3 target = rec.p + rec.normal + random_on_unit_sphere();
+            vec3 target = rec.p + rec.normal + random_unit_vector();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
         }
@@ -1399,10 +1399,8 @@ this diffuse method (before adopting Lambertian diffuse).
             return -in_unit_sphere;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-in-hemisphere]: <kbd>[material.h]</kbd> The random_in_hemisphere(normal) function]
+    [Listing [random-in-hemisphere]: <kbd>[vec3.h]</kbd> The random_in_hemisphere(normal) function]
 
-Note that the functionality should be identical between `random_in_unit_sphere()` and
-`random_on_unit_sphere()`
 </div>
 
 <div class='together'>
@@ -1435,7 +1433,8 @@ Gives us the following image:
 <div class='together'>
 Scenes will become more complicated over the course of the book. You are encouraged to
 switch between the different diffuse renderers presented here. Most scenes of interest will contain
-a disproportionate amount of diffuse materials. You can gain valuable insight by understanding the effect of different diffuse methods on the lighting of the scene.
+a disproportionate amount of diffuse materials. You can gain valuable insight by understanding the
+effect of different diffuse methods on the lighting of the scene.
 </div>
 
 Metal
@@ -1616,7 +1615,7 @@ points in, we will need a minus sign, yielding:
         return v - 2*dot(v,n)*n;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [vec3-reflect]: <kbd>[material.h]</kbd> vec3 reflection function]
+    [Listing [vec3-reflect]: <kbd>[vec3.h]</kbd> vec3 reflection function]
 </div>
 
 <div class='together'>
@@ -1729,18 +1728,9 @@ for the ray:
 The bigger the sphere, the fuzzier the reflections will be. This suggests adding a fuzziness
 parameter that is just the radius of the sphere (so zero is no perturbation). The catch is that for
 big spheres or grazing rays, we may scatter below the surface. We can just have the surface
-absorb those. We’ll put a maximum of 1 on the radius of the sphere which yields:
+absorb those.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    vec3 random_in_unit_sphere() {
-        vec3 p;
-        do {
-            p = 2*vec3(random_double(), random_double(), random_double()) - vec3(1,1,1);
-        } while (p.squared_length() >= 1);
-        return p;
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
     class metal : public material {
         public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1763,7 +1753,7 @@ absorb those. We’ll put a maximum of 1 on the radius of the sphere which yield
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [metal-fuzz]: <kbd>[main.cc]</kbd> Metal spheres with fuzziness]
+    [Listing [metal-fuzz]: <kbd>[material.h]</kbd> Metal spheres with fuzziness]
 
 In order to generate a random point inside a unit sphere (`random_in_unit_sphere()`), we used one of
 the easiest algorithms: a rejection method. First, pick a random point in the unit cube where x, y,
@@ -1832,7 +1822,7 @@ when you are submerged. The code for refraction is thus a bit more complicated t
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [refract]: <kbd>[material.h]</kbd> Refraction function]
+    [Listing [refract]: <kbd>[vec3.h]</kbd> Refraction function]
 </div>
 
 <div class='together'>

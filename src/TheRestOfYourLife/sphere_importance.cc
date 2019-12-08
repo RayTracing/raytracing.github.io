@@ -16,27 +16,17 @@
 #include <math.h>
 #include <stdlib.h>
 
-vec3 random_in_unit_sphere() {
-    vec3 p;
-    do {
-        p = 2*vec3(random_double(), random_double(), random_double()) - vec3(1,1,1);
-    } while (p.squared_length() >= 1);
-    return p;
-}
-
-vec3 random_on_unit_sphere() {
-    return unit_vector(random_in_unit_sphere());
-}
 
 inline double pdf(const vec3& p) {
     return  1.0 / (4.0*pi);
 }
 
+
 int main() {
     int N = 1000000;
     auto sum = 0.0;
     for (int i = 0; i < N; i++) {
-        vec3 d = random_on_unit_sphere();
+        vec3 d = random_unit_vector();
         auto cosine_squared = d.z()*d.z();
         sum += cosine_squared / pdf(d);
     }
