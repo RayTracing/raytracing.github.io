@@ -22,40 +22,6 @@ double schlick(double cosine, double ref_idx) {
     return r0 + (1-r0)*pow((1 - cosine),5);
 }
 
-bool refract(const vec3& v, const vec3& n, double ni_over_nt, vec3& refracted) {
-    vec3 uv = unit_vector(v);
-    auto dt = dot(uv, n);
-    auto discriminant = 1.0 - ni_over_nt*ni_over_nt*(1-dt*dt);
-
-    if (discriminant <= 0)
-        return false;
-
-    refracted = ni_over_nt*(uv - n*dt) - n*sqrt(discriminant);
-    return true;
-}
-
-
-vec3 reflect(const vec3& v, const vec3& n) {
-     return v - 2*dot(v,n)*n;
-}
-
-
-vec3 random_unit_vector() {
-    auto a = 2*pi * random_double();
-    auto z = 2*random_double() - 1;
-    auto r = sqrt(1 - z*z);
-    return vec3(r*cos(a), r*sin(a), z);
-}
-
-
-vec3 random_in_unit_sphere() {
-    vec3 p;
-    do {
-        p = 2.0*vec3(random_double(),random_double(),random_double()) - vec3(1,1,1);
-    } while (dot(p,p) >= 1.0);
-    return p;
-}
-
 
 class material  {
     public:
