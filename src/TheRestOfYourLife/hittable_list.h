@@ -37,8 +37,8 @@ double hittable_list::pdf_value(const vec3& o, const vec3& v) const {
 }
 
 vec3 hittable_list::random(const vec3& o) const {
-        int index = int(random_double() * list_size);
-        return list[ index ]->random(o);
+    int index = random_int(0, list_size-1);
+    return list[ index ]->random(o);
 }
 
 
