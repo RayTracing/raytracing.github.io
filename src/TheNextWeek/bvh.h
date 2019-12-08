@@ -88,7 +88,7 @@ int box_z_compare (const void * a, const void * b)
 }
 
 bvh_node::bvh_node(hittable **l, int n, double time0, double time1) {
-    int axis = int(3*random_double());
+    int axis = int(random_double(0,3));
 
     if (axis == 0)
         qsort(l, n, sizeof(hittable *), box_x_compare);

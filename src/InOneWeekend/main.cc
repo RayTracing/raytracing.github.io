@@ -44,8 +44,8 @@ hittable *random_scene() {
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
             auto choose_mat = random_double();
-            vec3 center(a+0.9*random_double(),0.2,b+0.9*random_double());
-            if ((center-vec3(4,0.2,0)).length() > 0.9) {
+            vec3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
+            if ((center - vec3(4, .2, 0)).length() > 0.9) {
                 if (choose_mat < 0.8) {  // diffuse
                     list[i++] = new sphere(
                         center, 0.2,
@@ -57,10 +57,12 @@ hittable *random_scene() {
                 else if (choose_mat < 0.95) { // metal
                     list[i++] = new sphere(
                         center, 0.2,
-                        new metal(vec3(0.5*(1 + random_double()),
-                                       0.5*(1 + random_double()),
-                                       0.5*(1 + random_double())),
-                                  0.5*random_double())
+                        new metal(
+                            vec3(random_double(.5, 1),
+                                 random_double(.5, 1),
+                                 random_double(.5, 1)),
+                            random_double(0, .5)
+                        )
                     );
                 }
                 else {  // glass

@@ -46,11 +46,10 @@ class camera {
         ray get_ray(double s, double t) {
             vec3 rd = lens_radius * random_in_unit_disk();
             vec3 offset = u * rd.x() + v * rd.y();
-            auto time = time0 + random_double()*(time1-time0);
             return ray(
                 origin + offset,
                 lower_left_corner + s*horizontal + t*vertical - origin - offset,
-                time
+                random_double(time0, time1)
             );
         }
 
