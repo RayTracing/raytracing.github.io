@@ -135,11 +135,10 @@ to camera because for now it is not allowed to move; it just sends out rays over
                 vec3 rd = lens_radius*random_in_unit_disk();
                 vec3 offset = u * rd.x() + v * rd.y();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                auto time = time0 + random_double()*(time1-time0);
                 return ray(
                     origin + offset,
                     lower_left_corner + s*horizontal + t*vertical - origin - offset,
-                    time
+                    random_double(time0, time1)
                 );
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
@@ -272,12 +271,12 @@ $\mathbf{C} + (0, r/2, 0)$ at time $t=1$, where $r$ is a random number in $[0,1)
         for (int a = -10; a < 10; a++) {
             for (int b = -10; b < 10; b++) {
                 auto choose_mat = random_double();
-                vec3 center(a+0.9*random_double(),0.2,b+0.9*random_double());
-                if ((center-vec3(4,0.2,0)).length() > 0.9) {
+                vec3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
+                if ((center - vec3(4, .2, 0)).length() > 0.9) {
                     if (choose_mat < 0.8) {  // diffuse
                         list[i++] = new moving_sphere(
                             center,
-                            center+vec3(0, 0.5*random_double(), 0),
+                            center + vec3(0, random_double(0, .5), 0),
                             0.0, 1.0, 0.2,
                             new lambertian(
                                 vec3(random_double()*random_double(),
@@ -290,10 +289,10 @@ $\mathbf{C} + (0, r/2, 0)$ at time $t=1$, where $r$ is a random number in $[0,1)
                         list[i++] = new sphere(
                             center, 0.2,
                             new metal(
-                                vec3(0.5*(1 + random_double()),
-                                     0.5*(1 + random_double()),
-                                     0.5*(1 + random_double())),
-                                0.5*random_double()
+                                vec3(random_double(.5, 1),
+                                     random_double(.5, 1),
+                                     random_double(.5, 1)),
+                                random_double(0, .5)
                             )
                         );
                     }
@@ -768,7 +767,7 @@ This yields:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bvh_node::bvh_node(hittable **l, int n, double time0, double time1) {
-        int axis = int(3*random_double());
+        int axis = int(random_double(0,3));
 
         if (axis == 0)
            qsort(l, n, sizeof(hittable *), box_x_compare);
@@ -1046,7 +1045,7 @@ code to make it all happen:
 
     void permute(int *p, int n) {
         for (int i = n-1; i > 0; i--) {
-            int target = int(random_double()*(i+1));
+            int target = int(random_double(0, i+1));
             int tmp = p[i];
             p[i] = p[target];
             p[target] = tmp;
@@ -1257,9 +1256,9 @@ exactly uniform:
     static vec3* perlin_generate() {
         vec3 *p = new vec3[256];
         for (int i = 0; i < 256; ++i) {
-            double x_random = 2*random_double() - 1;
-            double y_random = 2*random_double() - 1;
-            double z_random = 2*random_double() - 1;
+            double x_random = random_double(-1,1);
+            double y_random = random_double(-1,1);
+            double z_random = random_double(-1,1);
             p[i] = unit_vector(vec3(x_random, y_random, z_random));
         }
         return p;
@@ -2423,7 +2422,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
                 auto z0 = -1000.0 + j*w;
                 auto y0 = 0.0;
                 auto x1 = x0 + w;
-                auto y1 = 100.0*(random_double()+0.01);
+                auto y1 = random_double(1,101);
                 auto z1 = z0 + w;
                 boxlist[b++] = new box(vec3(x0,y0,z0), vec3(x1,y1,z1), ground);
             }
@@ -2455,8 +2454,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         int ns = 1000;
         for (int j = 0; j < ns; j++) {
             boxlist2[j] = new sphere(
-                vec3(165*random_double(), 165*random_double(), 165*random_double()),
-                10, white);
+                vec3(random_double(0,165), random_double(0,165), random_double(0,165)), 10, white);
         }
 
         list[l++] = new translate(

@@ -23,8 +23,8 @@ int main() {
     int sqrt_N = 10000;
     for (int i = 0; i < sqrt_N; i++) {
         for (int j = 0; j < sqrt_N; j++) {
-            auto x = 2*random_double() - 1;
-            auto y = 2*random_double() - 1;
+            auto x = random_double(-1,1);
+            auto y = random_double(-1,1);
             if (x*x + y*y < 1)
                 inside_circle++;
             x = 2*((i + random_double()) / sqrt_N) - 1;
