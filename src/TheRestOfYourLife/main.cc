@@ -101,7 +101,6 @@ int main() {
                 auto u = (i + random_double()) / nx;
                 auto v = (j + random_double()) / ny;
                 ray r = cam->get_ray(u, v);
-                vec3 p = r.at(2.0);
                 color += ray_color(r, world, &hlist, max_depth);
             }
             color.write_color(std::cout, num_samples);
