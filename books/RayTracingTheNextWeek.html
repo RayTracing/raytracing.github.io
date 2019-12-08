@@ -240,9 +240,9 @@ Be sure that in the materials you have the scattered rays be at the time of the 
         public:
             lambertian(const vec3& a) : albedo(a) {}
 
-            virtual bool scatter(const ray& r_in, const hit_record& rec,
-                vec3& attenuation, ray& scattered) const {
-
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
                 vec3 target = rec.p + rec.normal + random_unit_vector();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 scattered = ray(rec.p, target-rec.p, r_in.time());
@@ -251,7 +251,7 @@ Be sure that in the materials you have the scattered rays be at the time of the 
                 return true;
             }
 
-        vec3 albedo;
+            vec3 albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [lambertian-animate]: <kbd>[material.h]</kbd> Lambertian matrial for moving objects]
@@ -875,7 +875,7 @@ Now we can make textured materials by replacing the vec3 color with a texture po
                 vec3 target = rec.p + rec.normal + random_unit_vector();
                 scattered = ray(rec.p, target - rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                attenuation = albedo->value(0, 0, rec.p);
+                attenuation = albedo->value(rec.u, rec.v, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return true;
             }
@@ -1600,15 +1600,15 @@ class return black:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material {
         public:
-            virtual bool scatter(
-                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
-            ) const = 0;
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             virtual vec3 emitted(double u, double v, const vec3& p) const {
                 return vec3(0,0,0);
             }
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const = 0;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [matl-emit]: <kbd>[material.h]</kbd> New emitted function in class material]

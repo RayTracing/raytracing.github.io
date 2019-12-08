@@ -806,15 +806,6 @@ And _Lambertian_ material becomes:
         public:
             lambertian(texture *a) : albedo(a) {}
 
-            double scattering_pdf(
-                const ray& r_in, const hit_record& rec, const ray& scattered
-            ) const {
-                auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
-                if (cosine < 0)
-                    return 0;
-                return cosine / pi;
-            }
-
             bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& alb, ray& scattered, double& pdf
             ) const {
@@ -823,6 +814,13 @@ And _Lambertian_ material becomes:
                 alb = albedo->value(rec.u, rec.v, rec.p);
                 pdf = dot(rec.normal, scattered.direction()) / pi;
                 return true;
+            }
+
+            double scattering_pdf(
+                const ray& r_in, const hit_record& rec, const ray& scattered
+            ) const {
+                auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
+                return cosine < 0 ? 0 : cosine/pi;
             }
 
             texture *albedo;
@@ -1755,6 +1753,14 @@ We can redesign `material` and stuff all the new arguments into a `struct` like 
 
     class material {
         public:
+            virtual vec3 emitted(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                const ray& r_in, const hit_record& rec, double u, double v, const vec3& p
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            ) const {
+                return vec3(0,0,0);
+            }
+
             virtual bool scatter(
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 const ray& r_in, const hit_record& rec, scatter_record& srec
@@ -1768,14 +1774,6 @@ We can redesign `material` and stuff all the new arguments into a `struct` like 
             ) const {
                 return 0;
             }
-
-            virtual vec3 emitted(
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                const ray& r_in, const hit_record& rec, double u, double v, const vec3& p
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            ) const {
-                return vec3(0,0,0);
-            }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [material-refactor]: <kbd>[material.h]</kbd> Refactoring the material class]
@@ -1787,18 +1785,7 @@ The Lambertian material becomes simpler:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
         public:
-
             lambertian(texture *a) : albedo(a) {}
-
-            double scattering_pdf(
-                const ray& r_in, const hit_record& rec, const ray& scattered
-            ) const {
-                auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
-                if (cosine < 0)
-                    return 0;
-                return cosine / pi;
-            }
-
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const {
@@ -1808,6 +1795,13 @@ The Lambertian material becomes simpler:
                 return true;
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            double scattering_pdf(
+                const ray& r_in, const hit_record& rec, const ray& scattered
+            ) const {
+                auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
+                return cosine < 0 ? 0 : cosine/pi;
+            }
 
             texture *albedo;
     };
@@ -1866,6 +1860,7 @@ overall, and those are all fixable. For now, I will just fix `specular`. Metal i
                 srec.pdf_ptr = 0;
                 return true;
             }
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             vec3 albedo;
             double fuzz;

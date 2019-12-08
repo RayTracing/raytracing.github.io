@@ -1566,9 +1566,19 @@ reflectance $R$, or it can scatter with no attenuation but absorb the fraction $
 it could be a mixture of those strategies. For Lambertian materials we get this simple class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 random_unit_vector() {
+        auto a = 2*pi * random_double();
+        auto z = 2*random_double() - 1;
+        auto r = sqrt(1 - z*z);
+        return vec3(r*cos(a), r*sin(a), z);
+    }
+
+    ...
+
     class lambertian : public material {
         public:
             lambertian(const vec3& a) : albedo(a) {}
+
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
             ) const {
@@ -1616,6 +1626,7 @@ The metal material just reflects rays using that formula:
     class metal : public material {
         public:
             metal(const vec3& a) : albedo(a) {}
+
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
             ) const {
@@ -1733,9 +1744,7 @@ absorb those. We’ll put a maximum of 1 on the radius of the sphere which yield
     class metal : public material {
         public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            metal(const vec3& a, double f) : albedo(a) {
-                if (f < 1) fuzz = f; else fuzz = 1;
-            }
+            metal(const vec3& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             virtual bool scatter(
@@ -1815,12 +1824,12 @@ when you are submerged. The code for refraction is thus a bit more complicated t
         vec3 uv = unit_vector(v);
         auto dt = dot(uv, n);
         auto discriminant = 1.0 - ni_over_nt*ni_over_nt*(1-dt*dt);
-        if (discriminant > 0) {
-            refracted = ni_over_nt*(uv - n*dt) - n*sqrt(discriminant);
-            return true;
-        }
-        else
+
+        if (discriminant <= 0) {
             return false;
+
+        refracted = ni_over_nt*(uv - n*dt) - n*sqrt(discriminant);
+        return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [refract]: <kbd>[material.h]</kbd> Refraction function]
@@ -1833,6 +1842,7 @@ And the dielectric material that always refracts when possible is:
     class dielectric : public material {
         public:
             dielectric(double ri) : ref_idx(ri) {}
+
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
             ) const {
@@ -1845,16 +1855,14 @@ And the dielectric material that always refracts when possible is:
                 if (dot(r_in.direction(), rec.normal) > 0) {
                     outward_normal = -rec.normal;
                     ni_over_nt = ref_idx;
-                }
-                else {
+                } else {
                     outward_normal = rec.normal;
                     ni_over_nt = 1.0 / ref_idx;
                 }
 
                 if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
                     scattered = ray(rec.p, refracted);
-                }
-                else {
+                } else {
                     scattered = ray(rec.p, reflected);
                     return false;
                 }
