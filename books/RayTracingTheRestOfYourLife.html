@@ -548,11 +548,11 @@ uniform random samples on a unit sphere:
         return p;
     }
 
-    vec3 random_on_unit_sphere() {
+    vec3 random_unit_vector() {
         return unit_vector(random_in_unit_sphere());
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-on-unit-sphere]: <kbd>[pdf.h]</kbd> Random point on the unit sphere]
+    [Listing [random-unit-vector]: <kbd>[vec3.h]</kbd> Random vector of unit length]
 </div>
 
 <div class='together'>
@@ -569,7 +569,7 @@ z axis:
         int N = 1000000;
         auto sum = 0.0;
         for (int i = 0; i < N; i++) {
-            vec3 d = random_on_unit_sphere();
+            vec3 d = random_unit_vector();
             auto cosine_squared = d.z()*d.z();
             sum += cosine_squared / pdf(d);
         }
@@ -809,7 +809,7 @@ And _Lambertian_ material becomes:
             bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& alb, ray& scattered, double& pdf
             ) const {
-                vec3 target = rec.p + rec.normal + random_on_unit_sphere();
+                vec3 target = rec.p + rec.normal + random_unit_vector();
                 scattered = ray(rec.p, unit_vector(target-rec.p), r_in.time());
                 alb = albedo->value(rec.u, rec.v, rec.p);
                 pdf = dot(rec.normal, scattered.direction()) / pi;

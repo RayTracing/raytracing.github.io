@@ -25,6 +25,7 @@ inline vec3 random_cosine_direction() {
     return vec3(x, y, z);
 }
 
+
 inline vec3 random_to_sphere(double radius, double distance_squared) {
     auto r1 = random_double();
     auto r2 = random_double();
@@ -35,25 +36,6 @@ inline vec3 random_to_sphere(double radius, double distance_squared) {
     return vec3(x, y, z);
 }
 
-vec3 random_in_unit_sphere() {
-    vec3 p;
-    do {
-        p = 2*vec3(random_double(),random_double(),random_double()) - vec3(1,1,1);
-    } while (p.squared_length() >= 1);
-    return p;
-}
-
-vec3 random_on_unit_sphere() {
-    return unit_vector(random_in_unit_sphere());
-}
-
-vec3 random_in_hemisphere(const vec3& normal) {
-    vec3 in_unit_sphere = random_in_unit_sphere();
-    if (dot(in_unit_sphere, normal) > 0.0) // In the same hemisphere as the normal
-        return in_unit_sphere;
-    else
-        return -in_unit_sphere;
-}
 
 class pdf  {
     public:
@@ -61,6 +43,7 @@ class pdf  {
         virtual vec3 generate() const = 0;
         virtual ~pdf() {}
 };
+
 
 class cosine_pdf : public pdf {
     public:
@@ -78,6 +61,7 @@ class cosine_pdf : public pdf {
         onb uvw;
 };
 
+
 class hittable_pdf : public pdf {
     public:
         hittable_pdf(hittable *p, const vec3& origin) : ptr(p), o(origin) {}
@@ -90,6 +74,7 @@ class hittable_pdf : public pdf {
         vec3 o;
         hittable *ptr;
 };
+
 
 class mixture_pdf : public pdf {
     public:
@@ -105,5 +90,6 @@ class mixture_pdf : public pdf {
         }
         pdf *p[2];
 };
+
 
 #endif
