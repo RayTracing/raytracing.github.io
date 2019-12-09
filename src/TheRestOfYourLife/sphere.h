@@ -32,7 +32,7 @@ class sphere: public hittable  {
 double sphere::pdf_value(const vec3& o, const vec3& v) const {
     hit_record rec;
     if (this->hit(ray(o, v), 0.001, infinity, rec)) {
-        auto cos_theta_max = sqrt(1 - radius*radius/(center-o).squared_length());
+        auto cos_theta_max = sqrt(1 - radius*radius/(center-o).length_squared());
         auto solid_angle = 2*pi*(1-cos_theta_max);
         return  1 / solid_angle;
     }
@@ -42,7 +42,7 @@ double sphere::pdf_value(const vec3& o, const vec3& v) const {
 
 vec3 sphere::random(const vec3& o) const {
      vec3 direction = center - o;
-     auto distance_squared = direction.squared_length();
+     auto distance_squared = direction.length_squared();
      onb uvw;
      uvw.build_from_w(direction);
      return uvw.local(random_to_sphere(radius, distance_squared));
@@ -58,9 +58,9 @@ bool sphere::bounding_box(double t0, double t1, aabb& output_box) const {
 
 bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
     vec3 oc = r.origin() - center;
-    auto a = r.direction().squared_length();
+    auto a = r.direction().length_squared();
     auto half_b = dot(oc, r.direction());
-    auto c = oc.squared_length() - radius*radius;
+    auto c = oc.length_squared() - radius*radius;
     auto discriminant = half_b*half_b - a*c;
 
     if (discriminant > 0) {
