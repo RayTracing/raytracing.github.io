@@ -1161,8 +1161,7 @@ ray from the hit point $p$ to the random point $s$:
 <div class='together'>
 We need a way to pick a random point in a unit radius sphere. We’ll use what is usually the easiest
 algorithm: a rejection method. First, pick a random point in the unit cube where x, y, and z all
-range from -1 to +1. Reject this point and try again if the point is outside the sphere. A
-do-while construct is perfect for that:
+range from -1 to +1. Reject this point and try again if the point is outside the sphere.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class vec3 {
@@ -1180,11 +1179,10 @@ do-while construct is perfect for that:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_in_unit_sphere() {
-        vec3 p;
-        do {
-            p = vec3::random(-1,1);
-        } while (p.length_squared() >= 1.0);
-        return p;
+        while (true) {
+            auto p = vec3::random(-1,1);
+            if (p.length_squared() < 1) return p;
+        }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-in-unit-sphere]: <kbd>[material.h]</kbd> The random_in_unit_sphere() function]
@@ -1337,7 +1335,10 @@ the unit ball, and then normalizing those.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_unit_vector() {
-        return unit_vector(random_in_unit_sphere());
+        auto a = random_double(0, 2*pi);
+        auto z = random_double(-1, 1);
+        auto r = sqrt(1 - z*z);
+        return vec3(r*cos(a), r*sin(a), z);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-unit-vector]: <kbd>[vec3.h]</kbd> The random_unit_vector() function]
@@ -1585,15 +1586,6 @@ reflectance $R$, or it can scatter with no attenuation but absorb the fraction $
 it could be a mixture of those strategies. For Lambertian materials we get this simple class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 random_unit_vector() {
-        auto a = random_double(0, 2*pi);
-        auto z = random_double(-1, 1);
-        auto r = sqrt(1 - z*z);
-        return vec3(r*cos(a), r*sin(a), z);
-    }
-
-    ...
-
     class lambertian : public material {
         public:
             lambertian(const vec3& a) : albedo(a) {}
@@ -1775,10 +1767,6 @@ absorb those.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [metal-fuzz]: <kbd>[material.h]</kbd> Metal spheres with fuzziness]
 
-In order to generate a random point inside a unit sphere (`random_in_unit_sphere()`), we used one of
-the easiest algorithms: a rejection method. First, pick a random point in the unit cube where x, y,
-and z all range from -1 to +1. If the generated point is outside the unit sphere, repeat until we
-get one on the inside. A do/while construct is perfect for that.
 </div>
 
 <div class='together'>
@@ -2222,11 +2210,10 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_in_unit_disk() {
-        vec3 p;
-        do {
-            p = vec3(random_double(-1,1), random_double(-1,1), 0);
-        } while (dot(p,p) >= 1.0);
-        return p;
+        while (true) {
+            auto p = vec3(random_double(-1,1), random_double(-1,1), 0);
+            if (p.length_squared() < 1) return p;
+        }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [rand-in-unit-disk]: <kbd>[vec3.h]</kbd> Generate random point inside unit disk]
@@ -2265,7 +2252,7 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
 
             ray get_ray(double s, double t) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                vec3 rd = lens_radius*random_in_unit_disk();
+                vec3 rd = lens_radius * random_in_unit_disk();
                 vec3 offset = u * rd.x() + v * rd.y();
 
                 return ray(
