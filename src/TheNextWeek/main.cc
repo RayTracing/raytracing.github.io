@@ -103,8 +103,7 @@ hittable *final() {
 
     int ns = 1000;
     for (int j = 0; j < ns; j++) {
-        boxlist2[j] = new sphere(
-            vec3(random_double(0,165), random_double(0,165), random_double(0,165)), 10, white);
+        boxlist2[j] = new sphere(vec3::random(0,165), 10, white);
     }
 
     list[l++] = new translate(
@@ -260,31 +259,20 @@ hittable *random_scene() {
             auto choose_mat = random_double();
             vec3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
             if ((center - vec3(4, .2, 0)).length() > 0.9) {
-                if (choose_mat < 0.8) {  // diffuse
+                if (choose_mat < 0.8) {
+                    // diffuse
+                    auto albedo = vec3::random() * vec3::random();
                     list[i++] = new moving_sphere(
                         center, center + vec3(0, random_double(0,.5), 0), 0.0, 1.0, 0.2,
-                        new lambertian(
-                            new constant_texture(
-                                vec3(random_double()*random_double(),
-                                     random_double()*random_double(),
-                                     random_double()*random_double()
-                                )
-                            )
-                        )
+                        new lambertian(new constant_texture(albedo))
                     );
-                }
-                else if (choose_mat < 0.95) { // metal
-                    list[i++] = new sphere(
-                        center, 0.2,
-                        new metal(
-                            vec3(random_double(.5, 1),
-                                 random_double(.5, 1),
-                                 random_double(.5, 1)),
-                            random_double(0,.5)
-                        )
-                    );
-                }
-                else {  // glass
+                } else if (choose_mat < 0.95) {
+                    // metal
+                    auto albedo = vec3::random(.5, 1);
+                    auto fuzz = random_double(0, .5);
+                    list[i++] = new sphere(center, 0.2, new metal(albedo, fuzz));
+                } else {
+                    // glass
                     list[i++] = new sphere(center, 0.2, new dielectric(1.5));
                 }
             }
