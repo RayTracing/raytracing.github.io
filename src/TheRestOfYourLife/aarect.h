@@ -51,7 +51,7 @@ class xz_rect: public hittable {
             hit_record rec;
             if (this->hit(ray(origin, v), 0.001, infinity, rec)) {
                 auto area = (x1-x0)*(z1-z0);
-                auto distance_squared = rec.t * rec.t * v.squared_length();
+                auto distance_squared = rec.t * rec.t * v.length_squared();
                 auto cosine = fabs(dot(v, rec.normal) / v.length());
                 return  distance_squared / (cosine * area);
             }
