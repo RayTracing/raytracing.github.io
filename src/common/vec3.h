@@ -73,6 +73,14 @@ class vec3 {
                 << static_cast<int>(255.999 * clamp(b, 0.0, 1.0)) << '\n';
         }
 
+        inline static vec3 random() {
+            return vec3(random_double(), random_double(), random_double());
+        }
+
+        inline static vec3 random(double min, double max) {
+            return vec3(random_double(min,max), random_double(min,max), random_double(min,max));
+        }
+
         double e[3];
 };
 
@@ -141,7 +149,7 @@ vec3 random_unit_vector() {
 vec3 random_in_unit_sphere() {
     vec3 p;
     do {
-        p = vec3(random_double(-1,1), random_double(-1,1), random_double(-1,1));
+        p = vec3::random(-1,1);
     } while (p.squared_length() >= 1.0);
     return p;
 }

@@ -68,10 +68,7 @@ class perlin {
 static vec3* perlin_generate() {
     vec3 *p = new vec3[256];
     for (int i = 0; i < 256; ++i) {
-        double x_random = random_double(-1,1);
-        double y_random = random_double(-1,1);
-        double z_random = random_double(-1,1);
-        p[i] = unit_vector(vec3(x_random, y_random, z_random));
+        p[i] = unit_vector(vec3::random(-1,1));
     }
     return p;
 }

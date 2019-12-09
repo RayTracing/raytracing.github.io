@@ -46,26 +46,17 @@ hittable *random_scene() {
             auto choose_mat = random_double();
             vec3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
             if ((center - vec3(4, .2, 0)).length() > 0.9) {
-                if (choose_mat < 0.8) {  // diffuse
-                    list[i++] = new sphere(
-                        center, 0.2,
-                        new lambertian(vec3(random_double()*random_double(),
-                                            random_double()*random_double(),
-                                            random_double()*random_double()))
-                    );
-                }
-                else if (choose_mat < 0.95) { // metal
-                    list[i++] = new sphere(
-                        center, 0.2,
-                        new metal(
-                            vec3(random_double(.5, 1),
-                                 random_double(.5, 1),
-                                 random_double(.5, 1)),
-                            random_double(0, .5)
-                        )
-                    );
-                }
-                else {  // glass
+                if (choose_mat < 0.8) {
+                    // diffuse
+                    auto albedo = vec3::random() * vec3::random();
+                    list[i++] = new sphere(center, 0.2, new lambertian(albedo));
+                } else if (choose_mat < 0.95) {
+                    // metal
+                    auto albedo = vec3::random(.5, 1);
+                    auto fuzz = random_double(0, .5);
+                    list[i++] = new sphere(center, 0.2, new metal(albedo, fuzz));
+                } else {
+                    // glass
                     list[i++] = new sphere(center, 0.2, new dielectric(1.5));
                 }
             }
