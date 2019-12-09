@@ -46,10 +46,10 @@ class vec3 {
         }
 
         double length() const {
-            return sqrt(squared_length());
+            return sqrt(length_squared());
         }
 
-        double squared_length() const {
+        double length_squared() const {
             return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
         }
 
@@ -135,7 +135,7 @@ vec3 random_in_unit_disk() {
     vec3 p;
     do {
         p = vec3(random_double(-1,1), random_double(-1,1), 0);
-    } while (p.squared_length() >= 1.0);
+    } while (p.length_squared() >= 1.0);
     return p;
 }
 
@@ -150,7 +150,7 @@ vec3 random_in_unit_sphere() {
     vec3 p;
     do {
         p = vec3::random(-1,1);
-    } while (p.squared_length() >= 1.0);
+    } while (p.length_squared() >= 1.0);
     return p;
 }
 
