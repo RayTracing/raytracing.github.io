@@ -537,19 +537,22 @@ By MC integration, we should just be able to sample $\cos^2(\theta) / p(\text{di
 is direction in that context? We could make it based on polar coordinates, so $p$ would be in terms
 of $(\theta, \phi)$. However you do it, remember that a PDF has to integrate to 1 and represent the
 relative probability of that direction being sampled. We have a method from the last books to take
-uniform random samples on a unit sphere:
+uniform random samples in or on a unit sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_in_unit_sphere() {
-        vec3 p;
-        do {
-            p = vec3(random_double(-1,1), random_double(-1,1), random_double(-1,1));
-        } while (p.length_squared() >= 1);
-        return p;
+        while (true) {
+            auto p = vec3::random(-1,1);
+            if (p.length_squared() >= 1) continue;
+            return p;
+        }
     }
 
     vec3 random_unit_vector() {
-        return unit_vector(random_in_unit_sphere());
+        auto a = random_double(0, 2*pi);
+        auto z = random_double(-1, 1);
+        auto r = sqrt(1 - z*z);
+        return vec3(r*cos(a), r*sin(a), z);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-unit-vector]: <kbd>[vec3.h]</kbd> Random vector of unit length]
