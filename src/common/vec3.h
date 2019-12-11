@@ -132,11 +132,11 @@ inline vec3 unit_vector(vec3 v) {
 }
 
 vec3 random_in_unit_disk() {
-    vec3 p;
-    do {
-        p = vec3(random_double(-1,1), random_double(-1,1), 0);
-    } while (p.length_squared() >= 1.0);
-    return p;
+    while (true) {
+        auto p = vec3(random_double(-1,1), random_double(-1,1), 0);
+        if (p.length_squared() >= 1) continue;
+        return p;
+    }
 }
 
 vec3 random_unit_vector() {
@@ -147,11 +147,11 @@ vec3 random_unit_vector() {
 }
 
 vec3 random_in_unit_sphere() {
-    vec3 p;
-    do {
-        p = vec3::random(-1,1);
-    } while (p.length_squared() >= 1.0);
-    return p;
+    while (true) {
+        auto p = vec3::random(-1,1);
+        if (p.length_squared() >= 1) continue;
+        return p;
+    }
 }
 
 vec3 random_in_hemisphere(const vec3& normal) {
