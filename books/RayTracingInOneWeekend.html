@@ -411,9 +411,15 @@ length vector because I think not doing that makes for simpler and slightly fast
 
   ![Figure [cam-geom]: Camera geometry](../images/fig.cam-geom.jpg)
 
-<div class='together'>
 Below in code, the ray `r` goes to approximately the pixel centers (I won’t worry about exactness
 for now because we’ll add antialiasing later):
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline vec3 lerp(double t, const vec3& a, const vec3& b) {
+        return (1-t)*a + t*b;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [vec3-lerp]: <kbd>[vec3.h]</kbd> Vector linear interpolation function]
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "ray.h"
@@ -421,9 +427,9 @@ for now because we’ll add antialiasing later):
     #include <iostream>
 
     vec3 ray_color(const ray& r) {
-        vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+        auto d = r.direction();
+        auto t = 0.5 + 0.5 * d.y();
+        return lerp(t, vec3(1.0, 1.0, 1.0), vec3(0.0, 0.2, 1.0));
     }
 
     int main() {
@@ -452,13 +458,12 @@ for now because we’ll add antialiasing later):
         std::cerr << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [main-blue-white-blend]: <kbd>[main.cc]</kbd> Rendering a blue-to-white gradient]
-</div>
+    [Listing [ray-gradient]: <kbd>[main.cc]</kbd> Rendering a blue-to-white gradient]
 
 <div class='together'>
-The `ray_color(ray)` function linearly blends white and blue depending on the up/downess of the $y$
-coordinate. I first made it a unit vector so $-1.0 < y < 1.0$. I then did a standard graphics trick
-of scaling that to $0.0 ≤ t ≤ 1.0$. When $t = 1.0$ I want blue. When $t = 0.0$ I want white. In
+The `ray_color(ray)` function linearly blends white and blue depending on the height of the $y$
+coordinate, where $y$ is assumed to run from -1.0 to +1.0. I then did a standard graphics trick of
+scaling that to $0.0 ≤ t ≤ 1.0$. When $t = 1.0$ I want blue. When $t = 0.0$ I want white. In
 between, I want a blend. This forms a “linear blend”, or “linear interpolation”, or “lerp” for
 short, between two things. A lerp is always of the form
 
@@ -466,7 +471,7 @@ short, between two things. A lerp is always of the form
 
 with $t$ going from zero to one. In our case this produces:
 
-  ![A blue-to-white gradient depending on ray Y coordinate](../images/img.blue-to-white.png)
+  ![A blue-to-white gradient depending on ray Y coordinate](../images/img.ray-gradient.png)
 
 </div>
 

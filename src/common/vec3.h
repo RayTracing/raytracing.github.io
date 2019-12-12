@@ -131,6 +131,10 @@ inline vec3 unit_vector(vec3 v) {
     return v / v.length();
 }
 
+inline vec3 lerp(double t, const vec3& a, const vec3& b) {
+    return (1-t)*a + t*b;
+}
+
 vec3 random_in_unit_disk() {
     while (true) {
         auto p = vec3(random_double(-1,1), random_double(-1,1), 0);
