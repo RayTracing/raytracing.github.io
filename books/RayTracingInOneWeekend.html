@@ -456,11 +456,14 @@ for now because we’ll add antialiasing later):
 </div>
 
 <div class='together'>
-The `ray_color(ray)` function linearly blends white and blue depending on the up/downess of the $y$
-coordinate. I first made it a unit vector so $-1.0 < y < 1.0$. I then did a standard graphics trick
-of scaling that to $0.0 ≤ t ≤ 1.0$. When $t = 1.0$ I want blue. When $t = 0.0$ I want white. In
-between, I want a blend. This forms a “linear blend”, or “linear interpolation”, or “lerp” for
-short, between two things. A lerp is always of the form
+The `ray_color(ray)` function linearly blends white and blue depending on the height of the $y$
+coordinate _after_ scaling the ray direction to unit length (so $-1.0 < y < 1.0$). Because we're
+looking at the $y$ height after normalizing the vector, you'll notice a horizontal gradient to the
+color in addition to the vertical gradient.
+
+I then did a standard graphics trick of scaling that to $0.0 ≤ t ≤ 1.0$. When $t = 1.0$ I want blue.
+When $t = 0.0$ I want white. In between, I want a blend. This forms a “linear blend”, or “linear
+interpolation”, or “lerp” for short, between two things. A lerp is always of the form
 
   $$ \text{blendedValue} = (1-t)\cdot\text{startValue} + t\cdot\text{endValue}, $$
 
