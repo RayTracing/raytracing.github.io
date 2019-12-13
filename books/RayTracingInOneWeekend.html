@@ -803,17 +803,18 @@ If we decide to have the normals always point out, then we will need to determin
 ray is on when we color it. We can figure this out by comparing the ray with the normal. If the ray
 and the normal face in the same direction, the ray is inside the object, if the ray and the normal
 face in the opposide direction, then the ray is outside the object. This can be determined by
-taking the dot product of the two vectors, where if their dot is positive, they point in the same
-hemisphere.
+taking the dot product of the two vectors, where if their dot is positive, the ray is inside the
+sphere.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    if(dot(ray_direction, outward_normal) > 0.0)
+    if (dot(ray_direction, outward_normal) > 0.0) {
         // ray is inside the sphere
         ...
-    else
+    }
+    else {
         // ray is outside the sphere
         ...
-
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-normal-comparison]: <kbd>[sphere.h]</kbd> Comparing the ray and the normal]
 
@@ -824,22 +825,27 @@ information:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool front_face;
-    if(dot(ray_direction, outward_normal) > 0.0)
+    if (dot(ray_direction, outward_normal) > 0.0) {
         // ray is inside the sphere
         normal = -outward_normal;
         front_face = false;
-        ...
-    else
+    }
+    else {
         // ray is outside the sphere
         normal = outward_normal;
         front_face = true;
-        ...
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [normals-point-against]: <kbd>[sphere.h]</kbd> Remembering the side of the surface]
 
+The decision whether to have normals always point out or always point against the ray is based on
+whether you want to determine the side of the surface at the time of geometry or at the time of
+coloring. In this book we have more material types than we have geometry types, so we'll go for
+less work and put the determination at geometry time. This is simply a matter of preference and
+you'll see both implementations in the literature.
 
-
-I know we’ll want motion blur at some point, so I’ll also add a time input variable. 
+We add the `front_face` bool to the `hit_record` struct. I know that we’ll also want motion blur at
+some point, so I’ll also add a time input variable. 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef HITTABLE_H
@@ -865,10 +871,66 @@ I know we’ll want motion blur at some point, so I’ll also add a time input v
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hittable-time-side]: <kbd>[hittable.h]</kbd> The hittable class with time and side]
 
+And then we add the surface side determination to the class:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+        vec3 oc = r.origin() - center;
+        auto a = r.direction().length_squared();
+        auto half_b = dot(oc, r.direction());
+        auto c = oc.length_squared() - radius*radius;
+        auto discriminant = half_b*half_b - a*c;
+
+        if (discriminant > 0) {
+            auto root = sqrt(discriminant);
+            auto temp = (-half_b - root)/a;
+            if (temp < t_max && temp > t_min) {
+                rec.t = temp;
+                rec.p = r.at(rec.t);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                vec3 outward_normal = (rec.p - center) / radius;
+                if (dot(ray_direction, outward_normal) > 0.0) {
+                    // ray is inside the sphere
+                    rec.normal = -outward_normal;
+                    rec.front_face = false;
+                }
+                else {
+                    // ray is outside the sphere
+                    rec.normal = outward_normal;
+                    rec.front_face = true;
+                }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                return true;
+            }
+            temp = (-half_b + root) / a;
+            if (temp < t_max && temp > t_min) {
+                rec.t = temp;
+                rec.p = r.at(rec.t);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                vec3 outward_normal = (rec.p - center) / radius;
+                if (dot(ray_direction, outward_normal) > 0.0) {
+                    // ray is inside the sphere
+                    rec.normal = -outward_normal;
+                    rec.front_face = false;
+                }
+                else {
+                    // ray is outside the sphere
+                    rec.normal = outward_normal;
+                    rec.front_face = true;
+                }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                return true;
+            }
+        }
+        return false;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [sphere-final]: <kbd>[sphere.h]</kbd> The sphere class with normal determination]
+
 </div>
 
 <div class='together'>
-And a list of objects:
+We add a list of objects:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef HITTABLE_LIST_H
