@@ -818,7 +818,26 @@ hemisphere.
     [Listing [ray-normal-comparison]: <kbd>[sphere.h]</kbd> Comparing the ray and the normal]
 
 
-If we decide to have the normals always point against the ray, the information
+If we decide to have the normals always point against the ray, we won't be able to use the dot
+product to determine which side of the surface the ray is on. Instead, we would need to store that
+information:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool front_face;
+    if(dot(ray_direction, outward_normal) > 0.0)
+        // ray is inside the sphere
+        normal = -outward_normal;
+        front_face = false;
+        ...
+    else
+        // ray is outside the sphere
+        normal = outward_normal;
+        front_face = true;
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [normals-point-against]: <kbd>[sphere.h]</kbd> Remembering the side of the surface]
+
+
 
 I know we’ll want motion blur at some point, so I’ll also add a time input variable. 
 
@@ -833,7 +852,7 @@ I know we’ll want motion blur at some point, so I’ll also add a time input v
         vec3 normal;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double t;
-        bool 
+        bool front_face;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
 
