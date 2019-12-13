@@ -587,11 +587,11 @@ Surface Normals and Multiple Objects
 ====================================================================================================
 
 First, let’s get ourselves a surface normal so we can shade. This is a vector that is perpendicular
-to the surface, and by convention, points out. One design decision is whether these normals
-(again by convention) are unit length. That is convenient for shading so I will say yes, but I won’t
-enforce that in the code. This could allow subtle bugs, so be aware this is personal preference
-as are most design decisions like that. For a sphere, the normal is in the direction of the hit
-point minus the center:
+to the surface at the point of intersection. There are two design decisions to make for normals.
+The first is whether these normals are unit length. That is convenient for shading so I will say
+yes, but I won’t enforce that in the code. This could allow subtle bugs, so be aware this is
+personal preference as are most design decisions like that. For a sphere, the outward normal is in
+the direction of the hit point minus the center:
 
   ![Figure [surf-normal]: Sphere surface-normal geometry](../images/fig.sphere-normal.jpg)
 
@@ -705,8 +705,8 @@ found it convenient to add a valid interval for hits $t_{min}$ to $t_{max}$, so 
 it can help some details in the code to have an interval $t_{min}$ to $t_{max}$. One design question
 is whether to do things like compute the normal if we hit something. We might end up hitting
 something closer as we do our search, and we will only need the normal of the closest thing. I will
-go with the simple solution and compute a bundle of stuff I will store in some structure. I know
-we’ll want motion blur at some point, so I’ll add a time input variable. Here’s the abstract class:
+go with the simple solution and compute a bundle of stuff I will store in some structure. Here’s
+the abstract class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef HITTABLE_H
@@ -715,7 +715,6 @@ we’ll want motion blur at some point, so I’ll add a time input variable. Her
     #include "ray.h"
 
     struct hit_record {
-        double t;
         vec3 p;
         vec3 normal;
     };
@@ -781,6 +780,71 @@ And here’s the sphere:
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-initial]: <kbd>[sphere.h]</kbd> The sphere class]
+
+</div>
+
+<div class='together'>
+The second design decision for normals is whether they should always point out. At present, the
+normal found will always be in the direction of the center to the intersection point (the normal
+points out). If the ray intersects the sphere from the outside, the normal points against the ray.
+If the ray intersects the sphere from the inside, the normal (which always points out) points with
+the ray. Alternatively, we can have the normal always point against the ray. If the ray is outside
+the sphere, the normal will point outward, but if the ray is inside the sphere, the normal will
+point inward. 
+
+    ![Figure [normal-directions]: Possible directions for sphere surface-normal geometry](../images/fig.normal-possibilities.jpg)
+
+We need to choose one of these possibilities because we will eventually want to determine which
+side of the surface that the ray is coming from. This is important for objects that are rendered
+differently on each side, like the text on a two-sided sheet of paper, or for objects that have an
+inside and an outside, like glass balls.
+
+If we decide to have the normals always point out, then we will need to determine which side the
+ray is on when we color it. We can figure this out by comparing the ray with the normal. If the ray
+and the normal face in the same direction, the ray is inside the object, if the ray and the normal
+face in the opposide direction, then the ray is outside the object. This can be determined by
+taking the dot product of the two vectors, where if their dot is positive, they point in the same
+hemisphere.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    if(dot(ray_direction, outward_normal) > 0.0)
+        // ray is inside the sphere
+        ...
+    else
+        // ray is outside the sphere
+        ...
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-normal-comparison]: <kbd>[sphere.h]</kbd> Comparing the ray and the normal]
+
+
+If we decide to have the normals always point against the ray, the information
+
+I know we’ll want motion blur at some point, so I’ll also add a time input variable. 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef HITTABLE_H
+    #define HITTABLE_H
+
+    #include "ray.h"
+
+    struct hit_record {
+        vec3 p;
+        vec3 normal;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double t;
+        bool 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    };
+
+    class hittable {
+        public:
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+    };
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hittable-time-side]: <kbd>[hittable.h]</kbd> The hittable class with time and side]
 
 </div>
 
