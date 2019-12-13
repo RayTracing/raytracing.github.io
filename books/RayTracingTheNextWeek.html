@@ -209,8 +209,18 @@ intersection code barely needs a change: `center` just needs to become a functio
                 rec.t = temp;
                 rec.p = r.at(rec.t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                rec.normal = (rec.p - center(r.time())) / radius;
+                vec3 outward_normal = (rec.p - center(r.time())) / radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                if (dot(r.direction(), outward_normal) > 0.0) {
+                    // ray is inside the sphere
+                    rec.normal = -outward_normal;
+                    rec.front_face = false;
+                }
+                else {
+                    // ray is outside the sphere
+                    rec.normal = outward_normal;
+                    rec.front_face = true;
+                }
                 rec.mat_ptr = mat_ptr;
                 return true;
             }
@@ -219,8 +229,18 @@ intersection code barely needs a change: `center` just needs to become a functio
                 rec.t = temp;
                 rec.p = r.at(rec.t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                rec.normal = (rec.p - center(r.time())) / radius;
+                vec3 outward_normal = (rec.p - center(r.time())) / radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                if (dot(r.direction(), outward_normal) > 0.0) {
+                    // ray is inside the sphere
+                    rec.normal = -outward_normal;
+                    rec.front_face = false;
+                }
+                else {
+                    // ray is outside the sphere
+                    rec.normal = outward_normal;
+                    rec.front_face = true;
+                }
                 rec.mat_ptr = mat_ptr;
                 return true;
             }
@@ -1691,9 +1711,17 @@ And the hit function is:
         rec.u = (x-x0)/(x1-x0);
         rec.v = (y-y0)/(y1-y0);
         rec.t = t;
+        vec3 outward_normal = vec3(0, 0, 1);
+        if (dot(r.direction(), outward_normal) > 0.0) {
+            rec.normal = -outward_normal;
+            rec.front_face = false;
+        }
+        else {
+            rec.normal = outward_normal;
+            rec.front_face = true;
+        }
         rec.mat_ptr = mp;
         rec.p = r.at(t);
-        rec.normal = vec3(0, 0, 1);
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1795,9 +1823,17 @@ With unsurprising hit functions:
         rec.u = (x-x0)/(x1-x0);
         rec.v = (z-z0)/(z1-z0);
         rec.t = t;
+        vec3 outward_normal = vec3(0, 1, 0);
+        if (dot(r.direction(), outward_normal) > 0.0) {
+            rec.normal = -outward_normal;
+            rec.front_face = false;
+        }
+        else {
+            rec.normal = outward_normal;
+            rec.front_face = true;
+        }
         rec.mat_ptr = mp;
         rec.p = r.at(t);
-        rec.normal = vec3(0, 1, 0);
         return true;
     }
 
@@ -1812,9 +1848,17 @@ With unsurprising hit functions:
         rec.u = (y-y0)/(y1-y0);
         rec.v = (z-z0)/(z1-z0);
         rec.t = t;
+        vec3 outward_normal = vec3(1, 0, 0);
+        if (dot(r.direction(), outward_normal) > 0.0) {
+            rec.normal = -outward_normal;
+            rec.front_face = false;
+        }
+        else {
+            rec.normal = outward_normal;
+            rec.front_face = true;
+        }
         rec.mat_ptr = mp;
         rec.p = r.at(t);
-        rec.normal = vec3(1, 0, 0);
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1864,19 +1908,22 @@ And the view info:
 <div class='together'>
 We get:
 
-  ![Empty Cornell box](../images/img.cornell-first.jpg)
+  ![Empty Cornell box](../images/img.cornell-empty.jpg)
 
 </div>
 
 <div class='together'>
-This is very noisy because the light is small. But why are the other walls missing? They are facing
-the wrong way. We need outward facing normals. Let’s make a hittable that does nothing but hold
-another hittable, but reverses the normals:
+This is very noisy because the light is small. But we have a problem: Some of the walls are facing
+the wrong way. We haven't specified that a diffuse material should behave differently on different
+faces of the object, but what if the Cornell box had a different pattern on the inside and outside
+walls? The rectangle objects are described such that their front face is always in the $(1, 0, 0)$,
+$(0, 1, 0)$, or $(0, 0, 1)$ directions. We need a way to switch the faces of an object. Let’s make
+a hittable that does nothing but hold another hittable, but flips the face:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class flip_normals : public hittable {
+    class flip_face : public hittable {
         public:
-            flip_normals(hittable *p) : ptr(p) {}
+            flip_face(hittable *p) : ptr(p) {}
 
             virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
                 if (ptr->hit(r, t_min, t_max, rec)) {
@@ -1894,7 +1941,7 @@ another hittable, but reverses the normals:
             hittable *ptr;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [flip-normals]: <kbd>[hittable.h]</kbd> Flip-normals function]
+    [Listing [flip-face]: <kbd>[hittable.h]</kbd> Flip-Face function]
 </div>
 
 <div class='together'>
@@ -1910,16 +1957,16 @@ This makes Cornell:
         material *light = new diffuse_light(new constant_texture(vec3(15, 15, 15)));
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
+        list[i++] = new flip_face(new yz_rect(0, 555, 0, 555, 555, green));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
         list[i++] = new xz_rect(213, 343, 227, 332, 554, light);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
+        list[i++] = new flip_face(new xz_rect(0, 555, 0, 555, 555, white));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
+        list[i++] = new flip_face(new xy_rect(0, 555, 0, 555, 555, white));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         return new hittable_list(list,i);
@@ -1965,11 +2012,11 @@ make an axis-aligned block primitive that holds 6 rectangles:
         pmax = p1;
         hittable **list = new hittable*[6];
         list[0] = new xy_rect(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr);
-        list[1] = new flip_normals(new xy_rect(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr));
+        list[1] = new flip_face(new xy_rect(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr));
         list[2] = new xz_rect(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), ptr);
-        list[3] = new flip_normals(new xz_rect(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr));
+        list[3] = new flip_face(new xz_rect(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr));
         list[4] = new yz_rect(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr);
-        list[5] = new flip_normals(new yz_rect(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
+        list[5] = new flip_face(new yz_rect(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
         list_ptr = new hittable_list(list,6);
     }
 
@@ -2032,6 +2079,13 @@ move any underlying hittable is a _translate_ instance.
         ray moved_r(r.origin() - offset, r.direction(), r.time());
         if (ptr->hit(moved_r, t_min, t_max, rec)) {
             rec.p += offset;
+            if (dot(moved_r.direction(), rec.normal) > 0.0) {
+                rec.normal = -rec.normal;
+                rec.front_face = false;
+            }
+            else {
+                rec.front_face = true;
+            }
             return true;
         }
         else
@@ -2171,7 +2225,14 @@ And the hit function:
             normal[0] = cos_theta*rec.normal[0] + sin_theta*rec.normal[2];
             normal[2] = -sin_theta*rec.normal[0] + cos_theta*rec.normal[2];
             rec.p = p;
-            rec.normal = normal;
+            if (dot(rotated_r.direction(), normal) > 0.0) {
+                rec.normal = -normal;
+                rec.front_face = false;
+            }
+            else {
+                rec.normal = normal;
+                rec.front_face = true;
+            }
             return true;
         }
         else
@@ -2323,6 +2384,7 @@ And the hit function is:
                     }
 
                     rec.normal = vec3(1,0,0);  // arbitrary
+                    rec.front_face = true;     // also arbitrary
                     rec.mat_ptr = phase_function;
                     return true;
                 }
@@ -2351,12 +2413,12 @@ If we replace the two blocks with smoke and fog (dark and light particles) and m
         material *green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
         material *light = new diffuse_light(new constant_texture(vec3(7, 7, 7)));
 
-        list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
+        list[i++] = new flip_face(new yz_rect(0, 555, 0, 555, 555, green));
         list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
         list[i++] = new xz_rect(113, 443, 127, 432, 554, light);
-        list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
+        list[i++] = new flip_face(new xz_rect(0, 555, 0, 555, 555, white));
         list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
-        list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
+        list[i++] = new flip_face(new xy_rect(0, 555, 0, 555, 555, white));
 
         hittable *b1 = new translate(
             new rotate_y(new box(vec3(0, 0, 0), vec3(165, 165, 165), white), -18),

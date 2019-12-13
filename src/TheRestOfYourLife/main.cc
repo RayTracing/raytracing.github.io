@@ -21,26 +21,26 @@
 
 
 vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) {
-    hit_record rec;
-    if (depth <= 0 || !world->hit(r, 0.001, infinity, rec))
+    hit_record hrec;
+    if (depth <= 0 || !world->hit(r, 0.001, infinity, hrec))
         return vec3(0,0,0);
 
     scatter_record srec;
-    vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
-    if (!rec.mat_ptr->scatter(r, rec, srec))
+    vec3 emitted = hrec.mat_ptr->emitted(r, hrec, hrec.u, hrec.v, hrec.p);
+    if (!hrec.mat_ptr->scatter(r, hrec, srec))
         return emitted;
 
     if (srec.is_specular) {
         return srec.attenuation * ray_color(srec.specular_ray, world, light_shape, depth-1);
     }
-    hittable_pdf plight(light_shape, rec.p);
+    hittable_pdf plight(light_shape, hrec.p);
     mixture_pdf p(&plight, srec.pdf_ptr);
-    ray scattered = ray(rec.p, p.generate(), r.time());
+    ray scattered = ray(hrec.p, p.generate(), r.time());
     auto pdf_val = p.value(scattered.direction());
     delete srec.pdf_ptr;
 
     return emitted
-         + srec.attenuation * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+         + srec.attenuation * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
                             * ray_color(scattered, world, light_shape, depth-1)
                             / pdf_val;
 }
@@ -53,12 +53,12 @@ void cornell_box(hittable **scene, camera **cam, double aspect) {
 
     hittable **list = new hittable*[8];
     int i = 0;
-    list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
+    list[i++] = new flip_face(new yz_rect(0, 555, 0, 555, 555, green));
     list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
-    list[i++] = new flip_normals(new xz_rect(213, 343, 227, 332, 554, light));
-    list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
+    list[i++] = new flip_face(new xz_rect(213, 343, 227, 332, 554, light));
+    list[i++] = new flip_face(new xz_rect(0, 555, 0, 555, 555, white));
     list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
-    list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
+    list[i++] = new flip_face(new xy_rect(0, 555, 0, 555, 555, white));
     material *glass = new dielectric(1.5);
     list[i++] = new sphere(vec3(190, 90, 190),90 , glass);
     list[i++] = new translate(new rotate_y(

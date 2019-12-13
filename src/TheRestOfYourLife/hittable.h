@@ -26,12 +26,13 @@ void get_sphere_uv(const vec3& p, double& u, double& v) {
 
 
 struct hit_record {
-    double t;
-    double u;
-    double v;
     vec3 p;
     vec3 normal;
     material *mat_ptr;
+    double t;
+    double u;
+    double v;
+    bool front_face;
 };
 
 class hittable {
@@ -42,12 +43,12 @@ class hittable {
         virtual vec3 random(const vec3& o) const { return vec3(1,0,0); }
 };
 
-class flip_normals : public hittable {
+class flip_face : public hittable {
     public:
-        flip_normals(hittable *p) : ptr(p) {}
+        flip_face(hittable *p) : ptr(p) {}
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
             if (ptr->hit(r, t_min, t_max, rec)) {
-                rec.normal = -rec.normal;
+                rec.front_face = !rec.front_face;
                 return true;
             }
             else
@@ -72,6 +73,13 @@ bool translate::hit(const ray& r, double t_min, double t_max, hit_record& rec) c
     ray moved_r(r.origin() - offset, r.direction(), r.time());
     if (ptr->hit(moved_r, t_min, t_max, rec)) {
         rec.p += offset;
+        if (dot(moved_r.direction(), rec.normal) > 0.0) {
+            rec.normal = -rec.normal;
+            rec.front_face = false;
+        }
+        else {
+            rec.front_face = true;
+        }
         return true;
     }
     else
@@ -148,7 +156,14 @@ bool rotate_y::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
         normal[0] = cos_theta*rec.normal[0] + sin_theta*rec.normal[2];
         normal[2] = -sin_theta*rec.normal[0] + cos_theta*rec.normal[2];
         rec.p = p;
-        rec.normal = normal;
+        if (dot(rotated_r.direction(), normal) > 0.0) {
+            rec.normal = -normal;
+            rec.front_face = false;
+        }
+        else {
+            rec.normal = normal;
+            rec.front_face = true;
+        }
         return true;
     }
     else
