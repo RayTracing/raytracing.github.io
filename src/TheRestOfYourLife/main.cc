@@ -16,24 +16,31 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
-
 #include <iostream>
 
 
-vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) {
+vec3 ray_color(const ray& r, hittable& world, hittable& light_shape, int depth) {
     hit_record rec;
-    if (depth <= 0 || !world->hit(r, 0.001, infinity, rec))
+
+    // If we've exceeded the ray bounce limit, no more light is gathered.
+    if (depth <= 0)
         return vec3(0,0,0);
+
+    // If the ray hits nothing, return the background color.
+    if (!world.hit(r, 0.001, infinity, rec))
+        return vec3(0,1,1);
 
     scatter_record srec;
     vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+
     if (!rec.mat_ptr->scatter(r, rec, srec))
         return emitted;
 
     if (srec.is_specular) {
         return srec.attenuation * ray_color(srec.specular_ray, world, light_shape, depth-1);
     }
-    hittable_pdf plight(light_shape, rec.p);
+
+    hittable_pdf plight(&light_shape, rec.p);
     mixture_pdf p(&plight, srec.pdf_ptr);
     ray scattered = ray(rec.p, p.generate(), r.time());
     auto pdf_val = p.value(scattered.direction());
@@ -45,34 +52,44 @@ vec3 ray_color(const ray& r, hittable *world, hittable *light_shape, int depth) 
                             / pdf_val;
 }
 
-void cornell_box(hittable **scene, camera **cam, double aspect) {
-    material *red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
-    material *white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
-    material *green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
-    material *light = new diffuse_light(new constant_texture(vec3(15, 15, 15)));
 
-    hittable **list = new hittable*[8];
-    int i = 0;
-    list[i++] = new flip_normals(new yz_rect(0, 555, 0, 555, 555, green));
-    list[i++] = new yz_rect(0, 555, 0, 555, 0, red);
-    list[i++] = new flip_normals(new xz_rect(213, 343, 227, 332, 554, light));
-    list[i++] = new flip_normals(new xz_rect(0, 555, 0, 555, 555, white));
-    list[i++] = new xz_rect(0, 555, 0, 555, 0, white);
-    list[i++] = new flip_normals(new xy_rect(0, 555, 0, 555, 555, white));
+hittable_list cornell_box(camera& cam, double aspect) {
+    hittable_list world;
+
+    auto red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
+    auto white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
+    auto green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
+    auto light = new diffuse_light(new constant_texture(vec3(15, 15, 15)));
+
+    world.add(new flip_normals(new yz_rect(0, 555, 0, 555, 555, green)));
+    world.add(new yz_rect(0, 555, 0, 555, 0, red));
+    world.add(new flip_normals(new xz_rect(213, 343, 227, 332, 554, light)));
+    world.add(new flip_normals(new xz_rect(0, 555, 0, 555, 555, white)));
+    world.add(new xz_rect(0, 555, 0, 555, 0, white));
+    world.add(new flip_normals(new xy_rect(0, 555, 0, 555, 555, white)));
+
+    hittable* box1 = new box(vec3(0,0,0), vec3(165,330,165), white);
+    box1 = new rotate_y(box1, 15);
+    box1 = new translate(box1, vec3(265,0,295));
+    world.add(box1);
+
     material *glass = new dielectric(1.5);
-    list[i++] = new sphere(vec3(190, 90, 190),90 , glass);
-    list[i++] = new translate(new rotate_y(
-                    new box(vec3(0, 0, 0), vec3(165, 330, 165), white),  15), vec3(265,0,295));
-    *scene = new hittable_list(list,i);
+    world.add(new sphere(vec3(190,90,190), 90 , glass));
 
     vec3 lookfrom(278, 278, -800);
     vec3 lookat(278, 278, 0);
+    vec3 up(0, 1, 0);
     auto dist_to_focus = 10.0;
     auto aperture = 0.0;
     auto vfov = 40.0;
-    *cam = new camera(lookfrom, lookat, vec3(0,1,0),
-                      vfov, aspect, aperture, dist_to_focus, 0.0, 1.0);
+    auto t0 = 0.0;
+    auto t1 = 1.0;
+
+    cam = camera(lookfrom, lookat, up, vfov, aspect, aperture, dist_to_focus, t0, t1);
+
+    return world;
 }
+
 
 int main() {
     int nx = 600;
@@ -82,16 +99,14 @@ int main() {
 
     std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
 
-    hittable *world;
-    camera *cam;
+    camera cam;
     auto aspect = double(ny) / double(nx);
-    cornell_box(&world, &cam, aspect);
-    hittable *light_shape = new xz_rect(213, 343, 227, 332, 554, 0);
-    hittable *glass_sphere = new sphere(vec3(190, 90, 190), 90, 0);
-    hittable *a[2];
-    a[0] = light_shape;
-    a[1] = glass_sphere;
-    hittable_list hlist(a,2);
+
+    auto world = cornell_box(cam, aspect);
+
+    hittable_list lights;
+    lights.add(new xz_rect(213, 343, 227, 332, 554, 0));
+    lights.add(new sphere(vec3(190, 90, 190), 90, 0));
 
     for (int j = ny-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
@@ -100,8 +115,8 @@ int main() {
             for (int s = 0; s < num_samples; ++s) {
                 auto u = (i + random_double()) / nx;
                 auto v = (j + random_double()) / ny;
-                ray r = cam->get_ray(u, v);
-                color += ray_color(r, world, &hlist, max_depth);
+                ray r = cam.get_ray(u, v);
+                color += ray_color(r, world, lights, max_depth);
             }
             color.write_color(std::cout, num_samples);
         }

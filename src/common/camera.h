@@ -16,6 +16,8 @@
 
 class camera {
     public:
+        camera() : camera(vec3(0,0,-1), vec3(0,0,0), vec3(0,1,0), 40, 1, 0, 10) {}
+
         camera(
             vec3 lookfrom, vec3 lookat, vec3 vup,
             double vfov, // top to bottom, in degrees
