@@ -197,6 +197,7 @@ intersection code barely needs a change: `center` just needs to become a functio
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         vec3 oc = r.origin() - center(r.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        vec3 oc = r.origin() - center;
         auto a = r.direction().length_squared();
         auto half_b = dot(oc, r.direction());
         auto c = oc.length_squared() - radius*radius;
@@ -209,8 +210,18 @@ intersection code barely needs a change: `center` just needs to become a functio
                 rec.t = temp;
                 rec.p = r.at(rec.t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                rec.normal = (rec.p - center(r.time())) / radius;
+                vec3 outward_normal = (rec.p - center(r.time())) / radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                if (dot(ray_direction, outward_normal) > 0.0) {
+                    // ray is inside the sphere
+                    rec.normal = -outward_normal;
+                    rec.front_face = false;
+                }
+                else {
+                    // ray is outside the sphere
+                    rec.normal = outward_normal;
+                    rec.front_face = true;
+                }
                 rec.mat_ptr = mat_ptr;
                 return true;
             }
@@ -219,8 +230,18 @@ intersection code barely needs a change: `center` just needs to become a functio
                 rec.t = temp;
                 rec.p = r.at(rec.t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                rec.normal = (rec.p - center(r.time())) / radius;
+                vec3 outward_normal = (rec.p - center(r.time())) / radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                if (dot(ray_direction, outward_normal) > 0.0) {
+                    // ray is inside the sphere
+                    rec.normal = -outward_normal;
+                    rec.front_face = false;
+                }
+                else {
+                    // ray is outside the sphere
+                    rec.normal = outward_normal;
+                    rec.front_face = true;
+                }
                 rec.mat_ptr = mat_ptr;
                 return true;
             }
