@@ -59,7 +59,7 @@ bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& re
             rec.t = temp;
             rec.p = r.at(rec.t);
             vec3 outward_normal = (rec.p - center(r.time())) / radius;
-            if (dot(ray_direction, outward_normal) > 0.0) {
+            if (dot(r.direction(), outward_normal) > 0.0) {
                 // ray is inside the sphere
                 rec.normal = -outward_normal;
                 rec.front_face = false;
@@ -77,7 +77,7 @@ bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& re
             rec.t = temp;
             rec.p = r.at(rec.t);
             vec3 outward_normal = (rec.p - center(r.time())) / radius;
-            if (dot(ray_direction, outward_normal) > 0.0) {
+            if (dot(r.direction(), outward_normal) > 0.0) {
                 // ray is inside the sphere
                 rec.normal = -outward_normal;
                 rec.front_face = false;
