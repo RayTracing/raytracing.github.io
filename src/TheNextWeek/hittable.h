@@ -26,12 +26,13 @@ void get_sphere_uv(const vec3& p, double& u, double& v) {
 
 
 struct hit_record {
-    double t;
-    double u;
-    double v;
     vec3 p;
     vec3 normal;
     material *mat_ptr;
+    double t;
+    double u;
+    double v;
+    bool front_face;
 };
 
 class hittable {
