@@ -48,9 +48,19 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
         auto temp = (-half_b - root)/a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
-            rec.p = r.at(rec.t);
+            rec.p = r.at(rec.t);            
+            vec3 outward_normal = (rec.p - center) / radius;
+            if (dot(ray_direction, outward_normal) > 0.0) {
+                // ray is inside the sphere
+                rec.normal = -outward_normal;
+                rec.front_face = false;
+            }
+            else {
+                // ray is outside the sphere
+                rec.normal = outward_normal;
+                rec.front_face = true;
+            }
             get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
-            rec.normal = (rec.p - center) / radius;
             rec.mat_ptr = mat_ptr;
             return true;
         }
@@ -58,9 +68,19 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
         temp = (-half_b + root)/a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
-            rec.p = r.at(rec.t);
+            rec.p = r.at(rec.t);            
+            vec3 outward_normal = (rec.p - center) / radius;
+            if (dot(ray_direction, outward_normal) > 0.0) {
+                // ray is inside the sphere
+                rec.normal = -outward_normal;
+                rec.front_face = false;
+            }
+            else {
+                // ray is outside the sphere
+                rec.normal = outward_normal;
+                rec.front_face = true;
+            }
             get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
-            rec.normal = (rec.p - center) / radius;
             rec.mat_ptr = mat_ptr;
             return true;
         }
