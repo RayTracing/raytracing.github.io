@@ -166,18 +166,6 @@ vec3 reflect(const vec3& v, const vec3& n) {
     return v - 2*dot(v,n)*n;
 }
 
-bool refract(const vec3& v, const vec3& n, double ni_over_nt, vec3& refracted) {
-    vec3 uv = unit_vector(v);
-    auto dt = dot(uv, n);
-    auto discriminant = 1.0 - ni_over_nt*ni_over_nt*(1-dt*dt);
-
-    if (discriminant <= 0)
-        return false;
-
-    refracted = ni_over_nt*(uv - n*dt) - n*sqrt(discriminant);
-    return true;
-}
-
 vec3 refract(const vec3& r, const vec3& n, double etai_over_etat) {
     auto cos_theta = ffmin(dot(-r, n), 1.0);
     vec3 r_out_parallel =  etai_over_etat * (r + cos_theta*n);

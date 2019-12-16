@@ -34,7 +34,6 @@ class material  {
         ) const = 0;
 };
 
-
 class dielectric : public material {
     public:
         dielectric(double ri) : ref_idx(ri) {}
@@ -42,44 +41,38 @@ class dielectric : public material {
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
         ) const {
-            vec3 outward_normal;
-            vec3 reflected = reflect(r_in.direction(), rec.normal);
-            double ni_over_nt;
             attenuation = vec3(1.0, 1.0, 1.0);
-            vec3 refracted;
-            double reflect_prob;
-            double cosine;
-
-            if (dot(r_in.direction(), rec.normal) > 0) {
-                outward_normal = -rec.normal;
-                ni_over_nt = ref_idx;
-                cosine = ref_idx * dot(r_in.direction(), rec.normal)
-                       / r_in.direction().length();
+            double etai_over_etat;
+            if (rec.front_face) {
+                etai_over_etat = 1.0 / ref_idx;
             } else {
-                outward_normal = rec.normal;
-                ni_over_nt = 1.0 / ref_idx;
-                cosine = -dot(r_in.direction(), rec.normal) / r_in.direction().length();
+                etai_over_etat = ref_idx;
             }
 
-            if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
-                reflect_prob = schlick(cosine, ref_idx);
-            } else {
+            vec3 unit_direction = unit_vector(r_in.direction());
+            double cos_theta = ffmin(dot(-unit_direction, rec.normal), 1.0);
+            double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
+            if (etai_over_etat * sin_theta > 1.0 ) {
+                vec3 reflected = reflect(unit_direction, rec.normal);
                 scattered = ray(rec.p, reflected, r_in.time());
-                reflect_prob = 1.0;
+                return true;
             }
-
-            if (random_double() < reflect_prob) {
-               scattered = ray(rec.p, reflected, r_in.time());
-            } else {
-               scattered = ray(rec.p, refracted, r_in.time());
+            
+            double reflect_prob = schlick(cos_theta, etai_over_etat);
+            if (random_double() < reflect_prob)
+            {
+                vec3 reflected = reflect(unit_direction, rec.normal);
+                scattered = ray(rec.p, reflected, r_in.time());
+                return true;
             }
-
+                
+            vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
+            scattered = ray(rec.p, refracted, r_in.time());
             return true;
         }
 
         double ref_idx;
 };
-
 
 class diffuse_light : public material  {
     public:
