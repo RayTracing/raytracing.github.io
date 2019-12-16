@@ -2011,13 +2011,13 @@ If we restrict $\mathbf{A}$ and $\mathbf{B}$ to be unit vectors:
 We can now rewrite $\mathbf{R'}_{\parallel}$ in terms of known quantities:
 
   $$ \mathbf{R'}_{\parallel} = 
-     \frac{\eta}{\eta'} (\mathbf{R} + (\mathbf{R} \cdot \mathbf{N}) \mathbf{N}) $$
+     \frac{\eta}{\eta'} (\mathbf{R} + (\mathbf{-R} \cdot \mathbf{N}) \mathbf{N}) $$
 
 When we combine them back together, we can write a function to calculate $\mathbf{R'}$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 refract(const vec3& r, const vec3& n, double etai_over_etat) {
-        auto cos_theta = dot(r, n);
+        auto cos_theta = dot(-r, n);
         vec3 r_out_parallel =  etai_over_etat * (r + cos_theta*n);
         vec3 r_out_perp = -sqrt(1.0 - r_out_parallel.length_squared()) * N;
         return r_out_parallel + r_out_perp;
@@ -2037,44 +2037,91 @@ And the dielectric material that always refracts is:
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
             ) const {
+                attenuation = vec3(1.0, 1.0, 1.0);
                 double etai_over_etat;
-                attenuation = vec3(1.0, 1.0, 0.0);
-
                 if (rec.front_face) {
-                    ni_over_nt = ref_idx;
+                    etai_over_etat = 1.0 / ref_idx;
                 } else {
-                    ni_over_nt = 1.0 / ref_idx;
+                    etai_over_etat = ref_idx;
                 }
 
-                vec3 refracted = refract(r_in.direction().unit_vector(), rec.normal, etai_over_etat)
+                vec3 unit_direction = unit_vector(r_in.direction());
+                vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
                 scattered = ray(rec.p, refracted);
-
                 return true;
             }
 
             double ref_idx;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [dielectric]: <kbd>[material.h]</kbd> Dielectric material class]
+    [Listing [dielectric]: <kbd>[material.h]</kbd> Dielectric material class that always refracts]
 
   ![Glass sphere that always refracts](../images/img.glass-always-refract.png)
-
-
 </div>
 
 
 <div class='together'>
-One troublesome practical issue is that when the ray is in the material with the higher refractive
-index, there is no real solution to Snell’s law and thus there is no refraction possible. Here all
-the light is reflected, and because in practice that is usually inside solid objects, it is called
-“total internal reflection”. This is why sometimes the water-air boundary acts as a perfect mirror
-when you are submerged. The code for refraction is thus a bit more complicated than for reflection:
+That definitely doesn't look right. One troublesome practical issue is that when the ray is in the
+material with the higher refractive index, there is no real solution to Snell’s law and thus there
+is no refraction possible. If we refer back to Snell's law and the derivation of $\sin\theta'$:
+
+  $$ \sin\theta' = \frac{\eta}{\eta'} \cdot \sin\theta $$
+
+If the ray is inside glass and outside is air ($\eta = 1.5$ and $\eta' = 1.0$):
+
+  $$ \sin\theta' = \frac{1.5}{1.0} \cdot \sin\theta $$
+
+The value of $\sin\theta'$ cannot be greater than 1. So, if,
+
+  $$ \frac{1.5}{1.0} \cdot \sin\theta > 1.0 $$
+
+The equality between the two sides of the equation is broken and a solution cannot exist. If a 
+solution does not exist the glass cannot refract and must reflect the ray:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    if(etai_over_etat * sin_theta > 1.0) {
+        // Must Reflect
+        ...
+    }
+    else {
+        // Can Refract
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [dielectric]: <kbd>[material.h]</kbd> Determining if the ray can refract]
+
+Here all the light is reflected, and because in practice that is usually inside solid objects, it
+is called “total internal reflection”. This is why sometimes the water-air boundary acts as a
+perfect mirror when you are submerged.
+</div>
+
+<div class='together'>
+We can solve for `sin_theta` using the trigonometric qualities:
+
+  $$ \sin\theta  = \sqrt{1 - \cos^2\theta} $$
+
+and
+
+  $$ \cos\theta = \mathbf{R} \cdot \mathbf{N} $$
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    double cos_theta = ffmin(dot(-unit_direction, rec.normal), 1.0);
+    double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
+    if(etai_over_etat * sin_theta > 1.0) {
+        // Must Reflect
+        ...
+    }
+    else {
+        // Can Refract
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [dielectric]: <kbd>[material.h]</kbd> Determining if the ray can refract]
 
 </div>
 
-
 <div class='together'>
-And the dielectric material that always refracts when possible is:
+And the dielectric material that always refracts (when possible) is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class dielectric : public material {
@@ -2084,43 +2131,38 @@ And the dielectric material that always refracts when possible is:
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
             ) const {
-                vec3 outward_normal;
-                vec3 reflected = reflect(r_in.direction(), rec.normal);
-                double ni_over_nt;
-                attenuation = vec3(1.0, 1.0, 0.0);
-                vec3 refracted;
-
-                if (dot(r_in.direction(), rec.normal) > 0) {
-                    outward_normal = -rec.normal;
-                    ni_over_nt = ref_idx;
+                attenuation = vec3(1.0, 1.0, 1.0);
+                double etai_over_etat;
+                if (rec.front_face) {
+                    etai_over_etat = 1.0 / ref_idx;
                 } else {
-                    outward_normal = rec.normal;
-                    ni_over_nt = 1.0 / ref_idx;
+                    etai_over_etat = ref_idx;
                 }
 
-                if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
-                    scattered = ray(rec.p, refracted);
-                } else {
+                vec3 unit_direction = unit_vector(r_in.direction());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                double cos_theta = ffmin(dot(-unit_direction, rec.normal), 1.0);
+                double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
+                if (etai_over_etat * sin_theta > 1.0 ) {
+                    vec3 reflected = reflect(unit_direction, rec.normal);
                     scattered = ray(rec.p, reflected);
-                    return false;
+                    return true;
                 }
 
+                vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
+                scattered = ray(rec.p, refracted);
                 return true;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
             double ref_idx;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [dielectric]: <kbd>[material.h]</kbd> Dielectric material class]
+    [Listing [dielectric]: <kbd>[material.h]</kbd> Dielectric material class with reflection]
 </div>
 
-Attenuation is always 1 -- the glass surface absorbs nothing. The `attenuation = vec3(1.0, 1.0,
-0.0)` above will also kill the blue channel which is the type of color bug that can be hard to find
--- it will give a color shift only. Try it the way it is and then change it to
-`attenuation = vec3(1.0, 1.0, 1.0)` to see the difference.
-
 <div class='together'>
-If we try that out with these parameters:
+Attenuation is always 1 -- the glass surface absorbs nothing. If we try that out with these parameters:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
@@ -2132,15 +2174,8 @@ If we try that out with these parameters:
 
 We get:
 
-  ![Glass sphere with a subtle bug](../images/img.glass-no-reflect.png)
-
+  ![Glass sphere that sometimes refracts](../images/img.glass-sometimes-refract.png)
 </div>
-
-(The reader Becker has pointed out that when there is a reflection ray the function returns `false`
-so there are no reflections. He is right, and that is why there are none in the image above. I am
-leaving this in rather than correcting it because it is an interesting example of a major bug that
-still leaves a reasonably plausible image. These sleeper bugs are the hardest bugs to find because
-we humans are not designed to find fault with what we see.)
 
 <div class='together'>
 Now real glass has reflectivity that varies with angle -- look at a window at a steep angle and it
@@ -2159,59 +2194,41 @@ surprisingly simple polynomial approximation by Christophe Schlick:
 
 <div class='together'>
 This yields our full glass material:
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class dielectric : public material {
         public:
             dielectric(double ri) : ref_idx(ri) {}
+
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
             ) const {
-                vec3 outward_normal;
-                vec3 reflected = reflect(r_in.direction(), rec.normal);
-                double ni_over_nt;
                 attenuation = vec3(1.0, 1.0, 1.0);
-                vec3 refracted;
+                double etai_over_etat;
+                if (rec.front_face) {
+                    etai_over_etat = 1.0 / ref_idx;
+                } else {
+                    etai_over_etat = ref_idx;
+                }
 
-
+                vec3 unit_direction = unit_vector(r_in.direction());
+                double cos_theta = ffmin(dot(-unit_direction, rec.normal), 1.0);
+                double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
+                if (etai_over_etat * sin_theta > 1.0 ) {
+                    vec3 reflected = reflect(unit_direction, rec.normal);
+                    scattered = ray(rec.p, reflected);
+                    return true;
+                }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                double reflect_prob;
-                double cosine;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-                if (dot(r_in.direction(), rec.normal) > 0) {
-                     outward_normal = -rec.normal;
-                     ni_over_nt = ref_idx;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                     cosine = ref_idx * dot(r_in.direction(), rec.normal)
-                            / r_in.direction().length();
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                }
-                else {
-                     outward_normal = rec.normal;
-                     ni_over_nt = 1.0 / ref_idx;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                     cosine = -dot(r_in.direction(), rec.normal)
-                            / r_in.direction().length();
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                }
-
-                if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                   reflect_prob = schlick(cosine, ref_idx);
-                }
-                else {
-                   reflect_prob = 1.0;
-                }
-
-                if (random_double() < reflect_prob) {
-                   scattered = ray(rec.p, reflected);
-                }
-                else {
-                   scattered = ray(rec.p, refracted);
+                double reflect_prob = schlick(cos_theta, etai_over_etat);
+                if (random_double() < reflect_prob)
+                {
+                    vec3 reflected = reflect(unit_direction, rec.normal);
+                    scattered = ray(rec.p, reflected);
+                    return true;
                 }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
+                vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
+                scattered = ray(rec.p, refracted);
                 return true;
             }
 
@@ -2242,7 +2259,6 @@ This gives:
   ![A hollow glass sphere](../images/img.glass-hollow.png)
 
 </div>
-
 
 
 Positionable Camera
