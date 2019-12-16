@@ -1970,14 +1970,98 @@ of the image and it was clearly wrong. That often does the job.
 <div class='together'>
 The refraction is described by Snell’s law:
 
-  $$ n \cdot \sin\theta = n' \cdot \sin\theta' $$
+  $$ \eta \cdot \sin\theta = \eta' \cdot \sin\theta' $$
 
-Where $n$ and $n'$ are the refractive indices (typically air = 1, glass = 1.3–1.7, diamond = 2.4)
-and the geometry is:
+Where $\theta$ and $\theta'$ are the angles from the normal, and $\eta$ and $\eta'$ (pronounced
+"eta" and "eta prime") are the refractive indices (typically air = 1.0, glass = 1.3–1.7, diamond =
+2.4). The geometry is:
 
   ![Figure [ray-refract]: Refracted ray geometry](../images/fig.ray-refract.jpg)
 
 </div>
+
+<div class='together'>
+In order to determine the direction of the refracted ray, we have to solve for $\sin\theta'$:
+
+  $$ \sin\theta' = \frac{\eta}{\eta'} \cdot \sin\theta $$
+
+On the refracted side of the surface there is a refracted ray $\mathbf{R'}$ and a normal
+$\mathbf{N'}$, and there exists an angle, $\theta'$, between them. We can split $\mathbf{R'}$ into
+the parts of the ray that are parallel to $\mathbf{N'}$ and perpendicular to $\mathbf{N'}$:
+
+  $$ \mathbf{R'} = \mathbf{R'}_{\parallel} + \mathbf{R'}_{\bot} $$
+
+If we solve for $\mathbf{R'}_{\parallel}$ and $\mathbf{R'}_{\bot}$ we get:
+
+  $$ \mathbf{R'}_{\parallel} = \frac{\eta}{\eta'} (\mathbf{R} + \cos\theta \mathbf{N}) $$
+  $$ \mathbf{R'}_{\bot} = -\sqrt{1 - |\mathbf{R'}_{\parallel}|^2} \mathbf{N} $$
+
+You can go ahead and prove this for yourself if you want, but we will treat it as fact and move on.
+The rest of the book will not require you to understand the proof.
+
+We still need to solve for $\cos\theta$. It is well known that the dot product of two vectors can
+be explained in terms of the consine of the angle between them:
+
+  $$ \mathbf{A} \cdot \mathbf{B} = |\mathbf{A}| |\mathbf{B}| \cos\theta $$
+
+If we restrict $\mathbf{A}$ and $\mathbf{B}$ to be unit vectors:
+
+  $$ \mathbf{A} \cdot \mathbf{B} = \cos\theta $$
+
+We can now rewrite $\mathbf{R'}_{\parallel}$ in terms of known quantities:
+
+  $$ \mathbf{R'}_{\parallel} = 
+     \frac{\eta}{\eta'} (\mathbf{R} + (\mathbf{R} \cdot \mathbf{N}) \mathbf{N}) $$
+
+When we combine them back together, we can write a function to calculate $\mathbf{R'}$:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 refract(const vec3& r, const vec3& n, double etai_over_etat) {
+        auto cos_theta = dot(r, n);
+        vec3 r_out_parallel =  etai_over_etat * (r + cos_theta*n);
+        vec3 r_out_perp = -sqrt(1.0 - r_out_parallel.length_squared()) * N;
+        return r_out_parallel + r_out_perp;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [refract]: <kbd>[vec3.h]</kbd> Refraction function]
+</div>
+
+<div class='together'>
+And the dielectric material that always refracts is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class dielectric : public material {
+        public:
+            dielectric(double ri) : ref_idx(ri) {}
+
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
+                double etai_over_etat;
+                attenuation = vec3(1.0, 1.0, 0.0);
+
+                if (rec.front_face) {
+                    ni_over_nt = ref_idx;
+                } else {
+                    ni_over_nt = 1.0 / ref_idx;
+                }
+
+                vec3 refracted = refract(r_in.direction().unit_vector(), rec.normal, etai_over_etat)
+                scattered = ray(rec.p, refracted);
+
+                return true;
+            }
+
+            double ref_idx;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [dielectric]: <kbd>[material.h]</kbd> Dielectric material class]
+
+  ![Glass sphere that always refracts](../images/img.glass-always-refract.png)
+
+
+</div>
+
 
 <div class='together'>
 One troublesome practical issue is that when the ray is in the material with the higher refractive
@@ -1986,21 +2070,8 @@ the light is reflected, and because in practice that is usually inside solid obj
 “total internal reflection”. This is why sometimes the water-air boundary acts as a perfect mirror
 when you are submerged. The code for refraction is thus a bit more complicated than for reflection:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool refract(const vec3& v, const vec3& n, double ni_over_nt, vec3& refracted) {
-        vec3 uv = unit_vector(v);
-        auto dt = dot(uv, n);
-        auto discriminant = 1.0 - ni_over_nt*ni_over_nt*(1-dt*dt);
-
-        if (discriminant <= 0) {
-            return false;
-
-        refracted = ni_over_nt*(uv - n*dt) - n*sqrt(discriminant);
-        return true;
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [refract]: <kbd>[vec3.h]</kbd> Refraction function]
 </div>
+
 
 <div class='together'>
 And the dielectric material that always refracts when possible is:
