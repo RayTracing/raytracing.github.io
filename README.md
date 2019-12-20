@@ -76,9 +76,9 @@ or, run the optimized version (if you've built with `--config release`):
 
     build\release\inOneWeekend > image.ppm
 
-The resulting PPM file can be viewed as a regular computer image. Most operating systems come
-natively with a PPM viewer included. If your operating system doesn't handle PPM files, then PPM
-file viewers can be easily found online. We like [ImageMagick][].
+The generated PPM file can be viewed directly as a regular computer image, if your operating system
+supports this image type. If your system doesn't handle PPM files, then you should be able to find
+PPM file viewers online. We like [ImageMagick][].
 
 
 Corrections & Contributions
