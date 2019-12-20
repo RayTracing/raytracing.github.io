@@ -31,7 +31,7 @@ $ git clone https://github.com/RayTracing/raytracing.github.io
 A local copy can also be obtained by pointing a git gui client to the link:
 ```
 https://github.com/RayTracing/raytracing.github.io
-``` 
+```
 
 Copies of source are provided for you to check your work and compare against.
 If you wish to build the provided source, the process uses CMake.
