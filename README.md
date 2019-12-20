@@ -19,6 +19,16 @@ For printed copies, or to create PDF versions, use the print function in your br
 have been properly formatted for print versions as well.
 
 
+Project Status
+---------------
+We're currently hard at work on the v3.0.0 release. This will be a large evolution of the entire
+project: all three books, new and revised content, buildable with CMake, with a good number of code
+refactoring improvements. We're hoping to release this next version in January or February of 2020.
+
+If you'd like a sneak peek, we're over in the `development` branch. See the instructions below if
+you'd like to contribute!
+
+
 Corrections & Contributions
 ----------------------------
 If you spot errors, have suggested corrections, or would like to help out with the project, please
