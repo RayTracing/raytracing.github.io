@@ -617,8 +617,7 @@ $\vec{\mathbf{N}}$:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (discriminant < 0) {
             return -1.0;
-        }
-        else {
+        } else {
             return (-b - sqrt(discriminant) ) / (2.0*a);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -683,8 +682,7 @@ Using these observations, we can now simplify the sphere-intersection code to th
 
     if (discriminant < 0) {
         return -1.0;
-    }
-    else {
+    } else {
         return (-half_b - sqrt(discriminant) ) / a;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -792,27 +790,35 @@ And a list of objects:
     #define HITTABLE_LIST_H
 
     #include "hittable.h"
+    #include <vector>
 
     class hittable_list: public hittable {
         public:
             hittable_list() {}
-            hittable_list(hittable **l, int n) {list = l; list_size = n; }
+            hittable_list(hittable* object) { add(object); }
+
+            void clear()               { objects.clear(); }
+            void add(hittable* object) { objects.push_back(object); }
+
             virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
-            hittable **list;
-            int list_size;
+
+        public:
+            std::vector<hittable*> objects;
     };
 
     bool hittable_list::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         hit_record temp_rec;
         bool hit_anything = false;
-        double closest_so_far = t_max;
-        for (int i = 0; i < list_size; i++) {
-            if (list[i]->hit(r, t_min, closest_so_far, temp_rec)) {
+        auto closest_so_far = t_max;
+
+        for (auto object : objects) {
+            if (object->hit(r, t_min, closest_so_far, temp_rec)) {
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
                 rec = temp_rec;
             }
         }
+
         return hit_anything;
     }
 
@@ -820,6 +826,11 @@ And a list of objects:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hittable-list-initial]: <kbd>[hittable_list.h]</kbd> The hittable_list class]
 </div>
+
+If you're unfamiliar with C++'s `std::vector`, this is a generic array-like collection of an
+arbitrary type. Above, we use a collection of pointers to `hittable`. `std::vector` automatically
+grows as more values are added: `objects.push_back(object)` adds a value to the end of the
+`std::vector` member variable `objects`.
 
 <div class='together'></div>
 We need some math constants that we conveniently define in their own header file. For now we only
@@ -876,10 +887,10 @@ And the new main:
     #include <iostream>
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    vec3 ray_color(const ray& r, hittable *world) {
+    vec3 ray_color(const ray& r, hittable& world) {
         hit_record rec;
-        if (world->hit(r, 0.0, infinity, rec)) {
-            return 0.5*vec3(rec.normal.x()+1, rec.normal.y()+1, rec.normal.z()+1);
+        if (world.hit(r, 0.0, infinity, rec)) {
+            return 0.5 * (rec.normal + vec3(1,1,1));
         }
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -893,7 +904,9 @@ And the new main:
     int main() {
         int nx = 200;
         int ny = 100;
+
         std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
+
         vec3 lower_left_corner(-2.0, -1.0, -1.0);
         vec3 horizontal(4.0, 0.0, 0.0);
         vec3 vertical(0.0, 2.0, 0.0);
@@ -901,10 +914,9 @@ And the new main:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        hittable *list[2];
-        list[0] = new sphere(vec3(0,0,-1), 0.5);
-        list[1] = new sphere(vec3(0,-100.5,-1), 100);
-        hittable *world = new hittable_list(list,2);
+        hittable_list world;
+        world.add(new sphere(vec3(0,0,-1), 0.5));
+        world.add(new sphere(vec3(0,-100.5,-1), 100));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         for (int j = ny-1; j >= 0; --j) {
@@ -1077,12 +1089,12 @@ Main is also changed:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         int num_samples = 100;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
-        hittable *list[2];
-        list[0] = new sphere(vec3(0,0,-1), 0.5);
-        list[1] = new sphere(vec3(0,-100.5,-1), 100);
-        hittable *world = new hittable_list(list,2);
+        hittable_list world;
+        world.add(new sphere(vec3(0,0,-1), 0.5));
+        world.add(new sphere(vec3(0,-100.5,-1), 100));
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         camera cam;
@@ -1196,9 +1208,9 @@ range from -1 to +1. Reject this point and try again if the point is outside the
 Then update the `ray_color()` function to use the new random direction generator:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, hittable *world) {
+    vec3 ray_color(const ray& r, hittable& world) {
         hit_record rec;
-        if (world->hit(r, 0.0, infinity, rec)) {
+        if (world.hit(r, 0.0, infinity, rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 target = rec.p + rec.normal + random_in_unit_sphere();
             return 0.5 * ray_color(ray(rec.p, target - rec.p), world);
@@ -1220,9 +1232,10 @@ time — long enough to blow the stack. To guard against that, let's limit the m
 depth, returning no light contribution at the maximum depth:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    vec3 ray_color(const ray& r, hittable *world, int depth) {
+    vec3 ray_color(const ray& r, hittable& world, int depth) {
         hit_record rec;
-        if (world->hit(r, 0.0, infinity, rec)) {
+        if (world.hit(r, 0.0, infinity, rec)) {
+            // If we've exceeded the ray bounce limit, no more light is gathered.
             if (depth <= 0)
                 return vec3(0,0,0);
             vec3 target = rec.p + rec.normal + random_in_unit_sphere();
@@ -1242,6 +1255,7 @@ depth, returning no light contribution at the maximum depth:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         int max_depth = 50;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
         for (int j = ny-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
@@ -1316,7 +1330,7 @@ off of not at exactly $t=0$, but instead at $t=-0.0000001$ or $t=0.00000001$ or 
 point approximation the sphere intersector gives us. So we need to ignore hits very near zero:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    if (world->hit(r, 0.001, infinity, rec)) {
+    if (world.hit(r, 0.001, infinity, rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [reflect-tolerance]: <kbd>[main.cc]</kbd> Calculating reflected ray origins with tolerance]
 
@@ -1357,9 +1371,10 @@ This `random_unit_vector()` is a drop-in replacement for the existing `random_in
 function.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, hittable *world, int depth) {
+    vec3 ray_color(const ray& r, hittable& world, int depth) {
         hit_record rec;
-        if (world->hit(r, 0.0, infinity, rec)) {
+        if (world.hit(r, 0.0, infinity, rec)) {
+            // If we've exceeded the ray bounce limit, no more light is gathered.
             if (depth <= 0)
                 return vec3(0,0,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1432,9 +1447,10 @@ this diffuse method (before adopting Lambertian diffuse).
 Plugging the new formula into the `ray_color()` function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, hittable *world, int depth) {
+    vec3 ray_color(const ray& r, hittable& world, int depth) {
         hit_record rec;
-        if (world->hit(r, 0.0, infinity, rec)) {
+        if (world.hit(r, 0.0, infinity, rec)) {
+            // If we've exceeded the ray bounce limit, no more light is gathered.
             if (depth <= 0)
                 return vec3(0,0,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1660,10 +1676,11 @@ The metal material just reflects rays using that formula:
 We need to modify the color function to use this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, hittable *world, int depth) {
+    vec3 ray_color(const ray& r, hittable& world, int depth) {
         hit_record rec;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        if (world->hit(r, 0.001, infinity, rec)) {
+        if (world.hit(r, 0.001, infinity, rec)) {
+            // If we've exceeded the ray bounce limit, no more light is gathered.
             if (depth <= 0)
                 return vec3(0,0,0);
             ray scattered;
@@ -1696,12 +1713,11 @@ metal spheres:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        hittable *list[4];
-        list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.7, 0.3, 0.3)));
-        list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
-        list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2)));
-        list[3] = new sphere(vec3(-1,0,-1), 0.5, new metal(vec3(0.8, 0.8, 0.8)));
-        hittable *world = new hittable_list(list,4);
+        hittable_list world;
+        world.add(new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.7, 0.3, 0.3))));
+        world.add(new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0))));
+        world.add(new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2))));
+        world.add(new sphere(vec3(-1,0,-1), 0.5, new metal(vec3(0.8, 0.8, 0.8))));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         camera cam;
@@ -2068,9 +2084,9 @@ When calling it with camera `cam(90, double(nx)/ny)` and these spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     auto R = cos(pi/4);
-    list[0] = new sphere(vec3(-R,0,-1), R, new lambertian(vec3(0, 0, 1)));
-    list[1] = new sphere(vec3( R,0,-1), R, new lambertian(vec3(1, 0, 0)));
-    hittable *world = new hittable_list(list,2);
+    hittable_list world;
+    world.add(new sphere(vec3(-R,0,-1), R, new lambertian(vec3(0, 0, 1))));
+    world.add(new sphere(vec3( R,0,-1), R, new lambertian(vec3(1, 0, 0))));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-wide-angle]: <kbd>[main.cc]</kbd> Scene with wide-angle camera]
 
@@ -2307,38 +2323,45 @@ Where Next?
 First let’s make the image on the cover of this book -- lots of random spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hittable *random_scene() {
-        int n = 500;
-        hittable **list = new hittable*[n+1];
-        list[0] =  new sphere(vec3(0,-1000,0), 1000, new lambertian(vec3(0.5, 0.5, 0.5)));
+    hittable_list random_scene() {
+        hittable_list objects;
+
+        objects.add(new sphere(vec3(0,-1000,0), 1000, new lambertian(vec3(0.5, 0.5, 0.5))));
+
         int i = 1;
         for (int a = -11; a < 11; a++) {
             for (int b = -11; b < 11; b++) {
                 auto choose_mat = random_double();
                 vec3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
-                if ((center-vec3(4,0.2,0)).length() > 0.9) {
+                if ((center - vec3(4, .2, 0)).length() > 0.9) {
                     if (choose_mat < 0.8) {
                         // diffuse
                         auto albedo = vec3::random() * vec3::random();
-                        list[i++] = new sphere(center, 0.2, new lambertian(albedo));
+                        objects.add(new sphere(center, 0.2, new lambertian(albedo)));
                     } else if (choose_mat < 0.95) {
                         // metal
                         auto albedo = vec3::random(.5, 1);
                         auto fuzz = random_double(0, .5);
-                        list[i++] = new sphere(center, 0.2, new metal(albedo, fuzz));
+                        objects.add(new sphere(center, 0.2, new metal(albedo, fuzz)));
                     } else {
                         // glass
-                        list[i++] = new sphere(center, 0.2, new dielectric(1.5));
+                        objects.add(new sphere(center, 0.2, new dielectric(1.5)));
                     }
                 }
             }
         }
 
-        list[i++] = new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5));
-        list[i++] = new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1)));
-        list[i++] = new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0));
+        objects.add(new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5)));
+        objects.add(new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1))));
+        objects.add(new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0)));
 
-        return new hittable_list(list,i);
+        return objects;
+    }
+
+    int main() {
+        ...
+        auto world = random_scene();
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-final]: <kbd>[main.cc]</kbd> Final scene]
