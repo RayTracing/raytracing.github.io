@@ -14,15 +14,17 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
-
 #include <iostream>
 
 
-vec3 ray_color(const ray& r, hittable *world, int depth) {
+vec3 ray_color(const ray& r, hittable& world, int depth) {
     hit_record rec;
-    if (world->hit(r, 0.001, infinity, rec)) {
-        if (depth <= 0)
-            return vec3(0,0,0);
+
+    // If we've exceeded the ray bounce limit, no more light is gathered.
+    if (depth <= 0)
+        return vec3(0,0,0);
+
+    if (world.hit(r, 0.001, infinity, rec)) {
         ray scattered;
         vec3 attenuation;
         if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
@@ -36,10 +38,11 @@ vec3 ray_color(const ray& r, hittable *world, int depth) {
 }
 
 
-hittable *random_scene() {
-    size_t n = 500;
-    hittable **list = new hittable*[n+1];
-    list[0] = new sphere(vec3(0,-1000,0), 1000, new lambertian(vec3(0.5, 0.5, 0.5)));
+hittable_list random_scene() {
+    hittable_list objects;
+
+    objects.add(new sphere(vec3(0,-1000,0), 1000, new lambertian(vec3(0.5, 0.5, 0.5))));
+
     int i = 1;
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
@@ -49,25 +52,25 @@ hittable *random_scene() {
                 if (choose_mat < 0.8) {
                     // diffuse
                     auto albedo = vec3::random() * vec3::random();
-                    list[i++] = new sphere(center, 0.2, new lambertian(albedo));
+                    objects.add(new sphere(center, 0.2, new lambertian(albedo)));
                 } else if (choose_mat < 0.95) {
                     // metal
                     auto albedo = vec3::random(.5, 1);
                     auto fuzz = random_double(0, .5);
-                    list[i++] = new sphere(center, 0.2, new metal(albedo, fuzz));
+                    objects.add(new sphere(center, 0.2, new metal(albedo, fuzz)));
                 } else {
                     // glass
-                    list[i++] = new sphere(center, 0.2, new dielectric(1.5));
+                    objects.add(new sphere(center, 0.2, new dielectric(1.5)));
                 }
             }
         }
     }
 
-    list[i++] = new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5));
-    list[i++] = new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1)));
-    list[i++] = new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0));
+    objects.add(new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5)));
+    objects.add(new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1))));
+    objects.add(new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0)));
 
-    return new hittable_list(list,i);
+    return objects;
 }
 
 
@@ -79,7 +82,7 @@ int main() {
 
     std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
 
-    hittable *world = random_scene();
+    auto world = random_scene();
 
     vec3 lookfrom(13,2,3);
     vec3 lookat(0,0,0);
