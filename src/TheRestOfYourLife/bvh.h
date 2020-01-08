@@ -35,7 +35,7 @@ class bvh_node : public hittable  {
 };
 
 
-bool box_compare(const hittable *a, const hittable *b, int axis) {
+inline bool box_compare(const hittable *a, const hittable *b, int axis) {
     aabb box_a;
     aabb box_b;
 
