@@ -48,7 +48,7 @@ hittable_list random_scene() {
         for (int b = -11; b < 11; b++) {
             auto choose_mat = random_double();
             vec3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
-            if ((center - vec3(4, .2, 0)).length() > 0.9) {
+            if ((center - vec3(4, 0.2, 0)).length() > 0.9) {
                 if (choose_mat < 0.8) {
                     // diffuse
                     auto albedo = vec3::random() * vec3::random();
