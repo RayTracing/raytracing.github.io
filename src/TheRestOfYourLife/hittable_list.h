@@ -58,14 +58,13 @@ bool hittable_list::bounding_box(double t0, double t1, aabb& output_box) const {
 
     if (!first_true)
         return false;
-    else
-        output_box = temp_box;
+
+    output_box = temp_box;
 
     for (auto object : objects) {
-        if (object->bounding_box(t0, t1, temp_box))
-            output_box = surrounding_box(output_box, temp_box);
-        else
+        if (!object->bounding_box(t0, t1, temp_box))
             return false;
+        output_box = surrounding_box(output_box, temp_box);
     }
 
     return true;
@@ -85,8 +84,7 @@ double hittable_list::pdf_value(const vec3& o, const vec3& v) const {
 
 vec3 hittable_list::random(const vec3 &o) const {
     auto int_size = static_cast<int>(objects.size());
-    auto index = static_cast<size_t>(random_int(0, int_size-1));
-    return objects[index]->random(o);
+    return objects[random_int(0, int_size-1)]->random(o);
 }
 
 
