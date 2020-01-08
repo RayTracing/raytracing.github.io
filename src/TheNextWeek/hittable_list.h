@@ -56,14 +56,13 @@ bool hittable_list::bounding_box(double t0, double t1, aabb& output_box) const {
 
     if (!first_true)
         return false;
-    else
-        output_box = temp_box;
+
+    output_box = temp_box;
 
     for (auto object : objects) {
-        if (object->bounding_box(t0, t1, temp_box))
-            output_box = surrounding_box(output_box, temp_box);
-        else
+        if (!object->bounding_box(t0, t1, temp_box))
             return false;
+        output_box = surrounding_box(output_box, temp_box);
     }
 
     return true;

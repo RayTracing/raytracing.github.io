@@ -649,14 +649,13 @@ the fly because it is only usually called at BVH construction.
 
         if (!first_true)
             return false;
-        else
-            output_box = temp_box;
+
+        output_box = temp_box;
 
         for (auto object : objects) {
-            if (objects[i]->bounding_box(t0, t1, temp_box))
-                output_box = surrounding_box(output_box, temp_box);
-            else
+            if (!objects[i]->bounding_box(t0, t1, temp_box))
                 return false;
+            output_box = surrounding_box(output_box, temp_box);
         }
 
         return true;
