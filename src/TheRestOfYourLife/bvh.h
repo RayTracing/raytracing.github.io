@@ -52,19 +52,14 @@ bool box_z_compare (const hittable *a, const hittable *b) { return box_compare(a
 
 
 bvh_node::bvh_node(
-    std::vector<hittable*> &objects, size_t start, size_t end, double time0, double time1
+    std::vector<hittable*>& objects, size_t start, size_t end, double time0, double time1
 ) {
-    if (end <= start) {
-        start = 0;
-        end = objects.size();
-    }
-
-    size_t object_span = end - start;
-
     int axis = random_int(0,2);
     auto comparator = (axis == 0) ? box_x_compare
                     : (axis == 1) ? box_y_compare
                                   : box_z_compare;
+
+    size_t object_span = end - start;
 
     if (object_span == 1) {
         left = right = objects[start];
