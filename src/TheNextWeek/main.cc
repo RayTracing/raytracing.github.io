@@ -147,12 +147,12 @@ hittable_list cornell_box() {
     auto green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
     auto light = new diffuse_light(new constant_texture(vec3(15, 15, 15)));
 
-    objects.add(new flip_normals(new yz_rect(0, 555, 0, 555, 555, green)));
+    objects.add(new flip_face(new yz_rect(0, 555, 0, 555, 555, green)));
     objects.add(new yz_rect(0, 555, 0, 555, 0, red));
     objects.add(new xz_rect(213, 343, 227, 332, 554, light));
-    objects.add(new flip_normals(new xz_rect(0, 555, 0, 555, 555, white)));
+    objects.add(new flip_face(new xz_rect(0, 555, 0, 555, 555, white)));
     objects.add(new xz_rect(0, 555, 0, 555, 0, white));
-    objects.add(new flip_normals(new xy_rect(0, 555, 0, 555, 555, white)));
+    objects.add(new flip_face(new xy_rect(0, 555, 0, 555, 555, white)));
 
     hittable* box1 = new box(vec3(0, 0, 0), vec3(165, 330, 165), white);
     box1 = new rotate_y(box1,  15);
@@ -176,12 +176,12 @@ hittable_list cornell_balls() {
     auto green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
     auto light = new diffuse_light(new constant_texture(vec3(5, 5, 5)));
 
-    objects.add(new flip_normals(new yz_rect(0, 555, 0, 555, 555, green)));
+    objects.add(new flip_face(new yz_rect(0, 555, 0, 555, 555, green)));
     objects.add(new yz_rect(0, 555, 0, 555, 0, red));
     objects.add(new xz_rect(113, 443, 127, 432, 554, light));
-    objects.add(new flip_normals(new xz_rect(0, 555, 0, 555, 555, white)));
+    objects.add(new flip_face(new xz_rect(0, 555, 0, 555, 555, white)));
     objects.add(new xz_rect(0, 555, 0, 555, 0, white));
-    objects.add(new flip_normals(new xy_rect(0, 555, 0, 555, 555, white)));
+    objects.add(new flip_face(new xy_rect(0, 555, 0, 555, 555, white)));
 
     hittable* boundary = new sphere(vec3(160, 100, 145), 100, new dielectric(1.5));
     objects.add(boundary);
@@ -204,12 +204,12 @@ hittable_list cornell_smoke() {
     auto green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
     auto light = new diffuse_light(new constant_texture(vec3(7, 7, 7)));
 
-    objects.add(new flip_normals(new yz_rect(0, 555, 0, 555, 555, green)));
+    objects.add(new flip_face(new yz_rect(0, 555, 0, 555, 555, green)));
     objects.add(new yz_rect(0, 555, 0, 555, 0, red));
     objects.add(new xz_rect(113, 443, 127, 432, 554, light));
-    objects.add(new flip_normals(new xz_rect(0, 555, 0, 555, 555, white)));
+    objects.add(new flip_face(new xz_rect(0, 555, 0, 555, 555, white)));
     objects.add(new xz_rect(0, 555, 0, 555, 0, white));
-    objects.add(new flip_normals(new xy_rect(0, 555, 0, 555, 555, white)));
+    objects.add(new flip_face(new xy_rect(0, 555, 0, 555, 555, white)));
 
     hittable* box1 = new box(vec3(0,0,0), vec3(165,330,165), white);
     box1 = new rotate_y(box1,  15);
@@ -241,12 +241,12 @@ hittable_list cornell_final() {
     auto green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
     auto light = new diffuse_light(new constant_texture(vec3(7, 7, 7)));
 
-    objects.add(new flip_normals(new yz_rect(0, 555, 0, 555, 555, green)));
+    objects.add(new flip_face(new yz_rect(0, 555, 0, 555, 555, green)));
     objects.add(new yz_rect(0, 555, 0, 555, 0, red));
     objects.add(new xz_rect(123, 423, 147, 412, 554, light));
-    objects.add(new flip_normals(new xz_rect(0, 555, 0, 555, 555, white)));
+    objects.add(new flip_face(new xz_rect(0, 555, 0, 555, 555, white)));
     objects.add(new xz_rect(0, 555, 0, 555, 0, white));
-    objects.add(new flip_normals(new xy_rect(0, 555, 0, 555, 555, white)));
+    objects.add(new flip_face(new xy_rect(0, 555, 0, 555, 555, white)));
 
     hittable* boundary2 = new box(vec3(0,0,0), vec3(165,165,165), new dielectric(1.5));
     boundary2 = new rotate_y(boundary2, -18);

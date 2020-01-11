@@ -61,12 +61,12 @@ hittable_list cornell_box(camera& cam, double aspect) {
     auto green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
     auto light = new diffuse_light(new constant_texture(vec3(15, 15, 15)));
 
-    world.add(new flip_normals(new yz_rect(0, 555, 0, 555, 555, green)));
+    world.add(new flip_face(new yz_rect(0, 555, 0, 555, 555, green)));
     world.add(new yz_rect(0, 555, 0, 555, 0, red));
-    world.add(new flip_normals(new xz_rect(213, 343, 227, 332, 554, light)));
-    world.add(new flip_normals(new xz_rect(0, 555, 0, 555, 555, white)));
+    world.add(new flip_face(new xz_rect(213, 343, 227, 332, 554, light)));
+    world.add(new flip_face(new xz_rect(0, 555, 0, 555, 555, white)));
     world.add(new xz_rect(0, 555, 0, 555, 0, white));
-    world.add(new flip_normals(new xy_rect(0, 555, 0, 555, 555, white)));
+    world.add(new flip_face(new xy_rect(0, 555, 0, 555, 555, white)));
 
     hittable* box1 = new box(vec3(0,0,0), vec3(165,330,165), white);
     box1 = new rotate_y(box1, 15);
