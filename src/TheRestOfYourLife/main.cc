@@ -42,12 +42,12 @@ vec3 ray_color(const ray& r, hittable& world, hittable& light_shape, int depth) 
 
     hittable_pdf plight(&light_shape, rec.p);
     mixture_pdf p(&plight, srec.pdf_ptr);
-    ray scattered = ray(hrec.p, p.generate(), r.time());
+    ray scattered = ray(rec.p, p.generate(), r.time());
     auto pdf_val = p.value(scattered.direction());
     delete srec.pdf_ptr;
 
     return emitted
-         + srec.attenuation * hrec.mat_ptr->scattering_pdf(r, hrec, scattered)
+         + srec.attenuation * rec.mat_ptr->scattering_pdf(r, rec, scattered)
                             * ray_color(scattered, world, light_shape, depth-1)
                             / pdf_val;
 }
