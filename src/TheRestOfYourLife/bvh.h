@@ -18,24 +18,27 @@
 
 class bvh_node : public hittable  {
     public:
-        bvh_node::bvh_node(hittable_list &list, double time0, double time1)
-            : bvh_node(list.objects, 0, 0, time0, time1)
+        bvh_node();
+
+        bvh_node(hittable_list& list, double time0, double time1)
+            : bvh_node(list.objects, 0, list.objects.size(), time0, time1)
         {}
 
         bvh_node(
-            std::vector<hittable*> &objects,
+            std::vector<hittable*>& objects,
             size_t start, size_t end, double time0, double time1);
 
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
 
+    public:
         hittable *left;
         hittable *right;
         aabb box;
 };
 
 
-inline bool box_compare(const hittable *a, const hittable *b, int axis) {
+inline bool box_compare(const hittable* a, const hittable* b, int axis) {
     aabb box_a;
     aabb box_b;
 
@@ -46,9 +49,9 @@ inline bool box_compare(const hittable *a, const hittable *b, int axis) {
 }
 
 
-bool box_x_compare (const hittable *a, const hittable *b) { return box_compare(a, b, 0); }
-bool box_y_compare (const hittable *a, const hittable *b) { return box_compare(a, b, 1); }
-bool box_z_compare (const hittable *a, const hittable *b) { return box_compare(a, b, 2); }
+bool box_x_compare (const hittable* a, const hittable* b) { return box_compare(a, b, 0); }
+bool box_y_compare (const hittable* a, const hittable* b) { return box_compare(a, b, 1); }
+bool box_z_compare (const hittable* a, const hittable* b) { return box_compare(a, b, 2); }
 
 
 bvh_node::bvh_node(
