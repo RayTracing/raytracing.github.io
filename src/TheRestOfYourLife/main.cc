@@ -19,7 +19,7 @@
 #include <iostream>
 
 
-vec3 ray_color(const ray& r, hittable& world, hittable& light_shape, int depth) {
+vec3 ray_color(const ray& r, hittable& world, shared_ptr<hittable> light_shape, int depth) {
     hit_record rec;
 
     // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -40,11 +40,10 @@ vec3 ray_color(const ray& r, hittable& world, hittable& light_shape, int depth) 
         return srec.attenuation * ray_color(srec.specular_ray, world, light_shape, depth-1);
     }
 
-    hittable_pdf plight(&light_shape, rec.p);
-    mixture_pdf p(&plight, srec.pdf_ptr);
+    auto plight = make_shared<hittable_pdf>(light_shape, rec.p);
+    mixture_pdf p(plight, srec.pdf_ptr);
     ray scattered = ray(rec.p, p.generate(), r.time());
     auto pdf_val = p.value(scattered.direction());
-    delete srec.pdf_ptr;
 
     return emitted
          + srec.attenuation * rec.mat_ptr->scattering_pdf(r, rec, scattered)
@@ -56,25 +55,25 @@ vec3 ray_color(const ray& r, hittable& world, hittable& light_shape, int depth) 
 hittable_list cornell_box(camera& cam, double aspect) {
     hittable_list world;
 
-    auto red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
-    auto white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
-    auto green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
-    auto light = new diffuse_light(new constant_texture(vec3(15, 15, 15)));
+    auto red = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.65, 0.05, 0.05)));
+    auto white = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.73, 0.73, 0.73)));
+    auto green = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.12, 0.45, 0.15)));
+    auto light = make_shared<diffuse_light>(make_shared<constant_texture>(vec3(15, 15, 15)));
 
-    world.add(new flip_face(new yz_rect(0, 555, 0, 555, 555, green)));
-    world.add(new yz_rect(0, 555, 0, 555, 0, red));
-    world.add(new flip_face(new xz_rect(213, 343, 227, 332, 554, light)));
-    world.add(new flip_face(new xz_rect(0, 555, 0, 555, 555, white)));
-    world.add(new xz_rect(0, 555, 0, 555, 0, white));
-    world.add(new flip_face(new xy_rect(0, 555, 0, 555, 555, white)));
+    world.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
+    world.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+    world.add(make_shared<flip_face>(make_shared<xz_rect>(213, 343, 227, 332, 554, light)));
+    world.add(make_shared<flip_face>(make_shared<xz_rect>(0, 555, 0, 555, 555, white)));
+    world.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+    world.add(make_shared<flip_face>(make_shared<xy_rect>(0, 555, 0, 555, 555, white)));
 
-    hittable* box1 = new box(vec3(0,0,0), vec3(165,330,165), white);
-    box1 = new rotate_y(box1, 15);
-    box1 = new translate(box1, vec3(265,0,295));
+    shared_ptr<hittable> box1 = make_shared<box>(vec3(0,0,0), vec3(165,330,165), white);
+    box1 = make_shared<rotate_y>(box1, 15);
+    box1 = make_shared<translate>(box1, vec3(265,0,295));
     world.add(box1);
 
-    material *glass = new dielectric(1.5);
-    world.add(new sphere(vec3(190,90,190), 90 , glass));
+    auto glass = make_shared<dielectric>(1.5);
+    world.add(make_shared<sphere>(vec3(190,90,190), 90 , glass));
 
     vec3 lookfrom(278, 278, -800);
     vec3 lookat(278, 278, 0);
@@ -104,9 +103,9 @@ int main() {
 
     auto world = cornell_box(cam, aspect);
 
-    hittable_list lights;
-    lights.add(new xz_rect(213, 343, 227, 332, 554, 0));
-    lights.add(new sphere(vec3(190, 90, 190), 90, 0));
+    auto lights = make_shared<hittable_list>();
+    lights->add(make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>()));
+    lights->add(make_shared<sphere>(vec3(190, 90, 190), 90, shared_ptr<material>()));
 
     for (int j = ny-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;

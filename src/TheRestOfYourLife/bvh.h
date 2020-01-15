@@ -25,20 +25,20 @@ class bvh_node : public hittable  {
         {}
 
         bvh_node(
-            std::vector<hittable*>& objects,
+            std::vector<shared_ptr<hittable>>& objects,
             size_t start, size_t end, double time0, double time1);
 
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
 
     public:
-        hittable *left;
-        hittable *right;
+        shared_ptr<hittable> left;
+        shared_ptr<hittable> right;
         aabb box;
 };
 
 
-inline bool box_compare(const hittable* a, const hittable* b, int axis) {
+inline bool box_compare(const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis) {
     aabb box_a;
     aabb box_b;
 
@@ -49,13 +49,22 @@ inline bool box_compare(const hittable* a, const hittable* b, int axis) {
 }
 
 
-bool box_x_compare (const hittable* a, const hittable* b) { return box_compare(a, b, 0); }
-bool box_y_compare (const hittable* a, const hittable* b) { return box_compare(a, b, 1); }
-bool box_z_compare (const hittable* a, const hittable* b) { return box_compare(a, b, 2); }
+bool box_x_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
+    return box_compare(a, b, 0);
+}
+
+bool box_y_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
+    return box_compare(a, b, 1);
+}
+
+bool box_z_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
+    return box_compare(a, b, 2);
+}
 
 
 bvh_node::bvh_node(
-    std::vector<hittable*>& objects, size_t start, size_t end, double time0, double time1
+    std::vector<shared_ptr<hittable>>& objects,
+    size_t start, size_t end, double time0, double time1
 ) {
     int axis = random_int(0,2);
     auto comparator = (axis == 0) ? box_x_compare
@@ -78,8 +87,8 @@ bvh_node::bvh_node(
         std::sort(objects.begin() + start, objects.begin() + end, comparator);
 
         auto mid = start + object_span/2;
-        left = new bvh_node(objects, start, mid, time0, time1);
-        right = new bvh_node(objects, mid, end, time0, time1);
+        left = make_shared<bvh_node>(objects, start, mid, time0, time1);
+        right = make_shared<bvh_node>(objects, mid, end, time0, time1);
     }
 
     aabb box_left, box_right;
