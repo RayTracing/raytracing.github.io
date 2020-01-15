@@ -18,15 +18,15 @@
 class hittable_list: public hittable  {
     public:
         hittable_list() {}
-        hittable_list(hittable* object) { add(object); }
+        hittable_list(shared_ptr<hittable> object) { add(object); }
 
-        void clear()               { objects.clear(); }
-        void add(hittable* object) { objects.push_back(object); }
+        void clear() { objects.clear(); }
+        void add(shared_ptr<hittable> object) { objects.push_back(object); }
 
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
 
     public:
-        std::vector<hittable*> objects;
+        std::vector<shared_ptr<hittable>> objects;
 };
 
 
