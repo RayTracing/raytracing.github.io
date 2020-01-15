@@ -83,7 +83,7 @@ class dielectric : public material {
 
 class diffuse_light : public material  {
     public:
-        diffuse_light(texture *a) : emit(a) {}
+        diffuse_light(shared_ptr<texture> a) : emit(a) {}
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
@@ -95,13 +95,13 @@ class diffuse_light : public material  {
             return emit->value(u, v, p);
         }
 
-        texture *emit;
+        shared_ptr<texture> emit;
 };
 
 
 class isotropic : public material {
     public:
-        isotropic(texture *a) : albedo(a) {}
+        isotropic(shared_ptr<texture> a) : albedo(a) {}
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
@@ -111,13 +111,13 @@ class isotropic : public material {
             return true;
         }
 
-        texture *albedo;
+        shared_ptr<texture> albedo;
 };
 
 
 class lambertian : public material {
     public:
-        lambertian(texture *a) : albedo(a) {}
+        lambertian(shared_ptr<texture> a) : albedo(a) {}
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
@@ -128,7 +128,7 @@ class lambertian : public material {
             return true;
         }
 
-        texture *albedo;
+        shared_ptr<texture> albedo;
 };
 
 

@@ -19,8 +19,10 @@
 
 class constant_medium : public hittable  {
     public:
-        constant_medium(hittable *b, double d, texture *a) : boundary(b), density(d) {
-            phase_function = new isotropic(a);
+        constant_medium(shared_ptr<hittable> b, double d, shared_ptr<texture> a)
+            : boundary(b), density(d)
+        {
+            phase_function = make_shared<isotropic>(a);
         }
 
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
@@ -29,9 +31,9 @@ class constant_medium : public hittable  {
             return boundary->bounding_box(t0, t1, output_box);
         }
 
-        hittable *boundary;
+        shared_ptr<hittable> boundary;
         double density;
-        material *phase_function;
+        shared_ptr<material> phase_function;
 };
 
 
