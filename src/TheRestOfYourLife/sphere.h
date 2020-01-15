@@ -19,14 +19,15 @@
 class sphere: public hittable  {
     public:
         sphere() {}
-        sphere(vec3 cen, double r, material *m) : center(cen), radius(r), mat_ptr(m) {};
+        sphere(vec3 cen, double r, shared_ptr<material> m)
+            : center(cen), radius(r), mat_ptr(m) {};
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
         virtual double  pdf_value(const vec3& o, const vec3& v) const;
         virtual vec3 random(const vec3& o) const;
         vec3 center;
         double radius;
-        material *mat_ptr;
+        shared_ptr<material> mat_ptr;
 };
 
 double sphere::pdf_value(const vec3& o, const vec3& v) const {
