@@ -41,7 +41,9 @@ vec3 ray_color(const ray& r, hittable& world, int depth) {
 hittable_list random_scene() {
     hittable_list objects;
 
-    objects.add(new sphere(vec3(0,-1000,0), 1000, new lambertian(vec3(0.5, 0.5, 0.5))));
+    objects.add(
+        make_shared<sphere>(vec3(0,-1000,0), 1000, make_shared<lambertian>(vec3(0.5, 0.5, 0.5)))
+    );
 
     int i = 1;
     for (int a = -11; a < 11; a++) {
@@ -52,23 +54,28 @@ hittable_list random_scene() {
                 if (choose_mat < 0.8) {
                     // diffuse
                     auto albedo = vec3::random() * vec3::random();
-                    objects.add(new sphere(center, 0.2, new lambertian(albedo)));
+                    objects.add(
+                        make_shared<sphere>(center, 0.2, make_shared<lambertian>(albedo)));
                 } else if (choose_mat < 0.95) {
                     // metal
                     auto albedo = vec3::random(.5, 1);
                     auto fuzz = random_double(0, .5);
-                    objects.add(new sphere(center, 0.2, new metal(albedo, fuzz)));
+                    objects.add(
+                        make_shared<sphere>(center, 0.2, make_shared<metal>(albedo, fuzz)));
                 } else {
                     // glass
-                    objects.add(new sphere(center, 0.2, new dielectric(1.5)));
+                    objects.add(make_shared<sphere>(center, 0.2, make_shared<dielectric>(1.5)));
                 }
             }
         }
     }
 
-    objects.add(new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5)));
-    objects.add(new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1))));
-    objects.add(new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0)));
+    objects.add(
+        make_shared<sphere>(vec3(0, 1, 0), 1.0, make_shared<dielectric>(1.5)));
+    objects.add(
+        make_shared<sphere>(vec3(-4, 1, 0), 1.0, make_shared<lambertian>(vec3(0.4, 0.2, 0.1))));
+    objects.add(
+        make_shared<sphere>(vec3(4, 1, 0), 1.0, make_shared<metal>(vec3(0.7, 0.6, 0.5), 0.0)));
 
     return objects;
 }

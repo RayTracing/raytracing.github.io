@@ -12,7 +12,13 @@
 #include <cstdlib>
 #include <limits>
 #include <cmath>
+#include <memory>
 
+
+// Usings
+
+using std::shared_ptr;
+using std::make_shared;
 
 // Constants
 
