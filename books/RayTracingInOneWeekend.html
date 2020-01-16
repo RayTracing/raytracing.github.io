@@ -920,15 +920,15 @@ We add a list of objects:
     class hittable_list: public hittable {
         public:
             hittable_list() {}
-            hittable_list(hittable* object) { add(object); }
+            hittable_list(shared_ptr<hittable> object) { add(object); }
 
-            void clear()               { objects.clear(); }
-            void add(hittable* object) { objects.push_back(object); }
+            void clear() { objects.clear(); }
+            void add(shared_ptr<hittable> object) { objects.push_back(object); }
 
             virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
 
         public:
-            std::vector<hittable*> objects;
+            std::vector<shared_ptr<hittable>> objects;
     };
 
     bool hittable_list::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
@@ -952,10 +952,41 @@ We add a list of objects:
     [Listing [hittable-list-initial]: <kbd>[hittable_list.h]</kbd> The hittable_list class]
 </div>
 
-If you're unfamiliar with C++'s `std::vector`, this is a generic array-like collection of an
-arbitrary type. Above, we use a collection of pointers to `hittable`. `std::vector` automatically
-grows as more values are added: `objects.push_back(object)` adds a value to the end of the
-`std::vector` member variable `objects`.
+## Some New C++ Features
+
+This code uses two C++ features that may trip you up if you're not normally a C++ programmer:
+`vector` and `shared_ptr`.
+
+`shared_ptr<type>` is a pointer to some allocated type, with reference-counting semantics.
+Every time you assign its value to another shared pointer (usually with a simple assignment), the
+reference count is incremented. As shared pointers go out of scope (like at the end of a block or
+function), the reference count is decremented. Once the count goes to zero, the object is deleted.
+
+<div class='together'>
+Typically, a shared pointer is first initialized with a newly-allocated object, something like this:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    shared_ptr<thing> thing_ptr = make_shared<thing>(1, true);
+    auto thing2_ptr = make_shared<thing2>(2, false);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [shared-ptr]: An example allocation using `shared_ptr`]
+
+`make_shared<thing>(1, true)` allocates a new instance of type `thing`, using the constructor
+arguments `(1, true)`. It returns a `shared_ptr<thing>`. This can be simplified as in the second
+line with the `auto` type declaration, because the type is sufficiently defined by the return type
+of `make_shared<thing2>`.
+
+We'll use shared pointers in our code, because it allows multiple objects to use a common object
+(for example, a bunch of spheres that all use the same material), and because it makes memory
+management automatic and easier to reason about.
+</div>
+
+The second C++ feature you may be unfamiliar with is `std::vector`. This is a generic array-like
+collection of an arbitrary type. Above, we use a collection of pointers to `hittable`. `std::vector`
+automatically grows as more values are added: `objects.push_back(object)` adds a value to the end of
+the `std::vector` member variable `objects`.
+
+## Common Constants and Utility Functions
 
 <div class='together'></div>
 We need some math constants that we conveniently define in their own header file. For now we only
@@ -1040,8 +1071,8 @@ And the new main:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         hittable_list world;
-        world.add(new sphere(vec3(0,0,-1), 0.5));
-        world.add(new sphere(vec3(0,-100.5,-1), 100));
+        world.add(make_shared<sphere>(vec3(0,0,-1), 0.5));
+        world.add(make_shared<sphere>(vec3(0,-100.5,-1), 100));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         for (int j = ny-1; j >= 0; --j) {
@@ -1218,8 +1249,8 @@ Main is also changed:
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
 
         hittable_list world;
-        world.add(new sphere(vec3(0,0,-1), 0.5));
-        world.add(new sphere(vec3(0,-100.5,-1), 100));
+        world.add(make_shared<sphere>(vec3(0,0,-1), 0.5));
+        world.add(make_shared<sphere>(vec3(0,-100.5,-1), 100));
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         camera cam;
@@ -1650,7 +1681,7 @@ that the pointer is to a class, which the “class material” in the hittable c
         vec3 p;
         vec3 normal;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        material *mat_ptr;
+        shared_ptr<material> mat_ptr;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         double t;
         bool front_face;
@@ -1687,12 +1718,17 @@ within `hit_record`. See the highlighted lines below:
     class sphere: public hittable {
         public:
             sphere() {}
-            sphere(vec3 cen, double r, material *m) : center(cen), radius(r), mat_ptr(m) {};
+
+            sphere(vec3 cen, double r, shared_ptr<material> m)
+                : center(cen), radius(r), mat_ptr(m) {};
+
             virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+
+        public:
             vec3 center;
             double radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            material *mat_ptr;
+            shared_ptr<material> mat_ptr;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
@@ -1752,6 +1788,7 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
                 return true;
             }
 
+        public:
             vec3 albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1799,6 +1836,8 @@ The metal material just reflects rays using that formula:
                 attenuation = albedo;
                 return (dot(scattered.direction(), rec.normal) > 0);
             }
+
+        public:
             vec3 albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1847,10 +1886,15 @@ metal spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         hittable_list world;
-        world.add(new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.7, 0.3, 0.3))));
-        world.add(new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0))));
-        world.add(new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2))));
-        world.add(new sphere(vec3(-1,0,-1), 0.5, new metal(vec3(0.8, 0.8, 0.8))));
+
+        world.add(make_shared<sphere>(
+            vec3(0,0,-1), 0.5, make_shared<lambertian>(vec3(0.7, 0.3, 0.3))));
+
+        world.add(make_shared<sphere>(
+            vec3(0,-100.5,-1), 100, make_shared<lambertian>(vec3(0.8, 0.8, 0.0))));
+
+        world.add(make_shared<sphere>(vec3(1,0,-1), 0.5, make_shared<metal>(vec3(0.8, 0.6, 0.2))));
+        world.add(make_shared<sphere>(vec3(-1,0,-1), 0.5, make_shared<metal>(vec3(0.8, 0.8, 0.8))));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         camera cam;
@@ -1912,6 +1956,8 @@ absorb those.
                 attenuation = albedo;
                 return (dot(scattered.direction(), rec.normal) > 0);
             }
+
+        public:
             vec3 albedo;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             double fuzz;
@@ -2134,6 +2180,7 @@ And the dielectric material that always refracts (when possible) is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
+        public:
             double ref_idx;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2144,10 +2191,14 @@ And the dielectric material that always refracts (when possible) is:
 Attenuation is always 1 -- the glass surface absorbs nothing. If we try that out with these parameters:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
-    list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
-    list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2), 0.0));
-    list[3] = new sphere(vec3(-1,0,-1), 0.5, new dielectric(1.5));
+    world.add(make_shared<sphere>(
+        vec3(0,0,-1), 0.5, make_shared<lambertian>(vec3(0.1, 0.2, 0.5)));
+
+    world.add(make_shared<sphere>(
+        vec3(0,-100.5,-1), 100, make_shared<lambertian>(vec3(0.8, 0.8, 0.0)));
+
+    world.add(make_shared<sphere>(vec3(1,0,-1), 0.5, make_shared<metal>(vec3(0.8, 0.6, 0.2), 0.0));
+    world.add(make_shared<sphere>(vec3(-1,0,-1), 0.5, make_shared<dielectric>(1.5));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-dielectric]: <kbd>[main.cc]</kbd> Scene with dielectric sphere]
 
@@ -2206,6 +2257,7 @@ This yields our full glass material:
                 return true;
             }
 
+        public:
             double ref_idx;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2218,11 +2270,12 @@ the geometry is unaffected but the surface normal points inward, so it can be us
 to make a hollow glass sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
-    list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
-    list[2] = new sphere(vec3(1,0,-1), 0.5, new metal(vec3(0.8, 0.6, 0.2), 0.3));
-    list[3] = new sphere(vec3(-1,0,-1), 0.5, new dielectric(1.5));
-    list[4] = new sphere(vec3(-1,0,-1), -0.45, new dielectric(1.5));
+    world.add(make_shared<sphere>(vec3(0,0,-1), 0.5, make_shared<lambertian>(vec3(0.1, 0.2, 0.5)));
+    world.add(make_shared<sphere>(
+        vec3(0,-100.5,-1), 100, make_shared<lambertian>(vec3(0.8, 0.8, 0.0)));
+    world.add(make_shared<sphere>(vec3(1,0,-1), 0.5, make_shared<metal>(vec3(0.8, 0.6, 0.2), 0.3));
+    world.add(make_shared<sphere>(vec3(-1,0,-1), 0.5, make_shared<dielectric>(1.5));
+    world.add(make_shared<sphere>(vec3(-1,0,-1), -0.45, make_shared<dielectric>(1.5));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-hollow-glass]: <kbd>[main.cc]</kbd> Scene with hollow glass sphere]
 </div>
@@ -2295,8 +2348,8 @@ When calling it with camera `cam(90, double(nx)/ny)` and these spheres:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     auto R = cos(pi/4);
     hittable_list world;
-    world.add(new sphere(vec3(-R,0,-1), R, new lambertian(vec3(0, 0, 1))));
-    world.add(new sphere(vec3( R,0,-1), R, new lambertian(vec3(1, 0, 0))));
+    world.add(make_shared<sphere>(vec3(-R,0,-1), R, make_shared<lambertian>(vec3(0, 0, 1))));
+    world.add(make_shared<sphere(>vec3( R,0,-1), R, make_shared<lambertian>(vec3(1, 0, 0))));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-wide-angle]: <kbd>[main.cc]</kbd> Scene with wide-angle camera]
 
@@ -2536,7 +2589,8 @@ First let’s make the image on the cover of this book -- lots of random spheres
     hittable_list random_scene() {
         hittable_list objects;
 
-        objects.add(new sphere(vec3(0,-1000,0), 1000, new lambertian(vec3(0.5, 0.5, 0.5))));
+        objects.add(make_shared<sphere>(
+            vec3(0,-1000,0), 1000, make_shared<lambertian>(vec3(0.5, 0.5, 0.5))));
 
         int i = 1;
         for (int a = -11; a < 11; a++) {
@@ -2547,23 +2601,29 @@ First let’s make the image on the cover of this book -- lots of random spheres
                     if (choose_mat < 0.8) {
                         // diffuse
                         auto albedo = vec3::random() * vec3::random();
-                        objects.add(new sphere(center, 0.2, new lambertian(albedo)));
+                        objects.add(
+                            make_shared<sphere>(center, 0.2, make_shared<lambertian>(albedo)));
                     } else if (choose_mat < 0.95) {
                         // metal
                         auto albedo = vec3::random(.5, 1);
                         auto fuzz = random_double(0, .5);
-                        objects.add(new sphere(center, 0.2, new metal(albedo, fuzz)));
+                        objects.add(
+                            make_shared<sphere>(center, 0.2, make_shared<metal>(albedo, fuzz)));
                     } else {
                         // glass
-                        objects.add(new sphere(center, 0.2, new dielectric(1.5)));
+                        objects.add(make_shared<sphere>(center, 0.2, make_shared<dielectric>(1.5)));
                     }
                 }
             }
         }
 
-        objects.add(new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5)));
-        objects.add(new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1))));
-        objects.add(new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0)));
+        objects.add(make_shared<sphere>(vec3(0, 1, 0), 1.0, make_shared<dielectric>(1.5)));
+
+        objects.add(
+            make_shared<sphere>(vec3(-4, 1, 0), 1.0, make_shared<lambertian>(vec3(0.4, 0.2, 0.1))));
+
+        objects.add(
+            make_shared<sphere>(vec3(4, 1, 0), 1.0, make_shared<metal>(vec3(0.7, 0.6, 0.5), 0.0)));
 
         return objects;
     }
