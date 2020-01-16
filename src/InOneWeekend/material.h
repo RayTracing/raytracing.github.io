@@ -73,6 +73,7 @@ class dielectric : public material {
             return true;
         }
 
+    public:
         double ref_idx;
 };
 
@@ -90,6 +91,7 @@ class lambertian : public material {
              return true;
         }
 
+    public:
         vec3 albedo;
 };
 
@@ -107,6 +109,7 @@ class metal : public material {
             return (dot(scattered.direction(), rec.normal) > 0);
         }
 
+    public:
         vec3 albedo;
         double fuzz;
 };
