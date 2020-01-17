@@ -211,16 +211,7 @@ intersection code barely needs a change: `center` just needs to become a functio
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 outward_normal = (rec.p - center(r.time())) / radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                if (dot(r.direction(), outward_normal) > 0.0) {
-                    // ray is inside the sphere
-                    rec.normal = -outward_normal;
-                    rec.front_face = false;
-                }
-                else {
-                    // ray is outside the sphere
-                    rec.normal = outward_normal;
-                    rec.front_face = true;
-                }
+                rec.set_face_normal(r, outward_normal);
                 rec.mat_ptr = mat_ptr;
                 return true;
             }
@@ -231,16 +222,7 @@ intersection code barely needs a change: `center` just needs to become a functio
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 outward_normal = (rec.p - center(r.time())) / radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                if (dot(r.direction(), outward_normal) > 0.0) {
-                    // ray is inside the sphere
-                    rec.normal = -outward_normal;
-                    rec.front_face = false;
-                }
-                else {
-                    // ray is outside the sphere
-                    rec.normal = outward_normal;
-                    rec.front_face = true;
-                }
+                rec.set_face_normal(r, outward_normal);
                 rec.mat_ptr = mat_ptr;
                 return true;
             }
@@ -1744,14 +1726,7 @@ And the hit function is:
         rec.v = (y-y0)/(y1-y0);
         rec.t = t;
         vec3 outward_normal = vec3(0, 0, 1);
-        if (dot(r.direction(), outward_normal) > 0.0) {
-            rec.normal = -outward_normal;
-            rec.front_face = false;
-        }
-        else {
-            rec.normal = outward_normal;
-            rec.front_face = true;
-        }
+        rec.set_face_normal(r, outward_normal);
         rec.mat_ptr = mp;
         rec.p = r.at(t);
         return true;
@@ -1858,14 +1833,7 @@ With unsurprising hit functions:
         rec.v = (z-z0)/(z1-z0);
         rec.t = t;
         vec3 outward_normal = vec3(0, 1, 0);
-        if (dot(r.direction(), outward_normal) > 0.0) {
-            rec.normal = -outward_normal;
-            rec.front_face = false;
-        }
-        else {
-            rec.normal = outward_normal;
-            rec.front_face = true;
-        }
+        rec.set_face_normal(r, outward_normal);
         rec.mat_ptr = mp;
         rec.p = r.at(t);
         return true;
@@ -1883,14 +1851,7 @@ With unsurprising hit functions:
         rec.v = (z-z0)/(z1-z0);
         rec.t = t;
         vec3 outward_normal = vec3(1, 0, 0);
-        if (dot(r.direction(), outward_normal) > 0.0) {
-            rec.normal = -outward_normal;
-            rec.front_face = false;
-        }
-        else {
-            rec.normal = outward_normal;
-            rec.front_face = true;
-        }
+        rec.set_face_normal(r, outward_normal);
         rec.mat_ptr = mp;
         rec.p = r.at(t);
         return true;
@@ -1961,7 +1922,7 @@ a hittable that does nothing but hold another hittable, but flips the face:
 
             virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
                 if (ptr->hit(r, t_min, t_max, rec)) {
-                    rec.normal = -rec.normal;
+                    rec.front_face = !rec.front_face;
                     return true;
                 }
                 else
@@ -2113,13 +2074,7 @@ move any underlying hittable is a _translate_ instance.
         ray moved_r(r.origin() - offset, r.direction(), r.time());
         if (ptr->hit(moved_r, t_min, t_max, rec)) {
             rec.p += offset;
-            if (dot(moved_r.direction(), rec.normal) > 0.0) {
-                rec.normal = -rec.normal;
-                rec.front_face = false;
-            }
-            else {
-                rec.front_face = true;
-            }
+            rec.set_face_normal(moved_r, rec.normal);
             return true;
         }
         else
@@ -2259,14 +2214,7 @@ And the hit function:
             normal[0] = cos_theta*rec.normal[0] + sin_theta*rec.normal[2];
             normal[2] = -sin_theta*rec.normal[0] + cos_theta*rec.normal[2];
             rec.p = p;
-            if (dot(rotated_r.direction(), normal) > 0.0) {
-                rec.normal = -normal;
-                rec.front_face = false;
-            }
-            else {
-                rec.normal = normal;
-                rec.front_face = true;
-            }
+            rec.set_face_normal(rotated_r, normal);
             return true;
         }
         else

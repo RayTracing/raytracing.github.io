@@ -858,6 +858,11 @@ some point, so I’ll also add a time input variable.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double t;
         bool front_face;
+
+        inline void set_face_normal(const ray& r, const vec3& outward_normal) {
+            front_face = dot(r.direction(), outward_normal) < 0;
+            normal = front_face ? outward_normal :-outward_normal;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
 
@@ -888,16 +893,7 @@ And then we add the surface side determination to the class:
                 rec.p = r.at(rec.t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 outward_normal = (rec.p - center) / radius;
-                if (dot(r.direction(), outward_normal) > 0.0) {
-                    // ray is inside the sphere
-                    rec.normal = -outward_normal;
-                    rec.front_face = false;
-                }
-                else {
-                    // ray is outside the sphere
-                    rec.normal = outward_normal;
-                    rec.front_face = true;
-                }
+                rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return true;
             }
@@ -907,16 +903,7 @@ And then we add the surface side determination to the class:
                 rec.p = r.at(rec.t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 outward_normal = (rec.p - center) / radius;
-                if (dot(r.direction(), outward_normal) > 0.0) {
-                    // ray is inside the sphere
-                    rec.normal = -outward_normal;
-                    rec.front_face = false;
-                }
-                else {
-                    // ray is outside the sphere
-                    rec.normal = outward_normal;
-                    rec.front_face = true;
-                }
+                rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return true;
             }
@@ -1675,6 +1662,12 @@ that the pointer is to a class, which the “class material” in the hittable c
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         double t;
         bool front_face;
+
+
+        inline void set_face_normal(const ray& r, const vec3& outward_normal) {
+            front_face = dot(r.direction(), outward_normal) < 0;
+            normal = front_face ? outward_normal :-outward_normal;
+        }
     };
 
     class hittable {
@@ -1724,16 +1717,7 @@ within `hit_record`. See the highlighted lines below:
                 rec.t = temp;
                 rec.p = r.at(rec.t);
                 vec3 outward_normal = (rec.p - center) / radius;
-                if (dot(r.direction(), outward_normal) > 0.0) {
-                    // ray is inside the sphere
-                    rec.normal = -outward_normal;
-                    rec.front_face = false;
-                }
-                else {
-                    // ray is outside the sphere
-                    rec.normal = outward_normal;
-                    rec.front_face = true;
-                }
+                rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 rec.mat_ptr = mat_ptr;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1743,17 +1727,8 @@ within `hit_record`. See the highlighted lines below:
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.at(rec.t);
-                vec3 outward_normal = (rec.p - center) / radius;
-                if (dot(r.direction(), outward_normal) > 0.0) {
-                    // ray is inside the sphere
-                    rec.normal = -outward_normal;
-                    rec.front_face = false;
-                }
-                else {
-                    // ray is outside the sphere
-                    rec.normal = outward_normal;
-                    rec.front_face = true;
-                }
+                vec3 outward_normal = (rec.p - center) / radius;                
+                rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 rec.mat_ptr = mat_ptr;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
