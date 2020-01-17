@@ -30,6 +30,7 @@ class constant_texture : public texture {
             return color;
         }
 
+    public:
         vec3 color;
 };
 
@@ -47,6 +48,7 @@ class checker_texture : public texture {
                 return even->value(u, v, p);
         }
 
+    public:
         shared_ptr<texture> odd;
         shared_ptr<texture> even;
 };
@@ -63,6 +65,7 @@ class noise_texture : public texture {
             return vec3(1,1,1)*0.5*(1 + sin(scale*p.z() + 10*noise.turb(p)));
         }
 
+    public:
         perlin noise;
         double scale;
 };
@@ -72,6 +75,7 @@ class image_texture : public texture {
     public:
         image_texture() {}
         image_texture(unsigned char *pixels, int A, int B) : data(pixels), nx(A), ny(B) {}
+
         ~image_texture() {
             delete data;
         }

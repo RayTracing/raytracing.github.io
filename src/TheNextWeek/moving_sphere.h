@@ -15,7 +15,7 @@
 #include "hittable.h"
 
 
-class moving_sphere: public hittable  {
+class moving_sphere : public hittable {
     public:
         moving_sphere() {}
         moving_sphere(
@@ -28,15 +28,18 @@ class moving_sphere: public hittable  {
 
         vec3 center(double time) const;
 
+    public:
         vec3 center0, center1;
         double time0, time1;
         double radius;
         shared_ptr<material> mat_ptr;
 };
 
+
 vec3 moving_sphere::center(double time) const{
     return center0 + ((time - time0) / (time1 - time0))*(center1 - center0);
 }
+
 
 bool moving_sphere::bounding_box(double t0, double t1, aabb& output_box) const {
     aabb box0(

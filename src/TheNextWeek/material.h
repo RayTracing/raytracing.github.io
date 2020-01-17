@@ -67,6 +67,7 @@ class dielectric : public material {
             return true;
         }
 
+    public:
         double ref_idx;
 };
 
@@ -85,6 +86,7 @@ class diffuse_light : public material {
             return emit->value(u, v, p);
         }
 
+    public:
         shared_ptr<texture> emit;
 };
 
@@ -101,6 +103,7 @@ class isotropic : public material {
             return true;
         }
 
+    public:
         shared_ptr<texture> albedo;
 };
 
@@ -118,6 +121,7 @@ class lambertian : public material {
             return true;
         }
 
+    public:
         shared_ptr<texture> albedo;
 };
 
@@ -135,6 +139,7 @@ class metal : public material {
             return (dot(scattered.direction(), rec.normal) > 0);
         }
 
+    public:
         vec3 albedo;
         double fuzz;
 };

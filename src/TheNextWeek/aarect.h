@@ -30,6 +30,7 @@ class xy_rect: public hittable {
             return true;
         }
 
+    public:
         shared_ptr<material> mp;
         double x0, x1, y0, y1, k;
 };
@@ -49,6 +50,7 @@ class xz_rect: public hittable {
             return true;
         }
 
+    public:
         shared_ptr<material> mp;
         double x0, x1, z0, z1, k;
 };
@@ -68,6 +70,7 @@ class yz_rect: public hittable {
             return true;
         }
 
+    public:
         shared_ptr<material> mp;
         double y0, y1, z0, z1, k;
 };

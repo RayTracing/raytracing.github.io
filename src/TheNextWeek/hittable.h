@@ -40,11 +40,13 @@ struct hit_record {
     }
 };
 
+
 class hittable {
     public:
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const = 0;
 };
+
 
 class flip_face : public hittable {
     public:
@@ -67,10 +69,12 @@ class flip_face : public hittable {
         shared_ptr<hittable> ptr;
 };
 
+
 class translate : public hittable {
     public:
         translate(shared_ptr<hittable> p, const vec3& displacement)
             : ptr(p), offset(displacement) {}
+
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
 
@@ -78,6 +82,7 @@ class translate : public hittable {
         shared_ptr<hittable> ptr;
         vec3 offset;
 };
+
 
 bool translate::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
     ray moved_r(r.origin() - offset, r.direction(), r.time());
@@ -90,6 +95,7 @@ bool translate::hit(const ray& r, double t_min, double t_max, hit_record& rec) c
         return false;
 }
 
+
 bool translate::bounding_box(double t0, double t1, aabb& output_box) const {
     if (ptr->bounding_box(t0, t1, output_box)) {
         output_box = aabb(
@@ -101,21 +107,25 @@ bool translate::bounding_box(double t0, double t1, aabb& output_box) const {
         return false;
 }
 
+
 class rotate_y : public hittable {
     public:
         rotate_y(shared_ptr<hittable> p, double angle);
+
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
             output_box = bbox;
             return hasbox;
         }
 
+    public:
         shared_ptr<hittable> ptr;
         double sin_theta;
         double cos_theta;
         bool hasbox;
         aabb bbox;
 };
+
 
 rotate_y::rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
     auto radians = degrees_to_radians(angle);
@@ -144,6 +154,7 @@ rotate_y::rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
     }
     bbox = aabb(min, max);
 }
+
 
 bool rotate_y::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
     vec3 origin = r.origin();

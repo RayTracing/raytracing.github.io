@@ -31,6 +31,7 @@ class constant_medium : public hittable  {
             return boundary->bounding_box(t0, t1, output_box);
         }
 
+    public:
         shared_ptr<hittable> boundary;
         double density;
         shared_ptr<material> phase_function;
