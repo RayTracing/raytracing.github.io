@@ -28,6 +28,7 @@ class box: public hittable  {
             return true;
         }
 
+    public:
         vec3 box_min;
         vec3 box_max;
         hittable_list sides;

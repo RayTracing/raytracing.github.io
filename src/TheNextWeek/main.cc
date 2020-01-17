@@ -46,14 +46,14 @@ vec3 ray_color(const ray& r, hittable& world, int depth) {
 
 
 hittable_list random_scene() {
-    hittable_list objects;
+    hittable_list world;
 
     auto checker = make_shared<checker_texture>(
         make_shared<constant_texture>(vec3(0.2, 0.3, 0.1)),
         make_shared<constant_texture>(vec3(0.9, 0.9, 0.9))
     );
 
-    objects.add(make_shared<sphere>(vec3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
+    world.add(make_shared<sphere>(vec3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
 
     for (int a = -10; a < 10; a++) {
         for (int b = -10; b < 10; b++) {
@@ -63,7 +63,7 @@ hittable_list random_scene() {
                 if (choose_mat < 0.8) {
                     // diffuse
                     auto albedo = vec3::random() * vec3::random();
-                    objects.add(make_shared<moving_sphere>(
+                    world.add(make_shared<moving_sphere>(
                         center, center + vec3(0, random_double(0,.5), 0), 0.0, 1.0, 0.2,
                         make_shared<lambertian>(make_shared<constant_texture>(albedo))
                     ));
@@ -71,25 +71,25 @@ hittable_list random_scene() {
                     // metal
                     auto albedo = vec3::random(.5, 1);
                     auto fuzz = random_double(0, .5);
-                    objects.add(
+                    world.add(
                         make_shared<sphere>(center, 0.2, make_shared<metal>(albedo, fuzz)));
                 } else {
                     // glass
-                    objects.add(make_shared<sphere>(center, 0.2, make_shared<dielectric>(1.5)));
+                    world.add(make_shared<sphere>(center, 0.2, make_shared<dielectric>(1.5)));
                 }
             }
         }
     }
 
-    objects.add(make_shared<sphere>(vec3(0, 1, 0), 1.0, make_shared<dielectric>(1.5)));
-    objects.add(make_shared<sphere>(
+    world.add(make_shared<sphere>(vec3(0, 1, 0), 1.0, make_shared<dielectric>(1.5)));
+    world.add(make_shared<sphere>(
         vec3(-4, 1, 0), 1.0,
         make_shared<lambertian>(make_shared<constant_texture>(vec3(0.4, 0.2, 0.1)))
     ));
-    objects.add(
+    world.add(
         make_shared<sphere>(vec3(4, 1, 0), 1.0, make_shared<metal>(vec3(0.7, 0.6, 0.5), 0.0)));
 
-    return hittable_list(make_shared<bvh_node>(objects, 0.0, 1.0));
+    return hittable_list(make_shared<bvh_node>(world, 0.0, 1.0));
 }
 
 
@@ -121,7 +121,7 @@ hittable_list two_perlin_spheres() {
 
 hittable_list earth() {
     int nx, ny, nn;
-    unsigned char *texture_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
+    unsigned char* texture_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
 
     auto earth_surface =
         make_shared<lambertian>(make_shared<image_texture>(texture_data, nx, ny));
