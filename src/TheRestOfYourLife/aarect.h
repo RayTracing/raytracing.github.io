@@ -98,14 +98,7 @@ bool xy_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
     rec.v = (y-y0)/(y1-y0);
     rec.t = t;
     vec3 outward_normal = vec3(0, 0, 1);
-    if (dot(r.direction(), outward_normal) > 0.0) {
-        rec.normal = -outward_normal;
-        rec.front_face = false;
-    }
-    else {
-        rec.normal = outward_normal;
-        rec.front_face = true;
-    }
+    rec.set_face_normal(r, outward_normal);
     rec.mat_ptr = mp;
     rec.p = r.at(t);
     return true;
@@ -123,14 +116,7 @@ bool xz_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
     rec.v = (z-z0)/(z1-z0);
     rec.t = t;
     vec3 outward_normal = vec3(0, 1, 0);
-    if (dot(r.direction(), outward_normal) > 0.0) {
-        rec.normal = -outward_normal;
-        rec.front_face = false;
-    }
-    else {
-        rec.normal = outward_normal;
-        rec.front_face = true;
-    }
+    rec.set_face_normal(r, outward_normal);
     rec.mat_ptr = mp;
     rec.p = r.at(t);
     return true;
@@ -148,14 +134,7 @@ bool yz_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
     rec.v = (z-z0)/(z1-z0);
     rec.t = t;
     vec3 outward_normal = vec3(1, 0, 0);
-    if (dot(r.direction(), outward_normal) > 0.0) {
-        rec.normal = -outward_normal;
-        rec.front_face = false;
-    }
-    else {
-        rec.normal = outward_normal;
-        rec.front_face = true;
-    }
+    rec.set_face_normal(r, outward_normal);
     rec.mat_ptr = mp;
     rec.p = r.at(t);
     return true;

@@ -76,13 +76,7 @@ bool translate::hit(const ray& r, double t_min, double t_max, hit_record& rec) c
     ray moved_r(r.origin() - offset, r.direction(), r.time());
     if (ptr->hit(moved_r, t_min, t_max, rec)) {
         rec.p += offset;
-        if (dot(moved_r.direction(), rec.normal) > 0.0) {
-            rec.normal = -rec.normal;
-            rec.front_face = false;
-        }
-        else {
-            rec.front_face = true;
-        }
+        rec.set_face_normal(moved_r, rec.normal);
         return true;
     }
     else
@@ -159,14 +153,7 @@ bool rotate_y::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
         normal[0] = cos_theta*rec.normal[0] + sin_theta*rec.normal[2];
         normal[2] = -sin_theta*rec.normal[0] + cos_theta*rec.normal[2];
         rec.p = p;
-        if (dot(rotated_r.direction(), normal) > 0.0) {
-            rec.normal = -normal;
-            rec.front_face = false;
-        }
-        else {
-            rec.normal = normal;
-            rec.front_face = true;
-        }
+        rec.set_face_normal(rotated_r, normal);
         return true;
     }
     else
