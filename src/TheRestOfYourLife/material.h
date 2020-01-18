@@ -64,12 +64,7 @@ class dielectric : public material {
             srec.is_specular = true;
             srec.pdf_ptr = 0;
             srec.attenuation = vec3(1.0, 1.0, 1.0);
-            double etai_over_etat;
-            if (rec.front_face) {
-                etai_over_etat = 1.0 / ref_idx;
-            } else {
-                etai_over_etat = ref_idx;
-            }
+            double etai_over_etat = (rec.front_face) ? (1.0 / ref_idx) : (ref_idx);
 
             vec3 unit_direction = unit_vector(r_in.direction());
             double cos_theta = ffmin(dot(-unit_direction, rec.normal), 1.0);

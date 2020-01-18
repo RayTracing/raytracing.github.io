@@ -40,12 +40,7 @@ class dielectric : public material {
             const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
         ) const {
             attenuation = vec3(1.0, 1.0, 1.0);
-            double etai_over_etat;
-            if (rec.front_face) {
-                etai_over_etat = 1.0 / ref_idx;
-            } else {
-                etai_over_etat = ref_idx;
-            }
+            double etai_over_etat = (rec.front_face) ? (1.0 / ref_idx) : (ref_idx);
 
             vec3 unit_direction = unit_vector(r_in.direction());
             double cos_theta = ffmin(dot(-unit_direction, rec.normal), 1.0);
