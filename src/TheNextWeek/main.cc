@@ -346,8 +346,8 @@ hittable_list final_scene() {
 
 
 int main() {
-    int nx = 400;
-    int ny = 400;
+    int nx = 600;
+    int ny = 600;
     int num_samples = 100;
     int max_depth = 50;
 
