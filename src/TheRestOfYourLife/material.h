@@ -64,36 +64,27 @@ class dielectric : public material {
             srec.is_specular = true;
             srec.pdf_ptr = 0;
             srec.attenuation = vec3(1.0, 1.0, 1.0);
-            vec3 outward_normal;
-            vec3 reflected = reflect(r_in.direction(), rec.normal);
-            vec3 refracted;
-            double ni_over_nt;
-            double reflect_prob;
-            double cosine;
+            double etai_over_etat = (rec.front_face) ? (1.0 / ref_idx) : (ref_idx);
 
-            if (dot(r_in.direction(), rec.normal) > 0) {
-                outward_normal = -rec.normal;
-                ni_over_nt = ref_idx;
-                cosine = ref_idx * dot(r_in.direction(), rec.normal)
-                       / r_in.direction().length();
-            } else {
-                outward_normal = rec.normal;
-                ni_over_nt = 1.0 / ref_idx;
-                cosine = -dot(r_in.direction(), rec.normal) / r_in.direction().length();
+            vec3 unit_direction = unit_vector(r_in.direction());
+            double cos_theta = ffmin(dot(-unit_direction, rec.normal), 1.0);
+            double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
+            if (etai_over_etat * sin_theta > 1.0 ) {
+                vec3 reflected = reflect(unit_direction, rec.normal);
+                srec.specular_ray = ray(rec.p, reflected, r_in.time());
+                return true;
             }
-
-            if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
-                reflect_prob = schlick(cosine, ref_idx);
-            } else {
-                reflect_prob = 1.0;
+            
+            double reflect_prob = schlick(cos_theta, etai_over_etat);
+            if (random_double() < reflect_prob)
+            {
+                vec3 reflected = reflect(unit_direction, rec.normal);
+                srec.specular_ray = ray(rec.p, reflected, r_in.time());
+                return true;
             }
-
-            if (random_double() < reflect_prob) {
-               srec.specular_ray = ray(rec.p, reflected, r_in.time());
-            } else {
-               srec.specular_ray = ray(rec.p, refracted, r_in.time());
-            }
-
+                
+            vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
+            srec.specular_ray = ray(rec.p, refracted, r_in.time());
             return true;
         }
 
@@ -108,7 +99,7 @@ class diffuse_light : public material {
         virtual vec3 emitted(
             const ray& r_in, const hit_record& rec, double u, double v, const vec3& p
         ) const {
-            if (dot(rec.normal, r_in.direction()) >= 0.0)
+            if (!rec.front_face)
                 return vec3(0,0,0);
             return emit->value(u, v, p);
         }
@@ -137,7 +128,9 @@ class lambertian : public material {
     public:
         lambertian(texture *a) : albedo(a) {}
 
-        bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const {
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, scatter_record& srec
+        ) const {
             srec.is_specular = false;
             srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
             srec.pdf_ptr = new cosine_pdf(rec.normal);

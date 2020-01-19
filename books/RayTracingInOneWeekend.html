@@ -345,8 +345,8 @@ Rays, a Simple Camera, and Background
 ====================================================================================================
 
 The one thing that all ray tracers have is a ray class, and a computation of what color is seen
-along a ray. Let’s think of a ray as a function $p(t) = \mathbf{a} + t \vec{\mathbf{b}}$. Here
-$\mathbf{p}$ is a 3D position along a line in 3D. $\mathbf{a}$ is the ray origin and
+along a ray. Let’s think of a ray as a function $\mathbf{p}(t) = \mathbf{a} + t \vec{\mathbf{b}}$.
+Here $\mathbf{p}$ is a 3D position along a line in 3D. $\mathbf{a}$ is the ray origin and
 $\vec{\mathbf{b}}$ is the ray direction. The ray parameter $t$ is a real number (`double` in the
 code). Plug in a different $t$ and $p(t)$ moves the point along the ray. Add in negative $t$ and you
 can go anywhere on the 3D line. For positive $t$, you get only the parts in front of $\mathbf{a}$,
@@ -508,7 +508,8 @@ for any $t$ where this is true:
 
 or expanding the full form of the ray $p(t)$:
 
-  $$ (\mathbf{a} + t \vec{\mathbf{b}} - \mathbf{c}) \cdot = R^2 $$
+  $$ (\mathbf{a} + t \vec{\mathbf{b}} - \mathbf{c})
+      \cdot (\mathbf{a} + t \vec{\mathbf{b}} - \mathbf{c}) = R^2 $$
 </div>
 
 <div class='together'>
@@ -579,11 +580,11 @@ Surface Normals and Multiple Objects
 ====================================================================================================
 
 First, let’s get ourselves a surface normal so we can shade. This is a vector that is perpendicular
-to the surface, and by convention, points out. One design decision is whether these normals
-(again by convention) are unit length. That is convenient for shading so I will say yes, but I won’t
-enforce that in the code. This could allow subtle bugs, so be aware this is personal preference
-as are most design decisions like that. For a sphere, the normal is in the direction of the hit
-point minus the center:
+to the surface at the point of intersection. There are two design decisions to make for normals.
+The first is whether these normals are unit length. That is convenient for shading so I will say
+yes, but I won’t enforce that in the code. This could allow subtle bugs, so be aware this is
+personal preference as are most design decisions like that. For a sphere, the outward normal is in
+the direction of the hit point minus the center:
 
   ![Figure [surf-normal]: Sphere surface-normal geometry](../images/fig.sphere-normal.jpg)
 
@@ -695,8 +696,8 @@ found it convenient to add a valid interval for hits $t_{min}$ to $t_{max}$, so 
 it can help some details in the code to have an interval $t_{min}$ to $t_{max}$. One design question
 is whether to do things like compute the normal if we hit something. We might end up hitting
 something closer as we do our search, and we will only need the normal of the closest thing. I will
-go with the simple solution and compute a bundle of stuff I will store in some structure. I know
-we’ll want motion blur at some point, so I’ll add a time input variable. Here’s the abstract class:
+go with the simple solution and compute a bundle of stuff I will store in some structure. Here’s
+the abstract class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef HITTABLE_H
@@ -705,7 +706,6 @@ we’ll want motion blur at some point, so I’ll add a time input variable. Her
     #include "ray.h"
 
     struct hit_record {
-        double t;
         vec3 p;
         vec3 normal;
     };
@@ -775,7 +775,140 @@ And here’s the sphere:
 </div>
 
 <div class='together'>
-And a list of objects:
+The second design decision for normals is whether they should always point out. At present, the
+normal found will always be in the direction of the center to the intersection point (the normal
+points out). If the ray intersects the sphere from the outside, the normal points against the ray.
+If the ray intersects the sphere from the inside, the normal (which always points out) points with
+the ray. Alternatively, we can have the normal always point against the ray. If the ray is outside
+the sphere, the normal will point outward, but if the ray is inside the sphere, the normal will
+point inward.
+
+    ![Figure [normal-directions]: Possible directions for sphere surface-normal geometry](../images/fig.normal-possibilities.jpg)
+
+We need to choose one of these possibilities because we will eventually want to determine which
+side of the surface that the ray is coming from. This is important for objects that are rendered
+differently on each side, like the text on a two-sided sheet of paper, or for objects that have an
+inside and an outside, like glass balls.
+
+If we decide to have the normals always point out, then we will need to determine which side the
+ray is on when we color it. We can figure this out by comparing the ray with the normal. If the ray
+and the normal face in the same direction, the ray is inside the object, if the ray and the normal
+face in the opposide direction, then the ray is outside the object. This can be determined by
+taking the dot product of the two vectors, where if their dot is positive, the ray is inside the
+sphere.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    if (dot(ray_direction, outward_normal) > 0.0) {
+        // ray is inside the sphere
+        ...
+    }
+    else {
+        // ray is outside the sphere
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-normal-comparison]: <kbd>[sphere.h]</kbd> Comparing the ray and the normal]
+
+
+If we decide to have the normals always point against the ray, we won't be able to use the dot
+product to determine which side of the surface the ray is on. Instead, we would need to store that
+information:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool front_face;
+    if (dot(ray_direction, outward_normal) > 0.0) {
+        // ray is inside the sphere
+        normal = -outward_normal;
+        front_face = false;
+    }
+    else {
+        // ray is outside the sphere
+        normal = outward_normal;
+        front_face = true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [normals-point-against]: <kbd>[sphere.h]</kbd> Remembering the side of the surface]
+
+The decision whether to have normals always point out or always point against the ray is based on
+whether you want to determine the side of the surface at the time of geometry or at the time of
+coloring. In this book we have more material types than we have geometry types, so we'll go for
+less work and put the determination at geometry time. This is simply a matter of preference and
+you'll see both implementations in the literature.
+
+We add the `front_face` bool to the `hit_record` struct. I know that we’ll also want motion blur at
+some point, so I’ll also add a time input variable.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef HITTABLE_H
+    #define HITTABLE_H
+
+    #include "ray.h"
+
+    struct hit_record {
+        vec3 p;
+        vec3 normal;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double t;
+        bool front_face;
+
+        inline void set_face_normal(const ray& r, const vec3& outward_normal) {
+            front_face = dot(r.direction(), outward_normal) < 0;
+            normal = front_face ? outward_normal :-outward_normal;
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    };
+
+    class hittable {
+        public:
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+    };
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hittable-time-side]: <kbd>[hittable.h]</kbd> The hittable class with time and side]
+
+And then we add the surface side determination to the class:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+        vec3 oc = r.origin() - center;
+        auto a = r.direction().length_squared();
+        auto half_b = dot(oc, r.direction());
+        auto c = oc.length_squared() - radius*radius;
+        auto discriminant = half_b*half_b - a*c;
+
+        if (discriminant > 0) {
+            auto root = sqrt(discriminant);
+            auto temp = (-half_b - root)/a;
+            if (temp < t_max && temp > t_min) {
+                rec.t = temp;
+                rec.p = r.at(rec.t);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                vec3 outward_normal = (rec.p - center) / radius;
+                rec.set_face_normal(r, outward_normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                return true;
+            }
+            temp = (-half_b + root) / a;
+            if (temp < t_max && temp > t_min) {
+                rec.t = temp;
+                rec.p = r.at(rec.t);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                vec3 outward_normal = (rec.p - center) / radius;
+                rec.set_face_normal(r, outward_normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                return true;
+            }
+        }
+        return false;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [sphere-final]: <kbd>[sphere.h]</kbd> The sphere class with normal determination]
+
+</div>
+
+<div class='together'>
+We add a list of objects:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef HITTABLE_LIST_H
@@ -1354,7 +1487,7 @@ the unit ball, and then normalizing those.
     [Listing [random-unit-vector]: <kbd>[vec3.h]</kbd> The random_unit_vector() function]
 
   ![Figure [rand-unit-vector]: Generating a random unit vector](../images/fig.rand-unitvector.png)
-  
+
 </div>
 
 
@@ -1514,12 +1647,19 @@ that the pointer is to a class, which the “class material” in the hittable c
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     struct hit_record {
-        double t;
         vec3 p;
         vec3 normal;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         material *mat_ptr;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        double t;
+        bool front_face;
+
+
+        inline void set_face_normal(const ray& r, const vec3& outward_normal) {
+            front_face = dot(r.direction(), outward_normal) < 0;
+            normal = front_face ? outward_normal :-outward_normal;
+        }
     };
 
     class hittable {
@@ -1555,7 +1695,6 @@ within `hit_record`. See the highlighted lines below:
             material *mat_ptr;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
-
     bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         vec3 oc = r.origin() - center;
         auto a = r.direction().length_squared();
@@ -1569,7 +1708,8 @@ within `hit_record`. See the highlighted lines below:
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.at(rec.t);
-                rec.normal = (rec.p - center) / radius;
+                vec3 outward_normal = (rec.p - center) / radius;
+                rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 rec.mat_ptr = mat_ptr;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1579,7 +1719,8 @@ within `hit_record`. See the highlighted lines below:
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.at(rec.t);
-                rec.normal = (rec.p - center) / radius;
+                vec3 outward_normal = (rec.p - center) / radius;                
+                rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 rec.mat_ptr = mat_ptr;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1813,40 +1954,64 @@ of the image and it was clearly wrong. That often does the job.
 <div class='together'>
 The refraction is described by Snell’s law:
 
-  $$ n \cdot \sin\theta = n' \cdot \sin\theta' $$
+  $$ \eta \cdot \sin\theta = \eta' \cdot \sin\theta' $$
 
-Where $n$ and $n'$ are the refractive indices (typically air = 1, glass = 1.3–1.7, diamond = 2.4)
-and the geometry is:
+Where $\theta$ and $\theta'$ are the angles from the normal, and $\eta$ and $\eta'$ (pronounced
+"eta" and "eta prime") are the refractive indices (typically air = 1.0, glass = 1.3–1.7, diamond =
+2.4). The geometry is:
 
   ![Figure [ray-refract]: Refracted ray geometry](../images/fig.ray-refract.jpg)
 
 </div>
 
 <div class='together'>
-One troublesome practical issue is that when the ray is in the material with the higher refractive
-index, there is no real solution to Snell’s law and thus there is no refraction possible. Here all
-the light is reflected, and because in practice that is usually inside solid objects, it is called
-“total internal reflection”. This is why sometimes the water-air boundary acts as a perfect mirror
-when you are submerged. The code for refraction is thus a bit more complicated than for reflection:
+In order to determine the direction of the refracted ray, we have to solve for $\sin\theta'$:
+
+  $$ \sin\theta' = \frac{\eta}{\eta'} \cdot \sin\theta $$
+
+On the refracted side of the surface there is a refracted ray $\mathbf{R'}$ and a normal
+$\mathbf{N'}$, and there exists an angle, $\theta'$, between them. We can split $\mathbf{R'}$ into
+the parts of the ray that are parallel to $\mathbf{N'}$ and perpendicular to $\mathbf{N'}$:
+
+  $$ \mathbf{R'} = \mathbf{R'}_{\parallel} + \mathbf{R'}_{\bot} $$
+
+If we solve for $\mathbf{R'}_{\parallel}$ and $\mathbf{R'}_{\bot}$ we get:
+
+  $$ \mathbf{R'}_{\parallel} = \frac{\eta}{\eta'} (\mathbf{R} + \cos\theta \mathbf{N}) $$
+  $$ \mathbf{R'}_{\bot} = -\sqrt{1 - |\mathbf{R'}_{\parallel}|^2} \mathbf{N} $$
+
+You can go ahead and prove this for yourself if you want, but we will treat it as fact and move on.
+The rest of the book will not require you to understand the proof.
+
+We still need to solve for $\cos\theta$. It is well known that the dot product of two vectors can
+be explained in terms of the consine of the angle between them:
+
+  $$ \mathbf{A} \cdot \mathbf{B} = |\mathbf{A}| |\mathbf{B}| \cos\theta $$
+
+If we restrict $\mathbf{A}$ and $\mathbf{B}$ to be unit vectors:
+
+  $$ \mathbf{A} \cdot \mathbf{B} = \cos\theta $$
+
+We can now rewrite $\mathbf{R'}_{\parallel}$ in terms of known quantities:
+
+  $$ \mathbf{R'}_{\parallel} =
+     \frac{\eta}{\eta'} (\mathbf{R} + (\mathbf{-R} \cdot \mathbf{N}) \mathbf{N}) $$
+
+When we combine them back together, we can write a function to calculate $\mathbf{R'}$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool refract(const vec3& v, const vec3& n, double ni_over_nt, vec3& refracted) {
-        vec3 uv = unit_vector(v);
-        auto dt = dot(uv, n);
-        auto discriminant = 1.0 - ni_over_nt*ni_over_nt*(1-dt*dt);
-
-        if (discriminant <= 0) {
-            return false;
-
-        refracted = ni_over_nt*(uv - n*dt) - n*sqrt(discriminant);
-        return true;
+    vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat) {
+        auto cos_theta = dot(-uv, n);
+        vec3 r_out_parallel =  etai_over_etat * (uv + cos_theta*n);
+        vec3 r_out_perp = -sqrt(1.0 - r_out_parallel.length_squared()) * N;
+        return r_out_parallel + r_out_perp;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [refract]: <kbd>[vec3.h]</kbd> Refraction function]
 </div>
 
 <div class='together'>
-And the dielectric material that always refracts when possible is:
+And the dielectric material that always refracts is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class dielectric : public material {
@@ -1856,43 +2021,127 @@ And the dielectric material that always refracts when possible is:
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
             ) const {
-                vec3 outward_normal;
-                vec3 reflected = reflect(r_in.direction(), rec.normal);
-                double ni_over_nt;
-                attenuation = vec3(1.0, 1.0, 0.0);
-                vec3 refracted;
-
-                if (dot(r_in.direction(), rec.normal) > 0) {
-                    outward_normal = -rec.normal;
-                    ni_over_nt = ref_idx;
+                attenuation = vec3(1.0, 1.0, 1.0);
+                double etai_over_etat;
+                if (rec.front_face) {
+                    etai_over_etat = 1.0 / ref_idx;
                 } else {
-                    outward_normal = rec.normal;
-                    ni_over_nt = 1.0 / ref_idx;
+                    etai_over_etat = ref_idx;
                 }
 
-                if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
-                    scattered = ray(rec.p, refracted);
-                } else {
-                    scattered = ray(rec.p, reflected);
-                    return false;
-                }
-
+                vec3 unit_direction = unit_vector(r_in.direction());
+                vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
+                scattered = ray(rec.p, refracted);
                 return true;
             }
 
             double ref_idx;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [dielectric]: <kbd>[material.h]</kbd> Dielectric material class]
+    [Listing [dielectric]: <kbd>[material.h]</kbd> Dielectric material class that always refracts]
+
+  ![Glass sphere that always refracts](../images/img.glass-always-refract.png)
 </div>
 
-Attenuation is always 1 -- the glass surface absorbs nothing. The `attenuation = vec3(1.0, 1.0,
-0.0)` above will also kill the blue channel which is the type of color bug that can be hard to find
--- it will give a color shift only. Try it the way it is and then change it to
-`attenuation = vec3(1.0, 1.0, 1.0)` to see the difference.
 
 <div class='together'>
-If we try that out with these parameters:
+That definitely doesn't look right. One troublesome practical issue is that when the ray is in the
+material with the higher refractive index, there is no real solution to Snell’s law and thus there
+is no refraction possible. If we refer back to Snell's law and the derivation of $\sin\theta'$:
+
+  $$ \sin\theta' = \frac{\eta}{\eta'} \cdot \sin\theta $$
+
+If the ray is inside glass and outside is air ($\eta = 1.5$ and $\eta' = 1.0$):
+
+  $$ \sin\theta' = \frac{1.5}{1.0} \cdot \sin\theta $$
+
+The value of $\sin\theta'$ cannot be greater than 1. So, if,
+
+  $$ \frac{1.5}{1.0} \cdot \sin\theta > 1.0 $$
+
+The equality between the two sides of the equation is broken and a solution cannot exist. If a
+solution does not exist the glass cannot refract and must reflect the ray:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    if(etai_over_etat * sin_theta > 1.0) {
+        // Must Reflect
+        ...
+    }
+    else {
+        // Can Refract
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [dielectric]: <kbd>[material.h]</kbd> Determining if the ray can refract]
+
+Here all the light is reflected, and because in practice that is usually inside solid objects, it
+is called “total internal reflection”. This is why sometimes the water-air boundary acts as a
+perfect mirror when you are submerged.
+</div>
+
+<div class='together'>
+We can solve for `sin_theta` using the trigonometric qualities:
+
+  $$ \sin\theta  = \sqrt{1 - \cos^2\theta} $$
+
+and
+
+  $$ \cos\theta = \mathbf{R} \cdot \mathbf{N} $$
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    double cos_theta = ffmin(dot(-unit_direction, rec.normal), 1.0);
+    double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
+    if(etai_over_etat * sin_theta > 1.0) {
+        // Must Reflect
+        ...
+    }
+    else {
+        // Can Refract
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [dielectric]: <kbd>[material.h]</kbd> Determining if the ray can refract]
+
+</div>
+
+<div class='together'>
+And the dielectric material that always refracts (when possible) is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class dielectric : public material {
+        public:
+            dielectric(double ri) : ref_idx(ri) {}
+
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            ) const {
+                attenuation = vec3(1.0, 1.0, 1.0);
+                double etai_over_etat = (rec.front_face) ? (1.0 / ref_idx) : (ref_idx);
+
+                vec3 unit_direction = unit_vector(r_in.direction());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                double cos_theta = ffmin(dot(-unit_direction, rec.normal), 1.0);
+                double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
+                if (etai_over_etat * sin_theta > 1.0 ) {
+                    vec3 reflected = reflect(unit_direction, rec.normal);
+                    scattered = ray(rec.p, reflected);
+                    return true;
+                }
+
+                vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
+                scattered = ray(rec.p, refracted);
+                return true;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            }
+
+            double ref_idx;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [dielectric]: <kbd>[material.h]</kbd> Dielectric material class with reflection]
+</div>
+
+<div class='together'>
+Attenuation is always 1 -- the glass surface absorbs nothing. If we try that out with these parameters:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     list[0] = new sphere(vec3(0,0,-1), 0.5, new lambertian(vec3(0.1, 0.2, 0.5)));
@@ -1904,15 +2153,8 @@ If we try that out with these parameters:
 
 We get:
 
-  ![Glass sphere with a subtle bug](../images/img.glass-no-reflect.png)
-
+  ![Glass sphere that sometimes refracts](../images/img.glass-sometimes-refract.png)
 </div>
-
-(The reader Becker has pointed out that when there is a reflection ray the function returns `false`
-so there are no reflections. He is right, and that is why there are none in the image above. I am
-leaving this in rather than correcting it because it is an interesting example of a major bug that
-still leaves a reasonably plausible image. These sleeper bugs are the hardest bugs to find because
-we humans are not designed to find fault with what we see.)
 
 <div class='together'>
 Now real glass has reflectivity that varies with angle -- look at a window at a steep angle and it
@@ -1931,59 +2173,36 @@ surprisingly simple polynomial approximation by Christophe Schlick:
 
 <div class='together'>
 This yields our full glass material:
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class dielectric : public material {
         public:
             dielectric(double ri) : ref_idx(ri) {}
+
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
             ) const {
-                vec3 outward_normal;
-                vec3 reflected = reflect(r_in.direction(), rec.normal);
-                double ni_over_nt;
                 attenuation = vec3(1.0, 1.0, 1.0);
-                vec3 refracted;
+                double etai_over_etat = (rec.front_face) ? (1.0 / ref_idx) : (ref_idx);
 
-
+                vec3 unit_direction = unit_vector(r_in.direction());
+                double cos_theta = ffmin(dot(-unit_direction, rec.normal), 1.0);
+                double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
+                if (etai_over_etat * sin_theta > 1.0 ) {
+                    vec3 reflected = reflect(unit_direction, rec.normal);
+                    scattered = ray(rec.p, reflected);
+                    return true;
+                }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                double reflect_prob;
-                double cosine;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-                if (dot(r_in.direction(), rec.normal) > 0) {
-                     outward_normal = -rec.normal;
-                     ni_over_nt = ref_idx;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                     cosine = ref_idx * dot(r_in.direction(), rec.normal)
-                            / r_in.direction().length();
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                }
-                else {
-                     outward_normal = rec.normal;
-                     ni_over_nt = 1.0 / ref_idx;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                     cosine = -dot(r_in.direction(), rec.normal)
-                            / r_in.direction().length();
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                }
-
-                if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted)) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                   reflect_prob = schlick(cosine, ref_idx);
-                }
-                else {
-                   reflect_prob = 1.0;
-                }
-
-                if (random_double() < reflect_prob) {
-                   scattered = ray(rec.p, reflected);
-                }
-                else {
-                   scattered = ray(rec.p, refracted);
+                double reflect_prob = schlick(cos_theta, etai_over_etat);
+                if (random_double() < reflect_prob)
+                {
+                    vec3 reflected = reflect(unit_direction, rec.normal);
+                    scattered = ray(rec.p, reflected);
+                    return true;
                 }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
+                vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
+                scattered = ray(rec.p, refracted);
                 return true;
             }
 
@@ -2014,7 +2233,6 @@ This gives:
   ![A hollow glass sphere](../images/img.glass-hollow.png)
 
 </div>
-
 
 
 Positionable Camera

@@ -58,7 +58,8 @@ bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& re
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
             rec.p = r.at(rec.t);
-            rec.normal = (rec.p - center(r.time())) / radius;
+            vec3 outward_normal = (rec.p - center(r.time())) / radius;
+            rec.set_face_normal(r, outward_normal);
             rec.mat_ptr = mat_ptr;
             return true;
         }
@@ -66,7 +67,8 @@ bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& re
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
             rec.p = r.at(rec.t);
-            rec.normal = (rec.p - center(r.time())) / radius;
+            vec3 outward_normal = (rec.p - center(r.time())) / radius;
+            rec.set_face_normal(r, outward_normal);
             rec.mat_ptr = mat_ptr;
             return true;
         }

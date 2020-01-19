@@ -80,9 +80,10 @@ bool xy_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
     rec.u = (x-x0)/(x1-x0);
     rec.v = (y-y0)/(y1-y0);
     rec.t = t;
+    vec3 outward_normal = vec3(0, 0, 1);
+    rec.set_face_normal(r, outward_normal);
     rec.mat_ptr = mp;
     rec.p = r.at(t);
-    rec.normal = vec3(0, 0, 1);
     return true;
 }
 
@@ -97,9 +98,10 @@ bool xz_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
     rec.u = (x-x0)/(x1-x0);
     rec.v = (z-z0)/(z1-z0);
     rec.t = t;
+    vec3 outward_normal = vec3(0, 1, 0);
+    rec.set_face_normal(r, outward_normal);
     rec.mat_ptr = mp;
     rec.p = r.at(t);
-    rec.normal = vec3(0, 1, 0);
     return true;
 }
 
@@ -114,9 +116,10 @@ bool yz_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
     rec.u = (y-y0)/(y1-y0);
     rec.v = (z-z0)/(z1-z0);
     rec.t = t;
+    vec3 outward_normal = vec3(1, 0, 0);
+    rec.set_face_normal(r, outward_normal);
     rec.mat_ptr = mp;
     rec.p = r.at(t);
-    rec.normal = vec3(1, 0, 0);
     return true;
 }
 

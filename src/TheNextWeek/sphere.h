@@ -49,8 +49,9 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
             rec.p = r.at(rec.t);
+            vec3 outward_normal = (rec.p - center) / radius;
+            rec.set_face_normal(r, outward_normal);
             get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
-            rec.normal = (rec.p - center) / radius;
             rec.mat_ptr = mat_ptr;
             return true;
         }
@@ -59,8 +60,9 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
             rec.p = r.at(rec.t);
+            vec3 outward_normal = (rec.p - center) / radius;
+            rec.set_face_normal(r, outward_normal);
             get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
-            rec.normal = (rec.p - center) / radius;
             rec.mat_ptr = mat_ptr;
             return true;
         }
