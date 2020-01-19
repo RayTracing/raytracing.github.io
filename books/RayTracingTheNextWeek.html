@@ -1070,41 +1070,44 @@ code to make it all happen:
             }
 
         public:
-            static double *ranfloat;
-            static int *perm_x;
-            static int *perm_y;
-            static int *perm_z;
+            static const int point_count = 256;
+            static double* ranfloat;
+            static int* perm_x;
+            static int* perm_y;
+            static int* perm_z;
     };
 
     static double* perlin_generate() {
-        auto p = new double[256];
-        for (int i = 0; i < 256; ++i)
+        auto p = new double[perlin::point_count];
+        for (int i = 0; i < perlin::point_count; ++i)
             p[i] = random_double();
         return p;
     }
 
-    void permute(int *p, int n) {
+    void permute(int* p, int n) {
         for (int i = n-1; i > 0; i--) {
             int target = random_int(0, i);
             int tmp = p[i];
             p[i] = p[target];
             p[target] = tmp;
         }
-        return;
     }
 
-    static int* perlin_generate_perm() {
-        int * p = new int[256];
-        for (int i = 0; i < 256; i++)
+    static int* perlin_generate_perm(int p[]) {
+        for (int i = 0; i < perlin::point_count; i++)
             p[i] = i;
-        permute(p, 256);
+
+        permute(p, perlin::point_count);
+
         return p;
     }
 
-    double *perlin::ranfloat = perlin_generate();
-    int *perlin::perm_x = perlin_generate_perm();
-    int *perlin::perm_y = perlin_generate_perm();
-    int *perlin::perm_z = perlin_generate_perm();
+    double* perlin::ranfloat = perlin_generate();
+
+    int perlin_values[3][perlin::point_count];
+    int* perlin::perm_x = perlin_generate_perm(perlin_values[0]);
+    int* perlin::perm_y = perlin_generate_perm(perlin_values[1]);
+    int* perlin::perm_z = perlin_generate_perm(perlin_values[2]);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin]: <kbd>[perlin.h]</kbd> A Perlin texture class and functions]
 </div>
@@ -1206,9 +1209,10 @@ To make it smooth, we can linearly interpolate:
             }
 
         public:
-            static int *perm_x;
-            static int *perm_y;
-            static int *perm_z;
+            static const int point_count = 256;
+            static int* perm_x;
+            static int* perm_y;
+            static int* perm_z;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-trilinear]: <kbd>[perlin.h]</kbd> Perlin with trilienear interpolation]
@@ -1290,10 +1294,12 @@ vectors (instead of just floats) on the lattice points, and use a dot product to
 max off the lattice. So, first we need to change the random floats to random vectors:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 *perlin::ranvec = perlin_generate();
-    int *perlin::perm_x = perlin_generate_perm();
-    int *perlin::perm_y = perlin_generate_perm();
-    int *perlin::perm_z = perlin_generate_perm();
+    vec3* perlin::ranvec = perlin_generate();
+
+    int perlin_values[3][perlin::point_count];
+    int* perlin::perm_x = perlin_generate_perm(perlin_values[0]);
+    int* perlin::perm_y = perlin_generate_perm(perlin_values[1]);
+    int* perlin::perm_z = perlin_generate_perm(perlin_values[2]);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-randunit]: <kbd>[perlin.h]</kbd> Perlin with random unit translations]
 </div>
@@ -1304,10 +1310,12 @@ exactly uniform:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     static vec3* perlin_generate() {
-        vec3 *p = new vec3[256];
-        for (int i = 0; i < 256; ++i) {
+        static vec3 p[perlin::point_count];
+
+        for (int i = 0; i < perlin::point_count; ++i) {
             p[i] = unit_vector(vec3::random(-1,1));
         }
+
         return p;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1340,10 +1348,11 @@ The Perlin class is now:
             }
 
         public:
-            static vec3 *ranvec;
-            static int *perm_x;
-            static int *perm_y;
-            static int *perm_z;
+            static const int point_count = 256;
+            static vec3* ranvec;
+            static int* perm_x;
+            static int* perm_y;
+            static int* perm_z;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-2]: <kbd>[perlin.h]</kbd> The perlin class so far]

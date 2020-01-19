@@ -63,46 +63,51 @@ class perlin {
         }
 
     public:
-        static vec3 *ranvec;
-        static int *perm_x;
-        static int *perm_y;
-        static int *perm_z;
+        static const int point_count = 256;
+        static vec3* ranvec;
+        static int* perm_x;
+        static int* perm_y;
+        static int* perm_z;
 };
 
 
 static vec3* perlin_generate() {
-    vec3 *p = new vec3[256];
-    for (int i = 0; i < 256; ++i) {
+    static vec3 p[perlin::point_count];
+
+    for (int i = 0; i < perlin::point_count; ++i) {
         p[i] = unit_vector(vec3::random(-1,1));
     }
+
     return p;
 }
 
 
-void permute(int *p, int n) {
+void permute(int* p, int n) {
     for (int i = n-1; i > 0; i--) {
         int target = random_int(0,i);
         int tmp = p[i];
         p[i] = p[target];
         p[target] = tmp;
     }
-    return;
 }
 
 
-static int* perlin_generate_perm() {
-    int * p = new int[256];
-    for (int i = 0; i < 256; i++)
+static int* perlin_generate_perm(int p[]) {
+    for (int i = 0; i < perlin::point_count; i++)
         p[i] = i;
-    permute(p, 256);
+
+    permute(p, perlin::point_count);
+
     return p;
 }
 
 
-vec3 *perlin::ranvec = perlin_generate();
-int *perlin::perm_x = perlin_generate_perm();
-int *perlin::perm_y = perlin_generate_perm();
-int *perlin::perm_z = perlin_generate_perm();
+vec3* perlin::ranvec = perlin_generate();
+
+int perlin_values[3][perlin::point_count];
+int* perlin::perm_x = perlin_generate_perm(perlin_values[0]);
+int* perlin::perm_y = perlin_generate_perm(perlin_values[1]);
+int* perlin::perm_z = perlin_generate_perm(perlin_values[2]);
 
 
 #endif
