@@ -40,8 +40,8 @@ vec3 ray_color(const ray& r, hittable& world, shared_ptr<hittable> light_shape, 
         return srec.attenuation * ray_color(srec.specular_ray, world, light_shape, depth-1);
     }
 
-    auto plight = make_shared<hittable_pdf>(light_shape, rec.p);
-    mixture_pdf p(plight, srec.pdf_ptr);
+    auto light_ptr = make_shared<hittable_pdf>(light_shape, rec.p);
+    mixture_pdf p(light_ptr, srec.pdf_ptr);
     ray scattered = ray(rec.p, p.generate(), r.time());
     auto pdf_val = p.value(scattered.direction());
 
