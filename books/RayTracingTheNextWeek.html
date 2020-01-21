@@ -1060,7 +1060,14 @@ code to make it all happen:
     class perlin {
         public:
             perlin() {
-                init();
+                ranfloat = new double[point_count];
+                for (int i = 0; i < point_count; ++i) {
+                    ranfloat[i] = random_double();
+                }
+
+                perm_x = perlin_generate_perm();
+                perm_y = perlin_generate_perm();
+                perm_z = perlin_generate_perm();
             }
 
             ~perlin() {
@@ -1086,17 +1093,6 @@ code to make it all happen:
             int* perm_x;
             int* perm_y;
             int* perm_z;
-
-            void init() {
-                ranfloat = new double[point_count];
-                for (int i = 0; i < point_count; ++i) {
-                    ranfloat[i] = random_double();
-                }
-
-                perm_x = perlin_generate_perm();
-                perm_y = perlin_generate_perm();
-                perm_z = perlin_generate_perm();
-            }
 
             static int* perlin_generate_perm() {
                 auto p = new int[point_count];
@@ -1300,12 +1296,24 @@ which gives:
 This is still a bit grid blocky looking, probably because the min and max of the pattern always
 lands exactly on the integer x/y/z. Ken Perlin’s very clever trick was to instead put random unit
 vectors (instead of just floats) on the lattice points, and use a dot product to move the min and
-max off the lattice. So, first we need to change the random floats to random vectors:
+max off the lattice. So, first we need to change the random floats to random vectors. These vectors
+are any reasonable set of irregular directions, and I won't bother to make them exactly uniform:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin {
         public:
-            ...
+            perlin() {
+                ranvec = new vec3[point_count];
+
+                for (int i = 0; i < point_count; ++i) {
+                    ranvec[i] = unit_vector(vec3::random(-1,1));
+                }
+
+                perm_x = perlin_generate_perm();
+                perm_y = perlin_generate_perm();
+                perm_z = perlin_generate_perm();
+            }
+
             ~perlin() {
                 delete[] ranvec;
                 delete[] perm_x;
@@ -1325,33 +1333,7 @@ max off the lattice. So, first we need to change the random floats to random vec
 </div>
 
 <div class='together'>
-These vectors are any reasonable set of irregular directions, and I won't bother to make them
-exactly uniform:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class perlin {
-        ...
-        private:
-            ...
-            void init() {
-                ranvec = new vec3[point_count];
-
-                for (int i = 0; i < point_count; ++i) {
-                    ranvec[i] = unit_vector(vec3::random(-1,1));
-                }
-
-                perm_x = perlin_generate_perm();
-                perm_y = perlin_generate_perm();
-                perm_z = perlin_generate_perm();
-            }
-            ...
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin-gen-2]: <kbd>[perlin.h]</kbd> New perlin_generate()]
-</div>
-
-<div class='together'>
-The Perlin class is now:
+The Perlin class `noise()` method is now:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin {
@@ -1380,7 +1362,7 @@ The Perlin class is now:
             ...
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin-2]: <kbd>[perlin.h]</kbd> The perlin class so far]
+    [Listing [perlin-2]: <kbd>[perlin.h]</kbd> Perlin class with new noise() method]
 </div>
 
 <div class='together'>
