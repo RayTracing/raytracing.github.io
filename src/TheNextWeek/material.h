@@ -53,7 +53,7 @@ class dielectric : public material {
                 scattered = ray(rec.p, reflected, r_in.time());
                 return true;
             }
-            
+
             double reflect_prob = schlick(cos_theta, etai_over_etat);
             if (random_double() < reflect_prob)
             {
@@ -61,7 +61,7 @@ class dielectric : public material {
                 scattered = ray(rec.p, reflected, r_in.time());
                 return true;
             }
-                
+
             vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
             scattered = ray(rec.p, refracted, r_in.time());
             return true;

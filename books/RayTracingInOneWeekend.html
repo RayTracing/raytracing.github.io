@@ -915,7 +915,11 @@ We add a list of objects:
     #define HITTABLE_LIST_H
 
     #include "hittable.h"
+    #include <memory>
     #include <vector>
+
+    using std::shared_ptr;
+    using std::make_shared;
 
     class hittable_list: public hittable {
         public:
@@ -954,8 +958,8 @@ We add a list of objects:
 
 ## Some New C++ Features
 
-This code uses two C++ features that may trip you up if you're not normally a C++ programmer:
-`vector` and `shared_ptr`.
+The `hittable_list` class code uses two C++ features that may trip you up if you're not normally a
+C++ programmer: `vector` and `shared_ptr`.
 
 `shared_ptr<type>` is a pointer to some allocated type, with reference-counting semantics.
 Every time you assign its value to another shared pointer (usually with a simple assignment), the
@@ -975,16 +979,24 @@ Typically, a shared pointer is first initialized with a newly-allocated object, 
 arguments `(1, true)`. It returns a `shared_ptr<thing>`. This can be simplified as in the second
 line with the `auto` type declaration, because the type is sufficiently defined by the return type
 of `make_shared<thing2>`.
+</div>
 
 We'll use shared pointers in our code, because it allows multiple objects to use a common object
 (for example, a bunch of spheres that all use the same material), and because it makes memory
 management automatic and easier to reason about.
-</div>
+
+`std::shared_ptr` is included with the `<memory>` header.
 
 The second C++ feature you may be unfamiliar with is `std::vector`. This is a generic array-like
 collection of an arbitrary type. Above, we use a collection of pointers to `hittable`. `std::vector`
 automatically grows as more values are added: `objects.push_back(object)` adds a value to the end of
 the `std::vector` member variable `objects`.
+
+`std::vector` is included with the `<vector>` header.
+
+Finally, the `using` statements in listing [hittable-list-initial] tell the compiler that we'll be
+getting `shared_ptr` and `make_shared` from the `std` library, so we don't need to prefex these with
+`std::` every time we reference them.
 
 ## Common Constants and Utility Functions
 
@@ -999,8 +1011,16 @@ file.
     #ifndef RTWEEKEND_H
     #define RTWEEKEND_H
 
-    #include <limits>
     #include <cmath>
+    #include <cstdlib>
+    #include <limits>
+    #include <memory>
+
+
+    // Usings
+
+    using std::shared_ptr;
+    using std::make_shared;
 
     // Constants
 
