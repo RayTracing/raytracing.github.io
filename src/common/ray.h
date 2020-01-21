@@ -33,6 +33,7 @@ class ray
             return orig + t*dir;
         }
 
+    public:
         vec3 orig;
         vec3 dir;
         double tm;
