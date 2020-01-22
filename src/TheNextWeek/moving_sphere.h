@@ -15,24 +15,31 @@
 #include "hittable.h"
 
 
-class moving_sphere: public hittable  {
+class moving_sphere : public hittable {
     public:
         moving_sphere() {}
-        moving_sphere(vec3 cen0, vec3 cen1, double t0, double t1, double r, material *m)
+        moving_sphere(
+            vec3 cen0, vec3 cen1, double t0, double t1, double r, shared_ptr<material> m)
             : center0(cen0), center1(cen1), time0(t0), time1(t1), radius(r), mat_ptr(m)
         {};
+
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
+
         vec3 center(double time) const;
+
+    public:
         vec3 center0, center1;
         double time0, time1;
         double radius;
-        material *mat_ptr;
+        shared_ptr<material> mat_ptr;
 };
+
 
 vec3 moving_sphere::center(double time) const{
     return center0 + ((time - time0) / (time1 - time0))*(center1 - center0);
 }
+
 
 bool moving_sphere::bounding_box(double t0, double t1, aabb& output_box) const {
     aabb box0(

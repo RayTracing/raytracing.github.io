@@ -162,20 +162,24 @@ We also need a moving object. I’ll create a sphere class that has its center m
 times need not match up with the camera aperture open and close.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class moving_sphere: public hittable {
+    class moving_sphere : public hittable {
         public:
             moving_sphere() {}
             moving_sphere(
-                vec3 cen0, vec3 cen1, double t0, double t1, double r, material *m)
-              : center0(cen0), center1(cen1), time0(t0), time1(t1), radius(r), mat_ptr(m)
+                vec3 cen0, vec3 cen1, double t0, double t1, double r, shared_ptr<material> m)
+                : center0(cen0), center1(cen1), time0(t0), time1(t1), radius(r), mat_ptr(m)
             {};
+
             virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
+
             vec3 center(double time) const;
+
+        public:
             vec3 center0, center1;
             double time0, time1;
             double radius;
-            material *mat_ptr;
+            shared_ptr<material> mat_ptr;
     };
 
     vec3 moving_sphere::center(double time) const{
@@ -268,7 +272,7 @@ $\mathbf{C} + (0, r/2, 0)$ at time $t=1$, where $r$ is a random number in $[0,1)
     hittable_list random_scene() {
         hittable_list world;
 
-        world.add(new sphere(vec3(0,-1000,0), 1000, new lambertian(checker)));
+        world.add(make_shared<sphere>(vec3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
 
         int i = 1;
         for (int a = -10; a < 10; a++) {
@@ -279,26 +283,29 @@ $\mathbf{C} + (0, r/2, 0)$ at time $t=1$, where $r$ is a random number in $[0,1)
                     if (choose_mat < 0.8) {
                         // diffuse
                         auto albedo = vec3::random() * vec3::random();
-                        world.add(new moving_sphere(
+                        world.add(make_shared<moving_sphere>(
                             center, center + vec3(0, random_double(0,.5), 0), 0.0, 1.0, 0.2,
-                            new lambertian(new constant_texture(albedo))
+                            make_shared<lambertian>(make_shared<constant_texture>(albedo))
                         ));
                     } else if (choose_mat < 0.95) {
                         // metal
                         auto albedo = vec3::random(.5, 1);
                         auto fuzz = random_double(0, .5);
-                        world.add(new sphere(center, 0.2, new metal(albedo, fuzz)));
+                        world.add(
+                            make_shared<sphere>(center, 0.2, make_shared<metal>(albedo, fuzz)));
                     } else {
                         // glass
-                        world.add(new sphere(center, 0.2, new dielectric(1.5)));
+                        world.add(make_shared<sphere>(center, 0.2, make_shared<dielectric>(1.5)));
                     }
                 }
             }
         }
 
-        world.add(new sphere(vec3(0, 1, 0), 1.0, new dielectric(1.5)));
-        world.add(new sphere(vec3(-4, 1, 0), 1.0, new lambertian(vec3(0.4, 0.2, 0.1))));
-        world.add(new sphere(vec3(4, 1, 0), 1.0, new metal(vec3(0.7, 0.6, 0.5), 0.0)));
+        world.add(make_shared<sphere>(vec3(0, 1, 0), 1.0, make_shared<dielectric>(1.5)));
+        world.add(make_shared<sphere>(
+            vec3(-4, 1, 0), 1.0, make_shared<lambertian>(vec3(0.4, 0.2, 0.1))));
+        world.add(make_shared<sphere>(
+            vec3(4, 1, 0), 1.0, make_shared<metal>(vec3(0.7, 0.6, 0.5), 0.0)));
 
         return world;
     }
@@ -701,15 +708,15 @@ a class:
             {}
 
             bvh_node(
-                std::vector<hittable*>& objects,
+                std::vector<shared_ptr<hittable>>& objects,
                 size_t start, size_t end, double time0, double time1);
 
             virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
 
         public:
-            hittable *left;
-            hittable *right;
+            shared_ptr<hittable> left;
+            shared_ptr<hittable> right;
             aabb box;
     };
 
@@ -773,7 +780,8 @@ This yields:
     ...
 
     bvh_node::bvh_node(
-        std::vector<hittable*>& objects, size_t start, size_t end, double time0, double time1
+        std::vector<shared_ptr<hittable>>& objects,
+        size_t start, size_t end, double time0, double time1
     ) {
         int axis = random_int(0,2);
         auto comparator = (axis == 0) ? box_x_compare
@@ -796,8 +804,8 @@ This yields:
             std::sort(objects.begin() + start, objects.begin() + end, comparator);
 
             auto mid = start + object_span/2;
-            left = new bvh_node(objects, start, mid, time0, time1);
-            right = new bvh_node(objects, mid, end, time0, time1);
+            left = make_shared<bvh_node>(objects, start, mid, time0, time1);
+            right = make_shared<bvh_node>(objects, mid, end, time0, time1);
         }
 
         aabb box_left, box_right;
@@ -824,7 +832,7 @@ axis index argument. Then define axis-specific comparison functions that use the
 function.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline bool box_compare(const hittable* a, const hittable* b, int axis) {
+    inline bool box_compare(const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis) {
         aabb box_a;
         aabb box_b;
 
@@ -835,9 +843,17 @@ function.
     }
 
 
-    bool box_x_compare (const hittable* a, const hittable* b) { return box_compare(a, b, 0); }
-    bool box_y_compare (const hittable* a, const hittable* b) { return box_compare(a, b, 1); }
-    bool box_z_compare (const hittable* a, const hittable* b) { return box_compare(a, b, 2); }
+    bool box_x_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
+        return box_compare(a, b, 0);
+    }
+
+    bool box_y_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
+        return box_compare(a, b, 1);
+    }
+
+    bool box_z_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
+        return box_compare(a, b, 2);
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [bvh-x-comp]: <kbd>[bvh.h]</kbd> BVH comparison function, X-axis]
 </div>
@@ -880,7 +896,7 @@ Now we can make textured materials by replacing the vec3 color with a texture po
     class lambertian : public material {
         public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            lambertian(texture *a) : albedo(a) {}
+            lambertian(shared_ptr<texture> a) : albedo(a) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             virtual bool scatter(
@@ -894,8 +910,9 @@ Now we can make textured materials by replacing the vec3 color with a texture po
                 return true;
             }
 
+        public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            texture *albedo;
+            shared_ptr<texture> albedo;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -906,14 +923,14 @@ Now we can make textured materials by replacing the vec3 color with a texture po
 where you used to have
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    new lambertian(vec3(0.5, 0.5, 0.5)))
+        ...make_shared<lambertian>(vec3(0.5, 0.5, 0.5))
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [lam-solid]: <kbd>[main.cc]</kbd> Lambertian material with solid color]
 
-now you should replace the `vec3(...)` with `new constant_texture(vec3(...))`
+now you should replace the `vec3(...)` with `make_shared<constant_texture>(vec3(...))`
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    new lambertian(new constant_texture(vec3(0.5, 0.5, 0.5))))
+        ...make_shared<lambertian>(make_shared<constant_texture>(vec3(0.5, 0.5, 0.5)))
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [lam-textured]: <kbd>[main.cc]</kbd> Lambertian material with texture]
 </div>
@@ -927,7 +944,8 @@ forms a 3D checker pattern.
     class checker_texture : public texture {
         public:
             checker_texture() {}
-            checker_texture(texture *t0, texture *tl): even(t0), odd(t1) {}
+            checker_texture(shared_ptr<texture> t0, shared_ptr<texture> t1): even(t0), odd(t1) {}
+
             virtual vec3 value(double u, double v, const vec3& p) const {
                 auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
                 if (sines < 0)
@@ -935,8 +953,10 @@ forms a 3D checker pattern.
                 else
                     return even->value(u, v, p);
             }
-            texture *odd;
-            texture *even;
+
+        public:
+            shared_ptr<texture> odd;
+            shared_ptr<texture> even;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [checker-texture]: <kbd>[texture.h]</kbd> Checkered texture]
@@ -946,14 +966,15 @@ Those checker odd/even pointers can be to a constant texture or to some other pr
 This is in the spirit of shader networks introduced by Pat Hanrahan back in the 1980s.
 
 <div class='together'>
-If we add this to our random_scene() function’s base sphere:
+If we add this to our `random_scene()` function’s base sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    texture *checker = new checker_texture(
-        new constant_texture(vec3(0.2, 0.3, 0.1)),
-        new constant_texture(vec3(0.9, 0.9, 0.9))
+    auto checker = make_shared<checker_texture>(
+        make_shared<constant_texture>(vec3(0.2, 0.3, 0.1)),
+        make_shared<constant_texture>(vec3(0.9, 0.9, 0.9))
     );
-    list[0] = new sphere(vec3(0,-1000,0), 1000, new lambertian(checker));
+
+    world.add(make_shared<sphere>(vec3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [checker-example]: <kbd>[main.cc]</kbd> Checkered texture in use]
 
@@ -970,11 +991,13 @@ If we add a new scene:
     hittable_list two_spheres() {
         hittable_list objects;
 
-        texture *checker = new checker_texture(
-            new constant_texture(vec3(0.2,0.3, 0.1)), new constant_texture(vec3(0.9, 0.9, 0.9)));
+        auto checker = make_shared<checker_texture>(
+            make_shared<constant_texture>(vec3(0.2, 0.3, 0.1)),
+            make_shared<constant_texture>(vec3(0.9, 0.9, 0.9))
+        );
 
-        objects.add(new sphere(vec3(0,-10, 0), 10, new lambertian(checker)));
-        objects.add(new sphere(vec3(0, 10, 0), 10, new lambertian(checker)));
+        objects.add(make_shared<sphere>(vec3(0,-10, 0), 10, make_shared<lambertian>(checker)));
+        objects.add(make_shared<sphere>(vec3(0, 10, 0), 10, make_shared<lambertian>(checker)));
 
         return objects;
     }
@@ -1036,6 +1059,24 @@ code to make it all happen:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin {
         public:
+            perlin() {
+                ranfloat = new double[point_count];
+                for (int i = 0; i < point_count; ++i) {
+                    ranfloat[i] = random_double();
+                }
+
+                perm_x = perlin_generate_perm();
+                perm_y = perlin_generate_perm();
+                perm_z = perlin_generate_perm();
+            }
+
+            ~perlin() {
+                delete[] ranfloat;
+                delete[] perm_x;
+                delete[] perm_y;
+                delete[] perm_z;
+            }
+
             double noise(const vec3& p) const {
                 auto u = p.x() - floor(p.x());
                 auto v = p.y() - floor(p.y());
@@ -1045,41 +1086,34 @@ code to make it all happen:
                 auto k = static_cast<int>(floor(p.z()));
                 return ranfloat[perm_x[i] ^ perm_y[j] ^ perm_z[k]];
             }
-            static double *ranfloat;
-            static int *perm_x;
-            static int *perm_y;
-            static int *perm_z;
+
+        private:
+            static const int point_count = 256;
+            double* ranfloat;
+            int* perm_x;
+            int* perm_y;
+            int* perm_z;
+
+            static int* perlin_generate_perm() {
+                auto p = new int[point_count];
+
+                for (int i = 0; i < perlin::point_count; i++)
+                    p[i] = i;
+
+                permute(p, point_count);
+
+                return p;
+            }
+
+            void permute(int* p, int n) {
+                for (int i = n-1; i > 0; i--) {
+                    int target = random_int(0, i);
+                    int tmp = p[i];
+                    p[i] = p[target];
+                    p[target] = tmp;
+                }
+            }
     };
-
-    static double* perlin_generate() {
-        auto p = new double[256];
-        for (int i = 0; i < 256; ++i)
-            p[i] = random_double();
-        return p;
-    }
-
-    void permute(int *p, int n) {
-        for (int i = n-1; i > 0; i--) {
-            int target = random_int(0, i);
-            int tmp = p[i];
-            p[i] = p[target];
-            p[target] = tmp;
-        }
-        return;
-    }
-
-    static int* perlin_generate_perm() {
-        int * p = new int[256];
-        for (int i = 0; i < 256; i++)
-            p[i] = i;
-        permute(p, 256);
-        return p;
-    }
-
-    double *perlin::ranfloat = perlin_generate();
-    int *perlin::perm_x = perlin_generate_perm();
-    int *perlin::perm_y = perlin_generate_perm();
-    int *perlin::perm_z = perlin_generate_perm();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin]: <kbd>[perlin.h]</kbd> A Perlin texture class and functions]
 </div>
@@ -1094,9 +1128,12 @@ colors:
     class noise_texture : public texture {
         public:
             noise_texture() {}
+
             virtual vec3 value(double u, double v, const vec3& p) const {
                 return vec3(1,1,1) * noise.noise(p);
             }
+
+        public:
             perlin noise;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1110,9 +1147,9 @@ We can use that texture on some spheres:
     hittable_list two_perlin_spheres() {
         hittable_list objects;
 
-        texture *pertext = new noise_texture();
-        objects.add(new sphere(vec3(0,-1000, 0), 1000, new lambertian(pertext)));
-        objects.add(new sphere(vec3(0, 2, 0), 2, new lambertian(pertext)));
+        auto pertext = make_shared<noise_texture>(4);
+        objects.add(make_shared<sphere>(vec3(0,-1000, 0), 1000, make_shared<lambertian>(pertext)));
+        objects.add(make_shared<sphere>(vec3(0, 2, 0), 2, make_shared<lambertian>(pertext)));
 
         return objects;
     }
@@ -1158,6 +1195,7 @@ To make it smooth, we can linearly interpolate:
 
     class perlin {
         public:
+            ...
             double noise(const vec3& p) const {
                 auto u = p.x() - floor(p.x());
                 auto v = p.y() - floor(p.y());
@@ -1166,6 +1204,7 @@ To make it smooth, we can linearly interpolate:
                 int j = floor(p.y());
                 int k = floor(p.z());
                 double c[2][2][2];
+
                 for (int di=0; di < 2; di++)
                     for (int dj=0; dj < 2; dj++)
                         for (int dk=0; dk < 2; dk++)
@@ -1174,11 +1213,10 @@ To make it smooth, we can linearly interpolate:
                                 perm_y[(j+dj) & 255] ^
                                 perm_z[(k+dk) & 255]
                             ];
+
                 return trilinear_interp(c, u, v, w);
             }
-            static int *perm_x;
-            static int *perm_y;
-            static int *perm_z;
+            ...
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-trilinear]: <kbd>[perlin.h]</kbd> Perlin with trilienear interpolation]
@@ -1199,6 +1237,7 @@ the interpolation:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin (
         public:
+            ...
             double noise(const vec3& p) const {
                 auto u = p.x() - floor(p.x());
                 auto v = p.y() - floor(p.y());
@@ -1233,16 +1272,19 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
         public:
             noise_texture() {}
             noise_texture(double sc) : scale(sc) {}
+
             virtual vec3 value(double u, double v, const vec3& p) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 return vec3(1,1,1) * noise.noise(scale * p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
+
+        public:
             perlin noise;
             double scale;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin-smoothed-2]: <kbd>[perlin.h]</kbd> Perlin smoothed, higher frequency]
+    [Listing [perlin-smoothed-2]: <kbd>[texture.h]</kbd> Perlin smoothed, higher frequency]
 
 which gives:
 
@@ -1254,39 +1296,49 @@ which gives:
 This is still a bit grid blocky looking, probably because the min and max of the pattern always
 lands exactly on the integer x/y/z. Ken Perlin’s very clever trick was to instead put random unit
 vectors (instead of just floats) on the lattice points, and use a dot product to move the min and
-max off the lattice. So, first we need to change the random floats to random vectors:
+max off the lattice. So, first we need to change the random floats to random vectors. These vectors
+are any reasonable set of irregular directions, and I won't bother to make them exactly uniform:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 *perlin::ranvec = perlin_generate();
-    int *perlin::perm_x = perlin_generate_perm();
-    int *perlin::perm_y = perlin_generate_perm();
-    int *perlin::perm_z = perlin_generate_perm();
+    class perlin {
+        public:
+            perlin() {
+                ranvec = new vec3[point_count];
+
+                for (int i = 0; i < point_count; ++i) {
+                    ranvec[i] = unit_vector(vec3::random(-1,1));
+                }
+
+                perm_x = perlin_generate_perm();
+                perm_y = perlin_generate_perm();
+                perm_z = perlin_generate_perm();
+            }
+
+            ~perlin() {
+                delete[] ranvec;
+                delete[] perm_x;
+                delete[] perm_y;
+                delete[] perm_z;
+            }
+        ...
+        private:
+            vec3* ranvec;
+            int* perm_x;
+            int* perm_y;
+            int* perm_z;
+            ...
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-randunit]: <kbd>[perlin.h]</kbd> Perlin with random unit translations]
 </div>
 
 <div class='together'>
-These vectors are any reasonable set of irregular directions, and I won't bother to make them
-exactly uniform:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    static vec3* perlin_generate() {
-        vec3 *p = new vec3[256];
-        for (int i = 0; i < 256; ++i) {
-            p[i] = unit_vector(vec3::random(-1,1));
-        }
-        return p;
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin-gen-2]: <kbd>[perlin.h]</kbd> New perlin_generate()]
-</div>
-
-<div class='together'>
-The Perlin class is now:
+The Perlin class `noise()` method is now:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin {
         public:
+            ...
             double noise(const vec3& p) const {
                 auto u = p.x() - floor(p.x());
                 auto v = p.y() - floor(p.y());
@@ -1295,6 +1347,7 @@ The Perlin class is now:
                 int j = floor(p.y());
                 int k = floor(p.z());
                 vec3 c[2][2][2];
+
                 for (int di=0; di < 2; di++)
                     for (int dj=0; dj < 2; dj++)
                         for (int dk=0; dk < 2; dk++)
@@ -1303,36 +1356,42 @@ The Perlin class is now:
                                 perm_y[(j+dj) & 255] ^
                                 pexm_z[(k+dk) & 255]
                             ];
+
                 return perlin_interp(c, u, v, w);
             }
-            static vec3 *ranvec;
-            static int *perm_x;
-            static int *perm_y;
-            static int *perm_z;
+            ...
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin-2]: <kbd>[perlin.h]</kbd> The perlin class so far]
+    [Listing [perlin-2]: <kbd>[perlin.h]</kbd> Perlin class with new noise() method]
 </div>
 
 <div class='together'>
 And the interpolation becomes a bit more complicated:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
-        auto uu = u*u*(3-2*u);
-        auto vv = v*v*(3-2*v);
-        auto ww = w*w*(3-2*w);
-        auto accum = 0.0;
-        for (int i=0; i < 2; i++)
-            for (int j=0; j < 2; j++)
-                for (int k=0; k < 2; k++) {
-                    vec3 weight_v(u-i, v-j, w-k);
-                    accum += (i*uu + (1-i)*(1-uu))
-                           * (j*vv + (1-j)*(1-vv))
-                           * (k*ww + (1-k)*(1-ww))
-                           * dot(c[i][j][k], weight_v);
-                }
-        return accum;
+    class perlin {
+        ...
+        private:
+            ...
+            inline double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
+                auto uu = u*u*(3-2*u);
+                auto vv = v*v*(3-2*v);
+                auto ww = w*w*(3-2*w);
+                auto accum = 0.0;
+
+                for (int i=0; i < 2; i++)
+                    for (int j=0; j < 2; j++)
+                        for (int k=0; k < 2; k++) {
+                            vec3 weight_v(u-i, v-j, w-k);
+                            accum += (i*uu + (1-i)*(1-uu))
+                                   * (j*vv + (1-j)*(1-vv))
+                                   * (k*ww + (1-k)*(1-ww))
+                                   * dot(c[i][j][k], weight_v);
+                        }
+
+                return accum;
+            }
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-interp]: <kbd>[perlin.h]</kbd> Perlin interpolation function so far]
@@ -1348,11 +1407,14 @@ perlin output back to between 0 and 1.
         public:
             noise_texture() {}
             noise_texture(double sc) : scale(sc) {}
+
             virtual vec3 value(double u, double v, const vec3& p) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 return vec3(1,1,1) * 0.5 * (1.0 + noise.noise(scale * p));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
+
+        public:
             perlin noise;
             double scale;
     };
@@ -1372,17 +1434,24 @@ Very often, a composite noise that has multiple summed frequencies is used. This
 turbulence and is a sum of repeated calls to noise:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    double turb(const vec3& p, int depth=7) const {
-        auto accum = 0.0;
-        vec3 temp_p = p;
-        auto weight = 1.0;
-        for (int i = 0; i < depth; i++) {
-            accum += weight*noise(temp_p);
-            weight *= 0.5;
-            temp_p *= 2;
-        }
-        return fabs(accum);
-    }
+    class perlin {
+        ...
+        public:
+            ...
+            double turb(const vec3& p, int depth=7) const {
+                auto accum = 0.0;
+                vec3 temp_p = p;
+                auto weight = 1.0;
+
+                for (int i = 0; i < depth; i++) {
+                    accum += weight*noise(temp_p);
+                    weight *= 0.5;
+                    temp_p *= 2;
+                }
+
+                return fabs(accum);
+            }
+            ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-turb]: <kbd>[perlin.h]</kbd> Turbulence function]
 </div>
@@ -1408,11 +1477,14 @@ effect is:
         public:
             noise_texture() {}
             noise_texture(double sc) : scale(sc) {}
+
             virtual vec3 value(double u, double v, const vec3& p) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 return vec3(1,1,1) * 0.5 * (1 + sin(scale*p.z() + 10*noise.turb(p)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
+
+        public:
             perlin noise;
             double scale;
     };
@@ -1518,23 +1590,35 @@ RGBs that each range 0..255 for black to fully-on.
             image_texture() {}
             image_texture(unsigned char *pixels, int A, int B)
                 : data(pixels), nx(A), ny(B) {}
-            virtual vec3 value(double u, double v, const vec3& p) const;
+
+            ~image_texture() {
+                delete data;
+            }
+
+            virtual vec3 value(double u, double v, const vec3& p) const {
+                // If we have no texture data, then always emit cyan (as a debugging aid).
+                if (data == nullptr)
+                    return vec3(0,1,1);
+
+                auto i = static_cast<int>((  u)*nx);
+                auto j = static_cast<int>((1-v)*ny-0.001);
+
+                if (i < 0) i = 0;
+                if (j < 0) j = 0;
+                if (i > nx-1) i = nx-1;
+                if (j > ny-1) j = ny-1;
+
+                auto r = static_cast<int>(data[3*i + 3*nx*j+0]) / 255.0;
+                auto g = static_cast<int>(data[3*i + 3*nx*j+1]) / 255.0;
+                auto b = static_cast<int>(data[3*i + 3*nx*j+2]) / 255.0;
+
+                return vec3(r, g, b);
+            }
+
+        public:
             unsigned char *data;
             int nx, ny;
     };
-
-    vec3 image_texture::value(double u, double v, const vec3& p) const {
-         int i = (  u) * nx;
-         int j = (1-v) * ny - 0.001;
-         if (i < 0) i = 0;
-         if (j < 0) j = 0;
-         if (i > nx-1) i = nx-1;
-         if (j > ny-1) j = ny-1;
-         auto r = int(data[3*i + 3*nx*j]  ) / 255.0;
-         auto g = int(data[3*i + 3*nx*j+1]) / 255.0;
-         auto b = int(data[3*i + 3*nx*j+2]) / 255.0;
-         return vec3(r, g, b);
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [img-texture]: <kbd>[surface_texture.h]</kbd> Image texture class]
 
@@ -1559,10 +1643,11 @@ is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable_list earth() {
         int nx, ny, nn;
-        unsigned char *texture_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
+        unsigned char* texture_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
 
-        auto earth_surface = new lambertian(new image_texture(texture_data, nx, ny));
-        auto globe = new sphere(vec3(0,0,0), 2, earth_surface);
+        auto earth_surface =
+            make_shared<lambertian>(make_shared<image_texture>(texture_data, nx, ny));
+        auto globe = make_shared<sphere>(vec3(0,0,0), 2, earth_surface);
 
         return hittable_list(globe);
     }
@@ -1592,9 +1677,9 @@ it to `hit_record instead` -- that’s a matter of design taste). Like the backg
 the ray what color it is and performs no reflection. It’s very simple:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class diffuse_light : public material {
+    class diffuse_light : public material  {
         public:
-            diffuse_light(texture *a) : emit(a) {}
+            diffuse_light(shared_ptr<texture> a) : emit(a) {}
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
@@ -1606,7 +1691,8 @@ the ray what color it is and performs no reflection. It’s very simple:
                 return emit->value(u, v, p);
             }
 
-            texture *emit;
+        public:
+            shared_ptr<texture> emit;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [diffuse-light]: <kbd>[material.h]</kbd> A diffuse light class]
@@ -1708,7 +1794,8 @@ The actual `xy_rect` class is thus:
                 return true;
             }
 
-            material *mp;
+        public:
+            shared_ptr<material> mp;
             double x0, x1, y0, y1, k;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1747,13 +1834,13 @@ If we set up a rectangle as a light:
     hittable_list simple_light() {
         hittable_list objects;
 
-        auto pertext = new noise_texture(4);
-        objects.add(new sphere(vec3(0,-1000, 0), 1000, new lambertian(pertext)));
-        objects.add(new sphere(vec3(0,2,0), 2, new lambertian(pertext)));
+        auto pertext = make_shared<noise_texture>(4);
+        objects.add(make_shared<sphere>(vec3(0,-1000, 0), 1000, make_shared<lambertian>(pertext)));
+        objects.add(make_shared<sphere>(vec3(0,2,0), 2, make_shared<lambertian>(pertext)));
 
-        auto difflight = new diffuse_light(new constant_texture(vec3(4,4,4)));
-        objects.add(new sphere(vec3(0,7,0), 2, difflight));
-        objects.add(new xy_rect(3, 5, 1, 3, -2, difflight));
+        auto difflight = make_shared<diffuse_light>(make_shared<constant_texture>(vec3(4,4,4)));
+        objects.add(make_shared<sphere>(vec3(0,7,0), 2, difflight));
+        objects.add(make_shared<xy_rect>(3, 5, 1, 3, -2, difflight));
 
         return objects;
     }
@@ -1797,7 +1884,8 @@ This is xz and yz:
                 return true;
             }
 
-            material *mp;
+        public:
+            shared_ptr<material> mp;
             double x0, x1, z0, z1, k;
     };
 
@@ -1815,7 +1903,8 @@ This is xz and yz:
                 return true;
             }
 
-            material  *mp;
+        public:
+            shared_ptr<material> mp;
             double y0, y1, z0, z1, k;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1872,16 +1961,16 @@ Let’s make the 5 walls and the light of the box:
     hittable_list cornell_box() {
         hittable_list objects;
 
-        auto red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
-        auto white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
-        auto green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
-        auto light = new diffuse_light(new constant_texture(vec3(15, 15, 15)));
+        auto red = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.65, 0.05, 0.05)));
+        auto white = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.73, 0.73, 0.73)));
+        auto green = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.12, 0.45, 0.15)));
+        auto light = make_shared<diffuse_light>(make_shared<constant_texture>(vec3(15, 15, 15)));
 
-        objects.add(new yz_rect(0, 555, 0, 555, 555, green));
-        objects.add(new yz_rect(0, 555, 0, 555, 0, red));
-        objects.add(new xz_rect(213, 343, 227, 332, 554, light));
-        objects.add(new xz_rect(0, 555, 0, 555, 0, white));
-        objects.add(new xy_rect(0, 555, 0, 555, 555, white));
+        objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
+        objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+        objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
+        objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+        objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
         return objects;
     }
@@ -1923,7 +2012,7 @@ object. Let’s make a hittable that does nothing but hold another hittable, and
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class flip_face : public hittable {
         public:
-            flip_face(hittable *p) : ptr(p) {}
+            flip_face(shared_ptr<hittable> p) : ptr(p) {}
 
             virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
                 if (ptr->hit(r, t_min, t_max, rec)) {
@@ -1938,7 +2027,8 @@ object. Let’s make a hittable that does nothing but hold another hittable, and
                 return ptr->bounding_box(t0, t1, output_box);
             }
 
-            hittable *ptr;
+        public:
+            shared_ptr<hittable> ptr;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [flip-face]: <kbd>[hittable.h]</kbd> Flip-Face function]
@@ -1951,22 +2041,23 @@ This makes Cornell:
     hittable_list cornell_box() {
         hittable_list objects;
 
-        material *red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
-        material *white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
-        material *green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
-        material *light = new diffuse_light(new constant_texture(vec3(15, 15, 15)));
+        auto red = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.65, 0.05, 0.05)));
+        auto white = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.73, 0.73, 0.73)));
+        auto green = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.12, 0.45, 0.15)));
+        auto light = make_shared<diffuse_light>(make_shared<constant_texture>(vec3(15, 15, 15)));
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        objects.add(new flip_face(new yz_rect(0, 555, 0, 555, 555, green)));
+        objects.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        objects.add(new yz_rect(0, 555, 0, 555, 0, red));
-        objects.add(new xz_rect(213, 343, 227, 332, 554, light));
+        objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+        objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        objects.add(new flip_face(new xz_rect(0, 555, 0, 555, 555, white)));
+        objects.add(make_shared<flip_face>(make_shared<xz_rect>(0, 555, 0, 555, 555, white)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        objects.add(new xz_rect(0, 555, 0, 555, 0, white));
+        objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        objects.add(new flip_face(new xy_rect(0, 555, 0, 555, 555, white)));
+        objects.add(make_shared<flip_face>(make_shared<xy_rect>(0, 555, 0, 555, 555, white)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         return objects;
@@ -1991,37 +2082,43 @@ The Cornell Box usually has two blocks in it. These are rotated relative to the 
 make an axis-aligned block primitive that holds 6 rectangles:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class box: public hittable {
+    class box: public hittable  {
         public:
             box() {}
-            box(const vec3& p0, const vec3& p1, material *ptr);
+            box(const vec3& p0, const vec3& p1, shared_ptr<material> ptr);
 
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
-                output_box =  aabb(pmin, pmax);
+                output_box = aabb(box_min, box_max);
                 return true;
             }
 
-            vec3 pmin, pmax;
-            hittable *list_ptr;
+        public:
+            vec3 box_min;
+            vec3 box_max;
+            hittable_list sides;
     };
 
-    box::box(const vec3& p0, const vec3& p1, material *ptr) {
-        pmin = p0;
-        pmax = p1;
-        hittable **list = new hittable*[6];
-        list[0] = new xy_rect(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr);
-        list[1] = new flip_face(new xy_rect(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr));
-        list[2] = new xz_rect(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), ptr);
-        list[3] = new flip_face(new xz_rect(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr));
-        list[4] = new yz_rect(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr);
-        list[5] = new flip_face(new yz_rect(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
-        list_ptr = new hittable_list(list,6);
+    box::box(const vec3& p0, const vec3& p1, shared_ptr<material> ptr) {
+        box_min = p0;
+        box_max = p1;
+
+        sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr));
+        sides.add(make_shared<flip_face>(
+            make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr)));
+
+        sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), ptr));
+        sides.add(make_shared<flip_face>(
+            make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr)));
+
+        sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr));
+        sides.add(make_shared<flip_face>(
+            make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr)));
     }
 
     bool box::hit(const ray& r, double t0, double t1, hit_record& rec) const {
-        return list_ptr->hit(r, t0, t1, rec);
+        return sides.hit(r, t0, t1, rec);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [box-class]: <kbd>[box.h]</kbd> A box object]
@@ -2030,8 +2127,8 @@ make an axis-aligned block primitive that holds 6 rectangles:
 Now we can add two blocks (but not rotated)
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    objects.add(new box(vec3(130, 0, 65), vec3(295, 165, 230), white));
-    objects.add(new box(vec3(265, 0, 295), vec3(430, 330, 460), white));
+    objects.add(make_shared<box>(vec3(130, 0, 65), vec3(295, 165, 230), white));
+    objects.add(make_shared<box>(vec3(265, 0, 295), vec3(430, 330, 460), white));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [add-boxes]: <kbd>[main.cc]</kbd> Adding box objects]
 
@@ -2064,14 +2161,14 @@ move any underlying hittable is a _translate_ instance.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class translate : public hittable {
         public:
-            translate(hittable *p, const vec3& displacement)
+            translate(shared_ptr<hittable> p, const vec3& displacement)
                 : ptr(p), offset(displacement) {}
 
             virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
-
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
 
-            hittable *ptr;
+        public:
+            shared_ptr<hittable> ptr;
             vec3 offset;
     };
 
@@ -2088,7 +2185,9 @@ move any underlying hittable is a _translate_ instance.
 
     bool translate::bounding_box(double t0, double t1, aabb& output_box) const {
         if (ptr->bounding_box(t0, t1, output_box)) {
-            output_box = aabb(output_box.min() + offset, output_box.max() + offset);
+            output_box = aabb(
+                output_box.min() + offset,
+                output_box.max() + offset);
             return true;
         }
         else
@@ -2145,16 +2244,16 @@ For a y-rotation class we have:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class rotate_y : public hittable {
         public:
-            rotate_y(hittable *p, double angle);
+            rotate_y(shared_ptr<hittable> p, double angle);
 
             virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
-
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
                 output_box = bbox;
                 return hasbox;
             }
 
-            hittable *ptr;
+        public:
+            shared_ptr<hittable> ptr;
             double sin_theta;
             double cos_theta;
             bool hasbox;
@@ -2233,14 +2332,14 @@ And the hit function:
 And the changes to Cornell are:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hittable* box1 = new box(vec3(0, 0, 0), vec3(165, 330, 165), white);
-    box1 = new rotate_y(box1,  15);
-    box1 = new translate(box1, vec3(265,0,295));
+    shared_ptr<hittable> box1 = make_shared<box>(vec3(0, 0, 0), vec3(165, 330, 165), white);
+    box1 = make_shared<rotate_y>(box1,  15);
+    box1 = make_shared<translate>(box1, vec3(265,0,295));
     objects.add(box1);
 
-    hittable* box2 = new box(vec3(0,0,0), vec3(165,165,165), white);
-    box2 = new rotate_y(box2, -18);
-    box2 = new translate(box2, vec3(130,0,65));
+    shared_ptr<hittable> box2 = make_shared<box>(vec3(0,0,0), vec3(165,165,165), white);
+    box2 = make_shared<rotate_y>(box2, -18);
+    box2 = make_shared<translate>(box2, vec3(130,0,65));
     objects.add(box2);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-rot-y]: <kbd>[main.cc]</kbd> Cornell scene with Y-rotated boxes]
@@ -2289,8 +2388,10 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class constant_medium : public hittable {
         public:
-            constant_medium(hittable *b, double d, texture *a) : boundary(b), density(d) {
-                phase_function = new isotropic(a);
+            constant_medium(shared_ptr<hittable> b, double d, shared_ptr<texture> a)
+                : boundary(b), density(d)
+            {
+                phase_function = make_shared<isotropic>(a);
             }
 
             virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
@@ -2299,9 +2400,10 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
                 return boundary->bounding_box(t0, t1, output_box);
             }
 
-            hittable *boundary;
+        public:
+            shared_ptr<hittable> boundary;
             double density;
-            material *phase_function;
+            shared_ptr<material> phase_function;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [const-med-class]: <kbd>[constant_medium.h]</kbd> Constant medium class]
@@ -2313,17 +2415,18 @@ The scattering function of isotropic picks a uniform random direction:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class isotropic : public material {
         public:
-            isotropic(texture *a) : albedo(a) {}
+            isotropic(shared_ptr<texture> a) : albedo(a) {}
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
-            ) const {
+            ) const  {
                 scattered = ray(rec.p, random_in_unit_sphere());
                 attenuation = albedo->value(rec.u, rec.v, rec.p);
                 return true;
             }
 
-            texture *albedo;
+        public:
+            shared_ptr<texture> albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [isotropic-class]: <kbd>[material.h]</kbd> The isotropic class]
@@ -2335,7 +2438,7 @@ And the hit function is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool constant_medium::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         // Print occasional samples when debugging. To enable, set enableDebug true.
-        const enableDebug = false;
+        const bool enableDebug = false;
         bool debugging = enableDebug && random_double() < 0.00001;
 
         hit_record rec1, rec2;
@@ -2345,19 +2448,15 @@ And the hit function is:
 
                 if (debugging) std::cerr << "\nt0 t1 " << rec1.t << " " << rec2.t << '\n';
 
-                if (rec1.t < t_min)
-                    rec1.t = t_min;
-
-                if (rec2.t > t_max)
-                    rec2.t = t_max;
+                if (rec1.t < t_min) rec1.t = t_min;
+                if (rec2.t > t_max) rec2.t = t_max;
 
                 if (rec1.t >= rec2.t)
                     return false;
-
                 if (rec1.t < 0)
                     rec1.t = 0;
 
-                auto distance_inside_boundary = (rec2.t - rec1.t)*r.direction().length();
+                auto distance_inside_boundary = (rec2.t - rec1.t) * r.direction().length();
                 auto hit_distance = -(1/density) * log(random_double());
 
                 if (hit_distance < distance_inside_boundary) {
@@ -2396,28 +2495,30 @@ If we replace the two blocks with smoke and fog (dark and light particles) and m
     hittable_list cornell_smoke() {
         hittable_list objects;
 
-        auto red = new lambertian(new constant_texture(vec3(0.65, 0.05, 0.05)));
-        auto white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
-        auto green = new lambertian(new constant_texture(vec3(0.12, 0.45, 0.15)));
-        auto light = new diffuse_light(new constant_texture(vec3(7, 7, 7)));
+        auto red = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.65, 0.05, 0.05)));
+        auto white = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.73, 0.73, 0.73)));
+        auto green = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.12, 0.45, 0.15)));
+        auto light = make_shared<diffuse_light>(make_shared<constant_texture>(vec3(7, 7, 7)));
 
-        objects.add(new flip_face(new yz_rect(0, 555, 0, 555, 555, green)));
-        objects.add(new yz_rect(0, 555, 0, 555, 0, red));
-        objects.add(new xz_rect(113, 443, 127, 432, 554, light));
-        objects.add(new flip_face(new xz_rect(0, 555, 0, 555, 555, white)));
-        objects.add(new xz_rect(0, 555, 0, 555, 0, white));
-        objects.add(new flip_face(new xy_rect(0, 555, 0, 555, 555, white)));
+        objects.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
+        objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+        objects.add(make_shared<xz_rect>(113, 443, 127, 432, 554, light));
+        objects.add(make_shared<flip_face>(make_shared<xz_rect>(0, 555, 0, 555, 555, white)));
+        objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+        objects.add(make_shared<flip_face>(make_shared<xy_rect>(0, 555, 0, 555, 555, white)));
 
-        hittable* box1 = new box(vec3(0,0,0), vec3(165,330,165), white);
-        box1 = new rotate_y(box1,  15);
-        box1 = new translate(box1, vec3(265,0,295));
+        shared_ptr<hittable> box1 = make_shared<box>(vec3(0,0,0), vec3(165,330,165), white);
+        box1 = make_shared<rotate_y>(box1,  15);
+        box1 = make_shared<translate>(box1, vec3(265,0,295));
 
-        hittable* box2 = new box(vec3(0,0,0), vec3(165,165,165), white);
-        box2 = new rotate_y(box2, -18);
-        box2 = new translate(box2, vec3(130,0,65));
+        shared_ptr<hittable> box2 = make_shared<box>(vec3(0,0,0), vec3(165,165,165), white);
+        box2 = make_shared<rotate_y>(box2, -18);
+        box2 = make_shared<translate>(box2, vec3(130,0,65));
 
-        objects.add(new constant_medium(box1, 0.01, new constant_texture(vec3(0,0,0))));
-        objects.add(new constant_medium(box2, 0.01, new constant_texture(vec3(1,1,1))));
+        objects.add(
+            make_shared<constant_medium>(box1, 0.01, make_shared<constant_texture>(vec3(0,0,0))));
+        objects.add(
+            make_shared<constant_medium>(box2, 0.01, make_shared<constant_texture>(vec3(1,1,1))));
 
         return objects;
     }
@@ -2445,7 +2546,8 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable_list final_scene() {
         hittable_list boxes1;
-        auto ground = new lambertian(new constant_texture(vec3(0.48, 0.83, 0.53)));
+        auto ground =
+            make_shared<lambertian>(make_shared<constant_texture>(vec3(0.48, 0.83, 0.53)));
 
         const int boxes_per_side = 20;
         for (int i = 0; i < boxes_per_side; i++) {
@@ -2457,48 +2559,58 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
                 auto x1 = x0 + w;
                 auto y1 = random_double(1,101);
                 auto z1 = z0 + w;
-                boxes1.add(new box(vec3(x0,y0,z0), vec3(x1,y1,z1), ground));
+
+                boxes1.add(make_shared<box>(vec3(x0,y0,z0), vec3(x1,y1,z1), ground));
             }
         }
 
         hittable_list objects;
 
-        objects.add(new bvh_node(boxes1, 0, 1));
+        objects.add(make_shared<bvh_node>(boxes1, 0, 1));
 
-        material *light = new diffuse_light(new constant_texture(vec3(7, 7, 7)));
-        objects.add(new xz_rect(123, 423, 147, 412, 554, light));
+        auto light = make_shared<diffuse_light>(make_shared<constant_texture>(vec3(7, 7, 7)));
+        objects.add(make_shared<xz_rect>(123, 423, 147, 412, 554, light));
 
-        vec3 center(400, 400, 200);
-        objects.add(new moving_sphere(
-            center, center+vec3(30, 0, 0), 0, 1, 50,
-            new lambertian(new constant_texture(vec3(0.7, 0.3, 0.1)))
+        auto center1 = vec3(400, 400, 200);
+        auto center2 = center1 + vec3(30,0,0);
+        auto moving_sphere_material =
+            make_shared<lambertian>(make_shared<constant_texture>(vec3(0.7, 0.3, 0.1)));
+        objects.add(make_shared<moving_sphere>(center1, center2, 0, 1, 50, moving_sphere_material));
+
+        objects.add(make_shared<sphere>(vec3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
+        objects.add(make_shared<sphere>(
+            vec3(0, 150, 145), 50, make_shared<metal>(vec3(0.8, 0.8, 0.9), 10.0)
         ));
 
-        objects.add(new sphere(vec3(260, 150, 45), 50, new dielectric(1.5)));
-        objects.add(new sphere(vec3(0, 150, 145), 50, new metal(vec3(0.8, 0.8, 0.9), 10.0)));
-
-        hittable *boundary = new sphere(vec3(360, 150, 145), 70, new dielectric(1.5));
+        auto boundary = make_shared<sphere>(vec3(360, 150, 145), 70, make_shared<dielectric>(1.5));
         objects.add(boundary);
-        objects.add(new constant_medium(boundary, 0.2, new constant_texture(vec3(0.2, 0.4, 0.9))));
-        boundary = new sphere(vec3(0, 0, 0), 5000, new dielectric(1.5));
-        objects.add(new constant_medium(boundary, .0001, new constant_texture(vec3(1,1,1))));
+        objects.add(make_shared<constant_medium>(
+            boundary, 0.2, make_shared<constant_texture>(vec3(0.2, 0.4, 0.9))
+        ));
+        boundary = make_shared<sphere>(vec3(0, 0, 0), 5000, make_shared<dielectric>(1.5));
+        objects.add(make_shared<constant_medium>(
+            boundary, .0001, make_shared<constant_texture>(vec3(1,1,1))));
 
         int nx, ny, nn;
-        unsigned char *tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
-        material *emat = new lambertian(new image_texture(tex_data, nx, ny));
-        objects.add(new sphere(vec3(400,200, 400), 100, emat));
-        texture *pertext = new noise_texture(0.1);
-        objects.add(new sphere(vec3(220,280, 300), 80, new lambertian(pertext)));
+        auto tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
+        auto emat = make_shared<lambertian>(make_shared<image_texture>(tex_data, nx, ny));
+        objects.add(make_shared<sphere>(vec3(400,200, 400), 100, emat));
+        auto pertext = make_shared<noise_texture>(0.1);
+        objects.add(make_shared<sphere>(vec3(220,280, 300), 80, make_shared<lambertian>(pertext)));
 
-        int ns = 1000;
         hittable_list boxes2;
-        material *white = new lambertian(new constant_texture(vec3(0.73, 0.73, 0.73)));
+        auto white = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.73, 0.73, 0.73)));
+        int ns = 1000;
         for (int j = 0; j < ns; j++) {
-            boxes2.add(new sphere(vec3::random(0,165), 10, white));
+            boxes2.add(make_shared<sphere>(vec3::random(0,165), 10, white));
         }
 
-        objects.add(new translate(
-            new rotate_y(new bvh_node(boxes2, 0.0, 1.0), 15), vec3(-100,270,395)));
+        objects.add(make_shared<translate>(
+            make_shared<rotate_y>(
+                make_shared<bvh_node>(boxes2, 0.0, 1.0), 15),
+                vec3(-100,270,395)
+            )
+        );
 
         return objects;
     }

@@ -53,7 +53,7 @@ class dielectric : public material {
                 scattered = ray(rec.p, reflected, r_in.time());
                 return true;
             }
-            
+
             double reflect_prob = schlick(cos_theta, etai_over_etat);
             if (random_double() < reflect_prob)
             {
@@ -61,19 +61,20 @@ class dielectric : public material {
                 scattered = ray(rec.p, reflected, r_in.time());
                 return true;
             }
-                
+
             vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
             scattered = ray(rec.p, refracted, r_in.time());
             return true;
         }
 
+    public:
         double ref_idx;
 };
 
 
 class diffuse_light : public material {
     public:
-        diffuse_light(texture *a) : emit(a) {}
+        diffuse_light(shared_ptr<texture> a) : emit(a) {}
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
@@ -85,13 +86,14 @@ class diffuse_light : public material {
             return emit->value(u, v, p);
         }
 
-        texture *emit;
+    public:
+        shared_ptr<texture> emit;
 };
 
 
 class isotropic : public material {
     public:
-        isotropic(texture *a) : albedo(a) {}
+        isotropic(shared_ptr<texture> a) : albedo(a) {}
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
@@ -101,13 +103,14 @@ class isotropic : public material {
             return true;
         }
 
-        texture *albedo;
+    public:
+        shared_ptr<texture> albedo;
 };
 
 
 class lambertian : public material {
     public:
-        lambertian(texture *a) : albedo(a) {}
+        lambertian(shared_ptr<texture> a) : albedo(a) {}
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
@@ -118,7 +121,8 @@ class lambertian : public material {
             return true;
         }
 
-        texture *albedo;
+    public:
+        shared_ptr<texture> albedo;
 };
 
 
@@ -135,6 +139,7 @@ class metal : public material {
             return (dot(scattered.direction(), rec.normal) > 0);
         }
 
+    public:
         vec3 albedo;
         double fuzz;
 };

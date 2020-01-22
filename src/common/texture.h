@@ -30,6 +30,7 @@ class constant_texture : public texture {
             return color;
         }
 
+    public:
         vec3 color;
 };
 
@@ -37,7 +38,7 @@ class constant_texture : public texture {
 class checker_texture : public texture {
     public:
         checker_texture() {}
-        checker_texture(texture *t0, texture *t1): even(t0), odd(t1) {}
+        checker_texture(shared_ptr<texture> t0, shared_ptr<texture> t1): even(t0), odd(t1) {}
 
         virtual vec3 value(double u, double v, const vec3& p) const {
             auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
@@ -47,8 +48,9 @@ class checker_texture : public texture {
                 return even->value(u, v, p);
         }
 
-        texture *odd;
-        texture *even;
+    public:
+        shared_ptr<texture> odd;
+        shared_ptr<texture> even;
 };
 
 
@@ -63,6 +65,7 @@ class noise_texture : public texture {
             return vec3(1,1,1)*0.5*(1 + sin(scale*p.z() + 10*noise.turb(p)));
         }
 
+    public:
         perlin noise;
         double scale;
 };
@@ -72,6 +75,10 @@ class image_texture : public texture {
     public:
         image_texture() {}
         image_texture(unsigned char *pixels, int A, int B) : data(pixels), nx(A), ny(B) {}
+
+        ~image_texture() {
+            delete data;
+        }
 
         virtual vec3 value(double u, double v, const vec3& p) const {
             // If we have no texture data, then always emit cyan (as a debugging aid).
@@ -93,6 +100,7 @@ class image_texture : public texture {
             return vec3(r, g, b);
         }
 
+    public:
         unsigned char *data;
         int nx, ny;
 };

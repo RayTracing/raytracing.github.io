@@ -11,6 +11,7 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
+#include "common/rtweekend.h"
 #include "hittable.h"
 #include <vector>
 
@@ -18,16 +19,16 @@
 class hittable_list: public hittable  {
     public:
         hittable_list() {}
-        hittable_list(hittable* object) { add(object); }
+        hittable_list(shared_ptr<hittable> object) { add(object); }
 
-        void clear()               { objects.clear(); }
-        void add(hittable* object) { objects.push_back(object); }
+        void clear() { objects.clear(); }
+        void add(shared_ptr<hittable> object) { objects.push_back(object); }
 
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
 
     public:
-        std::vector<hittable*> objects;
+        std::vector<shared_ptr<hittable>> objects;
 };
 
 

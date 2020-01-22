@@ -28,7 +28,7 @@ struct scatter_record
     ray specular_ray;
     bool is_specular;
     vec3 attenuation;
-    pdf *pdf_ptr;
+    shared_ptr<pdf> pdf_ptr;
 };
 
 
@@ -62,7 +62,7 @@ class dielectric : public material {
             const ray& r_in, const hit_record& rec, scatter_record& srec
         ) const {
             srec.is_specular = true;
-            srec.pdf_ptr = 0;
+            srec.pdf_ptr = nullptr;
             srec.attenuation = vec3(1.0, 1.0, 1.0);
             double etai_over_etat = (rec.front_face) ? (1.0 / ref_idx) : (ref_idx);
 
@@ -88,13 +88,14 @@ class dielectric : public material {
             return true;
         }
 
+    public:
         double ref_idx;
 };
 
 
 class diffuse_light : public material {
     public:
-        diffuse_light(texture *a) : emit(a) {}
+        diffuse_light(shared_ptr<texture> a) : emit(a) {}
 
         virtual vec3 emitted(
             const ray& r_in, const hit_record& rec, double u, double v, const vec3& p
@@ -104,13 +105,14 @@ class diffuse_light : public material {
             return emit->value(u, v, p);
         }
 
-        texture *emit;
+    public:
+        shared_ptr<texture> emit;
 };
 
 
 class isotropic : public material {
     public:
-        isotropic(texture *a) : albedo(a) {}
+        isotropic(shared_ptr<texture> a) : albedo(a) {}
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
@@ -120,20 +122,21 @@ class isotropic : public material {
             return true;
         }
 
-        texture *albedo;
+    public:
+        shared_ptr<texture> albedo;
 };
 
 
 class lambertian : public material {
     public:
-        lambertian(texture *a) : albedo(a) {}
+        lambertian(shared_ptr<texture> a) : albedo(a) {}
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, scatter_record& srec
         ) const {
             srec.is_specular = false;
             srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
-            srec.pdf_ptr = new cosine_pdf(rec.normal);
+            srec.pdf_ptr = make_shared<cosine_pdf>(rec.normal);
             return true;
         }
 
@@ -144,7 +147,8 @@ class lambertian : public material {
             return cosine < 0 ? 0 : cosine/pi;
         }
 
-        texture *albedo;
+    public:
+        shared_ptr<texture> albedo;
 };
 
 
@@ -156,13 +160,15 @@ class metal : public material {
             const ray& r_in, const hit_record& rec, scatter_record& srec
         ) const {
             vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
-            srec.specular_ray = ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
+            srec.specular_ray =
+                ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
             srec.attenuation = albedo;
             srec.is_specular = true;
-            srec.pdf_ptr = 0;
+            srec.pdf_ptr = nullptr;
             return true;
         }
 
+    public:
         vec3 albedo;
         double fuzz;
 };

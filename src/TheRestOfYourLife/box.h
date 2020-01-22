@@ -19,7 +19,7 @@
 class box: public hittable  {
     public:
         box() {}
-        box(const vec3& p0, const vec3& p1, material *ptr);
+        box(const vec3& p0, const vec3& p1, shared_ptr<material> ptr);
 
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
@@ -28,21 +28,27 @@ class box: public hittable  {
             return true;
         }
 
+    public:
         vec3 box_min;
         vec3 box_max;
         hittable_list sides;
 };
 
-box::box(const vec3& p0, const vec3& p1, material *ptr) {
+box::box(const vec3& p0, const vec3& p1, shared_ptr<material> ptr) {
     box_min = p0;
     box_max = p1;
 
-    sides.add(new xy_rect(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr));
-    sides.add(new flip_face(new xy_rect(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr)));
-    sides.add(new xz_rect(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), ptr));
-    sides.add(new flip_face(new xz_rect(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr)));
-    sides.add(new yz_rect(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr));
-    sides.add(new flip_face(new yz_rect(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr)));
+    sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr));
+    sides.add(make_shared<flip_face>(
+        make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr)));
+
+    sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), ptr));
+    sides.add(make_shared<flip_face>(
+        make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr)));
+
+    sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr));
+    sides.add(make_shared<flip_face>(
+        make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr)));
 }
 
 bool box::hit(const ray& r, double t0, double t1, hit_record& rec) const {
