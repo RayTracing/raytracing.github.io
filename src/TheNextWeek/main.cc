@@ -350,6 +350,7 @@ int main() {
     const int image_height = 600;
     const int samples_per_pixel = 100;
     const int max_depth = 50;
+    const auto aspect_ratio = double(image_width) / image_height;
 
     hittable_list world;
 
@@ -363,7 +364,6 @@ int main() {
     auto aperture = 0.0;
     auto vfov = 40.0;
 
-    auto aspect_ratio = double(image_width) / image_height;
     camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
     switch (0) {

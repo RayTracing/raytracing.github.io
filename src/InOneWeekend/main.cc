@@ -86,6 +86,7 @@ int main() {
     const int image_height = 800;
     const int samples_per_pixel = 10;
     const int max_depth = 50;
+    const auto aspect_ratio = double(image_width) / image_height;
 
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
@@ -97,7 +98,6 @@ int main() {
     auto dist_to_focus = 10.0;
     auto aperture = 0.1;
 
-    auto aspect_ratio = double(image_width) / image_height;
     camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
 
     for (int j = image_height-1; j >= 0; --j) {
