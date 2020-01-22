@@ -353,23 +353,49 @@ int main() {
 
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-    auto R = cos(pi/4);
-
     hittable_list world;
+
     switch (0) {
-        case  1:  world = random_scene();       break;
-        case  2:  world = two_spheres();        break;
-        case  3:  world = two_perlin_spheres(); break;
-        case  4:  world = earth();              break;
-        case  5:  world = simple_light();       break;
+        case 1:
+            world = random_scene();
+            break;
+
+        case 2:
+            world = two_spheres();
+            break;
+
+        case 3:
+            world = two_perlin_spheres();
+            break;
+
+        case 4:
+            world = earth();
+            break;
+
+        case 5:
+            world = simple_light();
+            break;
 
         default:
-        case  6:  world = cornell_box();        break;
+        case 6:
+            world = cornell_box();
+            break;
 
-        case  7:  world = cornell_balls();      break;
-        case  8:  world = cornell_smoke();      break;
-        case  9:  world = cornell_final();      break;
-        case 10:  world = final_scene();        break;
+        case 7:
+            world = cornell_balls();
+            break;
+
+        case 8:
+            world = cornell_smoke();
+            break;
+
+        case 9:
+            world = cornell_final();
+            break;
+
+        case 10:
+            world = final_scene();
+            break;
     }
 
     vec3 lookfrom(278, 278, -800);
