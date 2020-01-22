@@ -1240,9 +1240,9 @@ samples) when writing out the color. In addition, we'll add a handy utility func
     [Listing [clamp]: <kbd>[rtweekend.h]</kbd> The clamp() utility function]
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void write_color(std::ostream &out, int num_samples) {
+    void write_color(std::ostream &out, int samples_per_pixel) {
         // Divide the color total by the number of samples.
-        auto scale = 1.0 / num_samples;
+        auto scale = 1.0 / samples_per_pixel;
         auto r = scale * e[0];
         auto g = scale * e[1];
         auto b = scale * e[2];
@@ -1263,7 +1263,7 @@ Main is also changed:
         int image_width = 200;
         int image_height = 100;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        int num_samples = 100;
+        int samples_per_pixel = 100;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
@@ -1280,13 +1280,13 @@ Main is also changed:
             for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 color(0, 0, 0);
-                for (int s = 0; s < num_samples; ++s) {
+                for (int s = 0; s < samples_per_pixel; ++s) {
                     auto u = (i + random_double()) / image_width;
                     auto v = (j + random_double()) / image_height;
                     ray r = cam.get_ray(u, v);
                     color += ray_color(r, world);
                 }
-                color.write_color(std::cout, num_samples);
+                color.write_color(std::cout, samples_per_pixel);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
         }
@@ -1427,7 +1427,7 @@ depth, returning no light contribution at the maximum depth:
     int main() {
         int image_width = 200;
         int image_height = 100;
-        int num_samples = 100;
+        int samples_per_pixel = 100;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         int max_depth = 50;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1437,7 +1437,7 @@ depth, returning no light contribution at the maximum depth:
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
                 vec3 color(0, 0, 0);
-                for (int s = 0; s < num_samples; ++s) {
+                for (int s = 0; s < samples_per_pixel; ++s) {
                     auto u = (i + random_double()) / image_width;
                     auto v = (j + random_double()) / image_height;
                     ray r = cam.get_ray(u, v);
@@ -1445,7 +1445,7 @@ depth, returning no light contribution at the maximum depth:
                     color += ray_color(r, world, max_depth);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 }
-                color.write_color(std::cout, num_samples);
+                color.write_color(std::cout, samples_per_pixel);
             }
         }
 
@@ -1473,11 +1473,11 @@ which means raising the color to the power $1/gamma$, or in our simple case ½, 
 square-root:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void write_color(std::ostream &out, int num_samples) {
+    void write_color(std::ostream &out, int samples_per_pixel) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // Divide the color total by the number of samples and gamma-correct
         // for a gamma value of 2.0.
-        auto scale = 1.0 / num_samples;
+        auto scale = 1.0 / samples_per_pixel;
         auto r = sqrt(scale * e[0]);
         auto g = sqrt(scale * e[1]);
         auto b = sqrt(scale * e[2]);
@@ -1899,7 +1899,7 @@ metal spheres:
     int main() {
         int image_width = 200;
         int image_height = 100;
-        int num_samples = 100;
+        int samples_per_pixel = 100;
         int max_depth = 50;
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
@@ -1922,13 +1922,13 @@ metal spheres:
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
                 vec3 color(0, 0, 0);
-                for (int s = 0; s < num_samples; ++s) {
+                for (int s = 0; s < samples_per_pixel; ++s) {
                     auto u = (i + random_double()) / image_width;
                     auto v = (j + random_double()) / image_height;
                     ray r = cam.get_ray(u, v);
                     color += ray_color(r, world, max_depth);
                 }
-                color.write_color(std::cout, num_samples);
+                color.write_color(std::cout, samples_per_pixel);
             }
         }
 

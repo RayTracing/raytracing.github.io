@@ -84,7 +84,7 @@ hittable_list random_scene() {
 int main() {
     int image_width = 1200;
     int image_height = 800;
-    int num_samples = 10;
+    int samples_per_pixel = 10;
     int max_depth = 50;
 
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
@@ -103,13 +103,13 @@ int main() {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
         for (int i = 0; i < image_width; ++i) {
             vec3 color;
-            for (int s = 0; s < num_samples; ++s) {
+            for (int s = 0; s < samples_per_pixel; ++s) {
                 auto u = (i + random_double()) / image_width;
                 auto v = (j + random_double()) / image_height;
                 ray r = cam.get_ray(u, v);
                 color += ray_color(r, world, max_depth);
             }
-            color.write_color(std::cout, num_samples);
+            color.write_color(std::cout, samples_per_pixel);
         }
     }
 

@@ -2254,7 +2254,7 @@ for `NaN`s is that any `if` test with a `NaN` in it is false. Using this trick, 
 `vec3::write_color()` function to replace any NaN components with zero:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void write_color(std::ostream &out, int num_samples) {
+    void write_color(std::ostream &out, int samples_per_pixel) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // Replace NaN component values with zero.
         if (e[0] != e[0]) e[0] = 0.0;
@@ -2264,7 +2264,7 @@ for `NaN`s is that any `if` test with a `NaN` in it is false. Using this trick, 
 
         // Divide the color total by the number of samples and gamma-correct
         // for a gamma value of 2.0.
-        auto scale = 1.0 / num_samples;
+        auto scale = 1.0 / samples_per_pixel;
         auto r = sqrt(scale * e[0]);
         auto g = sqrt(scale * e[1]);
         auto b = sqrt(scale * e[2]);
