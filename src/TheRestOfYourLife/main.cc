@@ -91,29 +91,28 @@ hittable_list cornell_box(camera& cam, double aspect) {
 
 
 int main() {
-    int nx = 600;
-    int ny = 600;
+    int image_width = 600;
+    int image_height = 600;
     int num_samples = 100;
     int max_depth = 50;
 
-    std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
+    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
     camera cam;
-    auto aspect = double(ny) / double(nx);
-
-    auto world = cornell_box(cam, aspect);
+    auto aspect_ratio = double(image_width) / image_height;
+    auto world = cornell_box(cam, aspect_ratio);
 
     auto lights = make_shared<hittable_list>();
     lights->add(make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>()));
     lights->add(make_shared<sphere>(vec3(190, 90, 190), 90, shared_ptr<material>()));
 
-    for (int j = ny-1; j >= 0; --j) {
+    for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-        for (int i = 0; i < nx; ++i) {
+        for (int i = 0; i < image_width; ++i) {
             vec3 color;
             for (int s = 0; s < num_samples; ++s) {
-                auto u = (i + random_double()) / nx;
-                auto v = (j + random_double()) / ny;
+                auto u = (i + random_double()) / image_width;
+                auto v = (j + random_double()) / image_height;
                 ray r = cam.get_ray(u, v);
                 color += ray_color(r, world, lights, max_depth);
             }

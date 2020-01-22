@@ -82,12 +82,12 @@ hittable_list random_scene() {
 
 
 int main() {
-    int nx = 1200;
-    int ny = 800;
+    int image_width = 1200;
+    int image_height = 800;
     int num_samples = 10;
     int max_depth = 50;
 
-    std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
+    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
     auto world = random_scene();
 
@@ -96,15 +96,16 @@ int main() {
     auto dist_to_focus = 10.0;
     auto aperture = 0.1;
 
-    camera cam(lookfrom, lookat, vec3(0,1,0), 20, double(nx)/ny, aperture, dist_to_focus);
+    auto aspect_ratio = double(image_width) / image_height;
+    camera cam(lookfrom, lookat, vec3(0,1,0), 20, aspect_ratio, aperture, dist_to_focus);
 
-    for (int j = ny-1; j >= 0; --j) {
+    for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-        for (int i = 0; i < nx; ++i) {
+        for (int i = 0; i < image_width; ++i) {
             vec3 color;
             for (int s = 0; s < num_samples; ++s) {
-                auto u = double(i + random_double()) / double(nx);
-                auto v = double(j + random_double()) / double(ny);
+                auto u = (i + random_double()) / image_width;
+                auto v = (j + random_double()) / image_height;
                 ray r = cam.get_ray(u, v);
                 color += ray_color(r, world, max_depth);
             }

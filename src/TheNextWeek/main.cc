@@ -346,12 +346,12 @@ hittable_list final_scene() {
 
 
 int main() {
-    int nx = 600;
-    int ny = 600;
+    int image_width = 600;
+    int image_height = 600;
     int num_samples = 100;
     int max_depth = 50;
 
-    std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
+    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
     auto R = cos(pi/4);
 
@@ -381,16 +381,17 @@ int main() {
     auto aperture = 0.0;
     auto vfov = 40.0;
 
+    auto aspect_ratio = double(image_width) / image_height;
     camera cam(
-        lookfrom, lookat, vec3(0,1,0), vfov, double(nx)/ny, aperture, dist_to_focus, 0.0, 1.0);
+        lookfrom, lookat, vec3(0,1,0), vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
-    for (int j = ny-1; j >= 0; --j) {
+    for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-        for (int i = 0; i < nx; ++i) {
+        for (int i = 0; i < image_width; ++i) {
             vec3 color;
             for (int s = 0; s < num_samples; ++s) {
-                auto u = (i + random_double()) / nx;
-                auto v = (j + random_double()) / ny;
+                auto u = (i + random_double()) / image_width;
+                auto v = (j + random_double()) / image_height;
                 ray r = cam.get_ray(u, v);
                 color += ray_color(r, world, max_depth);
             }
