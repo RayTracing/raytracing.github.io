@@ -23,7 +23,7 @@
 #include <iostream>
 
 
-vec3 ray_color(const ray& r, hittable& world, const vec3& background, int depth) {
+vec3 ray_color(const ray& r, const vec3& background, hittable& world, int depth) {
     hit_record rec;
 
     // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -41,7 +41,7 @@ vec3 ray_color(const ray& r, hittable& world, const vec3& background, int depth)
     if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
         return emitted;
 
-    return emitted + attenuation * ray_color(scattered, world, background, depth-1);
+    return emitted + attenuation * ray_color(scattered, background, world, depth-1);
 }
 
 
@@ -451,7 +451,7 @@ int main() {
                 auto u = (i + random_double()) / image_width;
                 auto v = (j + random_double()) / image_height;
                 ray r = cam.get_ray(u, v);
-                color += ray_color(r, world, background, max_depth);
+                color += ray_color(r, background, world, max_depth);
             }
             color.write_color(std::cout, samples_per_pixel);
         }
