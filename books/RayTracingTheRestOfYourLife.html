@@ -848,7 +848,7 @@ And _Lambertian_ material becomes:
 And the color function gets a minor modification:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, hittable& world, int depth) {
+    vec3 ray_color(const ray& r, const vec3& background, hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -857,7 +857,7 @@ And the color function gets a minor modification:
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
-            return vec3(0,0,0);
+            return background;
 
         ray scattered;
         vec3 attenuation;
@@ -872,7 +872,7 @@ And the color function gets a minor modification:
 
         return emitted
              + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                      * ray_color(scattered, world, depth-1) / pdf;
+                      * ray_color(scattered, background, world, depth-1) / pdf;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1306,7 +1306,7 @@ If we hack our `ray_color()` function to sample the light in a very hard-coded f
 that math and get the concept, we can add it (see the highlighted region):
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, hittable& world, int depth) {
+    vec3 ray_color(const ray& r, const vec3& background, hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1315,7 +1315,7 @@ that math and get the concept, we can add it (see the highlighted region):
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
-            return vec3(0,0,0);
+            return background;
 
         ray scattered;
         vec3 attenuation;
@@ -1345,7 +1345,7 @@ that math and get the concept, we can add it (see the highlighted region):
 
         return emitted
              + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                      * ray_color(scattered, world, depth-1) / pdf;
+                      * ray_color(scattered, background, world, depth-1) / pdf;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-lights]: <kbd>[main.cc]</kbd> Ray color with light sampling]
@@ -1477,7 +1477,7 @@ We can try this in the `ray_color()` function, with the main changes highlighted
 change variable `pdf` to some other variable name to avoid a name conflict with the new `pdf` class.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, hittable& world, int depth) {
+    vec3 ray_color(const ray& r, const vec3& background, hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1486,7 +1486,7 @@ change variable `pdf` to some other variable name to avoid a name conflict with 
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
-            return vec3(0,0,0);
+            return background;
 
         ray scattered;
         vec3 attenuation;
@@ -1504,7 +1504,7 @@ change variable `pdf` to some other variable name to avoid a name conflict with 
 
         return emitted
              + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                      * ray_color(scattered, world, depth-1)
+                      * ray_color(scattered, background, world, depth-1)
                       / pdf_val;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1612,7 +1612,7 @@ And we change `xz_rect` to implement those functions:
 And then change `ray_color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, hittable& world, int depth) {
+    vec3 ray_color(const ray& r, const vec3& background, hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1621,7 +1621,7 @@ And then change `ray_color()`:
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
-            return vec3(0,0,0);
+            return background;
 
         ray scattered;
         vec3 attenuation;
@@ -1642,7 +1642,7 @@ And then change `ray_color()`:
 
         return emitted
              + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                      * ray_color(scattered, world, depth-1)
+                      * ray_color(scattered, background, world, depth-1)
                       / pdf_val;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1690,7 +1690,13 @@ class is straightforward:
 And plugging it into `ray_color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    vec3 ray_color(const ray& r, hittable& world, shared_ptr<hittable> light_shape, int depth) {
+    vec3 ray_color(
+        const ray& r,
+        const vec3& background,
+        hittable& world,
+        shared_ptr<hittable> lights,
+        int depth
+    ) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         hit_record rec;
 
@@ -1700,7 +1706,7 @@ And plugging it into `ray_color()`:
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
-            return vec3(0,0,0);
+            return background;
 
         ray scattered;
         vec3 attenuation;
@@ -1724,7 +1730,7 @@ And plugging it into `ray_color()`:
 
         return emitted
              + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                      * ray_color(scattered, world, depth-1)
+                      * ray_color(scattered, background, world, lights, depth-1)
                       / pdf_val;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1884,7 +1890,13 @@ The Lambertian material becomes simpler:
 And `ray_color()` changes are small:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, hittable& world, shared_ptr<hittable> light_shape, int depth) {
+    vec3 ray_color(
+        const ray& r,
+        const vec3& background,
+        hittable& world,
+        shared_ptr<hittable> lights,
+        int depth
+    ) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1893,7 +1905,7 @@ And `ray_color()` changes are small:
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
-            return vec3(0,0,0);
+            return background;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         scatter_record srec;
@@ -1901,7 +1913,7 @@ And `ray_color()` changes are small:
         if (!rec.mat_ptr->scatter(r, rec, srec))
             return emitted;
 
-        auto light_ptr = make_shared<hittable_pdf>(light_shape, rec.p);
+        auto light_ptr = make_shared<hittable_pdf>(lights, rec.p);
         mixture_pdf p(light_ptr, srec.pdf_ptr);
 
         ray scattered = ray(rec.p, p.generate(), r.time());
@@ -1909,7 +1921,7 @@ And `ray_color()` changes are small:
 
         return emitted
             + srec.attenuation * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                               * ray_color(scattered, world, light_shape, depth-1)
+                               * ray_color(scattered, background, world, lights, depth-1)
                                / pdf_val;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
@@ -1954,7 +1966,13 @@ just like it did before.
 `ray_color()` just needs a new case to generate an implicitly sampled ray:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, hittable& world, shared_ptr<hittable> light_shape, int depth) {
+    vec3 ray_color(
+        const ray& r,
+        const vec3& background,
+        hittable& world,
+        shared_ptr<hittable> lights,
+        int depth
+    ) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1963,7 +1981,7 @@ just like it did before.
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
-            return vec3(0,0,0);
+            return background;
 
         scatter_record srec;
         vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
@@ -1973,11 +1991,11 @@ just like it did before.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (srec.is_specular) {
             return srec.attenuation
-                 * ray_color(srec.specular_ray, world, light_shape, depth-1);
+                 * ray_color(srec.specular_ray, background, world, lights, depth-1);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        shared_ptr<pdf> light_ptr = make_shared<hittable_pdf>(light_shape, rec.p);
+        shared_ptr<pdf> light_ptr = make_shared<hittable_pdf>(lights, rec.p);
         mixture_pdf p(light_ptr, srec.pdf_ptr);
 
         ray scattered = ray(rec.p, p.generate(), r.time());
@@ -1986,7 +2004,7 @@ just like it did before.
 
         return emitted + srec.attenuation
                        * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                       * ray_color(scattered, world, light_shape, depth-1)
+                       * ray_color(scattered, background, world, lights, depth-1)
                        / pdf_val;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2174,7 +2192,7 @@ We can first try just sampling the sphere rather than the light:
                 auto u = (i + random_double()) / image_width;
                 auto v = (j + random_double()) / image_height;
                 ray r = cam->get_ray(u, v);
-                col += ray_color(r, world, glass_sphere, max_depth);
+                col += ray_color(r, background, world, glass_sphere, max_depth);
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sampling-sphere]: <kbd>[main.cc]</kbd> Sampling just the sphere]

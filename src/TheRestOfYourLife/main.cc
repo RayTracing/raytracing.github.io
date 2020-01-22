@@ -19,7 +19,13 @@
 #include <iostream>
 
 
-vec3 ray_color(const ray& r, hittable& world, shared_ptr<hittable> light_shape, int depth) {
+vec3 ray_color(
+    const ray& r,
+    const vec3& background,
+    hittable& world,
+    shared_ptr<hittable> lights,
+    int depth
+) {
     hit_record rec;
 
     // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -28,7 +34,7 @@ vec3 ray_color(const ray& r, hittable& world, shared_ptr<hittable> light_shape, 
 
     // If the ray hits nothing, return the background color.
     if (!world.hit(r, 0.001, infinity, rec))
-        return vec3(0,1,1);
+        return background;
 
     scatter_record srec;
     vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
@@ -37,17 +43,18 @@ vec3 ray_color(const ray& r, hittable& world, shared_ptr<hittable> light_shape, 
         return emitted;
 
     if (srec.is_specular) {
-        return srec.attenuation * ray_color(srec.specular_ray, world, light_shape, depth-1);
+        return srec.attenuation
+             * ray_color(srec.specular_ray, background, world, lights, depth-1);
     }
 
-    auto light_ptr = make_shared<hittable_pdf>(light_shape, rec.p);
+    auto light_ptr = make_shared<hittable_pdf>(lights, rec.p);
     mixture_pdf p(light_ptr, srec.pdf_ptr);
     ray scattered = ray(rec.p, p.generate(), r.time());
     auto pdf_val = p.value(scattered.direction());
 
     return emitted
          + srec.attenuation * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                            * ray_color(scattered, world, light_shape, depth-1)
+                            * ray_color(scattered, background, world, lights, depth-1)
                             / pdf_val;
 }
 
@@ -99,6 +106,8 @@ int main() {
 
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
+    vec3 background(0,0,0);
+
     camera cam;
     auto world = cornell_box(cam, aspect_ratio);
 
@@ -114,7 +123,7 @@ int main() {
                 auto u = (i + random_double()) / image_width;
                 auto v = (j + random_double()) / image_height;
                 ray r = cam.get_ray(u, v);
-                color += ray_color(r, world, lights, max_depth);
+                color += ray_color(r, background, world, lights, max_depth);
             }
             color.write_color(std::cout, samples_per_pixel);
         }
