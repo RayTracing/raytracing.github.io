@@ -374,16 +374,16 @@ int main() {
 
     vec3 lookfrom(278, 278, -800);
     //vec3 lookfrom(478, 278, -600);
-    vec3 lookat(278,278,0);
     //vec3 lookfrom(0, 0, 6);
+    vec3 lookat(278,278,0);
     //vec3 lookat(0,0,0);
+    vec3 vup(0,1,0);
     auto dist_to_focus = 10.0;
     auto aperture = 0.0;
     auto vfov = 40.0;
 
     auto aspect_ratio = double(image_width) / image_height;
-    camera cam(
-        lookfrom, lookat, vec3(0,1,0), vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
     for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
