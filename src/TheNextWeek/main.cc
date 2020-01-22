@@ -23,7 +23,7 @@
 #include <iostream>
 
 
-vec3 ray_color(const ray& r, hittable& world, int depth) {
+vec3 ray_color(const ray& r, hittable& world, const vec3& background, int depth) {
     hit_record rec;
 
     // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -32,7 +32,7 @@ vec3 ray_color(const ray& r, hittable& world, int depth) {
 
     // If the ray hits nothing, return the background color.
     if (!world.hit(r, 0.001, infinity, rec))
-        return vec3(0.5,0.5,0.5);
+        return background;
 
     ray scattered;
     vec3 attenuation;
@@ -41,7 +41,7 @@ vec3 ray_color(const ray& r, hittable& world, int depth) {
     if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
         return emitted;
 
-    return emitted + attenuation * ray_color(scattered, world, depth-1);
+    return emitted + attenuation * ray_color(scattered, world, background, depth-1);
 }
 
 
@@ -360,6 +360,7 @@ int main() {
     auto vfov = 40.0;
     auto aperture = 0.0;
     auto dist_to_focus = 10.0;
+    vec3 background(0,0,0);
 
     switch (0) {
         case 1:
@@ -367,6 +368,7 @@ int main() {
             lookfrom = vec3(13,2,3);
             lookat = vec3(0,0,0);
             vfov = 20.0;
+            background = vec3(0.70, 0.80, 1.00);
             break;
 
         case 2:
@@ -374,6 +376,7 @@ int main() {
             lookfrom = vec3(13,2,3);
             lookat = vec3(0,0,0);
             vfov = 20.0;
+            background = vec3(0.70, 0.80, 1.00);
             break;
 
         case 3:
@@ -381,6 +384,7 @@ int main() {
             lookfrom = vec3(13,2,3);
             lookat = vec3(0,0,0);
             vfov = 20.0;
+            background = vec3(0.70, 0.80, 1.00);
             break;
 
         case 4:
@@ -388,6 +392,7 @@ int main() {
             lookfrom = vec3(0,0,12);
             lookat = vec3(0,0,0);
             vfov = 20.0;
+            background = vec3(0.70, 0.80, 1.00);
             break;
 
         case 5:
@@ -446,7 +451,7 @@ int main() {
                 auto u = (i + random_double()) / image_width;
                 auto v = (j + random_double()) / image_height;
                 ray r = cam.get_ray(u, v);
-                color += ray_color(r, world, max_depth);
+                color += ray_color(r, world, background, max_depth);
             }
             color.write_color(std::cout, samples_per_pixel);
         }

@@ -1730,10 +1730,12 @@ class return black:
 </div>
 
 <div class='together'>
-Next, let’s make the background black in our `ray_color` function, and pay attention to emitted:
+Next, we want a pure black background so the only light in the scene is coming from the emitters. To
+do this, we’ll add a background color parameter to our `ray_color` function, and pay attention to
+the new `emitted` value.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, hittable& world, int depth) {
+    vec3 ray_color(const ray& r, hittable& world, const vec3& background, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1742,7 +1744,7 @@ Next, let’s make the background black in our `ray_color` function, and pay att
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
-            return vec3(0,0,0);
+            return background;
 
         ray scattered;
         vec3 attenuation;
@@ -1750,7 +1752,14 @@ Next, let’s make the background black in our `ray_color` function, and pay att
         if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
             return emitted;
 
-        return emitted + attenuation * ray_color(scattered, world, depth-1);
+        return emitted + attenuation * ray_color(scattered, world, background, depth-1);
+    }
+    ...
+
+    int main() {
+        ...
+                    color += ray_color(r, world, vec3(0,0,0), max_depth);
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-emitted]: <kbd>[main.cc]</kbd> ray_color function for emitting materials]
