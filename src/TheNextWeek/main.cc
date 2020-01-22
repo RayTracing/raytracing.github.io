@@ -354,63 +354,89 @@ int main() {
 
     hittable_list world;
 
-    vec3 lookfrom(278, 278, -800);
-    //vec3 lookfrom(478, 278, -600);
-    //vec3 lookfrom(0, 0, 6);
-    vec3 lookat(278,278,0);
-    //vec3 lookat(0,0,0);
+    vec3 lookfrom;
+    vec3 lookat;
     vec3 vup(0,1,0);
-    auto dist_to_focus = 10.0;
-    auto aperture = 0.0;
     auto vfov = 40.0;
-
-    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+    auto aperture = 0.0;
+    auto dist_to_focus = 10.0;
 
     switch (0) {
         case 1:
             world = random_scene();
+            lookfrom = vec3(13,2,3);
+            lookat = vec3(0,0,0);
+            vfov = 20.0;
             break;
 
         case 2:
             world = two_spheres();
+            lookfrom = vec3(13,2,3);
+            lookat = vec3(0,0,0);
+            vfov = 20.0;
             break;
 
         case 3:
             world = two_perlin_spheres();
+            lookfrom = vec3(13,2,3);
+            lookat = vec3(0,0,0);
+            vfov = 20.0;
             break;
 
         case 4:
             world = earth();
+            lookfrom = vec3(0,0,12);
+            lookat = vec3(0,0,0);
+            vfov = 20.0;
             break;
 
         case 5:
             world = simple_light();
+            lookfrom = vec3(26,3,6);
+            lookat = vec3(0,2,0);
+            vfov = 20.0;
             break;
 
         default:
         case 6:
             world = cornell_box();
+            lookfrom = vec3(278, 278, -800);
+            lookat = vec3(278, 278, 0);
+            vfov = 40.0;
             break;
 
         case 7:
             world = cornell_balls();
+            lookfrom = vec3(278, 278, -800);
+            lookat = vec3(278, 278, 0);
+            vfov = 40.0;
             break;
 
         case 8:
             world = cornell_smoke();
+            lookfrom = vec3(278, 278, -800);
+            lookat = vec3(278, 278, 0);
+            vfov = 40.0;
             break;
 
         case 9:
             world = cornell_final();
+            lookfrom = vec3(278, 278, -800);
+            lookat = vec3(278, 278, 0);
+            vfov = 40.0;
             break;
 
         case 10:
             world = final_scene();
+            lookfrom = vec3(478, 278, -600);
+            lookat = vec3(278, 278, 0);
+            vfov = 40.0;
             break;
     }
 
-
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
+    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
     for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
