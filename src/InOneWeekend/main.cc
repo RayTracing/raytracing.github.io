@@ -82,33 +82,35 @@ hittable_list random_scene() {
 
 
 int main() {
-    int nx = 1200;
-    int ny = 800;
-    int num_samples = 10;
-    int max_depth = 50;
+    const int image_width = 1200;
+    const int image_height = 800;
+    const int samples_per_pixel = 10;
+    const int max_depth = 50;
+    const auto aspect_ratio = double(image_width) / image_height;
 
-    std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
+    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
     auto world = random_scene();
 
     vec3 lookfrom(13,2,3);
     vec3 lookat(0,0,0);
+    vec3 vup(0,1,0);
     auto dist_to_focus = 10.0;
     auto aperture = 0.1;
 
-    camera cam(lookfrom, lookat, vec3(0,1,0), 20, double(nx)/ny, aperture, dist_to_focus);
+    camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
 
-    for (int j = ny-1; j >= 0; --j) {
+    for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-        for (int i = 0; i < nx; ++i) {
+        for (int i = 0; i < image_width; ++i) {
             vec3 color;
-            for (int s = 0; s < num_samples; ++s) {
-                auto u = double(i + random_double()) / double(nx);
-                auto v = double(j + random_double()) / double(ny);
+            for (int s = 0; s < samples_per_pixel; ++s) {
+                auto u = (i + random_double()) / image_width;
+                auto v = (j + random_double()) / image_height;
                 ray r = cam.get_ray(u, v);
                 color += ray_color(r, world, max_depth);
             }
-            color.write_color(std::cout, num_samples);
+            color.write_color(std::cout, samples_per_pixel);
         }
     }
 

@@ -19,7 +19,13 @@
 #include <iostream>
 
 
-vec3 ray_color(const ray& r, hittable& world, shared_ptr<hittable> light_shape, int depth) {
+vec3 ray_color(
+    const ray& r,
+    const vec3& background,
+    hittable& world,
+    shared_ptr<hittable> lights,
+    int depth
+) {
     hit_record rec;
 
     // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -28,7 +34,7 @@ vec3 ray_color(const ray& r, hittable& world, shared_ptr<hittable> light_shape, 
 
     // If the ray hits nothing, return the background color.
     if (!world.hit(r, 0.001, infinity, rec))
-        return vec3(0,1,1);
+        return background;
 
     scatter_record srec;
     vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
@@ -37,17 +43,18 @@ vec3 ray_color(const ray& r, hittable& world, shared_ptr<hittable> light_shape, 
         return emitted;
 
     if (srec.is_specular) {
-        return srec.attenuation * ray_color(srec.specular_ray, world, light_shape, depth-1);
+        return srec.attenuation
+             * ray_color(srec.specular_ray, background, world, lights, depth-1);
     }
 
-    auto light_ptr = make_shared<hittable_pdf>(light_shape, rec.p);
+    auto light_ptr = make_shared<hittable_pdf>(lights, rec.p);
     mixture_pdf p(light_ptr, srec.pdf_ptr);
     ray scattered = ray(rec.p, p.generate(), r.time());
     auto pdf_val = p.value(scattered.direction());
 
     return emitted
          + srec.attenuation * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                            * ray_color(scattered, world, light_shape, depth-1)
+                            * ray_color(scattered, background, world, lights, depth-1)
                             / pdf_val;
 }
 
@@ -91,33 +98,34 @@ hittable_list cornell_box(camera& cam, double aspect) {
 
 
 int main() {
-    int nx = 600;
-    int ny = 600;
-    int num_samples = 100;
-    int max_depth = 50;
+    const int image_width = 600;
+    const int image_height = 600;
+    const int samples_per_pixel = 100;
+    const int max_depth = 50;
+    const auto aspect_ratio = double(image_width) / image_height;
 
-    std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
+    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
+    vec3 background(0,0,0);
 
     camera cam;
-    auto aspect = double(ny) / double(nx);
-
-    auto world = cornell_box(cam, aspect);
+    auto world = cornell_box(cam, aspect_ratio);
 
     auto lights = make_shared<hittable_list>();
     lights->add(make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>()));
     lights->add(make_shared<sphere>(vec3(190, 90, 190), 90, shared_ptr<material>()));
 
-    for (int j = ny-1; j >= 0; --j) {
+    for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-        for (int i = 0; i < nx; ++i) {
+        for (int i = 0; i < image_width; ++i) {
             vec3 color;
-            for (int s = 0; s < num_samples; ++s) {
-                auto u = (i + random_double()) / nx;
-                auto v = (j + random_double()) / ny;
+            for (int s = 0; s < samples_per_pixel; ++s) {
+                auto u = (i + random_double()) / image_width;
+                auto v = (j + random_double()) / image_height;
                 ray r = cam.get_ray(u, v);
-                color += ray_color(r, world, lights, max_depth);
+                color += ray_color(r, background, world, lights, max_depth);
             }
-            color.write_color(std::cout, num_samples);
+            color.write_color(std::cout, samples_per_pixel);
         }
     }
 

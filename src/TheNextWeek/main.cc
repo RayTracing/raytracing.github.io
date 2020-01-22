@@ -23,7 +23,7 @@
 #include <iostream>
 
 
-vec3 ray_color(const ray& r, hittable& world, int depth) {
+vec3 ray_color(const ray& r, const vec3& background, hittable& world, int depth) {
     hit_record rec;
 
     // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -32,7 +32,7 @@ vec3 ray_color(const ray& r, hittable& world, int depth) {
 
     // If the ray hits nothing, return the background color.
     if (!world.hit(r, 0.001, infinity, rec))
-        return vec3(0.5,0.5,0.5);
+        return background;
 
     ray scattered;
     vec3 attenuation;
@@ -41,7 +41,7 @@ vec3 ray_color(const ray& r, hittable& world, int depth) {
     if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
         return emitted;
 
-    return emitted + attenuation * ray_color(scattered, world, depth-1);
+    return emitted + attenuation * ray_color(scattered, background, world, depth-1);
 }
 
 
@@ -346,55 +346,114 @@ hittable_list final_scene() {
 
 
 int main() {
-    int nx = 600;
-    int ny = 600;
-    int num_samples = 100;
-    int max_depth = 50;
-
-    std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
-
-    auto R = cos(pi/4);
+    const int image_width = 600;
+    const int image_height = 600;
+    const int samples_per_pixel = 100;
+    const int max_depth = 50;
+    const auto aspect_ratio = double(image_width) / image_height;
 
     hittable_list world;
+
+    vec3 lookfrom;
+    vec3 lookat;
+    vec3 vup(0,1,0);
+    auto vfov = 40.0;
+    auto aperture = 0.0;
+    auto dist_to_focus = 10.0;
+    vec3 background(0,0,0);
+
     switch (0) {
-        case  1:  world = random_scene();       break;
-        case  2:  world = two_spheres();        break;
-        case  3:  world = two_perlin_spheres(); break;
-        case  4:  world = earth();              break;
-        case  5:  world = simple_light();       break;
+        case 1:
+            world = random_scene();
+            lookfrom = vec3(13,2,3);
+            lookat = vec3(0,0,0);
+            vfov = 20.0;
+            background = vec3(0.70, 0.80, 1.00);
+            break;
+
+        case 2:
+            world = two_spheres();
+            lookfrom = vec3(13,2,3);
+            lookat = vec3(0,0,0);
+            vfov = 20.0;
+            background = vec3(0.70, 0.80, 1.00);
+            break;
+
+        case 3:
+            world = two_perlin_spheres();
+            lookfrom = vec3(13,2,3);
+            lookat = vec3(0,0,0);
+            vfov = 20.0;
+            background = vec3(0.70, 0.80, 1.00);
+            break;
+
+        case 4:
+            world = earth();
+            lookfrom = vec3(0,0,12);
+            lookat = vec3(0,0,0);
+            vfov = 20.0;
+            background = vec3(0.70, 0.80, 1.00);
+            break;
+
+        case 5:
+            world = simple_light();
+            lookfrom = vec3(26,3,6);
+            lookat = vec3(0,2,0);
+            vfov = 20.0;
+            break;
 
         default:
-        case  6:  world = cornell_box();        break;
+        case 6:
+            world = cornell_box();
+            lookfrom = vec3(278, 278, -800);
+            lookat = vec3(278, 278, 0);
+            vfov = 40.0;
+            break;
 
-        case  7:  world = cornell_balls();      break;
-        case  8:  world = cornell_smoke();      break;
-        case  9:  world = cornell_final();      break;
-        case 10:  world = final_scene();        break;
+        case 7:
+            world = cornell_balls();
+            lookfrom = vec3(278, 278, -800);
+            lookat = vec3(278, 278, 0);
+            vfov = 40.0;
+            break;
+
+        case 8:
+            world = cornell_smoke();
+            lookfrom = vec3(278, 278, -800);
+            lookat = vec3(278, 278, 0);
+            vfov = 40.0;
+            break;
+
+        case 9:
+            world = cornell_final();
+            lookfrom = vec3(278, 278, -800);
+            lookat = vec3(278, 278, 0);
+            vfov = 40.0;
+            break;
+
+        case 10:
+            world = final_scene();
+            lookfrom = vec3(478, 278, -600);
+            lookat = vec3(278, 278, 0);
+            vfov = 40.0;
+            break;
     }
 
-    vec3 lookfrom(278, 278, -800);
-    //vec3 lookfrom(478, 278, -600);
-    vec3 lookat(278,278,0);
-    //vec3 lookfrom(0, 0, 6);
-    //vec3 lookat(0,0,0);
-    auto dist_to_focus = 10.0;
-    auto aperture = 0.0;
-    auto vfov = 40.0;
+    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-    camera cam(
-        lookfrom, lookat, vec3(0,1,0), vfov, double(nx)/ny, aperture, dist_to_focus, 0.0, 1.0);
+    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
-    for (int j = ny-1; j >= 0; --j) {
+    for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-        for (int i = 0; i < nx; ++i) {
+        for (int i = 0; i < image_width; ++i) {
             vec3 color;
-            for (int s = 0; s < num_samples; ++s) {
-                auto u = (i + random_double()) / nx;
-                auto v = (j + random_double()) / ny;
+            for (int s = 0; s < samples_per_pixel; ++s) {
+                auto u = (i + random_double()) / image_width;
+                auto v = (j + random_double()) / image_height;
                 ray r = cam.get_ray(u, v);
-                color += ray_color(r, world, max_depth);
+                color += ray_color(r, background, world, max_depth);
             }
-            color.write_color(std::cout, num_samples);
+            color.write_color(std::cout, samples_per_pixel);
         }
     }
 

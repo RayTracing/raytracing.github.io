@@ -70,15 +70,15 @@ Let’s make some C++ code to output such a thing:
     #include <iostream>
 
     int main() {
-        int nx = 200;
-        int ny = 100;
+        const int image_width = 200;
+        const int image_height = 100;
 
-        std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
+        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        for (int j = ny-1; j >= 0; --j) {
-            for (int i = 0; i < nx; ++i) {
-                auto r = double(i) / nx;
-                auto g = double(j) / ny;
+        for (int j = image_height-1; j >= 0; --j) {
+            for (int i = 0; i < image_width; ++i) {
+                auto r = double(i) / image_width;
+                auto g = double(j) / image_height;
                 auto b = 0.2;
                 int ir = static_cast<int>(255.999 * r);
                 int ig = static_cast<int>(255.999 * g);
@@ -165,13 +165,13 @@ Our program outputs the image to the standard output stream (`std::cout`), so le
 instead write to the error output stream (`std::cerr`):
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        for (int j = ny-1; j >= 0; --j) {
+        for (int j = image_height-1; j >= 0; --j) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            for (int i = 0; i < nx; ++i) {
-                auto r = double(i) / nx;
-                auto g = double(j) / ny;
+            for (int i = 0; i < image_width; ++i) {
+                auto r = double(i) / image_width;
+                auto g = double(j) / image_height;
                 auto b = 0.2;
                 int ir = static_cast<int>(255.999 * r);
                 int ig = static_cast<int>(255.999 * g);
@@ -318,16 +318,16 @@ Now we can change our main to use this:
     #include <iostream>
 
     int main() {
-        int nx = 200;
-        int ny = 100;
+        const int image_width = 200;
+        const int image_height = 100;
 
-        std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
+        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        for (int j = ny-1; j >= 0; --j) {
+        for (int j = image_height-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-            for (int i = 0; i < nx; ++i) {
+            for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                vec3 color(double(i)/nx, double(j)/ny, 0.2);
+                vec3 color(double(i)/image_width, double(j)/image_height, 0.2);
                 color.write_color(std::cout);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
@@ -419,21 +419,23 @@ for now because we’ll add antialiasing later):
     }
 
     int main() {
-        int nx = 200;
-        int ny = 100;
-        std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+        const int image_width = 200;
+        const int image_height = 100;
+
+        std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         vec3 lower_left_corner(-2.0, -1.0, -1.0);
         vec3 horizontal(4.0, 0.0, 0.0);
         vec3 vertical(0.0, 2.0, 0.0);
         vec3 origin(0.0, 0.0, 0.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        for (int j = ny-1; j >= 0; --j) {
+        for (int j = image_height-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-            for (int i = 0; i < nx; ++i) {
+            for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                auto u = double(i) / nx;
-                auto v = double(j) / ny;
+                auto u = double(i) / image_width;
+                auto v = double(j) / image_height;
                 ray r(origin, lower_left_corner + u*horizontal + v*vertical);
                 vec3 color = ray_color(r);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1078,10 +1080,10 @@ And the new main:
     }
 
     int main() {
-        int nx = 200;
-        int ny = 100;
+        const int image_width = 200;
+        const int image_height = 100;
 
-        std::cout << "P3\n" << nx << ' ' << ny << "\n255\n";
+        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
         vec3 lower_left_corner(-2.0, -1.0, -1.0);
         vec3 horizontal(4.0, 0.0, 0.0);
@@ -1095,11 +1097,11 @@ And the new main:
         world.add(make_shared<sphere>(vec3(0,-100.5,-1), 100));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        for (int j = ny-1; j >= 0; --j) {
+        for (int j = image_height-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-            for (int i = 0; i < nx; ++i) {
-                auto u = double(i) / nx;
-                auto v = double(j) / ny;
+            for (int i = 0; i < image_width; ++i) {
+                auto u = double(i) / image_width;
+                auto v = double(j) / image_height;
                 ray r(origin, lower_left_corner + u*horizontal + v*vertical);
 
 
@@ -1240,9 +1242,9 @@ samples) when writing out the color. In addition, we'll add a handy utility func
     [Listing [clamp]: <kbd>[rtweekend.h]</kbd> The clamp() utility function]
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void write_color(std::ostream &out, int num_samples) {
+    void write_color(std::ostream &out, int samples_per_pixel) {
         // Divide the color total by the number of samples.
-        auto scale = 1.0 / num_samples;
+        auto scale = 1.0 / samples_per_pixel;
         auto r = scale * e[0];
         auto g = scale * e[1];
         auto b = scale * e[2];
@@ -1260,13 +1262,13 @@ Main is also changed:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
-        int nx = 200;
-        int ny = 100;
+        const int image_width = 200;
+        const int image_height = 100;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        int num_samples = 100;
+        const int samples_per_pixel = 100;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+        std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
         hittable_list world;
         world.add(make_shared<sphere>(vec3(0,0,-1), 0.5));
@@ -1275,18 +1277,18 @@ Main is also changed:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         camera cam;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        for (int j = ny-1; j >= 0; --j) {
+        for (int j = image_height-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-            for (int i = 0; i < nx; ++i) {
+            for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 color(0, 0, 0);
-                for (int s = 0; s < num_samples; ++s) {
-                    auto u = (i + random_double()) / nx;
-                    auto v = (j + random_double()) / ny;
+                for (int s = 0; s < samples_per_pixel; ++s) {
+                    auto u = (i + random_double()) / image_width;
+                    auto v = (j + random_double()) / image_height;
                     ray r = cam.get_ray(u, v);
                     color += ray_color(r, world);
                 }
-                color.write_color(std::cout, num_samples);
+                color.write_color(std::cout, samples_per_pixel);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
         }
@@ -1425,27 +1427,27 @@ depth, returning no light contribution at the maximum depth:
     }
     ...
     int main() {
-        int nx = 200;
-        int ny = 100;
-        int num_samples = 100;
+        const int image_width = 200;
+        const int image_height = 100;
+        const int samples_per_pixel = 100;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        int max_depth = 50;
+        const int max_depth = 50;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         ...
-        for (int j = ny-1; j >= 0; --j) {
+        for (int j = image_height-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-            for (int i = 0; i < nx; ++i) {
+            for (int i = 0; i < image_width; ++i) {
                 vec3 color(0, 0, 0);
-                for (int s = 0; s < num_samples; ++s) {
-                    auto u = (i + random_double()) / nx;
-                    auto v = (j + random_double()) / ny;
+                for (int s = 0; s < samples_per_pixel; ++s) {
+                    auto u = (i + random_double()) / image_width;
+                    auto v = (j + random_double()) / image_height;
                     ray r = cam.get_ray(u, v);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                     color += ray_color(r, world, max_depth);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 }
-                color.write_color(std::cout, num_samples);
+                color.write_color(std::cout, samples_per_pixel);
             }
         }
 
@@ -1473,11 +1475,11 @@ which means raising the color to the power $1/gamma$, or in our simple case ½, 
 square-root:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void write_color(std::ostream &out, int num_samples) {
+    void write_color(std::ostream &out, int samples_per_pixel) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // Divide the color total by the number of samples and gamma-correct
         // for a gamma value of 2.0.
-        auto scale = 1.0 / num_samples;
+        auto scale = 1.0 / samples_per_pixel;
         auto r = sqrt(scale * e[0]);
         auto g = sqrt(scale * e[1]);
         auto b = sqrt(scale * e[2]);
@@ -1897,11 +1899,12 @@ metal spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
-        int nx = 200;
-        int ny = 100;
-        int num_samples = 100;
-        int max_depth = 50;
-        std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+        const int image_width = 200;
+        const int image_height = 100;
+        const int samples_per_pixel = 100;
+        const int max_depth = 50;
+
+        std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1918,17 +1921,17 @@ metal spheres:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         camera cam;
-        for (int j = ny-1; j >= 0; --j) {
+        for (int j = image_height-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-            for (int i = 0; i < nx; ++i) {
+            for (int i = 0; i < image_width; ++i) {
                 vec3 color(0, 0, 0);
-                for (int s = 0; s < num_samples; ++s) {
-                    auto u = (i + random_double()) / nx;
-                    auto v = (j + random_double()) / ny;
+                for (int s = 0; s < samples_per_pixel; ++s) {
+                    auto u = (i + random_double()) / image_width;
+                    auto v = (j + random_double()) / image_height;
                     ray r = cam.get_ray(u, v);
                     color += ray_color(r, world, max_depth);
                 }
-                color.write_color(std::cout, num_samples);
+                color.write_color(std::cout, samples_per_pixel);
             }
         }
 
@@ -2363,7 +2366,7 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
 </div>
 
 <div class='together'>
-When calling it with camera `cam(90, double(nx)/ny)` and these spheres:
+When calling it with camera `cam(90, double(image_width)/image_height)` and these spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     auto R = cos(pi/4);
@@ -2449,7 +2452,9 @@ camera horizontally level until you decide to experiment with crazy camera angle
 This allows us to change the viewpoint:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    camera cam(vec3(-2,2,1), vec3(0,0,-1), vec3(0,1,0), 90, double(nx)/ny);
+    const auto aspect_ratio = double(image_width) / image_height;
+    ...
+    camera cam(vec3(-2,2,1), vec3(0,0,-1), vup, 90, aspect_ratio);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-free-view]: <kbd>[main.cc]</kbd> Scene with alternate viewpoint]
 
@@ -2582,12 +2587,15 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
 Using a big aperture:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    const auto aspect_ratio = double(image_width) / image_height;
+    ...
     vec3 lookfrom(3,3,2);
     vec3 lookat(0,0,-1);
+    vec3 vup(0,1,0);
     auto dist_to_focus = (lookfrom-lookat).length();
     auto aperture = 2.0;
 
-    camera cam(lookfrom, lookat, vec3(0,1,0), 20, double(nx)/ny, aperture, dist_to_focus);
+    camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-camera-dof]: <kbd>[main.cc]</kbd> Scene camera with depth-of-field]
 
