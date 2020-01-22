@@ -82,10 +82,10 @@ hittable_list random_scene() {
 
 
 int main() {
-    int image_width = 1200;
-    int image_height = 800;
-    int samples_per_pixel = 10;
-    int max_depth = 50;
+    const int image_width = 1200;
+    const int image_height = 800;
+    const int samples_per_pixel = 10;
+    const int max_depth = 50;
 
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 

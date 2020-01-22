@@ -91,10 +91,10 @@ hittable_list cornell_box(camera& cam, double aspect) {
 
 
 int main() {
-    int image_width = 600;
-    int image_height = 600;
-    int samples_per_pixel = 100;
-    int max_depth = 50;
+    const int image_width = 600;
+    const int image_height = 600;
+    const int samples_per_pixel = 100;
+    const int max_depth = 50;
 
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
