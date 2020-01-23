@@ -34,6 +34,7 @@ class box: public hittable  {
         hittable_list sides;
 };
 
+
 box::box(const vec3& p0, const vec3& p1, shared_ptr<material> ptr) {
     box_min = p0;
     box_max = p1;

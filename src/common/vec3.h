@@ -81,6 +81,7 @@ class vec3 {
             return vec3(random_double(min,max), random_double(min,max), random_double(min,max));
         }
 
+    public:
         double e[3];
 };
 

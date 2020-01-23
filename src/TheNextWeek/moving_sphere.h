@@ -56,12 +56,16 @@ bool moving_sphere::bounding_box(double t0, double t1, aabb& output_box) const {
 // replace "center" with "center(r.time())"
 bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
     vec3 oc = r.origin() - center(r.time());
-    auto a = dot(r.direction(), r.direction());
-    auto b = dot(oc, r.direction());
-    auto c = dot(oc, oc) - radius*radius;
-    auto discriminant = b*b - a*c;
+    auto a = r.direction().length_squared();
+    auto half_b = dot(oc, r.direction());
+    auto c = oc.length_squared() - radius*radius;
+
+    auto discriminant = half_b*half_b - a*c;
+
     if (discriminant > 0) {
-        auto temp = (-b - sqrt(discriminant))/a;
+        auto root = sqrt(discriminant);
+
+        auto temp = (-half_b - root)/a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
             rec.p = r.at(rec.t);
@@ -70,7 +74,8 @@ bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& re
             rec.mat_ptr = mat_ptr;
             return true;
         }
-        temp = (-b + sqrt(discriminant))/a;
+
+        temp = (-half_b + root)/a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
             rec.p = r.at(rec.t);
@@ -80,6 +85,7 @@ bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& re
             return true;
         }
     }
+
     return false;
 }
 
