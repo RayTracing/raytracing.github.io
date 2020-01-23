@@ -23,6 +23,7 @@ class sphere: public hittable  {
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
 
+    public:
         vec3 center;
         double radius;
         shared_ptr<material> mat_ptr;
@@ -41,6 +42,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
     auto a = r.direction().length_squared();
     auto half_b = dot(oc, r.direction());
     auto c = oc.length_squared() - radius*radius;
+
     auto discriminant = half_b*half_b - a*c;
 
     if (discriminant > 0) {
@@ -68,6 +70,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
             return true;
         }
     }
+
     return false;
 }
 

@@ -206,10 +206,12 @@ intersection code barely needs a change: `center` just needs to become a functio
         auto a = r.direction().length_squared();
         auto half_b = dot(oc, r.direction());
         auto c = oc.length_squared() - radius*radius;
+
         auto discriminant = half_b*half_b - a*c;
 
         if (discriminant > 0) {
             auto root = sqrt(discriminant);
+
             auto temp = (-half_b - root)/a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
@@ -221,6 +223,7 @@ intersection code barely needs a change: `center` just needs to become a functio
                 rec.mat_ptr = mat_ptr;
                 return true;
             }
+
             temp = (-half_b + root) / a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
