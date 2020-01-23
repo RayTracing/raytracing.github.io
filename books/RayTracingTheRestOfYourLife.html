@@ -1089,19 +1089,23 @@ Let’s also start generating them as random vectors:
         auto r1 = random_double();
         auto r2 = random_double();
         auto z = sqrt(1-r2);
+
         auto phi = 2*pi*r1;
         auto x = cos(phi)*sqrt(r2);
         auto y = sin(phi)*sqrt(r2);
+
         return vec3(x, y, z);
     }
 
     int main() {
         int N = 1000000;
+
         auto sum = 0.0;
         for (int i = 0; i < N; i++) {
             vec3 v = random_cosine_direction();
             sum += v.z()*v.z()*v.z() / (v.z()/pi);
         }
+
         std::cout << std::fixed << std::setprecision(12);
         std::cout << "Pi/2     = " << pi/2 << '\n';
         std::cout << "Estimate = " << sum/N << '\n';
@@ -1433,6 +1437,8 @@ minimal interface works, and for the PDF this implies:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class pdf {
         public:
+            virtual ~pdf() {}
+
             virtual double value(const vec3& direction) const = 0;
             virtual vec3 generate() const = 0;
     };
@@ -1449,16 +1455,25 @@ bounding box that works with all its subclasses.
 First, let’s try a cosine density:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline vec3 random_cosine_direction() {
+        auto r1 = random_double();
+        auto r2 = random_double();
+        auto z = sqrt(1-r2);
+
+        auto phi = 2*pi*r1;
+        auto x = cos(phi)*sqrt(r2);
+        auto y = sin(phi)*sqrt(r2);
+
+        return vec3(x, y, z);
+    }
+
     class cosine_pdf : public pdf {
         public:
             cosine_pdf(const vec3& w) { uvw.build_from_w(w); }
 
             virtual double value(const vec3& direction) const {
                 auto cosine = dot(unit_vector(direction), uvw.w());
-                if (cosine > 0)
-                    return cosine/pi;
-                else
-                    return 0;
+                return (cosine <= 0) ? 0 : cosine/pi;
             }
 
             virtual vec3 generate() const {
@@ -2168,9 +2183,11 @@ With the utility function:
         auto r1 = random_double();
         auto r2 = random_double();
         auto z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
+
         auto phi = 2*pi*r1;
         auto x = cos(phi)*sqrt(1-z*z);
         auto y = sin(phi)*sqrt(1-z*z);
+
         return vec3(x, y, z);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
