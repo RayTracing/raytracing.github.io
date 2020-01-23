@@ -55,6 +55,7 @@ bool constant_medium::hit(const ray& r, double t_min, double t_max, hit_record& 
 
             if (rec1.t >= rec2.t)
                 return false;
+
             if (rec1.t < 0)
                 rec1.t = 0;
 

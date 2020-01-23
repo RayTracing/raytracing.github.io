@@ -59,8 +59,11 @@ bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& re
     auto a = dot(r.direction(), r.direction());
     auto b = dot(oc, r.direction());
     auto c = dot(oc, oc) - radius*radius;
+
     auto discriminant = b*b - a*c;
+
     if (discriminant > 0) {
+
         auto temp = (-b - sqrt(discriminant))/a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
@@ -70,6 +73,7 @@ bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& re
             rec.mat_ptr = mat_ptr;
             return true;
         }
+
         temp = (-b + sqrt(discriminant))/a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
@@ -80,6 +84,7 @@ bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& re
             return true;
         }
     }
+
     return false;
 }
 
