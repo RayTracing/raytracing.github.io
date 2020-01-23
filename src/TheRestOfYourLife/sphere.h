@@ -23,9 +23,10 @@ class sphere: public hittable  {
             : center(cen), radius(r), mat_ptr(m) {};
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
-        virtual double  pdf_value(const vec3& o, const vec3& v) const;
+        virtual double pdf_value(const vec3& o, const vec3& v) const;
         virtual vec3 random(const vec3& o) const;
 
+    public:
         vec3 center;
         double radius;
         shared_ptr<material> mat_ptr;
@@ -33,13 +34,13 @@ class sphere: public hittable  {
 
 double sphere::pdf_value(const vec3& o, const vec3& v) const {
     hit_record rec;
-    if (this->hit(ray(o, v), 0.001, infinity, rec)) {
-        auto cos_theta_max = sqrt(1 - radius*radius/(center-o).length_squared());
-        auto solid_angle = 2*pi*(1-cos_theta_max);
-        return  1 / solid_angle;
-    }
-    else
+    if (!this->hit(ray(o, v), 0.001, infinity, rec))
         return 0;
+
+    auto cos_theta_max = sqrt(1 - radius*radius/(center-o).length_squared());
+    auto solid_angle = 2*pi*(1-cos_theta_max);
+
+    return  1 / solid_angle;
 }
 
 vec3 sphere::random(const vec3& o) const {
@@ -63,6 +64,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
     auto a = r.direction().length_squared();
     auto half_b = dot(oc, r.direction());
     auto c = oc.length_squared() - radius*radius;
+
     auto discriminant = half_b*half_b - a*c;
 
     if (discriminant > 0) {
@@ -90,6 +92,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
             return true;
         }
     }
+
     return false;
 }
 

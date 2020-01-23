@@ -2155,13 +2155,13 @@ The sphere class needs the two PDF-related functions:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     double sphere::pdf_value(const vec3& o, const vec3& v) const {
         hit_record rec;
-        if (this->hit(ray(o, v), 0.001, infinity, rec)) {
-            auto cos_theta_max = sqrt(1 - radius*radius/(center-o).length_squared());
-            auto solid_angle = 2*pi*(1-cos_theta_max);
-            return 1 / solid_angle;
-        }
-        else
+        if (!this->hit(ray(o, v), 0.001, infinity, rec))
             return 0;
+
+        auto cos_theta_max = sqrt(1 - radius*radius/(center-o).length_squared());
+        auto solid_angle = 2*pi*(1-cos_theta_max);
+
+        return  1 / solid_angle;
     }
 
     vec3 sphere::random(const vec3& o) const {
