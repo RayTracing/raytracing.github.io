@@ -2428,7 +2428,7 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
     class constant_medium : public hittable {
         public:
             constant_medium(shared_ptr<hittable> b, double d, shared_ptr<texture> a)
-                : boundary(b), density(d)
+                : boundary(b), neg_inv_density(-1/d)
             {
                 phase_function = make_shared<isotropic>(a);
             }
@@ -2441,8 +2441,8 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
 
         public:
             shared_ptr<hittable> boundary;
-            double density;
             shared_ptr<material> phase_function;
+            double neg_inv_density;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [const-med-class]: <kbd>[constant_medium.h]</kbd> Constant medium class]
@@ -2478,45 +2478,48 @@ And the hit function is:
     bool constant_medium::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         // Print occasional samples when debugging. To enable, set enableDebug true.
         const bool enableDebug = false;
-        bool debugging = enableDebug && random_double() < 0.00001;
+        const bool debugging = enableDebug && random_double() < 0.00001;
 
         hit_record rec1, rec2;
 
-        if (boundary->hit(r, -infinity, infinity, rec1)) {
-            if (boundary->hit(r, rec1.t+0.0001, infinity, rec2)) {
+        if (!boundary->hit(r, -infinity, infinity, rec1))
+            return false;
 
-                if (debugging) std::cerr << "\nt0 t1 " << rec1.t << " " << rec2.t << '\n';
+        if (!boundary->hit(r, rec1.t+0.0001, infinity, rec2))
+            return false;
 
-                if (rec1.t < t_min) rec1.t = t_min;
-                if (rec2.t > t_max) rec2.t = t_max;
+        if (debugging) std::cerr << "\nt0=" << rec1.t << ", t1=" << rec2.t << '\n';
 
-                if (rec1.t >= rec2.t)
-                    return false;
-                if (rec1.t < 0)
-                    rec1.t = 0;
+        if (rec1.t < t_min) rec1.t = t_min;
+        if (rec2.t > t_max) rec2.t = t_max;
 
-                auto distance_inside_boundary = (rec2.t - rec1.t) * r.direction().length();
-                auto hit_distance = -(1/density) * log(random_double());
+        if (rec1.t >= rec2.t)
+            return false;
 
-                if (hit_distance < distance_inside_boundary) {
+        if (rec1.t < 0)
+            rec1.t = 0;
 
-                    rec.t = rec1.t + hit_distance / r.direction().length();
-                    rec.p = r.at(rec.t);
+        const auto ray_length = r.direction().length();
+        const auto distance_inside_boundary = (rec2.t - rec1.t) * ray_length;
+        const auto hit_distance = neg_inv_density * log(random_double());
 
-                    if (debugging) {
-                        std::cerr << "hit_distance = " <<  hit_distance << '\n'
-                                  << "rec.t = " <<  rec.t << '\n'
-                                  << "rec.p = " <<  rec.p << '\n';
-                    }
+        if (hit_distance > distance_inside_boundary)
+            return false;
 
-                    rec.normal = vec3(1,0,0);  // arbitrary
-                    rec.front_face = true;     // also arbitrary
-                    rec.mat_ptr = phase_function;
-                    return true;
-                }
-            }
+        rec.t = rec1.t + hit_distance / ray_length;
+        rec.p = r.at(rec.t);
+
+        if (debugging) {
+            std::cerr << "hit_distance = " <<  hit_distance << '\n'
+                      << "rec.t = " <<  rec.t << '\n'
+                      << "rec.p = " <<  rec.p << '\n';
         }
-        return false;
+
+        rec.normal = vec3(1,0,0);  // arbitrary
+        rec.front_face = true;     // also arbitrary
+        rec.mat_ptr = phase_function;
+
+        return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [const-med-hit]: <kbd>[constant_medium.h]</kbd> Constant medium hit method]
@@ -2525,6 +2528,12 @@ And the hit function is:
 The reason we have to be so careful about the logic around the boundary is we need to make sure this
 works for ray origins inside the volume. In clouds, things bounce around a lot so that is a common
 case.
+
+In addition, the above code assumes that once a ray exits the constant medium boundary, it will
+continue forever outside the boundary. Put another way, it assumes that the boundary shape is
+convex. So this particular implementation will work for boundaries like boxes or spheres, but will
+not work with toruses or shapes that contain voids. It's possible to write an implementation that
+handles arbitrary shapes, but we'll leave that as an exercise for the reader.
 
 <div class='together'>
 If we replace the two blocks with smoke and fog (dark and light particles) and make the light bigger
