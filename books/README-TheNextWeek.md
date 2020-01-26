@@ -39,14 +39,6 @@ If you spot errors, have suggested corrections, or would like to help out with t
 review the [CONTRIBUTING][] document for the most effective way to proceed.
 
 
-Acknowledgments
-----------------
-Thanks to Becker for his many helpful comments on the draft and to Matthew Heimlich for spotting a
-critical motion blur error. Thanks to Andrew Kensler, Thiago Ize, and Ingo Wald for advice on
-ray-AABB tests. Thanks to David Hart and Grue Debry for help with a bunch of the details. Thanks to
-Jean Buckley for editing.
-
-
 
 [CONTRIBUTING]:               ../CONTRIBUTING.md
 [directly from GitHub]:       https://github.com/raytracing/raytracing.github.io/releases/
