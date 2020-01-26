@@ -38,22 +38,6 @@ review the [CONTRIBUTING][] document for the most effective way to proceed.
 
 
 
-
-
-Acknowledgements
------------------
-Thanks to Dave Hart and Jean Buckley for help on the original manuscript.
-
-Thanks to Paul Melis, Nakata Daisuke, Filipe Scur, Vahan Sosoyan, and Matthew Heimlich for finding
-errors.
-
-Thanks to Tatsuya Ogawa and Aaryaman Vasishta for code improvements.
-
-Thanks to Steve Hollasch, Trevor David Black, Berna Kabadayı and Lorenzo Mancini for translating the
-book to Markdeep and moving it to the web.
-
-
-
 [CONTRIBUTING]:               ../CONTRIBUTING.md
 [directly from GitHub]:       https://github.com/raytracing/raytracing.github.io/releases/
 [Hack the Hood]:              http://www.hackthehood.org/
