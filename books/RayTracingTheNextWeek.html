@@ -251,9 +251,9 @@ Be sure that in the materials you have the scattered rays be at the time of the 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
             ) const {
-                vec3 target = rec.p + rec.normal + random_unit_vector();
+                vec3 scatter_direction = rec.normal + random_unit_vector();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                scattered = ray(rec.p, target-rec.p, r_in.time());
+                scattered = ray(rec.p, scatter_direction, r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 attenuation = albedo;
                 return true;
@@ -911,8 +911,8 @@ Now we can make textured materials by replacing the vec3 color with a texture po
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
             ) const {
-                vec3 target = rec.p + rec.normal + random_unit_vector();
-                scattered = ray(rec.p, target - rec.p);
+                vec3 scatter_direction = rec.normal + random_unit_vector();
+                scattered = ray(rec.p, scatter_direction, r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 attenuation = albedo->value(rec.u, rec.v, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2459,7 +2459,7 @@ The scattering function of isotropic picks a uniform random direction:
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
             ) const  {
-                scattered = ray(rec.p, random_in_unit_sphere());
+                scattered = ray(rec.p, random_in_unit_sphere(), r_in.time());
                 attenuation = albedo->value(rec.u, rec.v, rec.p);
                 return true;
             }
