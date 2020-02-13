@@ -842,7 +842,7 @@ And _Lambertian_ material becomes:
 And the color function gets a minor modification:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, const vec3& background, hittable& world, int depth) {
+    vec3 ray_color(const ray& r, const vec3& background, const hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1304,7 +1304,7 @@ If we hack our `ray_color()` function to sample the light in a very hard-coded f
 that math and get the concept, we can add it (see the highlighted region):
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, const vec3& background, hittable& world, int depth) {
+    vec3 ray_color(const ray& r, const vec3& background, const hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1486,7 +1486,7 @@ We can try this in the `ray_color()` function, with the main changes highlighted
 change variable `pdf` to some other variable name to avoid a name conflict with the new `pdf` class.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, const vec3& background, hittable& world, int depth) {
+    vec3 ray_color(const ray& r, const vec3& background, const hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1627,7 +1627,7 @@ And we change `xz_rect` to implement those functions:
 And then change `ray_color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, const vec3& background, hittable& world, int depth) {
+    vec3 ray_color(const ray& r, const vec3& background, const hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1708,7 +1708,7 @@ And plugging it into `ray_color()`:
     vec3 ray_color(
         const ray& r,
         const vec3& background,
-        hittable& world,
+        const hittable& world,
         shared_ptr<hittable> lights,
         int depth
     ) {
@@ -1908,7 +1908,7 @@ And `ray_color()` changes are small:
     vec3 ray_color(
         const ray& r,
         const vec3& background,
-        hittable& world,
+        const hittable& world,
         shared_ptr<hittable> lights,
         int depth
     ) {
@@ -1984,7 +1984,7 @@ just like it did before.
     vec3 ray_color(
         const ray& r,
         const vec3& background,
-        hittable& world,
+        const hittable& world,
         shared_ptr<hittable> lights,
         int depth
     ) {

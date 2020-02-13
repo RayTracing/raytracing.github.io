@@ -1073,7 +1073,7 @@ And the new main:
     #include <iostream>
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    vec3 ray_color(const ray& r, hittable& world) {
+    vec3 ray_color(const ray& r, const hittable& world) {
         hit_record rec;
         if (world.hit(r, 0.0, infinity, rec)) {
             return 0.5 * (rec.normal + vec3(1,1,1));
@@ -1395,7 +1395,7 @@ range from -1 to +1. Reject this point and try again if the point is outside the
 Then update the `ray_color()` function to use the new random direction generator:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, hittable& world) {
+    vec3 ray_color(const ray& r, const hittable& world) {
         hit_record rec;
         if (world.hit(r, 0.0, infinity, rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1419,7 +1419,7 @@ time — long enough to blow the stack. To guard against that, let's limit the m
 depth, returning no light contribution at the maximum depth:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    vec3 ray_color(const ray& r, hittable& world, int depth) {
+    vec3 ray_color(const ray& r, const hittable& world, int depth) {
         hit_record rec;
         if (world.hit(r, 0.0, infinity, rec)) {
             // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1558,7 +1558,7 @@ This `random_unit_vector()` is a drop-in replacement for the existing `random_in
 function.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, hittable& world, int depth) {
+    vec3 ray_color(const ray& r, const hittable& world, int depth) {
         hit_record rec;
         if (world.hit(r, 0.0, infinity, rec)) {
             // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1634,7 +1634,7 @@ this diffuse method (before adopting Lambertian diffuse).
 Plugging the new formula into the `ray_color()` function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, hittable& world, int depth) {
+    vec3 ray_color(const ray& r, const hittable& world, int depth) {
         hit_record rec;
         if (world.hit(r, 0.0, infinity, rec)) {
             // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1879,7 +1879,7 @@ The metal material just reflects rays using that formula:
 We need to modify the color function to use this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, hittable& world, int depth) {
+    vec3 ray_color(const ray& r, const hittable& world, int depth) {
         hit_record rec;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (world.hit(r, 0.001, infinity, rec)) {
