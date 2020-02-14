@@ -17,7 +17,7 @@
 #include <iostream>
 
 
-vec3 ray_color(const ray& r, hittable& world, int depth) {
+vec3 ray_color(const ray& r, const hittable& world, int depth) {
     hit_record rec;
 
     // If we've exceeded the ray bounce limit, no more light is gathered.

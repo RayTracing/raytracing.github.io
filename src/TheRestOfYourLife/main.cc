@@ -22,7 +22,7 @@
 vec3 ray_color(
     const ray& r,
     const vec3& background,
-    hittable& world,
+    const hittable& world,
     shared_ptr<hittable> lights,
     int depth
 ) {
