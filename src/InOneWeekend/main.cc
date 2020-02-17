@@ -39,9 +39,9 @@ vec3 ray_color(const ray& r, const hittable& world, int depth) {
 
 
 hittable_list random_scene() {
-    hittable_list objects;
+    hittable_list world;
 
-    objects.add(
+    world.add(
         make_shared<sphere>(vec3(0,-1000,0), 1000, make_shared<lambertian>(vec3(0.5, 0.5, 0.5)))
     );
 
@@ -54,30 +54,30 @@ hittable_list random_scene() {
                 if (choose_mat < 0.8) {
                     // diffuse
                     auto albedo = vec3::random() * vec3::random();
-                    objects.add(
+                    world.add(
                         make_shared<sphere>(center, 0.2, make_shared<lambertian>(albedo)));
                 } else if (choose_mat < 0.95) {
                     // metal
                     auto albedo = vec3::random(.5, 1);
                     auto fuzz = random_double(0, .5);
-                    objects.add(
+                    world.add(
                         make_shared<sphere>(center, 0.2, make_shared<metal>(albedo, fuzz)));
                 } else {
                     // glass
-                    objects.add(make_shared<sphere>(center, 0.2, make_shared<dielectric>(1.5)));
+                    world.add(make_shared<sphere>(center, 0.2, make_shared<dielectric>(1.5)));
                 }
             }
         }
     }
 
-    objects.add(
+    world.add(
         make_shared<sphere>(vec3(0, 1, 0), 1.0, make_shared<dielectric>(1.5)));
-    objects.add(
+    world.add(
         make_shared<sphere>(vec3(-4, 1, 0), 1.0, make_shared<lambertian>(vec3(0.4, 0.2, 0.1))));
-    objects.add(
+    world.add(
         make_shared<sphere>(vec3(4, 1, 0), 1.0, make_shared<metal>(vec3(0.7, 0.6, 0.5), 0.0)));
 
-    return objects;
+    return world;
 }
 
 
