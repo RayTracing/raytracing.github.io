@@ -275,7 +275,8 @@ $\mathbf{C} + (0, r/2, 0)$ at time $t=1$, where $r$ is a random number in $[0,1)
     hittable_list random_scene() {
         hittable_list world;
 
-        world.add(make_shared<sphere>(vec3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
+        world.add(make_shared<sphere>(
+            vec3(0,-1000,0), 1000, make_shared<lambertian>(vec3(0.5, 0.5, 0.5))));
 
         int i = 1;
         for (int a = -10; a < 10; a++) {
@@ -288,8 +289,7 @@ $\mathbf{C} + (0, r/2, 0)$ at time $t=1$, where $r$ is a random number in $[0,1)
                         auto albedo = vec3::random() * vec3::random();
                         world.add(make_shared<moving_sphere>(
                             center, center + vec3(0, random_double(0,.5), 0), 0.0, 1.0, 0.2,
-                            make_shared<lambertian>(make_shared<constant_texture>(albedo))
-                        ));
+                            make_shared<lambertian>(albedo)));
                     } else if (choose_mat < 0.95) {
                         // metal
                         auto albedo = vec3::random(.5, 1);
