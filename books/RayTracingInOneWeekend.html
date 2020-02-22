@@ -1046,12 +1046,6 @@ file.
     inline double ffmin(double a, double b) { return a <= b ? a : b; }
     inline double ffmax(double a, double b) { return a >= b ? a : b; }
 
-    inline double clamp(double x, double min, double max) {
-        if (x < min) return min;
-        if (x > max) return max;
-        return x;
-    }
-
     // Common Headers
 
     #include "common/ray.h"
@@ -1259,9 +1253,9 @@ samples) when writing out the color. In addition, we'll add a handy utility func
         auto b = scale * e[2];
 
         // Write the translated [0,255] value of each color component.
-        out << static_cast<int>(256.0 * clamp(r, 0.0, 0.999999)) << ' '
-            << static_cast<int>(256.0 * clamp(g, 0.0, 0.999999)) << ' '
-            << static_cast<int>(256.0 * clamp(b, 0.0, 0.999999)) << '\n';
+        out << static_cast<int>(256 * clamp(r, 0.0, 0.999)) << ' '
+            << static_cast<int>(256 * clamp(g, 0.0, 0.999)) << ' '
+            << static_cast<int>(256 * clamp(b, 0.0, 0.999)) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-clamped]: <kbd>[vec3.h]</kbd> The write_color() function]
@@ -1495,9 +1489,9 @@ square-root:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         // Write the translated [0,255] value of each color component.
-        out << static_cast<int>(256.0 * clamp(r, 0.0, 0.999999)) << ' '
-            << static_cast<int>(256.0 * clamp(g, 0.0, 0.999999)) << ' '
-            << static_cast<int>(256.0 * clamp(b, 0.0, 0.999999)) << '\n';
+        out << static_cast<int>(256 * clamp(r, 0.0, 0.999)) << ' '
+            << static_cast<int>(256 * clamp(g, 0.0, 0.999)) << ' '
+            << static_cast<int>(256 * clamp(b, 0.0, 0.999)) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-gamma]: <kbd>[vec3.h]</kbd> write_color(), with gamma correction]
