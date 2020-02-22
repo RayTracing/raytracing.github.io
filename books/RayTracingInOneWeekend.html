@@ -652,6 +652,7 @@ And that yields this picture:
 </div>
 
 Let’s revisit the ray-sphere equation:
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 oc = r.origin() - center;
     auto a = dot(r.direction(), r.direction());
@@ -1762,6 +1763,7 @@ within `hit_record`. See the highlighted lines below:
             shared_ptr<material> mat_ptr;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
+
     bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
         vec3 oc = r.origin() - center;
         auto a = r.direction().length_squared();
@@ -1883,9 +1885,11 @@ We need to modify the color function to use this:
         hit_record rec;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (world.hit(r, 0.001, infinity, rec)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             // If we've exceeded the ray bounce limit, no more light is gathered.
             if (depth <= 0)
                 return vec3(0,0,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             ray scattered;
             vec3 attenuation;
             if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
@@ -1903,8 +1907,7 @@ We need to modify the color function to use this:
 </div>
 
 <div class='together'>
-You will also need to modify the sphere class to have a material pointer to it. And add some
-metal spheres:
+Now let’s add some metal spheres to our scene:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
