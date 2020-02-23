@@ -204,8 +204,13 @@ class `vec3` for colors, locations, directions, offsets, whatever. Some people d
 because it doesn’t prevent you from doing something silly, like adding a color to a location. They
 have a good point, but we’re going to always take the “less code” route when not obviously wrong.
 
+Since `vec3` is such a fundamental class, it will be common to all of our ray tracing project source
+code. If you look at the accompanying source code for this book, you'll see a directory under `src/`
+for each book. In addition, you'll see a directory named `src/common/`. That's where you'll find all
+of the header files common to all books, such as the `vec3.h` header we'll define below.
+
 <div class='together'>
-Here’s the top part of my `vec3` class:
+So, on to the `vec3` class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include <iostream>
@@ -260,7 +265,7 @@ Here’s the top part of my `vec3` class:
             double e[3];
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [vec3-class]: <kbd>[vec3.h]</kbd> `vec3` class]
+    [Listing [vec3-class]: <kbd>[common/vec3.h]</kbd> `vec3` class]
 </div>
 
 We use `double` here, but some ray tracers use `float`. Either one is fine -- follow your own
@@ -313,7 +318,7 @@ tastes. The second part of the header file contains vector utility functions:
         return v / v.length();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [vec3-utility]: <kbd>[vec3.h]</kbd> vec3 utility functions]
+    [Listing [vec3-utility]: <kbd>[common/vec3.h]</kbd> vec3 utility functions]
 
 <div class='together'>
 Now we can change our main to use this:
@@ -393,7 +398,7 @@ The function $p(t)$ in more verbose code form I call `ray::at(t)`:
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-initial]: <kbd>[ray.h]</kbd> The ray class]
+    [Listing [ray-initial]: <kbd>[common/ray.h]</kbd> The ray class]
 </div>
 
 Now we are ready to turn the corner and make a ray tracer. At the core, the ray tracer sends rays
@@ -800,7 +805,8 @@ the ray. Alternatively, we can have the normal always point against the ray. If 
 the sphere, the normal will point outward, but if the ray is inside the sphere, the normal will
 point inward.
 
-    ![Figure [normal-directions]: Possible directions for sphere surface-normal geometry](../images/fig.normal-possibilities.jpg)
+    ![Figure [normal-directions]: Possible directions for sphere surface-normal geometry
+    ](../images/fig.normal-possibilities.jpg)
 
 We need to choose one of these possibilities because we will eventually want to determine which
 side of the surface that the ray is coming from. This is important for objects that are rendered
@@ -1171,7 +1177,7 @@ number as desired with the following code snippet, added to `common/rtweekend.h`
         return min + (max-min)*random_double();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-double]: <kbd>[rtweekend.h]</kbd> random_double() functions]
+    [Listing [random-double]: <kbd>[common/rtweekend.h]</kbd> random_double() functions]
 </div>
 
 <div class='together'>
@@ -1191,7 +1197,7 @@ If you want to use this, you can obtain a random number with the conditions we n
         return rand_generator();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-double-alt]: <kbd>[file]</kbd> random_double(), alternate implemenation]
+    [Listing [random-double-alt]: random_double(), alternate implemenation]
 </div>
 
 <div class='together'>
@@ -1233,7 +1239,7 @@ before:
     };
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [camera-initial]: <kbd>[camera.h]</kbd> The camera class]
+    [Listing [camera-initial]: <kbd>[common/camera.h]</kbd> The camera class]
 </div>
 
 To handle the multi-sampled color computation, we update the `vec3::write_color()` function. Rather
@@ -1249,7 +1255,7 @@ samples) when writing out the color. In addition, we'll add a handy utility func
         return x;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [clamp]: <kbd>[rtweekend.h]</kbd> The clamp() utility function]
+    [Listing [clamp]: <kbd>[common/rtweekend.h]</kbd> The clamp() utility function]
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     void write_color(std::ostream &out, int samples_per_pixel) {
@@ -1265,7 +1271,7 @@ samples) when writing out the color. In addition, we'll add a handy utility func
             << static_cast<int>(256 * clamp(b, 0.0, 0.999)) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [write-color-clamped]: <kbd>[vec3.h]</kbd> The write_color() function]
+    [Listing [write-color-clamped]: <kbd>[common/vec3.h]</kbd> The write_color() function]
 
 <div class='together'>
 Main is also changed:
@@ -1378,7 +1384,7 @@ range from -1 to +1. Reject this point and try again if the point is outside the
             return vec3(random_double(min,max), random_double(min,max), random_double(min,max));
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [vec-rand-util]: <kbd>[vec3.h]</kbd> `vec3` random utility functions]
+    [Listing [vec-rand-util]: <kbd>[common/vec3.h]</kbd> `vec3` random utility functions]
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_in_unit_sphere() {
@@ -1389,7 +1395,8 @@ range from -1 to +1. Reject this point and try again if the point is outside the
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-in-unit-sphere]: <kbd>[vec3.h]</kbd> The random_in_unit_sphere() function]
+    [Listing [random-in-unit-sphere]:
+    <kbd>[common/vec3.h]</kbd> The random_in_unit_sphere() function]
 </div>
 
 <div class='together'>
@@ -1501,7 +1508,7 @@ square-root:
             << static_cast<int>(256 * clamp(b, 0.0, 0.999)) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [write-color-gamma]: <kbd>[vec3.h]</kbd> write_color(), with gamma correction]
+    [Listing [write-color-gamma]: <kbd>[common/vec3.h]</kbd> write_color(), with gamma correction]
 
 </div>
 
@@ -1520,7 +1527,8 @@ point approximation the sphere intersector gives us. So we need to ignore hits v
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     if (world.hit(r, 0.001, infinity, rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [reflect-tolerance]: <kbd>[main.cc]</kbd> Calculating reflected ray origins with tolerance]
+    [Listing [reflect-tolerance]:
+    <kbd>[main.cc]</kbd> Calculating reflected ray origins with tolerance]
 
 This gets rid of the shadow acne problem. Yes it is really called that.
 </div>
@@ -1547,7 +1555,7 @@ the unit ball, and then normalizing those.
         return vec3(r*cos(a), r*sin(a), z);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-unit-vector]: <kbd>[vec3.h]</kbd> The random_unit_vector() function]
+    [Listing [random-unit-vector]: <kbd>[common/vec3.h]</kbd> The random_unit_vector() function]
 
   ![Figure [rand-unit-vector]: Generating a random unit vector](../images/fig.rand-unitvector.png)
 
@@ -1627,7 +1635,8 @@ this diffuse method (before adopting Lambertian diffuse).
             return -in_unit_sphere;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-in-hemisphere]: <kbd>[vec3.h]</kbd> The random_in_hemisphere(normal) function]
+    [Listing [random-in-hemisphere]:
+    <kbd>[common/vec3.h]</kbd> The random_in_hemisphere(normal) function]
 
 </div>
 
@@ -1656,7 +1665,8 @@ Plugging the new formula into the `ray_color()` function:
 
 Gives us the following image:
 
-  ![Rendering of diffuse spheres with hemispherical scattering](../images/img.rand-hemispherical.png)
+  ![Rendering of diffuse spheres with hemispherical scattering
+  ](../images/img.rand-hemispherical.png)
 
 </div>
 
@@ -1801,7 +1811,8 @@ within `hit_record`. See the highlighted lines below:
         return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [sphere-material]: <kbd>[sphere.h]</kbd> Ray-sphere intersection with added material information]
+    [Listing [sphere-material]: <kbd>[sphere.h]</kbd>
+    Ray-sphere intersection with added material information]
 </div>
 
 <div class='together'>
@@ -1852,7 +1863,7 @@ points in, we will need a minus sign, yielding:
         return v - 2*dot(v,n)*n;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [vec3-reflect]: <kbd>[vec3.h]</kbd> vec3 reflection function]
+    [Listing [vec3-reflect]: <kbd>[common/vec3.h]</kbd> vec3 reflection function]
 </div>
 
 <div class='together'>
@@ -2090,7 +2101,7 @@ When we combine them back together, we can write a function to calculate $\mathb
         return r_out_parallel + r_out_perp;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [refract]: <kbd>[vec3.h]</kbd> Refraction function]
+    [Listing [refract]: <kbd>[common/vec3.h]</kbd> Refraction function]
 </div>
 
 <div class='together'>
@@ -2225,7 +2236,8 @@ And the dielectric material that always refracts (when possible) is:
 </div>
 
 <div class='together'>
-Attenuation is always 1 -- the glass surface absorbs nothing. If we try that out with these parameters:
+Attenuation is always 1 -- the glass surface absorbs nothing. If we try that out with these
+parameters:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     world.add(make_shared<sphere>(
@@ -2377,7 +2389,7 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
             vec3 vertical;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [camera-fov]: <kbd>[camera.h]</kbd> Camera with adjustable field-of-view (fov)]
+    [Listing [camera-fov]: <kbd>[common/camera.h]</kbd> Camera with adjustable field-of-view (fov)]
 </div>
 
 <div class='together'>
@@ -2462,7 +2474,7 @@ camera horizontally level until you decide to experiment with crazy camera angle
             vec3 vertical;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [camera-orient]: <kbd>[camera.h]</kbd> Positionable and orientable camera]
+    [Listing [camera-orient]: <kbd>[common/camera.h]</kbd> Positionable and orientable camera]
 
 <div class='together'>
 This allows us to change the viewpoint:
@@ -2541,7 +2553,7 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [rand-in-unit-disk]: <kbd>[vec3.h]</kbd> Generate random point inside unit disk]
+    [Listing [rand-in-unit-disk]: <kbd>[common/vec3.h]</kbd> Generate random point inside unit disk]
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
@@ -2598,7 +2610,7 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [camera-dof]: <kbd>[camera.h]</kbd> Camera with adjustable depth-of-field (dof)]
+    [Listing [camera-dof]: <kbd>[common/camera.h]</kbd> Camera with adjustable depth-of-field (dof)]
 
 <div class='together'>
 Using a big aperture:

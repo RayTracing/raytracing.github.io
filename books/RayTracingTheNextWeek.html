@@ -87,7 +87,7 @@ For this we will first need to have a ray store the time it exists at:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [time-ray]: <kbd>[ray.h]</kbd> Ray with time information]
+    [Listing [time-ray]: <kbd>[common/ray.h]</kbd> Ray with time information]
 </div>
 
 Now we need to modify the camera to generate rays at a random time between `time1` and `time2`.
@@ -155,7 +155,7 @@ to camera because for now it is not allowed to move; it just sends out rays over
     };
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [time-camera]: <kbd>[camera.h]</kbd> Camera with time information]
+    [Listing [time-camera]: <kbd>[common/camera.h]</kbd> Camera with time information]
 
 We also need a moving object. I’ll create a sphere class that has its center move linearly from
 `center0` at `time0` to `center1` at `time1`. Outside that time interval it continues on, so those
@@ -569,7 +569,7 @@ passing in the interval $t_{min}$, $t_{max}$ we get:
             vec3 _max;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [aabb]: <kbd>[aabb.h]</kbd> Axis-aligned bounding box class]
+    [Listing [aabb]: <kbd>[common/aabb.h]</kbd> Axis-aligned bounding box class]
 </div>
 
 Note that we use the simple custom `ffmax()` function (defined in `rtweekend.h`) instead of the C++
@@ -597,7 +597,7 @@ it as my go-to method:
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [aabb-hit]: <kbd>[aabb.h]</kbd> Axis-aligned bounding box hit function]
+    [Listing [aabb-hit]: <kbd>[common/aabb.h]</kbd> Axis-aligned bounding box hit function]
 </div>
 
 <div class='together'>
@@ -694,7 +694,7 @@ boxes:
         return aabb(small,big);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [surrounding-box]: <kbd>[aabb.h]</kbd> Surrounding bounding box]
+    [Listing [surrounding-box]: <kbd>[common/aabb.h]</kbd> Surrounding bounding box]
 </div>
 
 <div class='together'>
@@ -896,7 +896,7 @@ being able to make any color a texture is great.
             vec3 color;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [texture]: <kbd>[texture.h]</kbd> A texture class]
+    [Listing [texture]: <kbd>[common/texture.h]</kbd> A texture class]
 
 <div class='together'>
 Now we can make textured materials by replacing the vec3 color with a texture pointer:
@@ -968,7 +968,7 @@ forms a 3D checker pattern.
             shared_ptr<texture> even;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [checker-texture]: <kbd>[texture.h]</kbd> Checkered texture]
+    [Listing [checker-texture]: <kbd>[common/texture.h]</kbd> Checkered texture]
 </div>
 
 Those checker odd/even pointers can be to a constant texture or to some other procedural texture.
@@ -1127,7 +1127,7 @@ code to make it all happen:
             }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin]: <kbd>[perlin.h]</kbd> A Perlin texture class and functions]
+    [Listing [perlin]: <kbd>[common/perlin.h]</kbd> A Perlin texture class and functions]
 </div>
 
 <div class='together'>
@@ -1149,7 +1149,7 @@ colors:
             perlin noise;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [noise-texture]: <kbd>[texture.h]</kbd> Noise texture]
+    [Listing [noise-texture]: <kbd>[common/texture.h]</kbd> Noise texture]
 </div>
 
 <div class='together'>
@@ -1235,7 +1235,7 @@ To make it smooth, we can linearly interpolate:
             ...
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin-trilinear]: <kbd>[perlin.h]</kbd> Perlin with trilienear interpolation]
+    [Listing [perlin-trilinear]: <kbd>[common/perlin.h]</kbd> Perlin with trilienear interpolation]
 </div>
 
 <div class='together'>
@@ -1270,7 +1270,7 @@ the interpolation:
                 int k = floor(p.z());
                 ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin-smoothed]: <kbd>[perlin.h]</kbd> Perlin smoothed]
+    [Listing [perlin-smoothed]: <kbd>[common/perlin.h]</kbd> Perlin smoothed]
 </div>
 
 <div class='together'>
@@ -1300,7 +1300,7 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
             double scale;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin-smoothed-2]: <kbd>[texture.h]</kbd> Perlin smoothed, higher frequency]
+    [Listing [perlin-smoothed-2]: <kbd>[common/texture.h]</kbd> Perlin smoothed, higher frequency]
 
 which gives:
 
@@ -1345,7 +1345,7 @@ are any reasonable set of irregular directions, and I won't bother to make them 
             ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin-randunit]: <kbd>[perlin.h]</kbd> Perlin with random unit translations]
+    [Listing [perlin-randunit]: <kbd>[common/perlin.h]</kbd> Perlin with random unit translations]
 </div>
 
 <div class='together'>
@@ -1378,7 +1378,7 @@ The Perlin class `noise()` method is now:
             ...
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin-2]: <kbd>[perlin.h]</kbd> Perlin class with new noise() method]
+    [Listing [perlin-2]: <kbd>[common/perlin.h]</kbd> Perlin class with new noise() method]
 </div>
 
 <div class='together'>
@@ -1410,7 +1410,7 @@ And the interpolation becomes a bit more complicated:
         ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin-interp]: <kbd>[perlin.h]</kbd> Perlin interpolation function so far]
+    [Listing [perlin-interp]: <kbd>[common/perlin.h]</kbd> Perlin interpolation function so far]
 </div>
 
 <div class='together'>
@@ -1435,7 +1435,7 @@ perlin output back to between 0 and 1.
             double scale;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin-smoothed-2]: <kbd>[perlin.h]</kbd> Perlin smoothed, higher frequency]
+    [Listing [perlin-smoothed-2]: <kbd>[common/perlin.h]</kbd> Perlin smoothed, higher frequency]
 </div>
 
 <div class='together'>
@@ -1469,7 +1469,7 @@ turbulence and is a sum of repeated calls to noise:
             }
             ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin-turb]: <kbd>[perlin.h]</kbd> Turbulence function]
+    [Listing [perlin-turb]: <kbd>[common/perlin.h]</kbd> Turbulence function]
 </div>
 
 Here `fabs()` is the absolute value function defined in `<cmath>`.
@@ -1505,7 +1505,7 @@ effect is:
             double scale;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [noise-tex-2]: <kbd>[texture.h]</kbd> Noise texture with turbulence]
+    [Listing [noise-tex-2]: <kbd>[common/texture.h]</kbd> Noise texture with turbulence]
 
 Which yields:
 
