@@ -987,15 +987,15 @@ function), the reference count is decremented. Once the count goes to zero, the 
 Typically, a shared pointer is first initialized with a newly-allocated object, something like this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    shared_ptr<thing> thing_ptr = make_shared<thing>(1, true);
-    auto thing2_ptr = make_shared<thing2>(2, false);
+    shared_ptr<thing> thing_ptr = make_shared<thing>(thing_constructor_params ...);
+    auto thing2_ptr = make_shared<thing2>(thing2_constructor_params ...);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [shared-ptr]: An example allocation using `shared_ptr`]
 
-`make_shared<thing>(1, true)` allocates a new instance of type `thing`, using the constructor
-arguments `(1, true)`. It returns a `shared_ptr<thing>`. This can be simplified as in the second
-line with the `auto` type declaration, because the type is sufficiently defined by the return type
-of `make_shared<thing2>`.
+`make_shared<thing>(thing_constructor_params ...)` allocates a new instance of type `thing`, using
+the constructor parameters. It returns a `shared_ptr<thing>`. The second line shows a simpler form
+using the `auto` type declaration (the type can be automatically deduced by the return type of
+`make_shared<thing2>(...)`.
 </div>
 
 We'll use shared pointers in our code, because it allows multiple objects to use a common object
