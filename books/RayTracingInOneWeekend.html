@@ -747,8 +747,10 @@ And here’s the sphere:
         public:
             sphere() {}
             sphere(vec3 cen, double r) : center(cen), radius(r) {};
-            virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const;
+
+            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+
+        public:
             vec3 center;
             double radius;
     };
@@ -1658,7 +1660,8 @@ Plugging the new formula into the `ray_color()` function:
 
 Gives us the following image:
 
-  ![Rendering of diffuse spheres with hemispherical scattering](../images/fig.rand-hemispherical.png)
+  ![Rendering of diffuse spheres with hemispherical scattering](../images/img.rand-hemispherical.png)
+
 </div>
 
 <div class='together'>
@@ -1752,9 +1755,10 @@ within `hit_record`. See the highlighted lines below:
     class sphere: public hittable {
         public:
             sphere() {}
-
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             sphere(vec3 cen, double r, shared_ptr<material> m)
                 : center(cen), radius(r), mat_ptr(m) {};
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
 
