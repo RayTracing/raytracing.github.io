@@ -818,8 +818,7 @@ sphere.
     if (dot(ray_direction, outward_normal) > 0.0) {
         // ray is inside the sphere
         ...
-    }
-    else {
+    } else {
         // ray is outside the sphere
         ...
     }
@@ -920,7 +919,7 @@ And then we add the surface side determination to the class:
         return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [sphere-final]: <kbd>[sphere.h]</kbd> The sphere class with normal determination]
+    [Listing [sphere-final]: <kbd>[sphere.h]</kbd> The `sphere` class with normal determination]
 
 </div>
 
@@ -987,15 +986,25 @@ function), the reference count is decremented. Once the count goes to zero, the 
 Typically, a shared pointer is first initialized with a newly-allocated object, something like this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    shared_ptr<thing> thing_ptr = make_shared<thing>(1, true);
-    auto thing2_ptr = make_shared<thing2>(2, false);
+    shared_ptr<double> double_ptr = make_shared<double>(0.37);
+    shared_ptr<vec3>   vec3_ptr   = make_shared<vec3>(1.414214, 2.718281, 1.618034);
+    shared_ptr<sphere> sphere_ptr = make_shared<sphere>(vec3(0,0,0), 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [shared-ptr]: An example allocation using `shared_ptr`]
 
-`make_shared<thing>(1, true)` allocates a new instance of type `thing`, using the constructor
-arguments `(1, true)`. It returns a `shared_ptr<thing>`. This can be simplified as in the second
-line with the `auto` type declaration, because the type is sufficiently defined by the return type
-of `make_shared<thing2>`.
+`make_shared<thing>(thing_constructor_params ...)` allocates a new instance of type `thing`, using
+the constructor parameters. It returns a `shared_ptr<thing>`.
+
+Since the type can be automatically deduced by the return type of `make_shared<type>(...)`, the
+above lines can be more simply expressed using C++'s `auto` type specifier:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    auto double_ptr = make_shared<double>(0.37);
+    auto vec3_ptr   = make_shared<vec3>(1.414214, 2.718281, 1.618034);
+    auto sphere_ptr = make_shared<sphere>(vec3(0,0,0), 1.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [shared-ptr-auto]: An example allocation using `shared_ptr` with `auto` type]
+
 </div>
 
 We'll use shared pointers in our code, because it allows multiple objects to use a common object
