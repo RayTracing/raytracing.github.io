@@ -80,12 +80,4 @@ add_executable(pi                src/TheRestOfYourLife/pi.cc                ${CO
 add_executable(sphere_importance src/TheRestOfYourLife/sphere_importance.cc ${COMMON_ALL})
 add_executable(sphere_plot       src/TheRestOfYourLife/sphere_plot.cc       ${COMMON_ALL})
 
-target_include_directories(inOneWeekend      PRIVATE src)
-target_include_directories(theNextWeek       PRIVATE src)
-target_include_directories(theRestOfYourLife PRIVATE src)
-target_include_directories(cos_cubed         PRIVATE src)
-target_include_directories(cos_density       PRIVATE src)
-target_include_directories(integrate_x_sq    PRIVATE src)
-target_include_directories(pi                PRIVATE src)
-target_include_directories(sphere_importance PRIVATE src)
-target_include_directories(sphere_plot       PRIVATE src)
+include_directories(src/common)

@@ -9,11 +9,13 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
-#include "common/rtweekend.h"
-#include "common/camera.h"
+#include "rtweekend.h"
+
+#include "camera.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
+
 #include <iostream>
 
 

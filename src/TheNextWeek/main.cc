@@ -9,17 +9,19 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
-#include "common/rtweekend.h"
-#include "common/camera.h"
-#include "common/rtw_stb_image.h"
-#include "common/texture.h"
+#include "rtweekend.h"
+
 #include "box.h"
 #include "bvh.h"
+#include "camera.h"
 #include "constant_medium.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "moving_sphere.h"
+#include "rtw_stb_image.h"
 #include "sphere.h"
+#include "texture.h"
+
 #include <iostream>
 
 
