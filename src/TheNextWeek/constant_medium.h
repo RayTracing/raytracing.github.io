@@ -11,10 +11,11 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
-#include "common/rtweekend.h"
-#include "common/texture.h"
+#include "rtweekend.h"
+
 #include "hittable.h"
 #include "material.h"
+#include "texture.h"
 
 
 class constant_medium : public hittable  {

@@ -11,9 +11,10 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
-#include "common/rtweekend.h"
-#include "common/texture.h"
+#include "rtweekend.h"
+
 #include "pdf.h"
+#include "texture.h"
 
 
 double schlick(double cosine, double ref_idx) {

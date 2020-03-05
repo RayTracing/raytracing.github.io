@@ -11,8 +11,10 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
-#include "common/rtweekend.h"
+#include "rtweekend.h"
+
 #include "hittable.h"
+
 #include <algorithm>
 
 
