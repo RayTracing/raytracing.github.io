@@ -1,13 +1,72 @@
 Change Log
 ====================================================================================================
 
-vNext (version TBD)
---------------------
+// Current to 00d0ab0 2020-03-05
+
+v3.0.0 (in progress)
+---------------------
 Common
 - New: CMake configuration & build
-- New: File constants.h with portable math constants. Fixes #151.
-- Change: Replace pi with portable version. Fixes #207.
-- Change: Replace MAXFLOAT with (portable) infinity. Fixes #195.
+- New: File constants.h with portable math constants. Fixes [#151][]
+- New: `src/common` directory for code shared across books
+- New: Common project-wide header: `src/common/rtweekend.h`
+- New: `vec3::write_color` - provides a robust output method for color data (#93)
+- Change: Diffuse PDF computation uses random point _on_ sphere, rather than _inside_
+- Change: Default floating-point type changed from `float` to `double` (#150)
+- Change: Disable compile warnings for external `stb_image.h` on Windows
+- Change: Replace pi with portable version. Fixes [#207][]
+- Change: Replace MAXFLOAT with (portable) infinity (#195, #216)
+- Change: A _lot_ of code refactoring throughout
+- New: `degrees_to_radians()` utility function (#217)
+- Change: Lots more highlighting of changed code in books to aid reading
+- Change: Improved random number generator utilities
+- Change: Math typesetting fixes throughout the books (#13)
+- Change: Header cleanup across the source code (#218, #220)
+- New: Added code listing captions, including source file name, for all books (#238)
+- New: Added captions to all figures (#238)
+- Change: Improved naming of auxilliary programs in _The Rest Of Your Life_ source
+- Change: Cleaned up standard C++ header use (#19)
+- Change: `ray_color()` function now has max depth passed in, rather than hard-coding it (#143)
+- Fix: Fixed various minor problems in the text
+- Change: Code in source and in book reformatted to a consistent 96-column line length (#219)
+- Change: Books now use Markdeep's chapter indirection syntax
+- Fix: Fixed bug in `noise_texture::value()`
+- New: Clarified text around the ideal Lambertian distribution (#155)
+- Change: Added `random_in_unit_sphere()`, `random_unit_vector()`, `random_in_hemisphere()` to
+  vec3.h. Fixed places where we were using one but should have been using another. (#145)
+- Change: General rework of the `vec3` header (#153, #156, #215)
+- Change: Updated several output images to match code updates
+- Change: Books general styling improvements (#197)
+- Change: Lots of code cleanup (#192)
+- Change: Clarify sphere intersection code, plus slight perf improvement (#113)
+- Change: Reworked Lambertian reflection text (#155)
+- Change: Added proper handling of front vs back face intersection
+- Add: Added progress output for main programs (#139)
+- Deleted: Several unused source files from `src/TheRestOfYourLife`
+- Change: `ray::point_at_parameter()` renamed to `ray::at()`
+- Change: Moved `ffmin()`, `ffmax()` from `aabb.h` to `rtweekend.h`
+- Fix: Delete unused variable `p` in main()
+- Change: Move low-level utility functions to more appropriate headers
+- Add: `random_int()`, `random_double()`, and `vec3::random()` utility functions
+- Change: `squared_length()` renamed to `length_squared()`
+- Add: Added safety value when surface texture has null data
+- Add: Local copy of `markdeep.min.js` for offline reading
+- Change: Update `sphere::hit()` function.
+- Add: Additional explanatory text to the dielectric chapter
+- Change: Refraction variables renamed to match reflection variable names
+- Change: `hittable_list` uses `std::vector` plus `std::shared_ptr` pointers
+- Change: Materials are now referenced with `std::shared_ptr` pointers
+- Change: Complete elimination of bare pointers and `new`/`delete`
+- Change: Assorted variable renames for clarity
+- Add: "The Next Week" main program added swtich statement for different scenes
+- Add: "The Next Week" main program now defines all image/camera parameters for each scene
+- Add: Main programs now define and handle parameterized background color
+- Change: General refactorings of code for clarity / simplicity
+- Change: Refactored acknowledgements. These are now moved to and duplicated in each book
+- Change: Simplify lambertian scatter direction calculation
+- Change: Improve color [0,1] -> [0,255] mapping
+- Add: Draft image for hemispherical rendering
+- Fix: Correct first Perlin noise() function in "The Next Week".
 
 
 v2.0.0 (2019-10-07)
@@ -62,7 +121,7 @@ _Ray Tracing: The Next Week_
 - Fix: Text, Chapter 7, Changed `cornell_box` hittable array size to 5
 - Fix: Code and Text, Chapter 3, Changed `List[0]` to `List[i]` in `hittable_list::bounding_box()`
 - Fix: Code and Text, Chapter 3, Replaced `fmax` and `fmin` with `ffmax` and `ffmin`
-- Fix: Code, Add missing headers to constant_medium.h to fix g++ compiler error
+- Fix: Code, Add missing headers to `constant_medium.h` to fix g++ compiler error
 - New: raytracing.github.io/books/RayTracingTheNextWeek.html
 - Add: README.md, source README.md
 - Add: Markdeep page created for entire body of text
@@ -120,3 +179,7 @@ v1.42.0  (2018-08-26)
 ----------------------
 _Ray Tracing: The Next Week_
 - New: First GitHub release.
+
+
+
+[#195]: https://github.com/raytracing/raytracing.github.io/issues/#195
