@@ -26,6 +26,9 @@ raytracing.github.io/      # Repository root
     style/                 # CSS for books and web site
 ```
 
+The latest official release can be found in the `master` branch. All ongoing development work (and
+all of the latest changes) will be in the `development` branch.
+
 
 Issues
 -------
@@ -34,7 +37,8 @@ all kinds, even better ways to present something -- just go to the [issues page]
 
 **Before creating a new issue**, please review existing issues to see if someone has already
 submitted the same one. Odds are you're not the first to encounter something, so a little quick
-research can save everyone some hassle.
+research can save everyone some hassle. It's also a good idea to verify that problems still exist in
+the `development` branch when creating new issues.
 
 When entering a new issue, please include all relevant information. For content issues, include the
 book or books this applies to, and specific locations that should be reviewed. Similarly for code:
@@ -51,7 +55,7 @@ To contribute a change to the project, please follow these steps:
      duplicate other work planned or in progress, and makes sense for the next release.
 
   3. Create your changes in a feature branch (or fork) from the `development` branch (_not_ from
-     master).
+     `master`).
 
   4. Follow existing code style.
 

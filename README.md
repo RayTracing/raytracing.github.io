@@ -19,6 +19,24 @@ These books have been formatted for both screen and print. For printed copies, o
 versions, use the print function in your browser.
 
 
+News
+-----
+2020-March-23 — v3.0.0 is out! Following the major v2.0.0 release, we finally had the chance to dig
+into some of the larger changes we'd been wanting to make for a long time. This is a large change
+across the books and entire source code. The new source code now builds using CMake, for most
+platforms and build systems. We've refactored a good deal of the project source, cleaning things up,
+refactoring, adding new functionality where it made sense, and generally trying to simplify the code
+with the goal of making it easier to understand and modify. Finally, this release includes a number
+of changes to areas of the book that have given readers difficulties. Enjoy!
+
+
+Branches
+---------
+The `master` branch contains the code at latest release. All ongoing development, with all of the
+latest changes, can be found in the `development` branch. If you have issues to file, you may want
+to check to see if they're still present in the `development` branch.
+
+
 Downloading The Source Code
 ----------------------------
 The [GitHub home][] for this project contains all source and documentation associated with the _Ray

@@ -2,7 +2,7 @@ Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
 ----------------------------------------------------------------------------------------------------
-# v3.0.0 (in progress) / Current to b3f0bbc 2020-03-21
+# v3.0.0 (2020-03-23)
 
 With the migration to a web format accomplished in v2.0.0, we immediately began work on a new major
 release: v3.0.0. This release tackles the following key themes:
@@ -72,9 +72,11 @@ patch-level (fix) changes and some minor-level (addition) changes.
 
 ### _In One Weekend_
 - Change: Reworked Lambertian reflection text (#155)
+- Change: Revised the figure for computing a random reflection vector (#142)
 - New: Clarified text around the ideal Lambertian distribution (#155)
 - New: Additional explanatory text to the dielectric chapter
 - New: Image for hemispherical rendering
+- New: Image for dealing with front and back faces (#326)
 - Fix: Update `ray_color()` code blocks to match current source (#391)
 
 ### _The Next Week_
