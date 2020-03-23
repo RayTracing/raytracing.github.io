@@ -19,6 +19,13 @@ These books have been formatted for both screen and print. For printed copies, o
 versions, use the print function in your browser.
 
 
+Branches
+---------
+The `master` branch contains the code at latest release. All ongoing development, with all of the
+latest changes, can be found in the `development` branch. If you have issues to file, you may want
+to check to see if they're still present in the `development` branch.
+
+
 Downloading The Source Code
 ----------------------------
 The [GitHub home][] for this project contains all source and documentation associated with the _Ray
