@@ -5,6 +5,7 @@ Change Log -- Ray Tracing in One Weekend
 # v3.0.1 (In Progress)
 
 - Fix: Display rendered images as pixelated instead of smoothed (#179)
+- Delete: delete old README files specific to each book (#410)
 
 
 ----------------------------------------------------------------------------------------------------
