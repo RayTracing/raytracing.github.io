@@ -2,6 +2,12 @@ Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
 ----------------------------------------------------------------------------------------------------
+# v3.0.1 (In Progress)
+
+- Fix: Display rendered images as pixelated instead of smoothed (#179)
+
+
+----------------------------------------------------------------------------------------------------
 # v3.0.0 (2020-03-23)
 
 With the migration to a web format accomplished in v2.0.0, we immediately began work on a new major
