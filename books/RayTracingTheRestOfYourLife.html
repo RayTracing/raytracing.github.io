@@ -7,7 +7,7 @@
                                            Peter Shirley
                           edited by Steve Hollasch and Trevor David Black
                                                 <br>
-                                     Version 3.0.0, 2020-Mar-23
+                                     Version 3.0.1-wip, 2020-XXX-XX
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -768,7 +768,11 @@ our Cornell Box scene again, and let’s generate the camera in the function tha
 <div class='together'>
 At 500×500 my code produces this image in 10min on 1 core of my Macbook:
 
+  <div class="render">
+
   ![Cornell box, refactored](../images/img.cornell-refactor1.jpg)
+
+  </div>
 
 Reducing that noise is our goal. We’ll do that by constructing a PDF that sends more rays to the
 light.
@@ -898,7 +902,11 @@ randomly from the hemisphere above the surface. This would be $p(direction) = \f
 <div class='together'>
 And again I _should_ get the same picture except with different variance, but I don’t!
 
+  <div class="render">
+
   ![Cornell box, with different sampling strategy](../images/img.cornell-refactor2.jpg)
+
+  </div>
 
 </div>
 
@@ -1254,7 +1262,11 @@ We can rewrite our Lambertian material using this to get:
 <div class='together'>
 Which produces:
 
+  <div class="render">
+
   ![Cornell box, with orthonormal basis scatter function](../images/img.cornell-ortho.jpg)
+
+  </div>
 
 Is that right? We still don’t know for sure. Tracking down bugs is hard in the absence of reliable
 reference solutions. Let’s table that for now and move on to get rid of some of that noise.
@@ -1353,7 +1365,11 @@ that math and get the concept, we can add it (see the highlighted region):
 <div class='together'>
 With 10 samples per pixel this yields:
 
+  <div class="render">
+
   ![Cornell box, sampling only the light, 10 samples per pixel](../images/img.cornell-samplight.jpg)
+
+  </div>
 
 </div>
 
@@ -1379,7 +1395,11 @@ down. We can do that by letting the emitted member function of hittable take ext
 <div class='together'>
 We also need to flip the light so its normals point in the -y direction and we get:
 
+  <div class="render">
+
   ![Cornell box, light emitted only in the downward direction](../images/img.cornell-lightdown.jpg)
+
+  </div>
 
 </div>
 
@@ -1525,7 +1545,11 @@ change variable `pdf` to some other variable name to avoid a name conflict with 
 This yields an apparently matching result so all we’ve done so far is refactor where `pdf` is
 computed:
 
+  <div class="render">
+
   ![Cornell box with a cosine density _pdf_](../images/img.cornell-cospdf.jpg)
+
+  </div>
 
 </div>
 
@@ -1668,7 +1692,11 @@ And then change `ray_color()`:
 <div class='together'>
 At 10 samples per pixel we get:
 
+  <div class="render">
+
   ![Cornell box, sampling a hittable light, 10 samples per pixel](../images/img.cornell-samphit.jpg)
+
+  </div>
 
 </div>
 
@@ -1756,7 +1784,11 @@ And plugging it into `ray_color()`:
 <div class='together'>
 1000 samples per pixel yields:
 
+  <div class="render">
+
   ![Cornell box, mixture density of cosine and light sampling](../images/img.cornell-coslight.jpg)
+
+  </div>
 
 </div>
 
@@ -2082,7 +2114,11 @@ We also need to change the block to metal.
 The resulting image has a noisy reflection on the ceiling because the directions toward the box are
 not sampled with more density.
 
+  <div class="render">
+
   ![Cornell box with arbitrary PDF functions](../images/img.cornell-flexpdf.jpg)
+
+  </div>
 
 </div>
 
@@ -2221,7 +2257,11 @@ This yields a noisy box, but the caustic under the sphere is good. It took five 
 sampling the light did for my code. This is probably because those rays that hit the glass are
 expensive!
 
+  <div class="render">
+
   ![Cornell box with glass sphere, using new PDF functions](../images/img.cornell-glass.jpg)
+
+  </div>
 
 </div>
 
@@ -2264,7 +2304,11 @@ We assemble a list to pass to `ray_color()` `from main()`:
 <div class='together'>
 And we get a decent image with 1000 samples as before:
 
+  <div class="render">
+
   ![Cornell box, using a mixture of glass & light PDFs](../images/img.cornell-glasslight.jpg)
+
+  </div>
 
 </div>
 
@@ -2317,7 +2361,11 @@ for `NaN`s is that any `if` test with a `NaN` in it is false. Using this trick, 
 <div class='together'>
 Happily, the black specks are gone:
 
+  <div class="render">
+
   ![Cornell box with anti-acne color function](../images/img.book3-final.jpg)
+
+  </div>
 
 </div>
 
