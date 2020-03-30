@@ -440,16 +440,17 @@ for now because we’ll add antialiasing later):
     }
 
     int main() {
-        const int image_width = 200;
-        const int image_height = 100;
+        const int image_width = 768;
+        const auto aspect_ratio = 9.0 / 16.0;
+        const int image_height = static_cast<int>(aspect_ratio * image_width);
 
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        vec3 lower_left_corner(-2.0, -1.0, -1.0);
-        vec3 horizontal(4.0, 0.0, 0.0);
-        vec3 vertical(0.0, 2.0, 0.0);
         vec3 origin(0.0, 0.0, 0.0);
+        vec3 horizontal(4.0, 0.0, 0.0);
+        vec3 vertical(0.0, 2.25, 0.0);
+        vec3 lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0,0,1);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         for (int j = image_height-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
@@ -957,6 +958,7 @@ We add a list of objects:
     #define HITTABLE_LIST_H
 
     #include "hittable.h"
+
     #include <memory>
     #include <vector>
 
