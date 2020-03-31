@@ -2,6 +2,17 @@ Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
 ----------------------------------------------------------------------------------------------------
+# v3.1.0 (in progress)
+
+### _In One Weekend_
+- Fix: Update image and size for first PPM image
+- Fix: Update image and size for blue-to-white gradient image
+- Fix: Update image and size for simple red sphere render
+- Fix: Update image and size for sphere with normal-vector coloring
+- Fix: Improve image size and aspect ratio calculation to make size changes easier
+
+
+----------------------------------------------------------------------------------------------------
 # v3.0.1 (2020-03-31)
 
 - Fix: Display rendered images as pixelated instead of smoothed (#179)
