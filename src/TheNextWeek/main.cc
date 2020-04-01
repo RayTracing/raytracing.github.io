@@ -449,14 +449,14 @@ int main() {
     for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
         for (int i = 0; i < image_width; ++i) {
-            vec3 color;
+            vec3 pixel_color;
             for (int s = 0; s < samples_per_pixel; ++s) {
                 auto u = (i + random_double()) / image_width;
                 auto v = (j + random_double()) / image_height;
                 ray r = cam.get_ray(u, v);
-                color += ray_color(r, background, world, max_depth);
+                pixel_color += ray_color(r, background, world, max_depth);
             }
-            color.write_color(std::cout, samples_per_pixel);
+            pixel_color.write_color(std::cout, samples_per_pixel);
         }
     }
 
