@@ -4,6 +4,9 @@ Change Log -- Ray Tracing in One Weekend
 ----------------------------------------------------------------------------------------------------
 # v3.1.0 (in progress)
 
+### Common
+- New: subchapters throughout all three books (#267)
+
 ### _In One Weekend_
 - Fix: Update image and size for first PPM image
 - Fix: Update image and size for blue-to-white gradient image
