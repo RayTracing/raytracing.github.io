@@ -33,7 +33,7 @@ int main() {
 
     auto sum = 0.0;
     for (int i = 0; i < N; i++) {
-        vec3 v = random_cosine_direction();
+        auto v = random_cosine_direction();
         sum += v.z()*v.z()*v.z() / (v.z()/(pi));
     }
 

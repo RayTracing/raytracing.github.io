@@ -16,10 +16,10 @@
 
 class camera {
     public:
-        camera() : camera(vec3(0,0,-1), vec3(0,0,0), vec3(0,1,0), 40, 1, 0, 10) {}
+        camera() : camera(point3(0,0,-1), point3(0,0,0), vec3(0,1,0), 40, 1, 0, 10) {}
 
         camera(
-            vec3 lookfrom, vec3 lookat, vec3 vup,
+            point3 lookfrom, point3 lookat, vec3 vup,
             double vfov, // top to bottom, in degrees
             double aspect, double aperture, double focus_dist, double t0 = 0, double t1 = 0
         ) {
@@ -56,8 +56,8 @@ class camera {
         }
 
     public:
-        vec3 origin;
-        vec3 lower_left_corner;
+        point3 origin;
+        point3 lower_left_corner;
         vec3 horizontal;
         vec3 vertical;
         vec3 u, v, w;

@@ -27,7 +27,7 @@ class xy_rect: public hittable {
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
-            output_box = aabb(vec3(x0,y0, k-0.0001), vec3(x1, y1, k+0.0001));
+            output_box = aabb(point3(x0,y0, k-0.0001), point3(x1, y1, k+0.0001));
             return true;
         }
 
@@ -47,11 +47,11 @@ class xz_rect: public hittable {
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
-            output_box = aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
+            output_box = aabb(point3(x0,k-0.0001,z0), point3(x1, k+0.0001, z1));
             return true;
         }
 
-        virtual double pdf_value(const vec3& origin, const vec3& v) const {
+        virtual double pdf_value(const point3& origin, const vec3& v) const {
             hit_record rec;
             if (!this->hit(ray(origin, v), 0.001, infinity, rec))
                 return 0;
@@ -63,8 +63,8 @@ class xz_rect: public hittable {
             return distance_squared / (cosine * area);
         }
 
-        virtual vec3 random(const vec3& origin) const {
-            vec3 random_point = vec3(random_double(x0,x1), k, random_double(z0,z1));
+        virtual vec3 random(const point3& origin) const {
+            auto random_point = point3(random_double(x0,x1), k, random_double(z0,z1));
             return random_point - origin;
         }
 
@@ -84,7 +84,7 @@ class yz_rect: public hittable {
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
-            output_box = aabb(vec3(k-0.0001, y0, z0), vec3(k+0.0001, y1, z1));
+            output_box = aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
             return true;
         }
 
@@ -106,7 +106,7 @@ bool xy_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
     rec.u = (x-x0)/(x1-x0);
     rec.v = (y-y0)/(y1-y0);
     rec.t = t;
-    vec3 outward_normal = vec3(0, 0, 1);
+    auto outward_normal = vec3(0, 0, 1);
     rec.set_face_normal(r, outward_normal);
     rec.mat_ptr = mp;
     rec.p = r.at(t);
@@ -127,7 +127,7 @@ bool xz_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
     rec.u = (x-x0)/(x1-x0);
     rec.v = (z-z0)/(z1-z0);
     rec.t = t;
-    vec3 outward_normal = vec3(0, 1, 0);
+    auto outward_normal = vec3(0, 1, 0);
     rec.set_face_normal(r, outward_normal);
     rec.mat_ptr = mp;
     rec.p = r.at(t);
@@ -148,7 +148,7 @@ bool yz_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
     rec.u = (y-y0)/(y1-y0);
     rec.v = (z-z0)/(z1-z0);
     rec.t = t;
-    vec3 outward_normal = vec3(1, 0, 0);
+    auto outward_normal = vec3(1, 0, 0);
     rec.set_face_normal(r, outward_normal);
     rec.mat_ptr = mp;
     rec.p = r.at(t);

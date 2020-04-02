@@ -17,7 +17,7 @@
 class material;
 
 struct hit_record {
-    vec3 p;
+    point3 p;
     vec3 normal;
     shared_ptr<material> mat_ptr;
     double t;
@@ -28,6 +28,7 @@ struct hit_record {
         normal = front_face ? outward_normal :-outward_normal;
     }
 };
+
 
 class hittable {
     public:

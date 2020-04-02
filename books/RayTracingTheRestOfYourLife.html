@@ -3,11 +3,11 @@
 
 
 
-                               **Ray Tracing: The Rest of Your Life**
+                               *Ray Tracing: The Rest of Your Life**
                                            Peter Shirley
                           edited by Steve Hollasch and Trevor David Black
                                                 <br>
-                                     Version 3.0.1, 2020-03-31
+                                     Version 3.1.0-wip, 2020-03-31
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -726,10 +726,10 @@ our Cornell Box scene again, and let’s generate the camera in the function tha
     hittable_list cornell_box(camera& cam, double aspect) {
         hittable_list world;
 
-        auto red = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.65, 0.05, 0.05)));
-        auto white = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.73, 0.73, 0.73)));
-        auto green = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.12, 0.45, 0.15)));
-        auto light = make_shared<diffuse_light>(make_shared<constant_texture>(vec3(15, 15, 15)));
+        auto red   = make_shared<lambertian>(make_shared<constant_texture>(color(.65, .05, .05)));
+        auto white = make_shared<lambertian>(make_shared<constant_texture>(color(.73, .73, .73)));
+        auto green = make_shared<lambertian>(make_shared<constant_texture>(color(.12, .45, .15)));
+        auto light = make_shared<diffuse_light>(make_shared<constant_texture>(color(15, 15, 15)));
 
         world.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
         world.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
@@ -738,18 +738,18 @@ our Cornell Box scene again, and let’s generate the camera in the function tha
         world.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
         world.add(make_shared<flip_face>(make_shared<xy_rect>(0, 555, 0, 555, 555, white)));
 
-        shared_ptr<hittable> box1 = make_shared<box>(vec3(0,0,0), vec3(165,330,165), white);
+        shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
         box1 = make_shared<rotate_y>(box1, 15);
         box1 = make_shared<translate>(box1, vec3(265,0,295));
         world.add(box1);
 
-        shared_ptr<hittable> box2 = make_shared<box>(vec3(0,0,0), vec3(165,165,165), white);
+        shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
         box2 = make_shared<rotate_y>(box2, -18);
         box2 = make_shared<translate>(box2, vec3(130,0,65);
         world.add(box2);
 
-        vec3 lookfrom(278, 278, -800);
-        vec3 lookat(278, 278, 0);
+        point3 lookfrom(278, 278, -800);
+        point3 lookat(278, 278, 0);
         vec3 vup(0, 1, 0);
         auto dist_to_focus = 10.0;
         auto aperture = 0.0;
@@ -790,7 +790,7 @@ We modify the base-class `material` to enable this importance sampling:
         public:
 
             virtual bool scatter(
-                const ray& r_in, const hit_record& rec, vec3& albedo, ray& scattered, double& pdf
+                const ray& r_in, const hit_record& rec, color& albedo, ray& scattered, double& pdf
             ) const {
                 return false;
             }
@@ -801,8 +801,8 @@ We modify the base-class `material` to enable this importance sampling:
                 return 0;
             }
 
-            virtual vec3 emitted(double u, double v, const vec3& p) const {
-                return vec3(0,0,0);
+            virtual color emitted(double u, double v, const point3& p) const {
+                return color(0,0,0);
             }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -819,9 +819,9 @@ And _Lambertian_ material becomes:
             lambertian(shared_ptr<texture> a) : albedo(a) {}
 
             bool scatter(
-                const ray& r_in, const hit_record& rec, vec3& alb, ray& scattered, double& pdf
+                const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
             ) const {
-                vec3 target = rec.p + rec.normal + random_unit_vector();
+                point3 target = rec.p + rec.normal + random_unit_vector();
                 scattered = ray(rec.p, unit_vector(target-rec.p), r_in.time());
                 alb = albedo->value(rec.u, rec.v, rec.p);
                 pdf = dot(rec.normal, scattered.direction()) / pi;
@@ -844,27 +844,27 @@ And _Lambertian_ material becomes:
 </div>
 
 <div class='together'>
-And the color function gets a minor modification:
+And the `ray_color` function gets a minor modification:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, const vec3& background, const hittable& world, int depth) {
+    color ray_color(const ray& r, const color& background, const hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
-            return vec3(0,0,0);
+            return color(0,0,0);
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
             return background;
 
         ray scattered;
-        vec3 attenuation;
-        vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+        color attenuation;
+        color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double pdf;
-        vec3 albedo;
+        color albedo;
 
         if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf))
             return emitted;
@@ -887,7 +887,7 @@ randomly from the hemisphere above the surface. This would be $p(direction) = \f
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool scatter(
-        const ray& r_in, const hit_record& rec, vec3& alb, ray& scattered, double& pdf
+        const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
     ) const {
         vec3 direction = random_in_hemisphere(rec.normal);
         scattered = ray(rec.p, unit_vector(direction), r_in.time());
@@ -1105,7 +1105,7 @@ Let’s also start generating them as random vectors:
 
         auto sum = 0.0;
         for (int i = 0; i < N; i++) {
-            vec3 v = random_cosine_direction();
+            auto v = random_cosine_direction();
             sum += v.z()*v.z()*v.z() / (v.z()/pi);
         }
 
@@ -1241,7 +1241,7 @@ We can rewrite our Lambertian material using this to get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool scatter(
-        const ray& r_in, const hit_record& rec, vec3& alb, ray& scattered, double& pdf
+        const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
     ) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         onb uvw;
@@ -1317,28 +1317,28 @@ If we hack our `ray_color()` function to sample the light in a very hard-coded f
 that math and get the concept, we can add it (see the highlighted region):
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, const vec3& background, const hittable& world, int depth) {
+    color ray_color(const ray& r, const color& background, const hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
-            return vec3(0,0,0);
+            return color(0,0,0);
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
             return background;
 
         ray scattered;
-        vec3 attenuation;
-        vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+        color attenuation;
+        color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
         double pdf;
-        vec3 albedo;
+        color albedo;
         if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf))
             return emitted;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        vec3 on_light = vec3(random_double(213,343), 554, random_double(227,332));
-        vec3 to_light = on_light - rec.p;
+        auto on_light = vec3(random_double(213,343), 554, random_double(227,332));
+        auto to_light = on_light - rec.p;
         auto distance_squared = to_light.length_squared();
         to_light.make_unit_vector();
 
@@ -1380,13 +1380,13 @@ and there is a small space between light and ceiling. We probably want to have t
 down. We can do that by letting the emitted member function of hittable take extra information:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    virtual vec3 emitted(const ray& r_in, const hit_record& rec, double u, double v,
-        const vec3& p) const {
+    virtual color emitted(const ray& r_in, const hit_record& rec, double u, double v,
+        const point3& p) const {
 
         if (rec.front_face)
             return emit->value(u, v, p);
         else
-            return vec3(0,0,0);
+            return color(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [emitted-directional]: <kbd>[material.h]</kbd> Material emission, directional]
@@ -1507,22 +1507,22 @@ We can try this in the `ray_color()` function, with the main changes highlighted
 change variable `pdf` to some other variable name to avoid a name conflict with the new `pdf` class.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, const vec3& background, const hittable& world, int depth) {
+    color ray_color(const ray& r, const color& background, const hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
-            return vec3(0,0,0);
+            return color(0,0,0);
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
             return background;
 
         ray scattered;
-        vec3 attenuation;
-        vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+        color attenuation;
+        color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
         double pdf_val;
-        vec3 albedo;
+        color albedo;
         if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
             return emitted;
 
@@ -1559,7 +1559,7 @@ Now we can try sampling directions toward a `hittable` like the light.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable_pdf : public pdf {
         public:
-            hittable_pdf(shared_ptr<hittable> p, const vec3& origin) : ptr(p), o(origin) {}
+            hittable_pdf(shared_ptr<hittable> p, const point3& origin) : ptr(p), o(origin) {}
 
             virtual double value(const vec3& direction) const {
                 return ptr->pdf_value(o, direction);
@@ -1570,7 +1570,7 @@ Now we can try sampling directions toward a `hittable` like the light.
             }
 
         public:
-            vec3 o;
+            point3 o;
             shared_ptr<hittable> ptr;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1588,7 +1588,7 @@ instrumentation to all `hittable` subclasses, we’ll add two dummy functions to
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const = 0;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual double pdf_value(const vec3& o, const vec3& v) const {
+            virtual double pdf_value(const point3& o, const vec3& v) const {
                 return 0.0;
             }
 
@@ -1616,13 +1616,13 @@ And we change `xz_rect` to implement those functions:
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
-                output_box = aabb(vec3(x0,k-0.0001,z0), vec3(x1, k+0.0001, z1));
+                output_box = aabb(point3(x0,k-0.0001,z0), point3(x1, k+0.0001, z1));
                 return true;
             }
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual double pdf_value(const vec3& origin, const vec3& v) const {
+            virtual double pdf_value(const point3& origin, const vec3& v) const {
                 hit_record rec;
                 if (!this->hit(ray(origin, v), 0.001, infinity, rec))
                     return 0;
@@ -1634,8 +1634,8 @@ And we change `xz_rect` to implement those functions:
                 return distance_squared / (cosine * area);
             }
 
-            virtual vec3 random(const vec3& origin) const {
-                vec3 random_point = vec3(random_double(x0,x1), k, random_double(z0,z1));
+            virtual vec3 random(const point3& origin) const {
+                auto random_point = point3(random_double(x0,x1), k, random_double(z0,z1));
                 return random_point - origin;
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1652,22 +1652,22 @@ And we change `xz_rect` to implement those functions:
 And then change `ray_color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, const vec3& background, const hittable& world, int depth) {
+    color ray_color(const ray& r, const color& background, const hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
-            return vec3(0,0,0);
+            return color(0,0,0);
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
             return background;
 
         ray scattered;
-        vec3 attenuation;
-        vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+        color attenuation;
+        color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
         double pdf_val;
-        vec3 albedo;
+        color albedo;
         if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
             return emitted;
 
@@ -1734,9 +1734,9 @@ class is straightforward:
 And plugging it into `ray_color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    vec3 ray_color(
+    color ray_color(
         const ray& r,
-        const vec3& background,
+        const color& background,
         const hittable& world,
         shared_ptr<hittable> lights,
         int depth
@@ -1746,17 +1746,17 @@ And plugging it into `ray_color()`:
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
-            return vec3(0,0,0);
+            return color(0,0,0);
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
             return background;
 
         ray scattered;
-        vec3 attenuation;
-        vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+        color attenuation;
+        color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
         double pdf_val;
-        vec3 albedo;
+        color albedo;
         if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
             return emitted;
 
@@ -1870,19 +1870,19 @@ We can redesign `material` and stuff all the new arguments into a `struct` like 
     struct scatter_record {
         ray specular_ray;
         bool is_specular;
-        vec3 attenuation;
+        color attenuation;
         shared_ptr<pdf> pdf_ptr;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     class material {
         public:
-            virtual vec3 emitted(
+            virtual color emitted(
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                const ray& r_in, const hit_record& rec, double u, double v, const vec3& p
+                const ray& r_in, const hit_record& rec, double u, double v, const point3& p
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ) const {
-                return vec3(0,0,0);
+                return color(0,0,0);
             }
 
             virtual bool scatter(
@@ -1938,9 +1938,9 @@ The Lambertian material becomes simpler:
 And `ray_color()` changes are small:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(
+    color ray_color(
         const ray& r,
-        const vec3& background,
+        const color& background,
         const hittable& world,
         shared_ptr<hittable> lights,
         int depth
@@ -1949,7 +1949,7 @@ And `ray_color()` changes are small:
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
-            return vec3(0,0,0);
+            return color(0,0,0);
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
@@ -1957,7 +1957,7 @@ And `ray_color()` changes are small:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         scatter_record srec;
-        vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+        color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
         if (!rec.mat_ptr->scatter(r, rec, srec))
             return emitted;
 
@@ -1985,7 +1985,7 @@ overall, and those are all fixable. For now, I will just fix `specular`. Metal i
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class metal : public material {
         public:
-            metal(const vec3& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
+            metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, scatter_record& srec
@@ -2000,7 +2000,7 @@ overall, and those are all fixable. For now, I will just fix `specular`. Metal i
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         public:
-            vec3 albedo;
+            color albedo;
             double fuzz;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2014,9 +2014,9 @@ just like it did before.
 `ray_color()` just needs a new case to generate an implicitly sampled ray:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(
+    color ray_color(
         const ray& r,
-        const vec3& background,
+        const color& background,
         const hittable& world,
         shared_ptr<hittable> lights,
         int depth
@@ -2025,14 +2025,14 @@ just like it did before.
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
-            return vec3(0,0,0);
+            return color(0,0,0);
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
             return background;
 
         scatter_record srec;
-        vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+        color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
         if (!rec.mat_ptr->scatter(r, rec, srec))
             return emitted;
 
@@ -2067,10 +2067,10 @@ We also need to change the block to metal.
     hittable_list cornell_box(camera& cam, double aspect) {
         hittable_list world;
 
-        auto red = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.65, 0.05, 0.05)));
-        auto white = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.73, 0.73, 0.73)));
-        auto green = make_shared<lambertian>(make_shared<constant_texture>(vec3(0.12, 0.45, 0.15)));
-        auto light = make_shared<diffuse_light>(make_shared<constant_texture>(vec3(15, 15, 15)));
+        auto red   = make_shared<lambertian>(make_shared<constant_texture>(color(.65, .05, .05)));
+        auto white = make_shared<lambertian>(make_shared<constant_texture>(color(.73, .73, .73)));
+        auto green = make_shared<lambertian>(make_shared<constant_texture>(color(.12, .45, .15)));
+        auto light = make_shared<diffuse_light>(make_shared<constant_texture>(color(15, 15, 15)));
 
         world.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
         world.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
@@ -2081,20 +2081,20 @@ We also need to change the block to metal.
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        shared_ptr<material> aluminum = make_shared<metal>(vec3(0.8, 0.85, 0.88), 0.0);
-        shared_ptr<hittable> box1 = make_shared<box>(vec3(0,0,0), vec3(165,330,165), aluminum);
+        shared_ptr<material> aluminum = make_shared<metal>(color(0.8, 0.85, 0.88), 0.0);
+        shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), aluminum);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         box1 = make_shared<rotate_y>(box1, 15);
         box1 = make_shared<translate>(box1, vec3(265,0,295));
         world.add(box1);
 
-        shared_ptr<hittable> box2 = make_shared<box>(vec3(0,0,0), vec3(165,165,165), white);
+        shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
         box2 = make_shared<rotate_y>(box2, -18);
         box2 = make_shared<translate>(box2, vec3(130,0,65);
         world.add(box2);
 
-        vec3 lookfrom(278, 278, -800);
-        vec3 lookat(278, 278, 0);
+        point3 lookfrom(278, 278, -800);
+        point3 lookat(278, 278, 0);
         vec3 vup(0, 1, 0);
         auto dist_to_focus = 10.0;
         auto aperture = 0.0;
@@ -2190,7 +2190,7 @@ $\cos(\theta_{max}) = 0$, and $2\pi$ is the area of a hemisphere, so that works 
 The sphere class needs the two PDF-related functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    double sphere::pdf_value(const vec3& o, const vec3& v) const {
+    double sphere::pdf_value(const point3& o, const vec3& v) const {
         hit_record rec;
         if (!this->hit(ray(o, v), 0.001, infinity, rec))
             return 0;
@@ -2201,7 +2201,7 @@ The sphere class needs the two PDF-related functions:
         return  1 / solid_angle;
     }
 
-    vec3 sphere::random(const vec3& o) const {
+    vec3 sphere::random(const point3& o) const {
         vec3 direction = center - o;
         auto distance_squared = direction.length_squared();
         onb uvw;
@@ -2236,17 +2236,17 @@ We can first try just sampling the sphere rather than the light:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     shared_ptr<hittable> light_shape = make_shared<xz_rect>(213, 343, 227, 332, 554, 0);
-    shared_ptr<hittable> glass_sphere = make_shared<sphere>(vec3(190, 90, 190), 90, 0);
+    shared_ptr<hittable> glass_sphere = make_shared<sphere>(point3(190, 90, 190), 90, 0);
 
     for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
         for (int i = 0; i < image_width; ++i) {
-            vec3 col(0, 0, 0);
+            color pixel_color(0, 0, 0);
             for (int s=0; s < ns; ++s) {
                 auto u = (i + random_double()) / image_width;
                 auto v = (j + random_double()) / image_height;
                 ray r = cam->get_ray(u, v);
-                col += ray_color(r, background, world, glass_sphere, max_depth);
+                pixel_color += ray_color(r, background, world, glass_sphere, max_depth);
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sampling-sphere]: <kbd>[main.cc]</kbd> Sampling just the sphere]
@@ -2272,7 +2272,7 @@ hittables in and building a mixture PDF, or we could add PDF functions to `hitta
 think both tactics would work fine, but I will go with instrumenting `hittable_list`.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    double hittable_list::pdf_value(const vec3& o, const vec3& v) const {
+    double hittable_list::pdf_value(const point3& o, const vec3& v) const {
         auto weight = 1.0/objects.size();
         auto sum = 0.0;
 
@@ -2296,7 +2296,7 @@ We assemble a list to pass to `ray_color()` `from main()`:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable_list lights;
     lights.add(make_shared<xz_rect>(213, 343, 227, 332, 554, 0));
-    lights.add(make_shared<sphere>(vec3(190, 90, 190), 90, 0));
+    lights.add(make_shared<sphere>(point3(190, 90, 190), 90, 0));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-density-mixture]: <kbd>[main.cc]</kbd> Updating the scene]
 </div>

@@ -71,7 +71,7 @@ class cosine_pdf : public pdf {
 
 class hittable_pdf : public pdf {
     public:
-        hittable_pdf(shared_ptr<hittable> p, const vec3& origin) : ptr(p), o(origin) {}
+        hittable_pdf(shared_ptr<hittable> p, const point3& origin) : ptr(p), o(origin) {}
 
         virtual double value(const vec3& direction) const {
             return ptr->pdf_value(o, direction);
@@ -82,7 +82,7 @@ class hittable_pdf : public pdf {
         }
 
     public:
-        vec3 o;
+        point3 o;
         shared_ptr<hittable> ptr;
 };
 

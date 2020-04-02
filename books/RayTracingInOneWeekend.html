@@ -7,7 +7,7 @@
                                            Peter Shirley
                           edited by Steve Hollasch and Trevor David Black
                                                 <br>
-                                     Version 3.0.1, 2020-03-31
+                                     Version 3.1.0-wip, 2020-03-31
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -214,6 +214,9 @@ transparency channel for colors). For our purposes, three coordinates suffices. 
 class `vec3` for colors, locations, directions, offsets, whatever. Some people don’t like this
 because it doesn’t prevent you from doing something silly, like adding a color to a location. They
 have a good point, but we’re going to always take the “less code” route when not obviously wrong.
+In spite of this, we do declare two aliases for `vec3`: `point3` and `color`. Since these two types
+are just aliases for `vec3`, you won't get warnings if you pass a `color` to a function expecting a
+`point3`, for example. We use them only to clarify intent and use.
 
 <div class='together'>
 Here’s the top part of my `vec3` class:
@@ -270,6 +273,10 @@ Here’s the top part of my `vec3` class:
         public:
             double e[3];
     };
+
+    // Type aliases for vec3
+    using point3 = vec3;   // 3D point
+    using color = vec3;    // RGB color
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [vec3-class]: <kbd>[vec3.h]</kbd> `vec3` class]
 </div>
@@ -344,8 +351,8 @@ Now we can change our main to use this:
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                vec3 color(double(i)/(image_width-1), double(j)/(image_height-1), 0.25);
-                color.write_color(std::cout);
+                color pixel_color(double(i)/(image_width-1), double(j)/(image_height-1), 0.25);
+                pixel_color.write_color(std::cout);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
         }
@@ -386,19 +393,19 @@ The function $p(t)$ in more verbose code form I call `ray::at(t)`:
     class ray {
         public:
             ray() {}
-            ray(const vec3& origin, const vec3& direction)
+            ray(const point3& origin, const vec3& direction)
                 : orig(origin), dir(direction)
             {}
 
-            vec3 origin() const    { return orig; }
+            point3 origin() const  { return orig; }
             vec3 direction() const { return dir; }
 
-            vec3 at(double t) const {
+            point3 at(double t) const {
                 return orig + t*dir;
             }
 
         public:
-            vec3 orig;
+            point3 orig;
             vec3 dir;
     };
 
@@ -411,8 +418,8 @@ Now we are ready to turn the corner and make a ray tracer. At the core, the ray 
 through pixels and computes the color seen in the direction of those rays. The involved steps are
 (1) calculate the ray from the eye to the pixel, (2) determine which objects the ray intersects, and
 (3) compute a color for that intersection point. When first developing a ray tracer, I always do a
-simple camera for getting the code up and running. I also make a simple `color(ray)` function that
-returns the color of the background (a simple gradient).
+simple camera for getting the code up and running. I also make a simple `ray_color(ray)` function
+that returns the color of the background (a simple gradient).
 
 I’ve often gotten into trouble using square images for debugging because I transpose $x$ and $y$ too
 often, so I’ll stick with a 200×100 image. I’ll put the “eye” (or camera center if you think of a
@@ -433,10 +440,10 @@ for now because we’ll add antialiasing later):
 
     #include <iostream>
 
-    vec3 ray_color(const ray& r) {
+    color ray_color(const ray& r) {
         vec3 unit_direction = unit_vector(r.direction());
         auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
     }
 
     int main() {
@@ -447,10 +454,10 @@ for now because we’ll add antialiasing later):
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        vec3 origin(0.0, 0.0, 0.0);
+        point3 origin(0.0, 0.0, 0.0);
         vec3 horizontal(4.0, 0.0, 0.0);
         vec3 vertical(0.0, 2.25, 0.0);
-        vec3 lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0,0,1);
+        point3 lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0,0,1);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         for (int j = image_height-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
@@ -459,9 +466,9 @@ for now because we’ll add antialiasing later):
                 auto u = double(i) / (image_width-1);
                 auto v = double(j) / (image_height-1);
                 ray r(origin, lower_left_corner + u*horizontal + v*vertical);
-                vec3 color = ray_color(r);
+                color pixel_color = ray_color(r);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                color.write_color(std::cout);
+                pixel_color.write_color(std::cout);
             }
         }
 
@@ -568,7 +575,7 @@ If we take that math and hard-code it into our program, we can test it by colori
 that hits a small sphere we place at -1 on the z-axis:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    bool hit_sphere(const vec3& center, double radius, const ray& r) {
+    bool hit_sphere(const point3& center, double radius, const ray& r) {
         vec3 oc = r.origin() - center;
         auto a = dot(r.direction(), r.direction());
         auto b = 2.0 * dot(oc, r.direction());
@@ -579,14 +586,14 @@ that hits a small sphere we place at -1 on the z-axis:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r) {
+    color ray_color(const ray& r) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        if (hit_sphere(vec3(0,0,-1), 0.5, r))
-            return vec3(1, 0, 0);
+        if (hit_sphere(point3(0,0,-1), 0.5, r))
+            return color(1, 0, 0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 unit_direction = unit_vector(r.direction());
         auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-red-sphere]: <kbd>[main.cc]</kbd> Rendering a red sphere]
@@ -634,7 +641,7 @@ the closest hit point (smallest $t$). These changes in the code let us compute a
 $\vec{\mathbf{N}}$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    double hit_sphere(const vec3& center, double radius, const ray& r) {
+    double hit_sphere(const point3& center, double radius, const ray& r) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 oc = r.origin() - center;
         auto a = dot(r.direction(), r.direction());
@@ -651,19 +658,19 @@ $\vec{\mathbf{N}}$:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
 
-    vec3 ray_color(const ray& r) {
+    color ray_color(const ray& r) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        auto t = hit_sphere(vec3(0,0,-1), 0.5, r);
+        auto t = hit_sphere(point3(0,0,-1), 0.5, r);
         if (t > 0.0) {
             vec3 N = unit_vector(r.at(t) - vec3(0,0,-1));
-            return 0.5*vec3(N.x()+1, N.y()+1, N.z()+1);
+            return 0.5*color(N.x()+1, N.y()+1, N.z()+1);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 unit_direction = unit_vector(r.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         t = 0.5*(unit_direction.y() + 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [render-surface-normal]: <kbd>[main.cc]</kbd> Rendering surface normals on a sphere]
@@ -746,7 +753,7 @@ the abstract class:
     #include "ray.h"
 
     struct hit_record {
-        vec3 p;
+        point3 p;
         vec3 normal;
         double t;
 
@@ -775,12 +782,12 @@ And here’s the sphere:
     class sphere: public hittable {
         public:
             sphere() {}
-            sphere(vec3 cen, double r) : center(cen), radius(r) {};
+            sphere(point3 cen, double r) : center(cen), radius(r) {};
 
             virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
 
         public:
-            vec3 center;
+            point3 center;
             double radius;
     };
 
@@ -890,7 +897,7 @@ calculation for us.
     #include "ray.h"
 
     struct hit_record {
-        vec3 p;
+        point3 p;
         vec3 normal;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         bool front_face;
@@ -1018,7 +1025,7 @@ Typically, a shared pointer is first initialized with a newly-allocated object, 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     shared_ptr<double> double_ptr = make_shared<double>(0.37);
     shared_ptr<vec3>   vec3_ptr   = make_shared<vec3>(1.414214, 2.718281, 1.618034);
-    shared_ptr<sphere> sphere_ptr = make_shared<sphere>(vec3(0,0,0), 1.0);
+    shared_ptr<sphere> sphere_ptr = make_shared<sphere>(point3(0,0,0), 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [shared-ptr]: An example allocation using `shared_ptr`]
 
@@ -1031,7 +1038,7 @@ above lines can be more simply expressed using C++'s `auto` type specifier:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     auto double_ptr = make_shared<double>(0.37);
     auto vec3_ptr   = make_shared<vec3>(1.414214, 2.718281, 1.618034);
-    auto sphere_ptr = make_shared<sphere>(vec3(0,0,0), 1.0);
+    auto sphere_ptr = make_shared<sphere>(point3(0,0,0), 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [shared-ptr-auto]: An example allocation using `shared_ptr` with `auto` type]
 
@@ -1114,10 +1121,10 @@ And the new main:
     #include <iostream>
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    vec3 ray_color(const ray& r, const hittable& world) {
+    color ray_color(const ray& r, const hittable& world) {
         hit_record rec;
         if (world.hit(r, 0, infinity, rec)) {
-            return 0.5 * (rec.normal + vec3(1,1,1));
+            return 0.5 * (rec.normal + color(1,1,1));
         }
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1125,7 +1132,7 @@ And the new main:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto t = 0.5*(unit_direction.y() + 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
     }
 
     int main() {
@@ -1134,16 +1141,16 @@ And the new main:
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        vec3 lower_left_corner(-2.0, -1.0, -1.0);
+        point3 lower_left_corner(-2.0, -1.0, -1.0);
         vec3 horizontal(4.0, 0.0, 0.0);
         vec3 vertical(0.0, 2.0, 0.0);
-        vec3 origin(0.0, 0.0, 0.0);
+        point3 origin(0.0, 0.0, 0.0);
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         hittable_list world;
-        world.add(make_shared<sphere>(vec3(0,0,-1), 0.5));
-        world.add(make_shared<sphere>(vec3(0,-100.5,-1), 100));
+        world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
+        world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         for (int j = image_height-1; j >= 0; --j) {
@@ -1155,10 +1162,10 @@ And the new main:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                vec3 color = ray_color(r, world);
+                color pixel_color = ray_color(r, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-                color.write_color(std::cout);
+                pixel_color.write_color(std::cout);
             }
         }
 
@@ -1259,10 +1266,10 @@ before:
     class camera {
         public:
             camera() {
-                lower_left_corner = vec3(-2.0, -1.0, -1.0);
+                lower_left_corner = point3(-2.0, -1.0, -1.0);
                 horizontal = vec3(4.0, 0.0, 0.0);
                 vertical = vec3(0.0, 2.0, 0.0);
-                origin = vec3(0.0, 0.0, 0.0);
+                origin = point3(0.0, 0.0, 0.0);
             }
 
             ray get_ray(double u, double v) {
@@ -1270,8 +1277,8 @@ before:
             }
 
         public:
-            vec3 origin;
-            vec3 lower_left_corner;
+            point3 origin;
+            point3 lower_left_corner;
             vec3 horizontal;
             vec3 vertical;
     };
@@ -1325,8 +1332,8 @@ Main is also changed:
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
         hittable_list world;
-        world.add(make_shared<sphere>(vec3(0,0,-1), 0.5));
-        world.add(make_shared<sphere>(vec3(0,-100.5,-1), 100));
+        world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
+        world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         camera cam;
@@ -1335,14 +1342,14 @@ Main is also changed:
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                vec3 color(0, 0, 0);
+                color pixel_color(0, 0, 0);
                 for (int s = 0; s < samples_per_pixel; ++s) {
                     auto u = (i + random_double()) / (image_width-1);
                     auto v = (j + random_double()) / (image_height-1);
                     ray r = cam.get_ray(u, v);
-                    color += ray_color(r, world);
+                    pixel_color += ray_color(r, world);
                 }
-                color.write_color(std::cout, samples_per_pixel);
+                pixel_color.write_color(std::cout, samples_per_pixel);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
         }
@@ -1445,19 +1452,19 @@ range from -1 to +1. Reject this point and try again if the point is outside the
 Then update the `ray_color()` function to use the new random direction generator:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, const hittable& world) {
+    color ray_color(const ray& r, const hittable& world) {
         hit_record rec;
 
         if (world.hit(r, 0, infinity, rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+            point3 target = rec.p + rec.normal + random_in_unit_sphere();
             return 0.5 * ray_color(ray(rec.p, target - rec.p), world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
         vec3 unit_direction = unit_vector(r.direction());
         auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-random-unit]: <kbd>[main.cc]</kbd> ray_color() using a random ray direction]
@@ -1470,24 +1477,26 @@ time — long enough to blow the stack. To guard against that, let's limit the m
 depth, returning no light contribution at the maximum depth:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    vec3 ray_color(const ray& r, const hittable& world, int depth) {
+    color ray_color(const ray& r, const hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
-            return vec3(0,0,0);
+            return color(0,0,0);
 
         if (world.hit(r, 0, infinity, rec)) {
-            vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+            point3 target = rec.p + rec.normal + random_in_unit_sphere();
             return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
         vec3 unit_direction = unit_vector(r.direction());
         auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
     }
+
     ...
+
     int main() {
         const int image_width = 200;
         const int image_height = 100;
@@ -1500,16 +1509,16 @@ depth, returning no light contribution at the maximum depth:
         for (int j = image_height-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
-                vec3 color(0, 0, 0);
+                color pixel_color(0, 0, 0);
                 for (int s = 0; s < samples_per_pixel; ++s) {
                     auto u = (i + random_double()) / (image_width-1);
                     auto v = (j + random_double()) / (image_height-1);
                     ray r = cam.get_ray(u, v);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                    color += ray_color(r, world, max_depth);
+                    pixel_color += ray_color(r, world, max_depth);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 }
-                color.write_color(std::cout, samples_per_pixel);
+                pixel_color.write_color(std::cout, samples_per_pixel);
             }
         }
 
@@ -1619,23 +1628,23 @@ This `random_unit_vector()` is a drop-in replacement for the existing `random_in
 function.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, const hittable& world, int depth) {
+    color ray_color(const ray& r, const hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
-            return vec3(0,0,0);
+            return color(0,0,0);
 
         if (world.hit(r, 0.001, infinity, rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            vec3 target = rec.p + rec.normal + random_unit_vector();
+            point3 target = rec.p + rec.normal + random_unit_vector();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
         }
 
         vec3 unit_direction = unit_vector(r.direction());
         auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-unit-sphere]: <kbd>[main.cc]</kbd> ray_color() with replacement diffuse]
@@ -1701,23 +1710,23 @@ this diffuse method (before adopting Lambertian diffuse).
 Plugging the new formula into the `ray_color()` function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, const hittable& world, int depth) {
+    color ray_color(const ray& r, const hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
-            return vec3(0,0,0);
+            return color(0,0,0);
 
         if (world.hit(r, 0.001, infinity, rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            vec3 target = rec.p + random_in_hemisphere(rec.normal);
+            point3 target = rec.p + random_in_hemisphere(rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
         }
 
         vec3 unit_direction = unit_vector(r.direction());
         auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-hemisphere]: <kbd>[main.cc]</kbd> ray_color() with hemispherical scattering]
@@ -1758,7 +1767,7 @@ This suggests the abstract class:
     class material {
         public:
             virtual bool scatter(
-                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const = 0;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1783,7 +1792,7 @@ that the pointer is to a class, which the “class material” in the hittable c
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     struct hit_record {
-        vec3 p;
+        point3 p;
         vec3 normal;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         shared_ptr<material> mat_ptr;
@@ -1812,7 +1821,7 @@ What we have set up here is that material will tell us how rays interact with th
 `hit_record` is just a way to stuff a bunch of arguments into a struct so we can send them as a
 group. When a ray hits a surface (a particular sphere for example), the material pointer in the
 `hit_record` will be set to point at the material pointer the sphere was given when it was set up in
-`main()` when we start. When the `color()` routine gets the `hit_record` it can call member
+`main()` when we start. When the `ray_color()` routine gets the `hit_record` it can call member
 functions of the material pointer to find out what ray, if any, is scattered.
 
 <div class='together'>
@@ -1824,14 +1833,14 @@ within `hit_record`. See the highlighted lines below:
         public:
             sphere() {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            sphere(vec3 cen, double r, shared_ptr<material> m)
+            sphere(point3 cen, double r, shared_ptr<material> m)
                 : center(cen), radius(r), mat_ptr(m) {};
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
 
         public:
-            vec3 center;
+            point3 center;
             double radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             shared_ptr<material> mat_ptr;
@@ -1884,10 +1893,10 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
         public:
-            lambertian(const vec3& a) : albedo(a) {}
+            lambertian(const color& a) : albedo(a) {}
 
             virtual bool scatter(
-                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const {
                 vec3 scatter_direction = rec.normal + random_unit_vector();
                 scattered = ray(rec.p, scatter_direction);
@@ -1896,7 +1905,7 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
             }
 
         public:
-            vec3 albedo;
+            color albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [lambertian-initial]: <kbd>[material.h]</kbd> The lambertian material class]
@@ -1933,10 +1942,10 @@ The metal material just reflects rays using that formula:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class metal : public material {
         public:
-            metal(const vec3& a) : albedo(a) {}
+            metal(const color& a) : albedo(a) {}
 
             virtual bool scatter(
-                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
                 scattered = ray(rec.p, reflected);
@@ -1945,36 +1954,36 @@ The metal material just reflects rays using that formula:
             }
 
         public:
-            vec3 albedo;
+            color albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [metal-material]: <kbd>[material.h]</kbd> Metal material with reflectance function]
 </div>
 
 <div class='together'>
-We need to modify the color function to use this:
+We need to modify the `ray_color()` function to use this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, const hittable& world, int depth) {
+    color ray_color(const ray& r, const hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
-            return vec3(0,0,0);
+            return color(0,0,0);
 
         if (world.hit(r, 0.001, infinity, rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             ray scattered;
-            vec3 attenuation;
+            color attenuation;
             if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
                 return attenuation * ray_color(scattered, world, depth-1);
-            return vec3(0,0,0);
+            return color(0,0,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
         vec3 unit_direction = unit_vector(r.direction());
         auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*vec3(1.0, 1.0, 1.0) + t*vec3(0.5, 0.7, 1.0);
+        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-scatter]: <kbd>[main.cc]</kbd> Ray color with scattered reflectance]
@@ -1997,27 +2006,27 @@ Now let’s add some metal spheres to our scene:
         hittable_list world;
 
         world.add(make_shared<sphere>(
-            vec3(0,0,-1), 0.5, make_shared<lambertian>(vec3(0.7, 0.3, 0.3))));
+            point3(0,0,-1), 0.5, make_shared<lambertian>(color(0.7, 0.3, 0.3))));
 
         world.add(make_shared<sphere>(
-            vec3(0,-100.5,-1), 100, make_shared<lambertian>(vec3(0.8, 0.8, 0.0))));
+            point3(0,-100.5,-1), 100, make_shared<lambertian>(color(0.8, 0.8, 0.0))));
 
-        world.add(make_shared<sphere>(vec3(1,0,-1), 0.5, make_shared<metal>(vec3(0.8, 0.6, 0.2))));
-        world.add(make_shared<sphere>(vec3(-1,0,-1), 0.5, make_shared<metal>(vec3(0.8, 0.8, 0.8))));
+        world.add(make_shared<sphere>(point3(1,0,-1), 0.5, make_shared<metal>(color(.8,.6,.2))));
+        world.add(make_shared<sphere>(point3(-1,0,-1), 0.5, make_shared<metal>(color(.8,.8,.8))));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         camera cam;
         for (int j = image_height-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
-                vec3 color(0, 0, 0);
+                color pixel_color(0, 0, 0);
                 for (int s = 0; s < samples_per_pixel; ++s) {
                     auto u = (i + random_double()) / (image_width-1);
                     auto v = (j + random_double()) / (image_height-1);
                     ray r = cam.get_ray(u, v);
-                    color += ray_color(r, world, max_depth);
+                    pixel_color += ray_color(r, world, max_depth);
                 }
-                color.write_color(std::cout, samples_per_pixel);
+                pixel_color.write_color(std::cout, samples_per_pixel);
             }
         }
 
@@ -2056,11 +2065,11 @@ absorb those.
     class metal : public material {
         public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            metal(const vec3& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
+            metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             virtual bool scatter(
-                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2071,7 +2080,7 @@ absorb those.
             }
 
         public:
-            vec3 albedo;
+            color albedo;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             double fuzz;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2186,9 +2195,9 @@ And the dielectric material that always refracts is:
             dielectric(double ri) : ref_idx(ri) {}
 
             virtual bool scatter(
-                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const {
-                attenuation = vec3(1.0, 1.0, 1.0);
+                attenuation = color(1.0, 1.0, 1.0);
                 double etai_over_etat;
                 if (rec.front_face) {
                     etai_over_etat = 1.0 / ref_idx;
@@ -2284,9 +2293,9 @@ And the dielectric material that always refracts (when possible) is:
             dielectric(double ri) : ref_idx(ri) {}
 
             virtual bool scatter(
-                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const {
-                attenuation = vec3(1.0, 1.0, 1.0);
+                attenuation = color(1.0, 1.0, 1.0);
                 double etai_over_etat = (rec.front_face) ? (1.0 / ref_idx) : (ref_idx);
 
                 vec3 unit_direction = unit_vector(r_in.direction());
@@ -2317,13 +2326,13 @@ Attenuation is always 1 -- the glass surface absorbs nothing. If we try that out
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     world.add(make_shared<sphere>(
-        vec3(0,0,-1), 0.5, make_shared<lambertian>(vec3(0.1, 0.2, 0.5))));
+        point3(0,0,-1), 0.5, make_shared<lambertian>(color(0.1, 0.2, 0.5))));
 
     world.add(make_shared<sphere>(
-        vec3(0,-100.5,-1), 100, make_shared<lambertian>(vec3(0.8, 0.8, 0.0))));
+        point3(0,-100.5,-1), 100, make_shared<lambertian>(color(0.8, 0.8, 0.0))));
 
-    world.add(make_shared<sphere>(vec3(1,0,-1), 0.5, make_shared<metal>(vec3(0.8, 0.6, 0.2), 0.0)));
-    world.add(make_shared<sphere>(vec3(-1,0,-1), 0.5, make_shared<dielectric>(1.5)));
+    world.add(make_shared<sphere>(point3(1,0,-1), 0.5, make_shared<metal>(color(.8, .6, .2), 0.0)));
+    world.add(make_shared<sphere>(point3(-1,0,-1), 0.5, make_shared<dielectric>(1.5)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-dielectric]: <kbd>[main.cc]</kbd> Scene with dielectric sphere]
 
@@ -2359,9 +2368,9 @@ This yields our full glass material:
             dielectric(double ri) : ref_idx(ri) {}
 
             virtual bool scatter(
-                const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const {
-                attenuation = vec3(1.0, 1.0, 1.0);
+                attenuation = color(1.0, 1.0, 1.0);
                 double etai_over_etat = (rec.front_face) ? (1.0 / ref_idx) : (ref_idx);
 
                 vec3 unit_direction = unit_vector(r_in.direction());
@@ -2399,12 +2408,11 @@ the geometry is unaffected but the surface normal points inward, so it can be us
 to make a hollow glass sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    world.add(make_shared<sphere>(vec3(0,0,-1), 0.5, make_shared<lambertian>(vec3(0.1, 0.2, 0.5))));
-    world.add(make_shared<sphere>(
-        vec3(0,-100.5,-1), 100, make_shared<lambertian>(vec3(0.8, 0.8, 0.0))));
-    world.add(make_shared<sphere>(vec3(1,0,-1), 0.5, make_shared<metal>(vec3(0.8, 0.6, 0.2), 0.3)));
-    world.add(make_shared<sphere>(vec3(-1,0,-1), 0.5, make_shared<dielectric>(1.5)));
-    world.add(make_shared<sphere>(vec3(-1,0,-1), -0.45, make_shared<dielectric>(1.5)));
+    world.add(make_shared<sphere>(point3(0,0,-1), 0.5, make_shared<lambertian>(color(.1, .2, .5))));
+    world.add(make_shared<sphere>(point3(0,-100.5,-1), 100, make_shared<lambertian>(color(.8,.8,0.))));
+    world.add(make_shared<sphere>(point3(1,0,-1), 0.5, make_shared<metal>(color(.8, .6, .2), 0.3)));
+    world.add(make_shared<sphere>(point3(-1,0,-1), 0.5, make_shared<dielectric>(1.5)));
+    world.add(make_shared<sphere>(point3(-1,0,-1), -0.45, make_shared<dielectric>(1.5)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-hollow-glass]: <kbd>[main.cc]</kbd> Scene with hollow glass sphere]
 </div>
@@ -2449,13 +2457,13 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
                 double vfov, // top to bottom, in degrees
                 double aspect
             ) {
-                origin = vec3(0.0, 0.0, 0.0);
+                origin = point3(0.0, 0.0, 0.0);
 
                 auto theta = degrees_to_radians(vfov);
                 auto half_height = tan(theta/2);
                 auto half_width = aspect * half_height;
 
-                lower_left_corner = vec3(-half_width, -half_height, -1.0);
+                lower_left_corner = point3(-half_width, -half_height, -1.0);
 
                 horizontal = vec3(2*half_width, 0.0, 0.0);
                 vertical = vec3(0.0, 2*half_height, 0.0);
@@ -2467,8 +2475,8 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
             }
 
         public:
-            vec3 origin;
-            vec3 lower_left_corner;
+            point3 origin;
+            point3 lower_left_corner;
             vec3 horizontal;
             vec3 vertical;
     };
@@ -2482,8 +2490,8 @@ When calling it with camera `cam(90, double(image_width)/image_height)` and thes
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     auto R = cos(pi/4);
     hittable_list world;
-    world.add(make_shared<sphere>(vec3(-R,0,-1), R, make_shared<lambertian>(vec3(0, 0, 1))));
-    world.add(make_shared<sphere>(vec3( R,0,-1), R, make_shared<lambertian>(vec3(1, 0, 0))));
+    world.add(make_shared<sphere>(point3(-R,0,-1), R, make_shared<lambertian>(color(0, 0, 1))));
+    world.add(make_shared<sphere>(point3( R,0,-1), R, make_shared<lambertian>(color(1, 0, 0))));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-wide-angle]: <kbd>[main.cc]</kbd> Scene with wide-angle camera]
 
@@ -2524,7 +2532,7 @@ camera horizontally level until you decide to experiment with crazy camera angle
         public:
             camera(
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                vec3 lookfrom, vec3 lookat, vec3 vup,
+                point3 lookfrom, point3 lookat, vec3 vup,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 double vfov, // top to bottom, in degrees
                 double aspect
@@ -2555,8 +2563,8 @@ camera horizontally level until you decide to experiment with crazy camera angle
             }
 
         public:
-            vec3 origin;
-            vec3 lower_left_corner;
+            point3 origin;
+            point3 lower_left_corner;
             vec3 horizontal;
             vec3 vertical;
     };
@@ -2569,7 +2577,7 @@ This allows us to change the viewpoint:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     const auto aspect_ratio = double(image_width) / image_height;
     ...
-    camera cam(vec3(-2,2,1), vec3(0,0,-1), vup, 90, aspect_ratio);
+    camera cam(point3(-2,2,1), point3(0,0,-1), vup, 90, aspect_ratio);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-free-view]: <kbd>[main.cc]</kbd> Scene with alternate viewpoint]
 
@@ -2654,7 +2662,7 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
     class camera {
         public:
             camera(
-                vec3 lookfrom, vec3 lookat, vec3 vup,
+                point3 lookfrom, point3 lookat, vec3 vup,
                 double vfov, // top to bottom, in degrees
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 double aspect, double aperture, double focus_dist
@@ -2695,8 +2703,8 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
             }
 
         public:
-            vec3 origin;
-            vec3 lower_left_corner;
+            point3 origin;
+            point3 lower_left_corner;
             vec3 horizontal;
             vec3 vertical;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2713,8 +2721,8 @@ Using a big aperture:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     const auto aspect_ratio = double(image_width) / image_height;
     ...
-    vec3 lookfrom(3,3,2);
-    vec3 lookat(0,0,-1);
+    point3 lookfrom(3,3,2);
+    point3 lookat(0,0,-1);
     vec3 vup(0,1,0);
     auto dist_to_focus = (lookfrom-lookat).length();
     auto aperture = 2.0;
@@ -2746,22 +2754,22 @@ First let’s make the image on the cover of this book -- lots of random spheres
         hittable_list world;
 
         world.add(make_shared<sphere>(
-            vec3(0,-1000,0), 1000, make_shared<lambertian>(vec3(0.5, 0.5, 0.5))));
+            point3(0,-1000,0), 1000, make_shared<lambertian>(color(0.5, 0.5, 0.5))));
 
         int i = 1;
         for (int a = -11; a < 11; a++) {
             for (int b = -11; b < 11; b++) {
                 auto choose_mat = random_double();
-                vec3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
+                point3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
                 if ((center - vec3(4, 0.2, 0)).length() > 0.9) {
                     if (choose_mat < 0.8) {
                         // diffuse
-                        auto albedo = vec3::random() * vec3::random();
+                        auto albedo = color::random() * color::random();
                         world.add(
                             make_shared<sphere>(center, 0.2, make_shared<lambertian>(albedo)));
                     } else if (choose_mat < 0.95) {
                         // metal
-                        auto albedo = vec3::random(.5, 1);
+                        auto albedo = color::random(.5, 1);
                         auto fuzz = random_double(0, .5);
                         world.add(
                             make_shared<sphere>(center, 0.2, make_shared<metal>(albedo, fuzz)));
@@ -2773,13 +2781,13 @@ First let’s make the image on the cover of this book -- lots of random spheres
             }
         }
 
-        world.add(make_shared<sphere>(vec3(0, 1, 0), 1.0, make_shared<dielectric>(1.5)));
+        world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, make_shared<dielectric>(1.5)));
 
         world.add(
-            make_shared<sphere>(vec3(-4, 1, 0), 1.0, make_shared<lambertian>(vec3(0.4, 0.2, 0.1))));
+            make_shared<sphere>(point3(-4, 1, 0), 1.0, make_shared<lambertian>(color(.4, .2, .1))));
 
         world.add(
-            make_shared<sphere>(vec3(4, 1, 0), 1.0, make_shared<metal>(vec3(0.7, 0.6, 0.5), 0.0)));
+            make_shared<sphere>(point3(4, 1, 0), 1.0, make_shared<metal>(color(.7, .6, .5), 0.0)));
 
         return world;
     }
@@ -2788,8 +2796,8 @@ First let’s make the image on the cover of this book -- lots of random spheres
         ...
         auto world = random_scene();
 
-        vec3 lookfrom(13,2,3);
-        vec3 lookat(0,0,0);
+        point3 lookfrom(13,2,3);
+        point3 lookat(0,0,0);
         vec3 vup(0,1,0);
         auto dist_to_focus = 10.0;
         auto aperture = 0.1;

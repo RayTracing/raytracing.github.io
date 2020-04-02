@@ -20,7 +20,7 @@
 class box: public hittable  {
     public:
         box() {}
-        box(const vec3& p0, const vec3& p1, shared_ptr<material> ptr);
+        box(const point3& p0, const point3& p1, shared_ptr<material> ptr);
 
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
@@ -30,13 +30,13 @@ class box: public hittable  {
         }
 
     public:
-        vec3 box_min;
-        vec3 box_max;
+        point3 box_min;
+        point3 box_max;
         hittable_list sides;
 };
 
 
-box::box(const vec3& p0, const vec3& p1, shared_ptr<material> ptr) {
+box::box(const point3& p0, const point3& p1, shared_ptr<material> ptr) {
     box_min = p0;
     box_max = p1;
 
