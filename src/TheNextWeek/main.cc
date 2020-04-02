@@ -25,20 +25,20 @@
 #include <iostream>
 
 
-vec3 ray_color(const ray& r, const vec3& background, const hittable& world, int depth) {
+color ray_color(const ray& r, const color& background, const hittable& world, int depth) {
     hit_record rec;
 
     // If we've exceeded the ray bounce limit, no more light is gathered.
     if (depth <= 0)
-        return vec3(0,0,0);
+        return color(0,0,0);
 
     // If the ray hits nothing, return the background color.
     if (!world.hit(r, 0.001, infinity, rec))
         return background;
 
     ray scattered;
-    vec3 attenuation;
-    vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+    color attenuation;
+    color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
 
     if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
         return emitted;
@@ -363,7 +363,7 @@ int main() {
     auto vfov = 40.0;
     auto aperture = 0.0;
     auto dist_to_focus = 10.0;
-    vec3 background(0,0,0);
+    color background(0,0,0);
 
     switch (0) {
         case 1:
@@ -371,7 +371,7 @@ int main() {
             lookfrom = vec3(13,2,3);
             lookat = vec3(0,0,0);
             vfov = 20.0;
-            background = vec3(0.70, 0.80, 1.00);
+            background = color(0.70, 0.80, 1.00);
             break;
 
         case 2:
@@ -379,7 +379,7 @@ int main() {
             lookfrom = vec3(13,2,3);
             lookat = vec3(0,0,0);
             vfov = 20.0;
-            background = vec3(0.70, 0.80, 1.00);
+            background = color(0.70, 0.80, 1.00);
             break;
 
         case 3:
@@ -387,7 +387,7 @@ int main() {
             lookfrom = vec3(13,2,3);
             lookat = vec3(0,0,0);
             vfov = 20.0;
-            background = vec3(0.70, 0.80, 1.00);
+            background = color(0.70, 0.80, 1.00);
             break;
 
         case 4:
@@ -395,7 +395,7 @@ int main() {
             lookfrom = vec3(0,0,12);
             lookat = vec3(0,0,0);
             vfov = 20.0;
-            background = vec3(0.70, 0.80, 1.00);
+            background = color(0.70, 0.80, 1.00);
             break;
 
         case 5:
@@ -449,7 +449,7 @@ int main() {
     for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
         for (int i = 0; i < image_width; ++i) {
-            vec3 pixel_color;
+            color pixel_color;
             for (int s = 0; s < samples_per_pixel; ++s) {
                 auto u = (i + random_double()) / image_width;
                 auto v = (j + random_double()) / image_height;

@@ -7,7 +7,7 @@
                                            Peter Shirley
                           edited by Steve Hollasch and Trevor David Black
                                                 <br>
-                                     Version 3.0.1, 2020-03-31
+                                     Version 3.1.0-wip, 2020-03-31
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -1802,20 +1802,21 @@ do this, we’ll add a background color parameter to our `ray_color` function, a
 the new `emitted` value.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 ray_color(const ray& r, const vec3& background, const hittable& world, int depth) {
+    color ray_color(const ray& r, const color& background, const hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
-            return vec3(0,0,0);
+            return color(0,0,0);
 
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
             return background;
 
         ray scattered;
-        vec3 attenuation;
-        vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+        color attenuation;
+        color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+
         if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
             return emitted;
 
@@ -1825,7 +1826,7 @@ the new `emitted` value.
 
     int main() {
         ...
-        const vec3 background(0,0,0);
+        const color background(0,0,0);
         ...
                     pixel_color += ray_color(r, background, world, max_depth);
         ...

@@ -21,9 +21,9 @@
 #include <iostream>
 
 
-vec3 ray_color(
+color ray_color(
     const ray& r,
-    const vec3& background,
+    const color& background,
     const hittable& world,
     shared_ptr<hittable> lights,
     int depth
@@ -32,14 +32,14 @@ vec3 ray_color(
 
     // If we've exceeded the ray bounce limit, no more light is gathered.
     if (depth <= 0)
-        return vec3(0,0,0);
+        return color(0,0,0);
 
     // If the ray hits nothing, return the background color.
     if (!world.hit(r, 0.001, infinity, rec))
         return background;
 
     scatter_record srec;
-    vec3 emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+    color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
 
     if (!rec.mat_ptr->scatter(r, rec, srec))
         return emitted;
@@ -108,7 +108,7 @@ int main() {
 
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-    vec3 background(0,0,0);
+    color background(0,0,0);
 
     camera cam;
     auto world = cornell_box(cam, aspect_ratio);
@@ -120,7 +120,7 @@ int main() {
     for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
         for (int i = 0; i < image_width; ++i) {
-            vec3 pixel_color;
+            color pixel_color;
             for (int s = 0; s < samples_per_pixel; ++s) {
                 auto u = (i + random_double()) / image_width;
                 auto v = (j + random_double()) / image_height;
