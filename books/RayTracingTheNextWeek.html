@@ -46,10 +46,15 @@ reflection and defocus blur you needed multiple samples per pixel. Once you have
 that road, the good news is that almost all effects can be brute-forced. Motion blur is certainly
 one of those. In a real camera, the shutter opens and stays open for a time interval, and the camera
 and objects may move during that time. Its really an average of what the camera sees over that
-interval that we want. We can get a random estimate by sending each ray at some random time when the
-shutter is open. As long as the objects are where they should be at that time, we can get the right
-average answer with a ray that is at exactly a single time. This is fundamentally why random ray
-tracing tends to be simple.
+interval that we want.
+
+
+Updating The Ray Class to Track Time
+-------------------------------------
+We can get a random estimate by sending each ray at some random time when the shutter is open. As
+long as the objects are where they should be at that time, we can get the right average answer with
+a ray that is at exactly a single time. This is fundamentally why random ray tracing tends to be
+simple.
 
 The basic idea is to generate rays at random times while the shutter is open and intersect the model
 at that one time. The way it is usually done is to have the camera move and the objects move, but
@@ -90,6 +95,9 @@ For this we will first need to have a ray store the time it exists at:
     [Listing [time-ray]: <kbd>[ray.h]</kbd> Ray with time information]
 </div>
 
+
+Updating the Camera To Simulate Motion Blur
+--------------------------------------------
 Now we need to modify the camera to generate rays at a random time between `time1` and `time2`.
 Should the camera keep track of `time1` and `time2` or should that be up to the user of camera when
 a ray is created? When in doubt, I like to make constructors complicated if it makes calls simple,
@@ -157,6 +165,9 @@ to camera because for now it is not allowed to move; it just sends out rays over
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [time-camera]: <kbd>[camera.h]</kbd> Camera with time information]
 
+
+Moving Objects
+---------------
 We also need a moving object. I’ll create a sphere class that has its center move linearly from
 `center0` at `time0` to `center1` at `time1`. Outside that time interval it continues on, so those
 times need not match up with the camera aperture open and close.
@@ -239,6 +250,9 @@ intersection code barely needs a change: `center` just needs to become a functio
     [Listing [moving-sphere-hit]: <kbd>[moving-sphere.h]</kbd> Moving sphere hit function]
 </div>
 
+
+Tracking The Time Of Ray Intersection
+--------------------------------------
 <div class='together'>
 Be sure that in the materials you have the scattered rays be at the time of the incident ray.
 
@@ -264,6 +278,9 @@ Be sure that in the materials you have the scattered rays be at the time of the 
     [Listing [lambertian-animate]: <kbd>[material.h]</kbd> Lambertian matrial for moving objects]
 </div>
 
+
+Putting Everything Together
+----------------------------
 <div class='together'>
 The code below takes the example diffuse spheres from the scene at the end of the last book, and
 makes them move during the image render. (Think of a camera with shutter opening at time 0 and then
@@ -359,6 +376,9 @@ can be a sublinear search. The two most common families of sorting are to 1) div
 2) divide the objects. The latter is usually much easier to code up and just as fast to run for most
 models.
 
+
+Creating Bounding Volumes
+--------------------------
 <div class='together'>
 The key idea of a bounding volume over a set of primitives is to find a volume that fully encloses
 (bounds) all the objects. For example, suppose you computed a bounding sphere of 10 objects. Any ray
@@ -376,6 +396,9 @@ sphere, then it might hit one of the ten objects. So the bounding code is always
 A key thing is we are dividing objects into subsets. We are not dividing the screen or the volume.
 Any object is in just one bounding volume, but bounding volumes can overlap.
 
+
+Hierarchies of Bounding Volumes
+--------------------------------
 <div class='together'>
 To make things sub-linear we need to make the bounding volumes hierarchical. For example, if we
 divided a set of objects into two groups, red and blue, and used rectangular bounding volumes, we’d
@@ -400,6 +423,9 @@ no concept of ordering in the left and right children; they are simply inside. T
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
+
+Axis-Aligned Bounding Boxes (AABBs)
+------------------------------------
 To get that all to work we need a way to make good divisions, rather than bad ones, and a way to
 intersect a ray with a bounding volume. A ray bounding volume intersection needs to be fast, and
 bounding volumes need to be pretty compact. In practice for most models, axis-aligned boxes work
@@ -466,8 +492,12 @@ to overlap. For example, in 2D the green and blue overlapping only happens if th
 
 </div>
 
+
+Determining If a Ray Intersects an AABB
+----------------------------------------
 <div class='together'>
-What “do the t intervals in the slabs overlap?” would like in code is something like:
+What the question “do the t intervals in the slabs overlap?” would look like in code is something
+like this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     compute (tx0, tx1)
@@ -579,6 +609,9 @@ Note that we use the simple custom `ffmax()` function (defined in `rtweekend.h`)
 standard library `fmax()` utility. `ffmax()` is quite a bit faster because it doesn’t worry about
 `NaN`s and other exceptions.
 
+
+An Optimized AABB Hit Method
+-----------------------------
 <div class='together'>
 In reviewing this intersection method, Andrew Kensler at Pixar tried some experiments and has
 proposed this version of the code which works extremely well on many compilers, and I have adopted
@@ -603,6 +636,9 @@ it as my go-to method:
     [Listing [aabb-hit]: <kbd>[aabb.h]</kbd> Axis-aligned bounding box hit function]
 </div>
 
+
+Constructing Bounding Boxes For Hittables
+------------------------------------------
 <div class='together'>
 We now need to add a function to compute the bounding boxes of all the hittables. Then we will make
 a hierarchy of boxes over all the primitives and the individual primitives, like spheres, will live
@@ -654,6 +690,9 @@ and compute the box of those two boxes:
     [Listing [moving-sphere-bbox]: <kbd>[moving_sphere.h]</kbd> Moving sphere with bounding box]
 </div>
 
+
+Creating Bounding Boxes of Lists of Objects
+--------------------------------------------
 <div class='together'>
 For lists you can store the bounding box at construction, or compute it on the fly. I like doing it
 the fly because it is only usually called at BVH construction.
@@ -700,6 +739,9 @@ boxes:
     [Listing [surrounding-box]: <kbd>[aabb.h]</kbd> Surrounding bounding box]
 </div>
 
+
+The BVH Node Class
+-------------------
 <div class='together'>
 A BVH is also going to be a `hittable` -- just like lists of `hittable`s. It’s really a container,
 but it can respond to the query “does this ray hit you?”. One design question is whether we have two
@@ -758,6 +800,9 @@ check the children and sort out any details:
     [Listing [bvh-hit]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy hit function]
 </div>
 
+
+Splitting BVH Volumes
+----------------------
 <div class='together'>
 The most complicated part of any efficiency structure, including the BVH, is building it. We do this
 in the constructor. A cool thing about BVHs is that as long as the list of objects in a `bvh_node`
@@ -834,6 +879,9 @@ The check for whether there is a bounding box at all is in case you sent in some
 infinite plane that doesn’t have a bounding box. We don’t have any of those primitives, so it
 shouldn’t happen until you add such a thing.
 
+
+The Box Comparison Functions
+-----------------------------
 <div class='together'>
 Now we need to implement the box comparison functions, used by `std::sort()`. To do this, create a
 generic comparator returns true if the first argument is less than the second, given an additional
@@ -874,9 +922,12 @@ Solid Textures
 
 A texture in graphics usually means a function that makes the colors on a surface procedural. This
 procedure can be synthesis code, or it could be an image lookup, or a combination of both. We will
-first make all colors a texture. Most programs keep constant rgb colors and textures different
-classes so feel free to do something different, but I am a big believer in this architecture because
-being able to make any color a texture is great.
+first make all colors a texture. Most programs keep constant rgb colors and textures in different
+classes, so feel free to do something different, but I am a big believer in this architecture
+because being able to make any color a texture is great.
+
+The First Texture Class: Constant Texture
+------------------------------------------
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -932,7 +983,7 @@ Now we can make textured materials by replacing the vec3 color with a texture po
 </div>
 
 <div class='together'>
-where you used to have
+Where you used to have
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...make_shared<lambertian>(vec3(0.5, 0.5, 0.5))
@@ -947,6 +998,9 @@ now you should replace the `vec3(...)` with `make_shared<constant_texture>(vec3(
     [Listing [lam-textured]: <kbd>[main.cc]</kbd> Lambertian material with texture]
 </div>
 
+
+A Checker Texture
+------------------
 <div class='together'>
 We can create a checker texture by noting that the sign of sine and cosine just alternates in a
 regular way and if we multiply trig functions in all three dimensions, the sign of that product
@@ -1000,6 +1054,9 @@ We get:
 
 </div>
 
+
+Rendering A Scene With A Checkered Texture
+-------------------------------------------
 <div class='together'>
 If we add a new scene:
 
@@ -1075,6 +1132,9 @@ the same randomish number. Nearby points return similar numbers. Another importa
 noise is that it be simple and fast, so it’s usually done as a hack. I’ll build that hack up
 incrementally based on Andrew Kensler’s description.
 
+
+Using Blocks of Random Numbers
+-------------------------------
 <div class='together'>
 We could just tile all of space with a 3D array of random numbers and use them in blocks. You get
 something blocky where the repeating is clear:
@@ -1222,6 +1282,9 @@ Add the hashing does scramble as hoped:
 
 </div>
 
+
+Smoothing Out The Result
+-------------------------
 <div class='together'>
 To make it smooth, we can linearly interpolate:
 
@@ -1278,10 +1341,13 @@ And we get:
 
 </div>
 
+
+Another Approach to Smoothing
+------------------------------
 <div class='together'>
-Better, but there are obvious grid features in there. Some of it is Mach bands, a known perceptual
-artifact of linear interpolation of color. A standard trick is to use a Hermite cubic to round off
-the interpolation:
+Smoothing yields an improved result, but there are obvious grid features in there. Some of it is
+Mach bands, a known perceptual artifact of linear interpolation of color. A standard trick is to use
+a Hermite cubic to round off the interpolation:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin (
@@ -1317,6 +1383,9 @@ This gives a smoother looking image:
 
 </div>
 
+
+Tweaking The Frequency
+-----------------------
 <div class='together'>
 It is also a bit low frequency. We can scale the input point to make it vary more quickly:
 
@@ -1349,12 +1418,15 @@ which gives:
 
 </div>
 
+
+Using Random Vectors On The Lattice Points
+-------------------------------------------
 <div class='together'>
-This is still a bit grid blocky looking, probably because the min and max of the pattern always
-lands exactly on the integer x/y/z. Ken Perlin’s very clever trick was to instead put random unit
-vectors (instead of just floats) on the lattice points, and use a dot product to move the min and
-max off the lattice. So, first we need to change the random floats to random vectors. These vectors
-are any reasonable set of irregular directions, and I won't bother to make them exactly uniform:
+This is still a bit blocky looking, probably because the min and max of the pattern always lands
+exactly on the integer x/y/z. Ken Perlin’s very clever trick was to instead put random unit vectors
+(instead of just floats) on the lattice points, and use a dot product to move the min and max off
+the lattice. So, first we need to change the random floats to random vectors. These vectors are any
+reasonable set of irregular directions, and I won't bother to make them exactly uniform:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin {
@@ -1490,9 +1562,12 @@ This finally gives something more reasonable looking:
 
 </div>
 
+
+Introducing Turbulence
+-----------------------
 <div class='together'>
 Very often, a composite noise that has multiple summed frequencies is used. This is usually called
-turbulence and is a sum of repeated calls to noise:
+turbulence, and is a sum of repeated calls to noise:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin {
@@ -1530,6 +1605,9 @@ Used directly, turbulence gives a sort of camouflage netting appearance:
 
 </div>
 
+
+Adjusting the Phase
+--------------------
 <div class='together'>
 However, usually turbulence is used indirectly. For example, the “hello world” of procedural solid
 textures is a simple marble-like texture. The basic idea is to make color proportional to something
@@ -1588,10 +1666,15 @@ position is:
 
 <div class='together'>
 This is just a fractional position. For a hittable, we need to also return a $u$ and $v$ in the hit
-record. For spheres, this is usually based on some form of longitude and latitude, _i.e._, spherical
-coordinates. So if we have a $(\theta,\phi)$ in spherical coordinates we just need to scale $\theta$
-and $\phi$ to fractions. If $\theta$ is the angle down from the pole, and $\phi$ is the angle around
-the axis through the poles, the normalization to $[0,1]$ would be:
+record.
+
+
+Texture Coordinates For Spheres
+--------------------------------
+For spheres, this is usually based on some form of longitude and latitude, _i.e._, spherical
+coordinates. So if we have a $(\theta,\phi)$ in spherical coordinates, we just need to scale
+$\theta$ and $\phi$ to fractions. If $\theta$ is the angle down from the pole, and $\phi$ is the
+angle around the axis through the poles, the normalization to $[0,1]$ would be:
 
   $$ u = \frac{\phi}{2\pi} $$
   $$ v = \frac{\theta}{\pi} $$
@@ -1647,6 +1730,9 @@ The utility function is:
     [Listing [get-sphere-uv]: <kbd>[sphere.h]</kbd> get_sphere_uv function]
 </div>
 
+
+Storing Texture Image Data
+---------------------------
 Now we also need to create a texture class that holds an image. I am going to use my favorite image
 utility `stb_image`. It reads in an image into a big array of unsigned char. These are just packed
 RGBs that each range 0..255 for black to fully-on.
@@ -1709,6 +1795,9 @@ package makes that super simple -- just include the header `rtw_stb_image.h` in 
 
   </div>
 
+
+Using An Image Texture
+-----------------------
 To read an image from a file earthmap.jpg (I just grabbed a random earth map from the web -- any
 standard projection will do for our purposes), and then assign it to a diffuse material, the code
 is:
@@ -1748,6 +1837,8 @@ to just return attenuation. You should get something like:
 Rectangles and Lights
 ====================================================================================================
 
+Emissive Materials
+-------------------
 <div class='together'>
 First, let’s make a light emitting material. We need to add an emitted function (we could also add
 it to `hit_record instead` -- that’s a matter of design taste). Like the background, it just tells
@@ -1796,6 +1887,9 @@ class return black:
     [Listing [matl-emit]: <kbd>[material.h]</kbd> New emitted function in class material]
 </div>
 
+
+Adding Background Color to The Ray Color Function
+--------------------------------------------------
 <div class='together'>
 Next, we want a pure black background so the only light in the scene is coming from the emitters. To
 do this, we’ll add a background color parameter to our `ray_color` function, and pay attention to
@@ -1834,6 +1928,9 @@ the new `emitted` value.
     [Listing [ray-color-emitted]: <kbd>[main.cc]</kbd> ray_color function for emitting materials]
 </div>
 
+
+Creating Rectangle Objects
+---------------------------
 Now, let’s make some rectangles. Rectangles are often convenient for modeling man-made environments.
 I’m a fan of doing axis-aligned rectangles because they are easy. (We’ll get to instancing so we can
 rotate them later.)
@@ -1915,6 +2012,9 @@ And the hit function is:
     [Listing [xy-rect-hit]: <kbd>[aarect.h]</kbd> Hit function for XY rectangle objects]
 </div>
 
+
+Turning Objects Into Lights
+----------------------------
 <div class='together'>
 If we set up a rectangle as a light:
 
@@ -1960,6 +2060,9 @@ Fool around with making some spheres lights too.
 
 </div>
 
+
+More Axis-Aligned Rectangles
+-----------------------------
 Now let’s add the other two axes and the famous Cornell Box.
 
 <div class='together'>
@@ -2050,7 +2153,11 @@ With unsurprising hit functions:
     [Listing [xz-yz]: <kbd>[aarect.h]</kbd> XZ and YZ rectangle object hit functions]
 </div>
 
+
+Creating An Empty “Cornell Box”
+--------------------------------
 <div class='together'>
+The “Cornell Box” was introduced in 1984 to model the interaction of light between diffuse surfaces.
 Let’s make the 5 walls and the light of the box:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2103,6 +2210,9 @@ We get:
 
 </div>
 
+
+Flipped Objects
+----------------
 <div class='together'>
 This is very noisy because the light is small. But we have a problem: some of the walls are facing
 the wrong way. We haven't specified that a diffuse material should behave differently on different
@@ -2263,6 +2373,9 @@ subtract 2 off the x-component of the ray origin.
 
 </div>
 
+
+Intance Translation
+--------------------
 <div class='together'>
 Whether you think of this as a move or a change of coordinates is up to you. The code for this, to
 move any underlying hittable is a _translate_ instance.
@@ -2306,6 +2419,9 @@ move any underlying hittable is a _translate_ instance.
     [Listing [translate-class]: <kbd>[hittable.h]</kbd> Hittable translation class]
 </div>
 
+
+Instance Rotation
+------------------
 <div class='together'>
 Rotation isn’t quite as easy to understand or generate the formulas for. A common graphics tactic is
 to apply all rotations about the x, y, and z axes. These rotations are in some sense axis-aligned.
@@ -2488,6 +2604,9 @@ volumes are a different animal than surfaces. But a cute technique is to make a 
 surface. A bunch of smoke can be replaced with a surface that probabilistically might or might not
 be there at every point in the volume. This will make more sense when you see the code.
 
+
+Constant Density Mediums
+-------------------------
 First, let’s start with a volume of constant density. A ray going through there can either scatter
 inside the volume, or it can make it all the way through like the middle ray in the figure. More
 thin transparent volumes, like a light fog, are more likely to have rays like the middle one. How
@@ -2620,6 +2739,9 @@ convex. So this particular implementation will work for boundaries like boxes or
 not work with toruses or shapes that contain voids. It's possible to write an implementation that
 handles arbitrary shapes, but we'll leave that as an exercise for the reader.
 
+
+Rendering a Cornell Box With Smoke and Fog Boxes
+-------------------------------------------------
 <div class='together'>
 If we replace the two blocks with smoke and fog (dark and light particles) and make the light bigger
 (and dimmer so it doesn’t blow out the scene) for faster convergence:
