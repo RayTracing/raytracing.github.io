@@ -18,7 +18,7 @@
 
 class material;
 
-void get_sphere_uv(const vec3& p, double& u, double& v) {
+void get_sphere_uv(const point3& p, double& u, double& v) {
     auto phi = atan2(p.z(), p.x());
     auto theta = asin(p.y());
     u = 1-(phi + pi) / (2*pi);
@@ -27,7 +27,7 @@ void get_sphere_uv(const vec3& p, double& u, double& v) {
 
 
 struct hit_record {
-    vec3 p;
+    point3 p;
     vec3 normal;
     shared_ptr<material> mat_ptr;
     double t;
@@ -133,8 +133,8 @@ rotate_y::rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
     cos_theta = cos(radians);
     hasbox = ptr->bounding_box(0, 1, bbox);
 
-    vec3 min( infinity,  infinity,  infinity);
-    vec3 max(-infinity, -infinity, -infinity);
+    point3 min( infinity,  infinity,  infinity);
+    point3 max(-infinity, -infinity, -infinity);
 
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
@@ -161,7 +161,7 @@ rotate_y::rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
 
 
 bool rotate_y::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
-    vec3 origin = r.origin();
+    point3 origin = r.origin();
     vec3 direction = r.direction();
 
     origin[0] = cos_theta*r.origin()[0] - sin_theta*r.origin()[2];
@@ -175,7 +175,7 @@ bool rotate_y::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
     if (!ptr->hit(rotated_r, t_min, t_max, rec))
         return false;
 
-    vec3 p = rec.p;
+    point3 p = rec.p;
     vec3 normal = rec.normal;
 
     p[0] =  cos_theta*rec.p[0] + sin_theta*rec.p[2];

@@ -28,17 +28,17 @@ struct scatter_record
 {
     ray specular_ray;
     bool is_specular;
-    vec3 attenuation;
+    color attenuation;
     shared_ptr<pdf> pdf_ptr;
 };
 
 
 class material  {
     public:
-        virtual vec3 emitted(
-            const ray& r_in, const hit_record& rec, double u, double v, const vec3& p
+        virtual color emitted(
+            const ray& r_in, const hit_record& rec, double u, double v, const point3& p
         ) const {
-            return vec3(0,0,0);
+            return color(0,0,0);
         }
 
         virtual bool scatter(
@@ -64,7 +64,7 @@ class dielectric : public material {
         ) const {
             srec.is_specular = true;
             srec.pdf_ptr = nullptr;
-            srec.attenuation = vec3(1.0, 1.0, 1.0);
+            srec.attenuation = color(1.0, 1.0, 1.0);
             double etai_over_etat = (rec.front_face) ? (1.0 / ref_idx) : (ref_idx);
 
             vec3 unit_direction = unit_vector(r_in.direction());
@@ -98,11 +98,11 @@ class diffuse_light : public material {
     public:
         diffuse_light(shared_ptr<texture> a) : emit(a) {}
 
-        virtual vec3 emitted(
-            const ray& r_in, const hit_record& rec, double u, double v, const vec3& p
+        virtual color emitted(
+            const ray& r_in, const hit_record& rec, double u, double v, const point3& p
         ) const {
             if (!rec.front_face)
-                return vec3(0,0,0);
+                return color(0,0,0);
             return emit->value(u, v, p);
         }
 
@@ -116,7 +116,7 @@ class isotropic : public material {
         isotropic(shared_ptr<texture> a) : albedo(a) {}
 
         virtual bool scatter(
-            const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
         ) const  {
             scattered = ray(rec.p, random_in_unit_sphere(), r_in.time());
             attenuation = albedo->value(rec.u, rec.v, rec.p);
@@ -155,7 +155,7 @@ class lambertian : public material {
 
 class metal : public material {
     public:
-        metal(const vec3& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
+        metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, scatter_record& srec
@@ -170,7 +170,7 @@ class metal : public material {
         }
 
     public:
-        vec3 albedo;
+        color albedo;
         double fuzz;
 };
 

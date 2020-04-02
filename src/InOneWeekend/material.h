@@ -27,7 +27,7 @@ double schlick(double cosine, double ref_idx) {
 class material  {
     public:
         virtual bool scatter(
-            const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
         ) const = 0;
 };
 
@@ -37,9 +37,9 @@ class dielectric : public material {
         dielectric(double ri) : ref_idx(ri) {}
 
         virtual bool scatter(
-            const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
         ) const {
-            attenuation = vec3(1.0, 1.0, 1.0);
+            attenuation = color(1.0, 1.0, 1.0);
             double etai_over_etat = (rec.front_face) ? (1.0 / ref_idx) : (ref_idx);
 
             vec3 unit_direction = unit_vector(r_in.direction());
@@ -71,10 +71,10 @@ class dielectric : public material {
 
 class lambertian : public material {
     public:
-        lambertian(const vec3& a) : albedo(a) {}
+        lambertian(const color& a) : albedo(a) {}
 
         virtual bool scatter(
-            const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
         ) const  {
             vec3 scatter_direction = rec.normal + random_unit_vector();
             scattered = ray(rec.p, scatter_direction);
@@ -83,16 +83,16 @@ class lambertian : public material {
         }
 
     public:
-        vec3 albedo;
+        color albedo;
 };
 
 
 class metal : public material {
     public:
-        metal(const vec3& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
+        metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
 
         virtual bool scatter(
-            const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
         ) const  {
             vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
             scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());
@@ -101,7 +101,7 @@ class metal : public material {
         }
 
     public:
-        vec3 albedo;
+        color albedo;
         double fuzz;
 };
 

@@ -20,20 +20,20 @@
 class sphere: public hittable  {
     public:
         sphere() {}
-        sphere(vec3 cen, double r, shared_ptr<material> m)
+        sphere(point3 cen, double r, shared_ptr<material> m)
             : center(cen), radius(r), mat_ptr(m) {};
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
-        virtual double pdf_value(const vec3& o, const vec3& v) const;
-        virtual vec3 random(const vec3& o) const;
+        virtual double pdf_value(const point3& o, const vec3& v) const;
+        virtual vec3 random(const point3& o) const;
 
     public:
-        vec3 center;
+        point3 center;
         double radius;
         shared_ptr<material> mat_ptr;
 };
 
-double sphere::pdf_value(const vec3& o, const vec3& v) const {
+double sphere::pdf_value(const point3& o, const vec3& v) const {
     hit_record rec;
     if (!this->hit(ray(o, v), 0.001, infinity, rec))
         return 0;
@@ -44,7 +44,7 @@ double sphere::pdf_value(const vec3& o, const vec3& v) const {
     return  1 / solid_angle;
 }
 
-vec3 sphere::random(const vec3& o) const {
+vec3 sphere::random(const point3& o) const {
      vec3 direction = center - o;
      auto distance_squared = direction.length_squared();
      onb uvw;
