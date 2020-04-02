@@ -6,6 +6,8 @@ Change Log -- Ray Tracing in One Weekend
 
 ### Common
 - Change: Minor change to use new `point3` and `color` type aliases for `vec3` (#422)
+- New: subchapters throughout all three books (#267)
+- Fix: Scattered improvements to the text.
 
 ### _In One Weekend_
 - Fix: Update image and size for first PPM image
