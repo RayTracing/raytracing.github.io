@@ -748,6 +748,8 @@ the abstract class:
     struct hit_record {
         vec3 p;
         vec3 normal;
+        double t;
+
     };
 
     class hittable {
@@ -878,8 +880,8 @@ coloring. In this book we have more material types than we have geometry types, 
 less work and put the determination at geometry time. This is simply a matter of preference and
 you'll see both implementations in the literature.
 
-We add the `front_face` bool to the `hit_record` struct. I know that we’ll also want motion blur at
-some point, so I’ll also add a time input variable.
+We add the `front_face` bool to the `hit_record` struct. We'll also add a function to solve this
+calculation for us.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef HITTABLE_H
@@ -891,7 +893,6 @@ some point, so I’ll also add a time input variable.
         vec3 p;
         vec3 normal;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double t;
         bool front_face;
 
         inline void set_face_normal(const ray& r, const vec3& outward_normal) {
