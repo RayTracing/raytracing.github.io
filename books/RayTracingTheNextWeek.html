@@ -49,8 +49,8 @@ and objects may move during that time. Its really an average of what the camera 
 interval that we want.
 
 
-Updating The Ray Class to Track Time
--------------------------------------
+Introduction of SpaceTime Ray Tracing
+--------------------------------------
 We can get a random estimate by sending each ray at some random time when the shutter is open. As
 long as the objects are where they should be at that time, we can get the right average answer with
 a ray that is at exactly a single time. This is fundamentally why random ray tracing tends to be
@@ -96,7 +96,7 @@ For this we will first need to have a ray store the time it exists at:
 </div>
 
 
-Updating the Camera To Simulate Motion Blur
+Updating the Camera to Simulate Motion Blur
 --------------------------------------------
 Now we need to modify the camera to generate rays at a random time between `time1` and `time2`.
 Should the camera keep track of `time1` and `time2` or should that be up to the user of camera when
@@ -166,8 +166,8 @@ to camera because for now it is not allowed to move; it just sends out rays over
     [Listing [time-camera]: <kbd>[camera.h]</kbd> Camera with time information]
 
 
-Moving Objects
----------------
+Adding Moving Spheres
+----------------------
 We also need a moving object. I’ll create a sphere class that has its center move linearly from
 `center0` at `time0` to `center1` at `time1`. Outside that time interval it continues on, so those
 times need not match up with the camera aperture open and close.
@@ -251,7 +251,7 @@ intersection code barely needs a change: `center` just needs to become a functio
 </div>
 
 
-Tracking The Time Of Ray Intersection
+Tracking the Time of Ray Intersection
 --------------------------------------
 <div class='together'>
 Be sure that in the materials you have the scattered rays be at the time of the incident ray.
@@ -377,8 +377,8 @@ can be a sublinear search. The two most common families of sorting are to 1) div
 models.
 
 
-Creating Bounding Volumes
---------------------------
+The Key Idea
+-------------
 <div class='together'>
 The key idea of a bounding volume over a set of primitives is to find a volume that fully encloses
 (bounds) all the objects. For example, suppose you computed a bounding sphere of 10 objects. Any ray
@@ -493,11 +493,10 @@ to overlap. For example, in 2D the green and blue overlapping only happens if th
 </div>
 
 
-Determining If a Ray Intersects an AABB
-----------------------------------------
+Ray Intersection with an AABB
+------------------------------
 <div class='together'>
-What the question “do the t intervals in the slabs overlap?” would look like in code is something
-like this:
+The following pseudocode determines whether the $t$ intervals in the slab overlap:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     compute (tx0, tx1)
@@ -637,7 +636,7 @@ it as my go-to method:
 </div>
 
 
-Constructing Bounding Boxes For Hittables
+Constructing Bounding Boxes for Hittables
 ------------------------------------------
 <div class='together'>
 We now need to add a function to compute the bounding boxes of all the hittables. Then we will make
@@ -1055,7 +1054,7 @@ We get:
 </div>
 
 
-Rendering A Scene With A Checkered Texture
+Rendering a Scene with a Checkered Texture
 -------------------------------------------
 <div class='together'>
 If we add a new scene:
@@ -1283,7 +1282,7 @@ Add the hashing does scramble as hoped:
 </div>
 
 
-Smoothing Out The Result
+Smoothing out the Result
 -------------------------
 <div class='together'>
 To make it smooth, we can linearly interpolate:
@@ -1342,8 +1341,8 @@ And we get:
 </div>
 
 
-Another Approach to Smoothing
-------------------------------
+Improvement with Hermitian Smoothing
+-------------------------------------
 <div class='together'>
 Smoothing yields an improved result, but there are obvious grid features in there. Some of it is
 Mach bands, a known perceptual artifact of linear interpolation of color. A standard trick is to use
@@ -1419,7 +1418,7 @@ which gives:
 </div>
 
 
-Using Random Vectors On The Lattice Points
+Using Random Vectors on the Lattice Points
 -------------------------------------------
 <div class='together'>
 This is still a bit blocky looking, probably because the min and max of the pattern always lands
@@ -1669,7 +1668,7 @@ This is just a fractional position. For a hittable, we need to also return a $u$
 record.
 
 
-Texture Coordinates For Spheres
+Texture Coordinates for Spheres
 --------------------------------
 For spheres, this is usually based on some form of longitude and latitude, _i.e._, spherical
 coordinates. So if we have a $(\theta,\phi)$ in spherical coordinates, we just need to scale
@@ -1787,7 +1786,11 @@ package makes that super simple -- just include the header `rtw_stb_image.h` in 
     [Listing [incl-stb-img]: Including the STB image package]
 </div>
 
+
+Using an Image Texture
+-----------------------
 <div class='together'>
+I just grabbed a random earth map from the web -- any standard projection will do for our purposes.
 
   <div class="render">
 
@@ -1795,12 +1798,10 @@ package makes that super simple -- just include the header `rtw_stb_image.h` in 
 
   </div>
 
+</div>
 
-Using An Image Texture
------------------------
-To read an image from a file earthmap.jpg (I just grabbed a random earth map from the web -- any
-standard projection will do for our purposes), and then assign it to a diffuse material, the code
-is:
+<div class='together'>
+Here's the code to read an image from a file and then assign it to a diffuse material:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable_list earth() {
@@ -1836,6 +1837,11 @@ to just return attenuation. You should get something like:
 
 Rectangles and Lights
 ====================================================================================================
+Lighting is a key component of raytracing. Early simple raytracers used abstract light sources, like
+points in space, or directions. Modern approaches have more physically-based lights, which have
+position and size. To create such light sources, we need to be able to take any regular object and
+turn it into something that emits light into our scene.
+
 
 Emissive Materials
 -------------------
@@ -1888,7 +1894,7 @@ class return black:
 </div>
 
 
-Adding Background Color to The Ray Color Function
+Adding Background Color to the Ray Color Function
 --------------------------------------------------
 <div class='together'>
 Next, we want a pure black background so the only light in the scene is coming from the emitters. To
@@ -2013,7 +2019,7 @@ And the hit function is:
 </div>
 
 
-Turning Objects Into Lights
+Turning Objects into Lights
 ----------------------------
 <div class='together'>
 If we set up a rectangle as a light:
@@ -2154,7 +2160,7 @@ With unsurprising hit functions:
 </div>
 
 
-Creating An Empty “Cornell Box”
+Creating an Empty “Cornell Box”
 --------------------------------
 <div class='together'>
 The “Cornell Box” was introduced in 1984 to model the interaction of light between diffuse surfaces.
@@ -2740,7 +2746,7 @@ not work with toruses or shapes that contain voids. It's possible to write an im
 handles arbitrary shapes, but we'll leave that as an exercise for the reader.
 
 
-Rendering a Cornell Box With Smoke and Fog Boxes
+Rendering a Cornell Box with Smoke and Fog Boxes
 -------------------------------------------------
 <div class='together'>
 If we replace the two blocks with smoke and fog (dark and light particles) and make the light bigger
