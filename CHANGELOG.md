@@ -10,6 +10,7 @@ Change Log -- Ray Tracing in One Weekend
 - Fix: Update image and size for simple red sphere render
 - Fix: Update image and size for sphere with normal-vector coloring
 - Fix: Improve image size and aspect ratio calculation to make size changes easier
+- Fix: Added `t` parameter back into `hit_record` at correct place
 
 
 ----------------------------------------------------------------------------------------------------
