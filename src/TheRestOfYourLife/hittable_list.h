@@ -74,7 +74,7 @@ bool hittable_list::bounding_box(double t0, double t1, aabb& output_box) const {
 }
 
 
-double hittable_list::pdf_value(const vec3& o, const vec3& v) const {
+double hittable_list::pdf_value(const point3& o, const vec3& v) const {
     auto weight = 1.0/objects.size();
     auto sum = 0.0;
 

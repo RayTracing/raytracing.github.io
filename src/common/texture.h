@@ -18,21 +18,21 @@
 
 class texture  {
     public:
-        virtual vec3 value(double u, double v, const vec3& p) const = 0;
+        virtual color value(double u, double v, const vec3& p) const = 0;
 };
 
 
 class constant_texture : public texture {
     public:
         constant_texture() {}
-        constant_texture(vec3 c) : color(c) {}
+        constant_texture(color c) : solid_color(c) {}
 
-        virtual vec3 value(double u, double v, const vec3& p) const {
-            return color;
+        virtual color value(double u, double v, const vec3& p) const {
+            return solid_color;
         }
 
     public:
-        vec3 color;
+        vec3 solid_color;
 };
 
 
@@ -41,7 +41,7 @@ class checker_texture : public texture {
         checker_texture() {}
         checker_texture(shared_ptr<texture> t0, shared_ptr<texture> t1): even(t0), odd(t1) {}
 
-        virtual vec3 value(double u, double v, const vec3& p) const {
+        virtual color value(double u, double v, const vec3& p) const {
             auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
             if (sines < 0)
                 return odd->value(u, v, p);
@@ -60,10 +60,10 @@ class noise_texture : public texture {
         noise_texture() {}
         noise_texture(double sc) : scale(sc) {}
 
-        virtual vec3 value(double u, double v, const vec3& p) const {
-            // return vec3(1,1,1)*0.5*(1 + noise.turb(scale * p));
-            // return vec3(1,1,1)*noise.turb(scale * p);
-            return vec3(1,1,1)*0.5*(1 + sin(scale*p.z() + 10*noise.turb(p)));
+        virtual color value(double u, double v, const vec3& p) const {
+            // return color(1,1,1)*0.5*(1 + noise.turb(scale * p));
+            // return color(1,1,1)*noise.turb(scale * p);
+            return color(1,1,1)*0.5*(1 + sin(scale*p.z() + 10*noise.turb(p)));
         }
 
     public:
@@ -81,10 +81,10 @@ class image_texture : public texture {
             delete data;
         }
 
-        virtual vec3 value(double u, double v, const vec3& p) const {
+        virtual color value(double u, double v, const vec3& p) const {
             // If we have no texture data, then always emit cyan (as a debugging aid).
             if (data == nullptr)
-                return vec3(0,1,1);
+                return color(0,1,1);
 
             auto i = static_cast<int>((  u)*nx);
             auto j = static_cast<int>((1-v)*ny-0.001);
@@ -98,7 +98,7 @@ class image_texture : public texture {
             auto g = static_cast<int>(data[3*i + 3*nx*j+1]) / 255.0;
             auto b = static_cast<int>(data[3*i + 3*nx*j+2]) / 255.0;
 
-            return vec3(r, g, b);
+            return color(r, g, b);
         }
 
     public:
