@@ -2,6 +2,13 @@ Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
 ----------------------------------------------------------------------------------------------------
+# v3.0.2 (in progress)
+
+### _The Next Week_
+- Fix `shared_ptr` dereference and simplify code in `hittable_list::bounding_box()` (#435)
+
+
+----------------------------------------------------------------------------------------------------
 # v3.0.1 (2020-03-31)
 
 - Fix: Display rendered images as pixelated instead of smoothed (#179)
