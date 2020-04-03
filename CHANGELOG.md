@@ -17,6 +17,9 @@ Change Log -- Ray Tracing in One Weekend
 - Fix: Improve image size and aspect ratio calculation to make size changes easier
 - Fix: Added `t` parameter back into `hit_record` at correct place
 
+### _The Next Week_
+- Change: Large rewrite of the `image_texture` class. Now handles image loading too. (#434)
+
 
 ----------------------------------------------------------------------------------------------------
 # v3.0.1 (2020-03-31)

@@ -1741,41 +1741,63 @@ resulting image data.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
+    #include "rtw_stb_image.h"
+
+    #include <iostream>
 
     class image_texture : public texture {
         public:
-            image_texture() {}
-            image_texture(unsigned char *pixels, int A, int B)
-                : data(pixels), nx(A), ny(B) {}
+            const static int bytes_per_pixel = 3;
+
+            image_texture()
+              : data(nullptr), width(0), height(0), bytes_per_scanline(0) {}
+
+            image_texture(const char* filename) {
+                auto components_per_pixel = bytes_per_pixel;
+
+                data = stbi_load(
+                    filename, &width, &height, &components_per_pixel, components_per_pixel);
+
+                if (!data) {
+                    std::cerr << "ERROR: Could not load texture image file '" << filename << "'.\n";
+                    width = height = 0;
+                }
+
+                bytes_per_scanline = bytes_per_pixel * width;
+            }
 
             ~image_texture() {
                 delete data;
             }
 
-            virtual color value(double u, double v, const point3& p) const {
-                // If we have no texture data, then always emit cyan (as a debugging aid).
+            virtual color value(double u, double v, const vec3& p) const {
+                // If we have no texture data, then return solid cyan as a debugging aid.
                 if (data == nullptr)
                     return color(0,1,1);
 
-                auto i = static_cast<int>((  u)*nx);
-                auto j = static_cast<int>((1-v)*ny-0.001);
+                // Clamp input texture coordinates to [0,1] x [1,0]
+                u = clamp(u, 0.0, 1.0);
+                v = 1.0 - clamp(v, 0.0, 1.0);  // Flip V to image coordinates
 
-                if (i < 0) i = 0;
-                if (j < 0) j = 0;
-                if (i > nx-1) i = nx-1;
-                if (j > ny-1) j = ny-1;
+                auto i = static_cast<int>(u * width);
+                auto j = static_cast<int>(v * height);
 
-                auto r = static_cast<int>(data[3*i + 3*nx*j+0]) / 255.0;
-                auto g = static_cast<int>(data[3*i + 3*nx*j+1]) / 255.0;
-                auto b = static_cast<int>(data[3*i + 3*nx*j+2]) / 255.0;
+                // Clamp integer mapping, since actual coordinates should be less than 1.0
+                if (i >= width)  i = width-1;
+                if (j >= height) j = height-1;
 
-                return color(r, g, b);
+                const auto color_scale = 1.0 / 255.0;
+                auto pixel = data + j*bytes_per_scanline + i*bytes_per_pixel;
+
+                return color(color_scale*pixel[0], color_scale*pixel[1], color_scale*pixel[2]);
             }
 
-        public:
+        private:
             unsigned char *data;
-            int nx, ny;
+            int width, height;
+            int bytes_per_scanline;
     };
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [img-texture]: <kbd>[texture.h]</kbd> Image texture class]
 
@@ -1809,11 +1831,8 @@ Here's the code to read an image from a file and then assign it to a diffuse mat
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable_list earth() {
-        int nx, ny, nn;
-        unsigned char* texture_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
-
-        auto earth_surface =
-            make_shared<lambertian>(make_shared<image_texture>(texture_data, nx, ny));
+        auto earth_texture = make_shared<image_texture>("earthmap.jpg");
+        auto earth_surface = make_shared<lambertian>(earth_texture);
         auto globe = make_shared<sphere>(point3(0,0,0), 2, earth_surface);
 
         return hittable_list(globe);
@@ -2861,9 +2880,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         objects.add(make_shared<constant_medium>(
             boundary, .0001, make_shared<constant_texture>(color(1,1,1))));
 
-        int nx, ny, nn;
-        auto tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
-        auto emat = make_shared<lambertian>(make_shared<image_texture>(tex_data, nx, ny));
+        auto emat = make_shared<lambertian>(make_shared<image_texture>("earthmap.jpg"));
         objects.add(make_shared<sphere>(point3(400,200,400), 100, emat));
         auto pertext = make_shared<noise_texture>(0.1);
         objects.add(make_shared<sphere>(point3(220,280,300), 80, make_shared<lambertian>(pertext)));
