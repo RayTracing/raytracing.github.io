@@ -33,8 +33,7 @@ of changes to areas of the book that have given readers difficulties. Enjoy!
 Branches
 ---------
 The `master` branch contains the code at latest release. All ongoing development, with all of the
-latest changes, can be found in the `development` branch. If you have issues to file, you may want
-to check to see if they're still present in the `development` branch.
+latest changes, can be found in the `dev-patch`, `dev-minor`, and `dev-major` branches.
 
 
 Downloading The Source Code
