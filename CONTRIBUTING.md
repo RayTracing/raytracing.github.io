@@ -27,7 +27,9 @@ raytracing.github.io/      # Repository root
 ```
 
 The latest official release can be found in the `master` branch. All ongoing development work (and
-all of the latest changes) will be in the `development` branch.
+all of the latest changes) will be in the `dev-patch`, `dev-minor`, and `dev-major` branches. The
+appropriate target branch for any pull requests you want to make will be determined in the
+associated issue first (all PRs should have an associated issue).
 
 
 Issues
@@ -49,17 +51,18 @@ Pull Requests
 --------------
 To contribute a change to the project, please follow these steps:
 
-  1. [Create a GitHub issue](https://github.com/RayTracing/raytracing.github.io/issues)
+  1. [Create a GitHub issue](https://github.com/RayTracing/raytracing.github.io/issues).
 
   2. Participate in the discussion as needed. We'll ensure that the work doesn't conflict with or
-     duplicate other work planned or in progress, and makes sense for the next release.
+     duplicate other work planned or in progress, and decide which development branch is correct
+     for the release type and release schedule.
 
-  3. Create your changes in a feature branch (or fork) from the `development` branch (_not_ from
-     `master`).
+  3. Create your changes in a feature branch (or fork) from the assigned development branch
+     (probably `dev-patch`, `dev-minor`, `dev-major`, or `future`).
 
   4. Follow existing code style.
 
-  5. When ready, create a pull request and assign it to "rt-contributors".
+  5. When ready, create a pull request and request a review from "rt-contributors".
 
 New to GitHub? We'll walk you through the process above. Just mention that you'd like a little
 guidance in the proposal issue.
