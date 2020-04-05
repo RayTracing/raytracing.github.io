@@ -7,6 +7,7 @@ Change Log -- Ray Tracing in One Weekend
 ### _The Next Week_
 - Fix: `shared_ptr` dereference and simplify code in `hittable_list::bounding_box()` (#435)
 - Fix: erroneous en-dash in code block (#439)
+- Fix: Add highlight to new `hittable::bounding_box()` method (#442)
 
 
 ----------------------------------------------------------------------------------------------------
