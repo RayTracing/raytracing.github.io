@@ -4,6 +4,9 @@ Change Log -- Ray Tracing in One Weekend
 ----------------------------------------------------------------------------------------------------
 # v3.0.2 (in progress)
 
+### _In One Weekend_
+- Fix: Correct typo: "consine" to "cosine"
+
 ### _The Next Week_
 - Fix: `shared_ptr` dereference and simplify code in `hittable_list::bounding_box()` (#435)
 - Fix: erroneous en-dash in code block (#439)
