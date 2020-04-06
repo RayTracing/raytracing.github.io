@@ -4,6 +4,9 @@ Change Log -- Ray Tracing in One Weekend
 ----------------------------------------------------------------------------------------------------
 # v3.0.2 (in progress)
 
+### Common
+- Fix: Correct bad link to Markdeep library in Acknowledgments (#449)
+
 ### _In One Weekend_
 - Fix: Correct typo: "consine" to "cosine"
 
