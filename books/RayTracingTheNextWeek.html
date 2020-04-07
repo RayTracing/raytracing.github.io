@@ -898,6 +898,24 @@ being able to make any color a texture is great.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [texture]: <kbd>[texture.h]</kbd> A texture class]
 
+We'll need to update the `hit_record` structure to store the U,V surface coordinates of the
+ray-object hit point.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    struct hit_record {
+        vec3 p;
+        vec3 normal;
+        shared_ptr<material> mat_ptr;
+        double t;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double u;
+        double v;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        bool front_face;
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hit-record-uv]: <kbd>[hittable.h]</kbd> Adding U,V coordinates to the `hit_record`]
+
 <div class='together'>
 Now we can make textured materials by replacing the vec3 color with a texture pointer:
 
