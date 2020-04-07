@@ -7,7 +7,7 @@
                                            Peter Shirley
                           edited by Steve Hollasch and Trevor David Black
                                                 <br>
-                                     Version 3.1.0-wip, 2020-03-31
+                                     Version 3.1.0-wip, 2020-XX-XX
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -32,8 +32,8 @@ suggests you take a week rather than a weekend for this endeavor. But you can sa
 you want a weekend project. Order is not very important for the concepts presented in this book, and
 without BVH and Perlin texture you will still get a Cornell Box!
 
-Thanks to everyone who lent a hand on this project. You can find them in the [acknowledgments][] at
-the end of this book.
+Thanks to everyone who lent a hand on this project. You can find them in the acknowledgments section
+at the end of this book.
 
 
 
@@ -650,7 +650,9 @@ frame and the bounding box will bound the object moving through that interval.
         public:
             virtual bool hit(
                 const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const = 0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hittable-bbox]: <kbd>[hittable.h]</kbd> Hittable class with bounding-box]
@@ -701,17 +703,12 @@ the fly because it is only usually called at BVH construction.
         if (objects.empty()) return false;
 
         aabb temp_box;
-        bool first_true = objects[0]->bounding_box(t0, t1, temp_box);
-
-        if (!first_true)
-            return false;
-
-        output_box = temp_box;
+        bool first_box = true;
 
         for (const auto& object : objects) {
-            if (!objects[i]->bounding_box(t0, t1, temp_box))
-                return false;
-            output_box = surrounding_box(output_box, temp_box);
+            if (!object->bounding_box(t0, t1, temp_box)) return false;
+            output_box = first_box ? temp_box : surrounding_box(output_box, temp_box);
+            first_box = false;
         }
 
         return true;
@@ -1019,7 +1016,7 @@ forms a 3D checker pattern.
             virtual color value(double u, double v, const point3& p) const {
                 auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
                 if (sines < 0)
-                    return odd—>value(u, v, p);
+                    return odd->value(u, v, p);
                 else
                     return even->value(u, v, p);
             }
@@ -2902,73 +2899,15 @@ images to me at ptrshrl@gmail.com.
 
 
 
-Acknowledgments
-====================================================================================================
+                               (insert acknowledgments.md.html here)
 
-<div class="credit-list"> **Original Manuscript Help**
-
-  - Dave Hart
-  - Jean Buckley
-</div>
-
-<div class="credit-list"> **Web Release**
-
-  - Berna Kabadayı
-  - Lorenzo Mancini
-  - Lori Whippler Hollasch
-  - Ronald Wotzlaw
-</div>
-
-<div class="credit-list"> **Corrections and Improvements**
-
-  - Aaryaman Vasishta
-  - Andrew Kensler
-  - Apoorva Joshi
-  - Aras Pranckevičius
-  - Becker
-  - Ben Kerl
-  - Benjamin Summerton
-  - Bennett Hardwick
-  - Dan Drummond
-  - David Chambers
-  - David Hart
-  - Eric Haines
-  - Fabio Sancinetti
-  - Filipe Scur
-  - Frank He
-  - Gerrit Wessendorf
-  - Grue Debry
-  - Ingo Wald
-  - Jason Stone
-  - Jean Buckley
-  - Joey Cho
-  - Lorenzo Mancini
-  - Marcus Ottosson
-  - Matthew Heimlich
-  - Nakata Daisuke
-  - Paul Melis
-  - Phil Cristensen
-  - Ronald Wotzlaw
-  - Tatsuya Ogawa
-  - Thiago Ize
-  - Vahan Sosoyan
-</div>
-
-<div class="credit-list"> **Tools**
-
-  <div class="indented">
-  Thanks to the team at [Limnu][] for help on the figures.
-
-  Huge shout out to Morgan McGuire for his fantastic [Markdeep][] library.
-  </div>
-</div>
-
-
-
+<<<<<<< HEAD
 [acknowledgments]: #acknowledgments
 [Limnu]:           https://limnu.com/
 [Markdeep]:        https://casual-effects/markdeep/
 [stb_image]:       https://github.com/nothings/stb
+=======
+>>>>>>> dev-patch
 
 
 <!-- Markdeep: https://casual-effects.com/markdeep/ -->
