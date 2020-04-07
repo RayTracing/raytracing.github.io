@@ -1320,11 +1320,11 @@ before:
                 origin = point3(0.0, 0.0, 0.0);
             }
 
-            ray get_ray(double u, double v) {
+            ray get_ray(double u, double v) const {
                 return ray(origin, lower_left_corner + u*horizontal + v*vertical - origin);
             }
 
-        public:
+        private:
             point3 origin;
             point3 lower_left_corner;
             vec3 horizontal;
@@ -2577,11 +2577,11 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            ray get_ray(double u, double v) {
+            ray get_ray(double u, double v) const {
                 return ray(origin, lower_left_corner + u*horizontal + v*vertical - origin);
             }
 
-        public:
+        private:
             point3 origin;
             point3 lower_left_corner;
             vec3 horizontal;
@@ -2668,11 +2668,11 @@ camera horizontally level until you decide to experiment with crazy camera angle
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
-            ray get_ray(double s, double t) {
+            ray get_ray(double s, double t) const {
                 return ray(origin, lower_left_corner + s*horizontal + t*vertical - origin);
             }
 
-        public:
+        private:
             point3 origin;
             point3 lower_left_corner;
             vec3 horizontal;
@@ -2806,7 +2806,7 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
-            ray get_ray(double s, double t) {
+            ray get_ray(double s, double t) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 rd = lens_radius * random_in_unit_disk();
                 vec3 offset = u * rd.x() + v * rd.y();
@@ -2818,7 +2818,7 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
-        public:
+        private:
             point3 origin;
             point3 lower_left_corner;
             vec3 horizontal;
