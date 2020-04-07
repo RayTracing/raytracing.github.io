@@ -18,7 +18,6 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "moving_sphere.h"
-#include "rtw_stb_image.h"
 #include "sphere.h"
 #include "texture.h"
 
@@ -128,11 +127,8 @@ hittable_list two_perlin_spheres() {
 
 
 hittable_list earth() {
-    int nx, ny, nn;
-    unsigned char* texture_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
-
-    auto earth_surface =
-        make_shared<lambertian>(make_shared<image_texture>(texture_data, nx, ny));
+    auto earth_texture = make_shared<image_texture>("earthmap.jpg");
+    auto earth_surface = make_shared<lambertian>(earth_texture);
     auto globe = make_shared<sphere>(point3(0,0,0), 2, earth_surface);
 
     return hittable_list(globe);
@@ -246,10 +242,7 @@ hittable_list cornell_final() {
 
     auto pertext = make_shared<noise_texture>(0.1);
 
-    int nx, ny, nn;
-    unsigned char* tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
-
-    auto mat = make_shared<lambertian>(make_shared<image_texture>(tex_data, nx, ny));
+    auto mat = make_shared<lambertian>(make_shared<image_texture>("earthmap.jpg"));
 
     auto red   = make_shared<lambertian>(make_shared<solid_color>(.65, .05, .05));
     auto white = make_shared<lambertian>(make_shared<solid_color>(.73, .73, .73));
@@ -322,9 +315,7 @@ hittable_list final_scene() {
     boundary = make_shared<sphere>(point3(0,0,0), 5000, make_shared<dielectric>(1.5));
     objects.add(make_shared<constant_medium>(boundary, .0001, make_shared<solid_color>(1,1,1)));
 
-    int nx, ny, nn;
-    auto tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
-    auto emat = make_shared<lambertian>(make_shared<image_texture>(tex_data, nx, ny));
+    auto emat = make_shared<lambertian>(make_shared<image_texture>("earthmap.jpg"));
     objects.add(make_shared<sphere>(point3(400,200,400), 100, emat));
     auto pertext = make_shared<noise_texture>(0.1);
     objects.add(make_shared<sphere>(point3(220,280,300), 80, make_shared<lambertian>(pertext)));
