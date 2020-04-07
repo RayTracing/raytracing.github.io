@@ -5,7 +5,8 @@ Change Log -- Ray Tracing in One Weekend
 # v3.0.2 (in progress)
 
 ### Common
-- Change: Every book source now includes from a single common acknowledgments document.
+- Fix: code styling for source code both inline and in fenced blocks (#430)
+- Change: Every book source now includes from a single common acknowledgments document
 
 ### _In One Weekend_
 - Fix: Correct typo: "consine" to "cosine"
