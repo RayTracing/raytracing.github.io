@@ -4,12 +4,15 @@ Change Log -- Ray Tracing in One Weekend
 ----------------------------------------------------------------------------------------------------
 # v3.0.2 (in progress)
 
+### Common
+- Change: Every book source now includes from a single common acknowledgments document.
+
 ### _In One Weekend_
 - Fix: Correct typo: "consine" to "cosine"
 
 ### _The Next Week_
 - Fix: `shared_ptr` dereference and simplify code in `hittable_list::bounding_box()` (#435)
-- Fix: erroneous en-dash in code block (#439)
+- Fix: Erroneous en-dash in code block. Replace `–>` with `->` (#439)
 - Fix: Add highlight to new `hittable::bounding_box()` method (#442)
 
 
