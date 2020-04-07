@@ -938,23 +938,26 @@ The First Texture Class: Constant Texture
             virtual color value(double u, double v, const point3& p) const = 0;
     };
 
-    class constant_texture : public texture {
+    class solid_color : public texture {
         public:
-            constant_texture() {}
-            constant_texture(color c) : solid_color(c) {}
+            solid_color() {}
+            solid_color(color c) : color_value(c) {}
 
-            virtual color value(double u, double v, const point3& p) const {
-                return solid_color;
+            solid_color(double red, double green, double blue)
+              : solid_color(color(red,green,blue)) {}
+
+            virtual color value(double u, double v, const vec3& p) const {
+                return color_value;
             }
 
-        public:
-            color solid_color;
+        private:
+            color color_value;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [texture]: <kbd>[texture.h]</kbd> A texture class]
 
 <div class='together'>
-Now we can make textured materials by replacing the `color solid_color` with a texture pointer:
+Now we can make textured materials by replacing the `const color& a` with a texture pointer:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
@@ -991,10 +994,10 @@ Where you used to have
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [lam-solid]: <kbd>[main.cc]</kbd> Lambertian material with solid color]
 
-now you should replace the `color(...)` with `make_shared<constant_texture>(color(...))`
+now you should replace the `color(...)` with `make_shared<solid_color>(...)`
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        ...make_shared<lambertian>(make_shared<constant_texture>(color(0.5, 0.5, 0.5)))
+        ...make_shared<lambertian>(make_shared<solid_color>(0.5, 0.5, 0.5))
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [lam-textured]: <kbd>[main.cc]</kbd> Lambertian material with texture]
 </div>
@@ -1037,8 +1040,7 @@ If we add this to our `random_scene()` function’s base sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     auto checker = make_shared<checker_texture>(
-        make_shared<constant_texture>(color(0.2, 0.3, 0.1)),
-        make_shared<constant_texture>(color(0.9, 0.9, 0.9))
+        make_shared<solid_color>(0.2, 0.3, 0.1), make_shared<solid_color>(0.9, 0.9, 0.9)
     );
 
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
@@ -1066,8 +1068,7 @@ If we add a new scene:
         hittable_list objects;
 
         auto checker = make_shared<checker_texture>(
-            make_shared<constant_texture>(color(0.2, 0.3, 0.1)),
-            make_shared<constant_texture>(color(0.9, 0.9, 0.9))
+            make_shared<solid_color>(0.2, 0.3, 0.1), make_shared<solid_color>(0.9, 0.9, 0.9)
         );
 
         objects.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker)));
@@ -2037,7 +2038,7 @@ If we set up a rectangle as a light:
         objects.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
         objects.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(pertext)));
 
-        auto difflight = make_shared<diffuse_light>(make_shared<constant_texture>(color(4,4,4)));
+        auto difflight = make_shared<diffuse_light>(make_shared<solid_color>(4,4,4));
         objects.add(make_shared<sphere>(point3(0,7,0), 2, difflight));
         objects.add(make_shared<xy_rect>(3, 5, 1, 3, -2, difflight));
 
@@ -2175,10 +2176,10 @@ Let’s make the 5 walls and the light of the box:
     hittable_list cornell_box() {
         hittable_list objects;
 
-        auto red   = make_shared<lambertian>(make_shared<constant_texture>(color(.65, .05, .05)));
-        auto white = make_shared<lambertian>(make_shared<constant_texture>(color(.73, .73, .73)));
-        auto green = make_shared<lambertian>(make_shared<constant_texture>(color(.12, .45, .15)));
-        auto light = make_shared<diffuse_light>(make_shared<constant_texture>(color(15, 15, 15)));
+        auto red   = make_shared<lambertian>(make_shared<solid_color>(.65, .05, .05));
+        auto white = make_shared<lambertian>(make_shared<solid_color>(.73, .73, .73));
+        auto green = make_shared<lambertian>(make_shared<solid_color>(.12, .45, .15));
+        auto light = make_shared<diffuse_light>(make_shared<solid_color>(15, 15, 15));
 
         objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
         objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
@@ -2263,10 +2264,10 @@ This makes Cornell:
     hittable_list cornell_box() {
         hittable_list objects;
 
-        auto red   = make_shared<lambertian>(make_shared<constant_texture>(color(.65, .05, .05)));
-        auto white = make_shared<lambertian>(make_shared<constant_texture>(color(.73, .73, .73)));
-        auto green = make_shared<lambertian>(make_shared<constant_texture>(color(.12, .45, .15)));
-        auto light = make_shared<diffuse_light>(make_shared<constant_texture>(color(15, 15, 15)));
+        auto red   = make_shared<lambertian>(make_shared<solid_color>(.65, .05, .05));
+        auto white = make_shared<lambertian>(make_shared<solid_color>(.73, .73, .73));
+        auto green = make_shared<lambertian>(make_shared<solid_color>(.12, .45, .15));
+        auto light = make_shared<diffuse_light>(make_shared<solid_color>(15, 15, 15));
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2761,10 +2762,10 @@ If we replace the two blocks with smoke and fog (dark and light particles) and m
     hittable_list cornell_smoke() {
         hittable_list objects;
 
-        auto red   = make_shared<lambertian>(make_shared<constant_texture>(color(.65, .05, .05)));
-        auto white = make_shared<lambertian>(make_shared<constant_texture>(color(.73, .73, .73)));
-        auto green = make_shared<lambertian>(make_shared<constant_texture>(color(.12, .45, .15)));
-        auto light = make_shared<diffuse_light>(make_shared<constant_texture>(color(7, 7, 7)));
+        auto red   = make_shared<lambertian>(make_shared<solid_color>(.65, .05, .05));
+        auto white = make_shared<lambertian>(make_shared<solid_color>(.73, .73, .73));
+        auto green = make_shared<lambertian>(make_shared<solid_color>(.12, .45, .15));
+        auto light = make_shared<diffuse_light>(make_shared<solid_color>(7, 7, 7));
 
         objects.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
         objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
@@ -2781,10 +2782,8 @@ If we replace the two blocks with smoke and fog (dark and light particles) and m
         box2 = make_shared<rotate_y>(box2, -18);
         box2 = make_shared<translate>(box2, vec3(130,0,65));
 
-        objects.add(
-            make_shared<constant_medium>(box1, 0.01, make_shared<constant_texture>(color(0,0,0))));
-        objects.add(
-            make_shared<constant_medium>(box2, 0.01, make_shared<constant_texture>(color(1,1,1))));
+        objects.add(make_shared<constant_medium>(box1, 0.01, make_shared<solid_color>(0,0,0)));
+        objects.add(make_shared<constant_medium>(box2, 0.01, make_shared<solid_color>(1,1,1)));
 
         return objects;
     }
@@ -2816,8 +2815,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable_list final_scene() {
         hittable_list boxes1;
-        auto ground =
-            make_shared<lambertian>(make_shared<constant_texture>(color(0.48, 0.83, 0.53)));
+        auto ground = make_shared<lambertian>(make_shared<solid_color>(0.48, 0.83, 0.53));
 
         const int boxes_per_side = 20;
         for (int i = 0; i < boxes_per_side; i++) {
@@ -2838,13 +2836,13 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 
         objects.add(make_shared<bvh_node>(boxes1, 0, 1));
 
-        auto light = make_shared<diffuse_light>(make_shared<constant_texture>(color(7, 7, 7)));
+        auto light = make_shared<diffuse_light>(make_shared<solid_color>(7, 7, 7));
         objects.add(make_shared<xz_rect>(123, 423, 147, 412, 554, light));
 
         auto center1 = point3(400, 400, 200);
         auto center2 = center1 + vec3(30,0,0);
         auto moving_sphere_material =
-            make_shared<lambertian>(make_shared<constant_texture>(color(0.7, 0.3, 0.1)));
+            make_shared<lambertian>(make_shared<solid_color>(0.7, 0.3, 0.1));
         objects.add(make_shared<moving_sphere>(center1, center2, 0, 1, 50, moving_sphere_material));
 
         objects.add(make_shared<sphere>(point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
@@ -2855,11 +2853,11 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         auto boundary = make_shared<sphere>(point3(360,150,145), 70, make_shared<dielectric>(1.5));
         objects.add(boundary);
         objects.add(make_shared<constant_medium>(
-            boundary, 0.2, make_shared<constant_texture>(color(0.2, 0.4, 0.9))
+            boundary, 0.2, make_shared<solid_color>(0.2, 0.4, 0.9)
         ));
         boundary = make_shared<sphere>(point3(0, 0, 0), 5000, make_shared<dielectric>(1.5));
         objects.add(make_shared<constant_medium>(
-            boundary, .0001, make_shared<constant_texture>(color(1,1,1))));
+            boundary, .0001, make_shared<solid_color>(1,1,1)));
 
         int nx, ny, nn;
         auto tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
@@ -2869,7 +2867,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         objects.add(make_shared<sphere>(point3(220,280,300), 80, make_shared<lambertian>(pertext)));
 
         hittable_list boxes2;
-        auto white = make_shared<lambertian>(make_shared<constant_texture>(color(.73, .73, .73)));
+        auto white = make_shared<lambertian>(make_shared<solid_color>(.73, .73, .73));
         int ns = 1000;
         for (int j = 0; j < ns; j++) {
             boxes2.add(make_shared<sphere>(point3::random(0,165), 10, white));

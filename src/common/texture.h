@@ -22,17 +22,20 @@ class texture  {
 };
 
 
-class constant_texture : public texture {
+class solid_color : public texture {
     public:
-        constant_texture() {}
-        constant_texture(color c) : solid_color(c) {}
+        solid_color() {}
+        solid_color(color c) : color_value(c) {}
+
+        solid_color(double red, double green, double blue)
+          : solid_color(color(red,green,blue)) {}
 
         virtual color value(double u, double v, const vec3& p) const {
-            return solid_color;
+            return color_value;
         }
 
-    public:
-        vec3 solid_color;
+    private:
+        color color_value;
 };
 
 
