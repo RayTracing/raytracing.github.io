@@ -51,8 +51,8 @@ hittable_list random_scene() {
     hittable_list world;
 
     auto checker = make_shared<checker_texture>(
-        make_shared<constant_texture>(color(0.2, 0.3, 0.1)),
-        make_shared<constant_texture>(color(0.9, 0.9, 0.9))
+        make_shared<solid_color>(0.2, 0.3, 0.1),
+        make_shared<solid_color>(0.9, 0.9, 0.9)
     );
 
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
@@ -67,7 +67,7 @@ hittable_list random_scene() {
                     auto albedo = color::random() * color::random();
                     world.add(make_shared<moving_sphere>(
                         center, center + vec3(0, random_double(0,.5), 0), 0.0, 1.0, 0.2,
-                        make_shared<lambertian>(make_shared<constant_texture>(albedo))
+                        make_shared<lambertian>(make_shared<solid_color>(albedo))
                     ));
                 } else if (choose_mat < 0.95) {
                     // metal
@@ -88,7 +88,7 @@ hittable_list random_scene() {
     world.add(
         make_shared<sphere>(
             point3(-4,1,0), 1.0,
-            make_shared<lambertian>(make_shared<constant_texture>(color(0.4, 0.2, 0.1)))
+            make_shared<lambertian>(make_shared<solid_color>(0.4, 0.2, 0.1))
         )
     );
 
@@ -106,8 +106,7 @@ hittable_list two_spheres() {
     hittable_list objects;
 
     auto checker = make_shared<checker_texture>(
-        make_shared<constant_texture>(color(0.2, 0.3, 0.1)),
-        make_shared<constant_texture>(color(0.9, 0.9, 0.9))
+        make_shared<solid_color>(0.2, 0.3, 0.1), make_shared<solid_color>(0.9, 0.9, 0.9)
     );
 
     objects.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker)));
@@ -147,7 +146,7 @@ hittable_list simple_light() {
     objects.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
     objects.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(pertext)));
 
-    auto difflight = make_shared<diffuse_light>(make_shared<constant_texture>(color(4,4,4)));
+    auto difflight = make_shared<diffuse_light>(make_shared<solid_color>(4,4,4));
     objects.add(make_shared<sphere>(point3(0,7,0), 2, difflight));
     objects.add(make_shared<xy_rect>(3, 5, 1, 3, -2, difflight));
 
@@ -158,10 +157,10 @@ hittable_list simple_light() {
 hittable_list cornell_box() {
     hittable_list objects;
 
-    auto red   = make_shared<lambertian>(make_shared<constant_texture>(color(.65, .05, .05)));
-    auto white = make_shared<lambertian>(make_shared<constant_texture>(color(.73, .73, .73)));
-    auto green = make_shared<lambertian>(make_shared<constant_texture>(color(.12, .45, .15)));
-    auto light = make_shared<diffuse_light>(make_shared<constant_texture>(color(15,15,15)));
+    auto red   = make_shared<lambertian>(make_shared<solid_color>(.65, .05, .05));
+    auto white = make_shared<lambertian>(make_shared<solid_color>(.73, .73, .73));
+    auto green = make_shared<lambertian>(make_shared<solid_color>(.12, .45, .15));
+    auto light = make_shared<diffuse_light>(make_shared<solid_color>(15,15,15));
 
     objects.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
     objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
@@ -187,10 +186,10 @@ hittable_list cornell_box() {
 hittable_list cornell_balls() {
     hittable_list objects;
 
-    auto red   = make_shared<lambertian>(make_shared<constant_texture>(color(.65, .05, .05)));
-    auto white = make_shared<lambertian>(make_shared<constant_texture>(color(.73, .73, .73)));
-    auto green = make_shared<lambertian>(make_shared<constant_texture>(color(.12, .45, .15)));
-    auto light = make_shared<diffuse_light>(make_shared<constant_texture>(color(5,5,5)));
+    auto red   = make_shared<lambertian>(make_shared<solid_color>(.65, .05, .05));
+    auto white = make_shared<lambertian>(make_shared<solid_color>(.73, .73, .73));
+    auto green = make_shared<lambertian>(make_shared<solid_color>(.12, .45, .15));
+    auto light = make_shared<diffuse_light>(make_shared<solid_color>(5,5,5));
 
     objects.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
     objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
@@ -201,9 +200,7 @@ hittable_list cornell_balls() {
 
     auto boundary = make_shared<sphere>(point3(160,100,145), 100, make_shared<dielectric>(1.5));
     objects.add(boundary);
-    objects.add(make_shared<constant_medium>(
-        boundary, 0.1, make_shared<constant_texture>(color(1,1,1))
-    ));
+    objects.add(make_shared<constant_medium>(boundary, 0.1, make_shared<solid_color>(1,1,1)));
 
     shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
     box1 = make_shared<rotate_y>(box1, 15);
@@ -217,10 +214,10 @@ hittable_list cornell_balls() {
 hittable_list cornell_smoke() {
     hittable_list objects;
 
-    auto red   = make_shared<lambertian>(make_shared<constant_texture>(color(.65, .05, .05)));
-    auto white = make_shared<lambertian>(make_shared<constant_texture>(color(.73, .73, .73)));
-    auto green = make_shared<lambertian>(make_shared<constant_texture>(color(.12, .45, .15)));
-    auto light = make_shared<diffuse_light>(make_shared<constant_texture>(color(7, 7, 7)));
+    auto red   = make_shared<lambertian>(make_shared<solid_color>(.65, .05, .05));
+    auto white = make_shared<lambertian>(make_shared<solid_color>(.73, .73, .73));
+    auto green = make_shared<lambertian>(make_shared<solid_color>(.12, .45, .15));
+    auto light = make_shared<diffuse_light>(make_shared<solid_color>(7, 7, 7));
 
     objects.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
     objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
@@ -237,10 +234,8 @@ hittable_list cornell_smoke() {
     box2 = make_shared<rotate_y>(box2, -18);
     box2 = make_shared<translate>(box2, vec3(130,0,65));
 
-    objects.add(
-        make_shared<constant_medium>(box1, 0.01, make_shared<constant_texture>(color(0,0,0))));
-    objects.add(
-        make_shared<constant_medium>(box2, 0.01, make_shared<constant_texture>(color(1,1,1))));
+    objects.add(make_shared<constant_medium>(box1, 0.01, make_shared<solid_color>(0,0,0)));
+    objects.add(make_shared<constant_medium>(box2, 0.01, make_shared<solid_color>(1,1,1)));
 
     return objects;
 }
@@ -256,10 +251,10 @@ hittable_list cornell_final() {
 
     auto mat = make_shared<lambertian>(make_shared<image_texture>(tex_data, nx, ny));
 
-    auto red   = make_shared<lambertian>(make_shared<constant_texture>(color(.65, .05, .05)));
-    auto white = make_shared<lambertian>(make_shared<constant_texture>(color(.73, .73, .73)));
-    auto green = make_shared<lambertian>(make_shared<constant_texture>(color(.12, .45, .15)));
-    auto light = make_shared<diffuse_light>(make_shared<constant_texture>(color(7, 7, 7)));
+    auto red   = make_shared<lambertian>(make_shared<solid_color>(.65, .05, .05));
+    auto white = make_shared<lambertian>(make_shared<solid_color>(.73, .73, .73));
+    auto green = make_shared<lambertian>(make_shared<solid_color>(.12, .45, .15));
+    auto light = make_shared<diffuse_light>(make_shared<solid_color>(7, 7, 7));
 
     objects.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
     objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
@@ -273,7 +268,7 @@ hittable_list cornell_final() {
     boundary2 = make_shared<rotate_y>(boundary2, -18);
     boundary2 = make_shared<translate>(boundary2, vec3(130,0,65));
 
-    auto tex = make_shared<constant_texture>(color(0.9, 0.9, 0.9));
+    auto tex = make_shared<solid_color>(0.9, 0.9, 0.9);
 
     objects.add(boundary2);
     objects.add(make_shared<constant_medium>(boundary2, 0.2, tex));
@@ -284,8 +279,7 @@ hittable_list cornell_final() {
 
 hittable_list final_scene() {
     hittable_list boxes1;
-    auto ground =
-        make_shared<lambertian>(make_shared<constant_texture>(color(0.48, 0.83, 0.53)));
+    auto ground = make_shared<lambertian>(make_shared<solid_color>(0.48, 0.83, 0.53));
 
     const int boxes_per_side = 20;
     for (int i = 0; i < boxes_per_side; i++) {
@@ -306,13 +300,13 @@ hittable_list final_scene() {
 
     objects.add(make_shared<bvh_node>(boxes1, 0, 1));
 
-    auto light = make_shared<diffuse_light>(make_shared<constant_texture>(color(7, 7, 7)));
+    auto light = make_shared<diffuse_light>(make_shared<solid_color>(7, 7, 7));
     objects.add(make_shared<xz_rect>(123, 423, 147, 412, 554, light));
 
     auto center1 = point3(400, 400, 200);
     auto center2 = center1 + vec3(30,0,0);
     auto moving_sphere_material =
-        make_shared<lambertian>(make_shared<constant_texture>(color(0.7, 0.3, 0.1)));
+        make_shared<lambertian>(make_shared<solid_color>(0.7, 0.3, 0.1));
     objects.add(make_shared<moving_sphere>(center1, center2, 0, 1, 50, moving_sphere_material));
 
     objects.add(make_shared<sphere>(point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
@@ -323,11 +317,10 @@ hittable_list final_scene() {
     auto boundary = make_shared<sphere>(point3(360,150,145), 70, make_shared<dielectric>(1.5));
     objects.add(boundary);
     objects.add(make_shared<constant_medium>(
-        boundary, 0.2, make_shared<constant_texture>(color(0.2, 0.4, 0.9))
+        boundary, 0.2, make_shared<solid_color>(0.2, 0.4, 0.9)
     ));
     boundary = make_shared<sphere>(point3(0,0,0), 5000, make_shared<dielectric>(1.5));
-    objects.add(make_shared<constant_medium>(
-        boundary, .0001, make_shared<constant_texture>(color(1,1,1))));
+    objects.add(make_shared<constant_medium>(boundary, .0001, make_shared<solid_color>(1,1,1)));
 
     int nx, ny, nn;
     auto tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
@@ -337,7 +330,7 @@ hittable_list final_scene() {
     objects.add(make_shared<sphere>(point3(220,280,300), 80, make_shared<lambertian>(pertext)));
 
     hittable_list boxes2;
-    auto white = make_shared<lambertian>(make_shared<constant_texture>(color(.73, .73, .73)));
+    auto white = make_shared<lambertian>(make_shared<solid_color>(.73, .73, .73));
     int ns = 1000;
     for (int j = 0; j < ns; j++) {
         boxes2.add(make_shared<sphere>(point3::random(0,165), 10, white));
