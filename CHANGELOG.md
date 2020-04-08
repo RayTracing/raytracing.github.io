@@ -17,6 +17,11 @@ Change Log -- Ray Tracing in One Weekend
 - Fix: Introduce `u`,`v` surface coordinates to `hit_record` (#441)
 - Fix: Add highlight to new `hittable::bounding_box()` method (#442)
 
+### _The Rest of Your Life_
+- Fix: unitialized variable in first version of `integrate_x_sq.cc`
+- Fix: remove unreferenced variables in several sample programs
+- Fix: correct program computation of the integral of x^2 (#438)
+
 
 ----------------------------------------------------------------------------------------------------
 # v3.0.1 (2020-03-31)
