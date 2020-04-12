@@ -815,11 +815,6 @@ list along one axis. I’ll go for simplicity:
 
 </div>
 
-I used the old-school C `qsort` rather than the C++ sort because I need a different compare operator
-depending on axis, and `qsort` takes a compare function rather than using the less-than operator. I
-pass in a pointer to pointer -- this is just C for “array of pointers” because a pointer in C can
-also just be a pointer to the first element of an array.
-
 <div class='together'>
 When the list coming in is two elements, I put one in each subtree and end the recursion. The
 traverse algorithm should be smooth and not have to check for null pointers, so if I just have one
@@ -952,6 +947,24 @@ The First Texture Class: Constant Texture
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [texture]: <kbd>[texture.h]</kbd> A texture class]
+
+We'll need to update the `hit_record` structure to store the U,V surface coordinates of the
+ray-object hit point.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    struct hit_record {
+        vec3 p;
+        vec3 normal;
+        shared_ptr<material> mat_ptr;
+        double t;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double u;
+        double v;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        bool front_face;
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hit-record-uv]: <kbd>[hittable.h]</kbd> Adding U,V coordinates to the `hit_record`]
 
 <div class='together'>
 Now we can make textured materials by replacing the `const color& a` with a texture pointer:
@@ -2918,13 +2931,6 @@ images to me at ptrshrl@gmail.com.
 
                                (insert acknowledgments.md.html here)
 
-<<<<<<< HEAD
-[acknowledgments]: #acknowledgments
-[Limnu]:           https://limnu.com/
-[Markdeep]:        https://casual-effects/markdeep/
-[stb_image]:       https://github.com/nothings/stb
-=======
->>>>>>> dev-patch
 
 
 <!-- Markdeep: https://casual-effects.com/markdeep/ -->

@@ -23,10 +23,11 @@ Change Log -- Ray Tracing in One Weekend
 
 
 ----------------------------------------------------------------------------------------------------
-# v3.0.2 (in progress)
+# v3.0.2 (2020-04-11)
 
 ### Common
-- Change: Every book source now includes from a single common acknowledgments document.
+- Fix: code styling for source code both inline and in fenced blocks (#430)
+- Change: Every book source now includes from a single common acknowledgments document
 
 ### _In One Weekend_
 - Fix: Correct typo: "consine" to "cosine"
@@ -34,7 +35,13 @@ Change Log -- Ray Tracing in One Weekend
 ### _The Next Week_
 - Fix: `shared_ptr` dereference and simplify code in `hittable_list::bounding_box()` (#435)
 - Fix: Erroneous en-dash in code block. Replace `–>` with `->` (#439)
+- Fix: Introduce `u`,`v` surface coordinates to `hit_record` (#441)
 - Fix: Add highlight to new `hittable::bounding_box()` method (#442)
+
+### _The Rest of Your Life_
+- Fix: unitialized variable in first version of `integrate_x_sq.cc`
+- Fix: remove unreferenced variables in several sample programs
+- Fix: correct program computation of the integral of x^2 (#438)
 
 
 ----------------------------------------------------------------------------------------------------
