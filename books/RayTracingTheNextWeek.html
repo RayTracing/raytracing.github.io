@@ -1214,7 +1214,7 @@ code to make it all happen:
                 return p;
             }
 
-            void permute(int* p, int n) {
+            static void permute(int* p, int n) {
                 for (int i = n-1; i > 0; i--) {
                     int target = random_int(0, i);
                     int tmp = p[i];
@@ -1256,7 +1256,7 @@ We can use that texture on some spheres:
     hittable_list two_perlin_spheres() {
         hittable_list objects;
 
-        auto pertext = make_shared<noise_texture>(4);
+        auto pertext = make_shared<noise_texture>();
         objects.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
         objects.add(make_shared<sphere>(point3(0, 2, 0), 2, make_shared<lambertian>(pertext)));
 
@@ -1495,7 +1495,7 @@ The Perlin class `noise()` method is now:
                             c[di][dj][dk] = ranvec[
                                 perm_x[(i+di) & 255] ^
                                 perm_y[(j+dj) & 255] ^
-                                pexm_z[(k+dk) & 255]
+                                perm_z[(k+dk) & 255]
                             ];
 
                 return perlin_interp(c, u, v, w);
