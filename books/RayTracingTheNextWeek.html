@@ -2010,7 +2010,7 @@ The actual `xy_rect` class is thus:
         public:
             xy_rect() {}
 
-            xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, material *mat)
+            xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, shared_ptr<material> mat)
                 : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
 
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
@@ -2114,7 +2114,7 @@ This is xz and yz:
         public:
             xz_rect() {}
 
-            xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, material *mat)
+            xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<material> mat)
                 : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
@@ -2133,7 +2133,7 @@ This is xz and yz:
         public:
             yz_rect() {}
 
-            yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, material *mat)
+            yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<material> mat)
                 : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
@@ -2534,7 +2534,7 @@ For a y-rotation class we have:
 With constructor:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    rotate_y::rotate_y(hittable *p, double angle) : ptr(p) {
+    rotate_y::rotate_y(shared_ptr<hittable>, double angle) : ptr(p) {
         auto radians = degrees_to_radians(angle);
         sin_theta = sin(radians);
         cos_theta = cos(radians);
