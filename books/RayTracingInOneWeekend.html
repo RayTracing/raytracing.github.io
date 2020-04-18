@@ -17,7 +17,7 @@ Overview
 ====================================================================================================
 
 I’ve taught many graphics classes over the years. Often I do them in ray tracing, because you are
-forced to write all the code but you can still get cool images with no API. I decided to adapt my
+forced to write all the code, but you can still get cool images with no API. I decided to adapt my
 course notes into a how-to, to get you to a cool program as quickly as possible. It will not be a
 full-featured ray tracer, but it does have the indirect lighting which has made ray tracing a staple
 in movies. Follow these steps, and the architecture of the ray tracer you produce will be good for
@@ -33,8 +33,8 @@ in a weekend. If you take longer, don’t worry about it. I use C++ as the drivi
 don’t need to. However, I suggest you do, because it’s fast, portable, and most production movie and
 video game renderers are written in C++. Note that I avoid most “modern features” of C++, but
 inheritance and operator overloading are too useful for ray tracers to pass on. I do not provide the
-code online, but the code is real and I show all of it except for a few straightforward operators in
-the `vec3` class. I am a big believer in typing in code to learn it, but when code is available I
+code online, but the code is real, and I show all of it except for a few straightforward operators
+in the `vec3` class. I am a big believer in typing in code to learn it, but when code is available I
 use it, so I only practice what I preach when the code is not available. So don’t ask!
 
 I have left that last part in because it is funny what a 180 I have done. Several readers ended up
@@ -64,7 +64,7 @@ Output an Image
 ====================================================================================================
 
 Whenever you start a renderer, you need a way to see an image. The most straightforward way is to
-write it to a file. The catch is, there are so many formats and many of those are complex. I always
+write it to a file. The catch is, there are so many formats, and many of those are complex. I always
 start with a plain text ppm file. Here’s a nice description from Wikipedia:
 
   ![](../images/img.ppm-example.jpg)
@@ -140,7 +140,7 @@ Opening the output file (in `ToyViewer` on my Mac, but try it in your favorite v
 
 <div class='together'>
 Hooray! This is the graphics “hello world”. If your image doesn’t look like that, open the output
-file in a text editor and see what it looks like. It should start something like this:
+file in a text editor, and see what it looks like. It should start something like this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     P3
@@ -171,7 +171,7 @@ progress of a long render, and also to possibly identify a run that's stalled ou
 loop or other problem.
 
 <div class='together'>
-Our program outputs the image to the standard output stream (`std::cout`), so leave that alone and
+Our program outputs the image to the standard output stream (`std::cout`), so leave that alone, and
 instead write to the error output stream (`std::cerr`):
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -357,7 +357,7 @@ Rays, a Simple Camera, and Background
 <div class='together'>
 The one thing that all ray tracers have is a ray class, and a computation of what color is seen
 along a ray. Let’s think of a ray as a function $\mathbf{p}(t) = \mathbf{a} + t \vec{\mathbf{b}}$.
-Here $\mathbf{p}$ is a 3D position along a line in 3D. $\mathbf{a}$ is the ray origin and
+Here $\mathbf{p}$ is a 3D position along a line in 3D. $\mathbf{a}$ is the ray origin, and
 $\vec{\mathbf{b}}$ is the ray direction. The ray parameter $t$ is a real number (`double` in the
 code). Plug in a different $t$ and $p(t)$ moves the point along the ray. Add in negative $t$ and you
 can go anywhere on the 3D line. For positive $t$, you get only the parts in front of $\mathbf{a}$,
@@ -401,7 +401,7 @@ The function $p(t)$ in more verbose code form I call `ray::at(t)`:
 </div>
 
 Now we are ready to turn the corner and make a ray tracer. At the core, the ray tracer sends rays
-through pixels and computes the color seen in the direction of those rays. The involved steps are
+through pixels, and computes the color seen in the direction of those rays. The involved steps are
 (1) calculate the ray from the eye to the pixel, (2) determine which objects the ray intersects, and
 (3) compute a color for that intersection point. When first developing a ray tracer, I always do a
 simple camera for getting the code up and running. I also make a simple `color(ray)` function that
@@ -411,7 +411,7 @@ I’ve often gotten into trouble using square images for debugging because I tra
 often, so I’ll stick with a 200×100 image. I’ll put the “eye” (or camera center if you think of a
 camera) at $(0,0,0)$. I will have the y-axis go up, and the x-axis to the right. In order to respect
 the convention of a right handed coordinate system, into the screen is the negative z-axis. I will
-traverse the screen from the lower left hand corner and use two offset vectors along the screen
+traverse the screen from the lower left hand corner, and use two offset vectors along the screen
 sides to move the ray endpoint across the screen. Note that I do not make the ray direction a unit
 length vector because I think not doing that makes for simpler and slightly faster code.
 
@@ -535,7 +535,7 @@ or expanding the full form of the ray $p(t)$:
 </div>
 
 <div class='together'>
-The rules of vector algebra are all that we would want here, and if we expand that equation and
+The rules of vector algebra are all that we would want here, and if we expand that equation, and
 move all the terms to the left hand side we get:
 
   $$ t^2 \vec{\mathbf{b}}\cdot\vec{\mathbf{b}}
@@ -715,11 +715,11 @@ Using these observations, we can now simplify the sphere-intersection code to th
 
 
 Now, how about several spheres? While it is tempting to have an array of spheres, a very clean
-solution is the make an “abstract class” for anything a ray might hit and make both a sphere and a
+solution is the make an “abstract class” for anything a ray might hit, and make both a sphere and a
 list of spheres just something you can hit. What that class should be called is something of a
 quandary -- calling it an “object” would be good if not for “object oriented” programming. “Surface”
 is often used, with the weakness being maybe we will want volumes. “hittable” emphasizes the member
-function that unites them. I don’t love any of these but I will go with “hittable”.
+function that unites them. I don’t love any of these, but I will go with “hittable”.
 
 <div class='together'>
 This `hittable` abstract class will have a hit function that takes in a ray. Most ray tracers have
@@ -864,10 +864,10 @@ information:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [normals-point-against]: <kbd>[sphere.h]</kbd> Remembering the side of the surface]
 
-The decision whether to have normals always point out or always point against the ray is based on
+The decision whether to have normals always point out or to always point against the ray is based on
 whether you want to determine the side of the surface at the time of geometry or at the time of
 coloring. In this book we have more material types than we have geometry types, so we'll go for
-less work and put the determination at geometry time. This is simply a matter of preference and
+less work, and put the determination at geometry time. This is simply a matter of preference, and
 you'll see both implementations in the literature.
 
 We add the `front_face` bool to the `hit_record` struct. I know that we’ll also want motion blur at
@@ -1029,7 +1029,7 @@ above lines can be more simply expressed using C++'s `auto` type specifier:
 
 We'll use shared pointers in our code, because it allows multiple geometries to share a common
 instance (for example, a bunch of spheres that all use the same texture map material), and because
-it makes memory management automatic and easier to reason about.
+it makes memory management automatic, and easier to reason about.
 
 `std::shared_ptr` is included with the `<memory>` header.
 
@@ -1178,10 +1178,10 @@ Antialiasing
 
 When a real camera takes a picture, there are usually no jaggies along edges because the edge pixels
 are a blend of some foreground and some background. We can get the same effect by averaging a bunch
-of samples inside each pixel. We will not bother with stratification, which is controversial but is
+of samples inside each pixel. We will not bother with stratification, which is controversial, but is
 usual for my programs. For some ray tracers it is critical, but the kind of general one we are
-writing doesn’t benefit very much from it and it makes the code uglier. We abstract the camera class
-a bit so we can make a cooler camera later.
+writing doesn’t benefit very much from it, and it makes the code uglier. We abstract the camera
+class a bit so we can make a cooler camera later.
 
 One thing we need is a random number generator that returns real random numbers. We need a function
 that returns a canonical random number which by convention returns random real in the range
@@ -1384,8 +1384,8 @@ surfaces that look matte. One of the simplest ways to do this turns out to be ex
 ideal diffuse surfaces. (I used to do it as a lazy hack that approximates mathematically ideal
 Lambertian.)
 
-(Reader Vassillen Chizhov proved that the lazy hack is indeed just a lazy hack and is inaccurate.
-The correct representation of ideal Lambertian isn't much more work and is presented at the end of
+(Reader Vassillen Chizhov proved that the lazy hack is indeed just a lazy hack, and is inaccurate.
+The correct representation of ideal Lambertian isn't much more work, and is presented at the end of
 the chapter.)
 
 <div class='together'>
@@ -1394,7 +1394,7 @@ a center of $(p + \vec{N})$ and $(p - \vec{N})$, where $\vec{N}$ is the normal o
 sphere with a center at $(p - \vec{N})$ is considered _inside_ the surface, whereas the sphere with
 center $(p + \vec{N})$ is considered _outside_ the surface. Select the tangent unit radius sphere
 that is on the same side of the surface as the ray origin. Pick a random point $s$ inside this unit
-radius sphere and send a ray from the hit point $p$ to the random point $s$ (this is the vector
+radius sphere, and send a ray from the hit point $p$ to the random point $s$ (this is the vector
 $(s-p)$):
 
   ![Figure [rand-vector]: Generating a random diffuse bounce ray](../images/fig.rand-vector.jpg)
@@ -1404,7 +1404,7 @@ $(s-p)$):
 <div class='together'>
 We need a way to pick a random point in a unit radius sphere. We’ll use what is usually the easiest
 algorithm: a rejection method. First, pick a random point in the unit cube where x, y, and z all
-range from -1 to +1. Reject this point and try again if the point is outside the sphere.
+range from -1 to +1. Reject this point, and try again if the point is outside the sphere.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class vec3 {
@@ -1869,7 +1869,7 @@ within `hit_record`. See the highlighted lines below:
 
 <div class='together'>
 For the Lambertian (diffuse) case we already have, it can either scatter always and attenuate by its
-reflectance $R$, or it can scatter with no attenuation but absorb the fraction $1-R$ of the rays. Or
+reflectance $R$, or it can scatter with no attenuation but absorb the fraction $1-R$ of the rays, or
 it could be a mixture of those strategies. For Lambertian materials we get this simple class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2030,7 +2030,7 @@ Which gives:
 </div>
 
 <div class='together'>
-We can also randomize the reflected direction by using a small sphere and choosing a new endpoint
+We can also randomize the reflected direction by using a small sphere, and choosing a new endpoint
 for the ray:
 
   ![Figure [reflect-fuzzy]: Generating fuzzed reflection rays](../images/fig.reflect-fuzzy.jpg)
@@ -2090,7 +2090,7 @@ Dielectrics
 
 Clear materials such as water, glass, and diamonds are dielectrics. When a light ray hits them, it
 splits into a reflected ray and a refracted (transmitted) ray. We’ll handle that by randomly
-choosing between reflection or refraction and only generating one scattered ray per interaction.
+choosing between reflection or refraction, and only generating one scattered ray per interaction.
 
 <div class='together'>
 The hardest part to debug is the refracted ray. I usually first just have all the light refract if
@@ -2107,7 +2107,7 @@ I got this (I have not told you how to do this right or wrong yet, but soon!):
 
 Is that right? Glass balls look odd in real life. But no, it isn’t right. The world should be
 flipped upside down and no weird black stuff. I just printed out the ray straight through the middle
-of the image and it was clearly wrong. That often does the job.
+of the image, and it was clearly wrong. That often does the job.
 
 <div class='together'>
 The refraction is described by Snell’s law:
@@ -2208,7 +2208,7 @@ And the dielectric material that always refracts is:
 
 <div class='together'>
 That definitely doesn't look right. One troublesome practical issue is that when the ray is in the
-material with the higher refractive index, there is no real solution to Snell’s law and thus there
+material with the higher refractive index, there is no real solution to Snell’s law, and thus there
 is no refraction possible. If we refer back to Snell's law and the derivation of $\sin\theta'$:
 
   $$ \sin\theta' = \frac{\eta}{\eta'} \cdot \sin\theta $$
@@ -2221,8 +2221,8 @@ The value of $\sin\theta'$ cannot be greater than 1. So, if,
 
   $$ \frac{1.5}{1.0} \cdot \sin\theta > 1.0 $$
 
-The equality between the two sides of the equation is broken and a solution cannot exist. If a
-solution does not exist the glass cannot refract and must reflect the ray:
+The equality between the two sides of the equation is broken, and a solution cannot exist. If a
+solution does not exist the glass cannot refract, and must reflect the ray:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     if(etai_over_etat * sin_theta > 1.0) {
@@ -2386,7 +2386,7 @@ This yields our full glass material:
 
 <div class='together'>
 An interesting and easy trick with dielectric spheres is to note that if you use a negative radius,
-the geometry is unaffected but the surface normal points inward, so it can be used as a bubble
+the geometry is unaffected, but the surface normal points inward, so it can be used as a bubble
 to make a hollow glass sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2507,7 +2507,7 @@ products, and we now have a complete orthonormal basis (u,v,w) to describe our c
 
 Remember that `vup`, `v`, and `w` are all in the same plane. Note that, like before when our fixed
 camera faced -Z, our arbitrary view camera faces -w. And keep in mind that we can -- but we don’t
-have to -- use world up (0,1,0) to specify vup. This is convenient and will naturally keep your
+have to -- use world up (0,1,0) to specify vup. This is convenient, and will naturally keep your
 camera horizontally level until you decide to experiment with crazy camera angles.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2606,8 +2606,8 @@ want defocus blur.
 
 <div class="together">
 A real camera has a complicated compound lens. For our code we could simulate the order: sensor,
-then lens, then aperture, and figure out where to send the rays and flip the image once computed
-(the image is projected upside down on the film). Graphics people usually use a thin lens
+then lens, then aperture. Then we could figure out where to send the rays, and flip the image once
+computed (the image is projected upside down on the film). Graphics people usually use a thin lens
 approximation:
 
   ![Figure [cam-lens]: Camera lens model](../images/fig.cam-lens.jpg)
@@ -2804,7 +2804,7 @@ This gives:
 
 An interesting thing you might note is the glass balls don’t really have shadows which makes them
 look like they are floating. This is not a bug (you don’t see glass balls much in real life, where
-they also look a bit strange and indeed seem to float on cloudy days). A point on the big sphere
+they also look a bit strange, and indeed seem to float on cloudy days). A point on the big sphere
 under a glass ball still has lots of light hitting it because the sky is re-ordered rather than
 blocked.
 
@@ -2816,16 +2816,16 @@ You now have a cool ray tracer! What next?
   2. Biasing scattered rays toward them, and then downweighting those rays to cancel out the bias.
      Both work. I am in the minority in favoring the latter approach.
 
-  3. Triangles. Most cool models are in triangle form. The model I/O is the worst and almost
+  3. Triangles. Most cool models are in triangle form. The model I/O is the worst, and almost
      everybody tries to get somebody else’s code to do this.
 
-  4. Surface textures. This lets you paste images on like wall paper. Pretty easy and a good thing
+  4. Surface textures. This lets you paste images on like wall paper. Pretty easy, and a good thing
      to do.
 
   5. Solid textures. Ken Perlin has his code online. Andrew Kensler has some very cool info at his
      blog.
 
-  6. Volumes and media. Cool stuff and will challenge your software architecture. I favor making
+  6. Volumes and media. Cool stuff, and will challenge your software architecture. I favor making
      volumes have the hittable interface and probabilistically have intersections based on density.
      Your rendering code doesn’t even have to know it has volumes with that method.
 
