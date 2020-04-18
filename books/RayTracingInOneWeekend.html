@@ -466,9 +466,9 @@ for now because we’ll add antialiasing later):
     }
 
     int main() {
-        const int image_width = 768;
-        const auto aspect_ratio = 9.0 / 16.0;
-        const int image_height = static_cast<int>(aspect_ratio * image_width);
+        const auto aspect_ratio = 16.0 / 9.0;
+        const int image_width = 384;
+        const int image_height = static_cast<int>(image_width / aspect_ratio);
 
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
@@ -1180,8 +1180,9 @@ And the new main:
     }
 
     int main() {
-        const int image_width = 200;
-        const int image_height = 100;
+        const auto aspect_ratio = 16.0 / 9.0;
+        const int image_width = 384;
+        const int image_height = static_cast<int>(image_width / aspect_ratio);
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
@@ -1373,8 +1374,9 @@ Main is also changed:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
-        const int image_width = 200;
-        const int image_height = 100;
+        const auto aspect_ratio = 16.0 / 9.0;
+        const int image_width = 384;
+        const int image_height = static_cast<int>(image_width / aspect_ratio);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         const int samples_per_pixel = 100;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1553,8 +1555,9 @@ depth, returning no light contribution at the maximum depth:
     ...
 
     int main() {
-        const int image_width = 200;
-        const int image_height = 100;
+        const auto aspect_ratio = 16.0 / 9.0;
+        const int image_width = 384;
+        const int image_height = static_cast<int>(image_width / aspect_ratio);
         const int samples_per_pixel = 100;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         const int max_depth = 50;
@@ -2076,8 +2079,9 @@ Now let’s add some metal spheres to our scene:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
-        const int image_width = 200;
-        const int image_height = 100;
+        const auto aspect_ratio = 16.0 / 9.0;
+        const int image_width = 384;
+        const int image_height = static_cast<int>(image_width / aspect_ratio);
         const int samples_per_pixel = 100;
         const int max_depth = 50;
 
@@ -2563,14 +2567,14 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
         public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             camera(
-                double vfov, // top to bottom, in degrees
-                double aspect
+                double vfov, // vertical field-of-view in degrees
+                double aspect_ratio
             ) {
                 origin = point3(0.0, 0.0, 0.0);
 
                 auto theta = degrees_to_radians(vfov);
                 auto half_height = tan(theta/2);
-                auto half_width = aspect * half_height;
+                auto half_width = aspect_ratio * half_height;
 
                 lower_left_corner = point3(-half_width, -half_height, -1.0);
 
@@ -2646,8 +2650,8 @@ camera horizontally level until you decide to experiment with crazy camera angle
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 point3 lookfrom, point3 lookat, vec3 vup,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                double vfov, // top to bottom, in degrees
-                double aspect
+                double vfov, // vertical field-of-view in degrees
+                double aspect_ratio
             ) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 origin = lookfrom;
@@ -2656,7 +2660,7 @@ camera horizontally level until you decide to experiment with crazy camera angle
 
                 auto theta = degrees_to_radians(vfov);
                 auto half_height = tan(theta/2);
-                auto half_width = aspect * half_height;
+                auto half_width = aspect_ratio * half_height;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 w = unit_vector(lookfrom - lookat);
@@ -2687,8 +2691,6 @@ camera horizontally level until you decide to experiment with crazy camera angle
 This allows us to change the viewpoint:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    const auto aspect_ratio = double(image_width) / image_height;
-    ...
     camera cam(point3(-2,2,1), point3(0,0,-1), vup, 90, aspect_ratio);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-free-view]: <kbd>[main.cc]</kbd> Scene with alternate viewpoint]
@@ -2781,9 +2783,9 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
         public:
             camera(
                 point3 lookfrom, point3 lookat, vec3 vup,
-                double vfov, // top to bottom, in degrees
+                double vfov, // vertical field-of-view in degrees
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                double aspect, double aperture, double focus_dist
+                double aspect_ratio, double aperture, double focus_dist
             ) {
                 origin = lookfrom;
                 lens_radius = aperture / 2;
@@ -2791,7 +2793,7 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
 
                 auto theta = degrees_to_radians(vfov);
                 auto half_height = tan(theta/2);
-                auto half_width = aspect * half_height;
+                auto half_width = aspect_ratio * half_height;
 
                 w = unit_vector(lookfrom - lookat);
                 u = unit_vector(cross(vup, w));
@@ -2837,8 +2839,6 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
 Using a big aperture:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    const auto aspect_ratio = double(image_width) / image_height;
-    ...
     point3 lookfrom(3,3,2);
     point3 lookat(0,0,-1);
     vec3 vup(0,1,0);
