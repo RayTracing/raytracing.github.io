@@ -17,6 +17,10 @@ Change Log -- Ray Tracing in One Weekend
 - Fix: Update image and size for sphere with normal-vector coloring
 - Fix: Improve image size and aspect ratio calculation to make size changes easier
 - Fix: Added `t` parameter back into `hit_record` at correct place
+- Fix: image basic vectors off by one
+- Change: First image size changed to 256x256
+- Change: Default image sizes changed from 200x100 to 384x216
+- Change: Define image aspect ratio up front, then image height from that and the image width
 
 ### _The Next Week_
 - Change: Large rewrite of the `image_texture` class. Now handles image loading too. (#434)
