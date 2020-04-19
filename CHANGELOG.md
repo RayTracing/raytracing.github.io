@@ -26,6 +26,14 @@ Change Log -- Ray Tracing in One Weekend
 - Change: Large rewrite of the `image_texture` class. Now handles image loading too. (#434)
 
 
+---------------------------------------------------------------------------------------------------
+# v3.0.3 (in progress)
+
+### _In One Weekend_
+- Fix: Correct typo in "What's next?" list to rejoin split paragraph on "Lights." Adjust numbering
+  in rest of list.
+
+
 ----------------------------------------------------------------------------------------------------
 # v3.0.2 (2020-04-11)
 
