@@ -20,8 +20,9 @@ class camera {
 
         camera(
             point3 lookfrom, point3 lookat, vec3 vup,
-            double vfov, // top to bottom, in degrees
-            double aspect, double aperture, double focus_dist, double t0 = 0, double t1 = 0
+            double vfov, // vertical field-of-view in degrees
+            double aspect_ratio, double aperture, double focus_dist,
+            double t0 = 0, double t1 = 0
         ) {
             origin = lookfrom;
             lens_radius = aperture / 2;
@@ -30,7 +31,7 @@ class camera {
 
             auto theta = degrees_to_radians(vfov);
             auto half_height = tan(theta/2);
-            auto half_width = aspect * half_height;
+            auto half_width = aspect_ratio * half_height;
 
             w = unit_vector(lookfrom - lookat);
             u = unit_vector(cross(vup, w));
