@@ -111,9 +111,9 @@ There are some things to note in that code:
      later when we internally use high dynamic range, but before output we will tone map to the zero
      to one range, so this code won’t change.
 
-  4. Red goes from black to fully on from left to right, and green goes from black at the bottom to
-     fully on at the top. Red and green together make yellow so we should expect the upper right
-     corner to be yellow.
+  4. Red goes from fully off (black) to fully on (bright red) from left to right, and green goes
+     from black at the bottom to fully on at the top. Red and green together make yellow so we
+     should expect the upper right corner to be yellow.
 
 
 Creating an Image File
@@ -231,6 +231,9 @@ Variables and Methods
 Here’s the top part of my `vec3` class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef VEC3_H
+    #define VEC3_H
+
     #include <iostream>
 
     class vec3 {
@@ -286,8 +289,10 @@ Here’s the top part of my `vec3` class:
     // Type aliases for vec3
     using point3 = vec3;   // 3D point
     using color = vec3;    // RGB color
+
+    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [vec3-class]: <kbd>[vec3.h]</kbd> `vec3` class]
+    [Listing [vec3-class]: <kbd>[vec3.h]</kbd> vec3 class]
 </div>
 
 We use `double` here, but some ray tracers use `float`. Either one is fine -- follow your own
@@ -374,7 +379,7 @@ Now we can change our main to use this:
         std::cerr << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ppm-2]: <kbd>[main.cc]</kbd> Final code for the first PPM image
+    [Listing [ppm-2]: <kbd>[main.cc]</kbd> Final code for the first PPM image]
 </div>
 
 
@@ -765,7 +770,7 @@ Using these observations, we can now simplify the sphere-intersection code to th
 An Abstraction for Hittable Objects
 ------------------------------------
 Now, how about several spheres? While it is tempting to have an array of spheres, a very clean
-solution is the make an “abstract class” for anything a ray might hit and make both a sphere and a
+solution is to make an “abstract class” for anything a ray might hit and make both a sphere and a
 list of spheres just something you can hit. What that class should be called is something of a
 quandary -- calling it an “object” would be good if not for “object oriented” programming. “Surface”
 is often used, with the weakness being maybe we will want volumes. “hittable” emphasizes the member
@@ -884,7 +889,7 @@ inside and an outside, like glass balls.
 If we decide to have the normals always point out, then we will need to determine which side the
 ray is on when we color it. We can figure this out by comparing the ray with the normal. If the ray
 and the normal face in the same direction, the ray is inside the object, if the ray and the normal
-face in the opposide direction, then the ray is outside the object. This can be determined by
+face in the opposite direction, then the ray is outside the object. This can be determined by
 taking the dot product of the two vectors, where if their dot is positive, the ray is inside the
 sphere.
 
@@ -993,7 +998,7 @@ And then we add the surface side determination to the class:
         return false;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [sphere-final]: <kbd>[sphere.h]</kbd> The `sphere` class with normal determination]
+    [Listing [sphere-final]: <kbd>[sphere.h]</kbd> The sphere class with normal determination]
 
 </div>
 
@@ -1001,7 +1006,8 @@ And then we add the surface side determination to the class:
 A List of Hittable Objects
 ---------------------------
 <div class='together'>
-We add a list of objects:
+We have a generic object called a `hittable` that the ray can intersect with. We now add a class
+that stores a list of `hittable`s:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef HITTABLE_LIST_H
@@ -1069,7 +1075,7 @@ Typically, a shared pointer is first initialized with a newly-allocated object, 
     shared_ptr<vec3>   vec3_ptr   = make_shared<vec3>(1.414214, 2.718281, 1.618034);
     shared_ptr<sphere> sphere_ptr = make_shared<sphere>(point3(0,0,0), 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [shared-ptr]: An example allocation using `shared_ptr`]
+    [Listing [shared-ptr]: An example allocation using shared_ptr]
 
 `make_shared<thing>(thing_constructor_params ...)` allocates a new instance of type `thing`, using
 the constructor parameters. It returns a `shared_ptr<thing>`.
@@ -1082,7 +1088,7 @@ above lines can be more simply expressed using C++'s `auto` type specifier:
     auto vec3_ptr   = make_shared<vec3>(1.414214, 2.718281, 1.618034);
     auto sphere_ptr = make_shared<sphere>(point3(0,0,0), 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [shared-ptr-auto]: An example allocation using `shared_ptr` with `auto` type]
+    [Listing [shared-ptr-auto]: An example allocation using shared_ptr with auto type]
 
 </div>
 
@@ -1217,7 +1223,7 @@ And the new main:
         std::cerr << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [main-with-rtweekend-h]: <kbd>[main.cc]</kbd> desc]
+    [Listing [main-with-rtweekend-h]: <kbd>[main.cc]</kbd> The new main with hittables]
 </div>
 
 <div class='together'>
@@ -1248,7 +1254,7 @@ so we can make a cooler camera later.
 Some Random Number Utilities
 -----------------------------
 One thing we need is a random number generator that returns real random numbers. We need a function
-that returns a canonical random number which by convention returns random real in the range
+that returns a canonical random number which by convention returns a random real in the range
 $0 ≤ r < 1$. The “less than” before the 1 is important as we will sometimes take advantage of that.
 
 <div class='together'>
@@ -1290,7 +1296,7 @@ If you want to use this, you can obtain a random number with the conditions we n
         return rand_generator();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-double-alt]: <kbd>[file]</kbd> random_double(), alternate implemenation]
+    [Listing [random-double-alt]: <kbd>[rtweekend.h]</kbd> random_double(), alternate implemenation]
 </div>
 
 
@@ -1430,11 +1436,11 @@ Diffuse Materials
 ====================================================================================================
 
 Now that we have objects and multiple rays per pixel, we can make some realistic looking materials.
-We’ll start with diffuse (matte) materials. One question is whether we can mix and match shapes and
-materials (so we assign a sphere a material) or if it’s put together so the geometry and material
-are tightly bound (that could be useful for procedural objects where the geometry and material are
-linked). We’ll go with separate -- which is usual in most renderers -- but do be aware of the
-limitation.
+We’ll start with diffuse (matte) materials. One question is whether we mix and match geometry and
+materials (so we can assign a material to multiple spheres, or vice versa) or if geometry and
+material are tightly bound (that could be useful for procedural objects where the geometry and
+material are linked). We’ll go with separate -- which is usual in most renderers -- but do be aware
+of the limitation.
 
 A Simple Diffuse Material
 --------------------------
@@ -1488,7 +1494,7 @@ range from -1 to +1. Reject this point and try again if the point is outside the
             return vec3(random_double(min,max), random_double(min,max), random_double(min,max));
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [vec-rand-util]: <kbd>[vec3.h]</kbd> `vec3` random utility functions]
+    [Listing [vec-rand-util]: <kbd>[vec3.h]</kbd> vec3 random utility functions]
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_in_unit_sphere() {
@@ -1535,14 +1541,19 @@ depth, returning no light contribution at the maximum depth:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     color ray_color(const ray& r, const hittable& world, int depth) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         hit_record rec;
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
             return color(0,0,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 
         if (world.hit(r, 0, infinity, rec)) {
             point3 target = rec.p + rec.normal + random_in_unit_sphere();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
@@ -1664,10 +1675,9 @@ True Lambertian Reflection
 <div class='together'>
 The rejection method presented here produces random points in the unit ball offset along the surface
 normal. This corresponds to picking directions on the hemisphere with high probability close to the
-normal, and a lower probability of scattering rays at grazing angles. The distribution present
-scales by the $\cos^3 (\phi)$ where $\phi$ is the angle from the normal. This is useful since light
-arriving at shallow angles spreads over a larger area, and thus has a lower contribution to the
-final color.
+normal, and a lower probability of scattering rays at grazing angles. This distribution scales by
+the $\cos^3 (\phi)$ where $\phi$ is the angle from the normal. This is useful since light arriving
+at shallow angles spreads over a larger area, and thus has a lower contribution to the final color.
 
 However, we are interested in a Lambertian distribution, which has a distribution of $\cos (\phi)$.
 True Lambertian has the probability higher for ray scattering close to the normal, but the
@@ -1837,12 +1847,17 @@ two things:
 This suggests the abstract class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef MATERIAL_H
+    #define MATERIAL_H
+
     class material {
         public:
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const = 0;
     };
+
+    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [material-initial]: <kbd>[material.h]</kbd> The material class]
 </div>
@@ -2453,8 +2468,8 @@ Schlick Approximation
 ----------------------
 <div class='together'>
 Now real glass has reflectivity that varies with angle -- look at a window at a steep angle and it
-becomes a mirror. There is a big ugly equation for that, but almost everybody uses a simple and
-surprisingly simple polynomial approximation by Christophe Schlick:
+becomes a mirror. There is a big ugly equation for that, but almost everybody uses a cheap and
+surprisingly accurate polynomial approximation by Christophe Schlick:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     double schlick(double cosine, double ref_idx) {
@@ -2634,13 +2649,14 @@ vector for the camera. This up vector should lie in the plane orthogonal to the 
 
 We can actually use any up vector we want, and simply project it onto this plane to get an up vector
 for the camera. I use the common convention of naming a “view up” (_vup_) vector. A couple of cross
-products, and we now have a complete orthonormal basis (u,v,w) to describe our camera’s orientation.
+products, and we now have a complete orthonormal basis $(u,v,w)$ to describe our camera’s
+orientation.
 
   ![Figure [cam-up]: Camera view up direction](../images/fig.cam-up.jpg)
 
 Remember that `vup`, `v`, and `w` are all in the same plane. Note that, like before when our fixed
 camera faced -Z, our arbitrary view camera faces -w. And keep in mind that we can -- but we don’t
-have to -- use world up (0,1,0) to specify vup. This is convenient and will naturally keep your
+have to -- use world up $(0,1,0)$ to specify vup. This is convenient and will naturally keep your
 camera horizontally level until you decide to experiment with crazy camera angles.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2703,7 +2719,14 @@ to get:
 
   </div>
 
-And we can change field of view to get:
+And we can change field of view:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    camera cam(point3(-2,2,1), point3(0,0,-1), vup, 20, aspect_ratio);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [change-field-view]: <kbd>[main.cc]</kbd> Change field of view]
+
+to get:
 
   <div class="render">
 
