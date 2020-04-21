@@ -386,13 +386,12 @@ The ray Class
 --------------
 <div class='together'>
 The one thing that all ray tracers have is a ray class, and a computation of what color is seen
-along a ray. Let’s think of a ray as a function $\mathbf{P}(t) = \mathbf{A} + t \mathbf{b}$. (Note:
-throughout these books, we'll use uppercase bold letters for points, and lowercase bold letters for
-vectors.) Here $\mathbf{P}$ is a 3D position along a line in 3D. $\mathbf{A}$ is the ray origin and
-$\mathbf{b}$ is the ray direction. The ray parameter $t$ is a real number (`double` in the
-code). Plug in a different $t$ and $\mathbf{P}(t)$ moves the point along the ray. Add in negative
-$t$ and you can go anywhere on the 3D line. For positive $t$, you get only the parts in front of
-$\mathbf{A}$, and this is what is often called a half-line or ray.
+along a ray. Let’s think of a ray as a function $\mathbf{P}(t) = \mathbf{A} + t \mathbf{b}$. Here
+$\mathbf{P}$ is a 3D position along a line in 3D. $\mathbf{A}$ is the ray origin and $\mathbf{b}$ is
+the ray direction. The ray parameter $t$ is a real number (`double` in the code). Plug in a
+different $t$ and $\mathbf{P}(t)$ moves the point along the ray. Add in negative $t$ and you can go
+anywhere on the 3D line. For positive $t$, you get only the parts in front of $\mathbf{A}$, and this
+is what is often called a half-line or ray.
 
   ![Figure [lerp]: Linear interpolation](../images/fig.lerp.jpg)
 
@@ -537,19 +536,19 @@ R^2$. Put another way, if a given point $(x,y,z)$ is on the sphere, then $x^2 + 
 the given point $(x,y,z)$ is _inside_ the sphere, then $x^2 + y^2 + z^2 < R^2$, and if a given point
 $(x,y,z)$ is _outside_ the sphere, then $x^2 + y^2 + z^2 > R^2$.
 
-It gets uglier if the sphere center is at $(\mathbf{C}_x, \mathbf{C}_y, \mathbf{C}_z)$:
+It gets uglier if the sphere center is at $(C_x, C_y, C_z)$:
 
-  $$ (x-\mathbf{C}_x)^2 + (y-\mathbf{C}_y)^2 + (z-\mathbf{C}_z)^2 = r^2 $$
+  $$ (x - C_x)^2 + (y - C_y)^2 + (z - C_z)^2 = r^2 $$
 </div>
 
 <div class='together'>
 In graphics, you almost always want your formulas to be in terms of vectors so all the x/y/z stuff
 is under the hood in the `vec3` class. You might note that the vector from center
-$\mathbf{C} = (\mathbf{C}_x,\mathbf{C}_y,\mathbf{C}_z)$ to point $\mathbf{P} = (x,y,z)$ is
-$(\mathbf{P} - \mathbf{C})$, and therefore
+$\mathbf{C} = (C_x,C_y,C_z)$ to point $\mathbf{P} = (x,y,z)$ is $(\mathbf{P} - \mathbf{C})$, and
+therefore
 
   $$ (\mathbf{P} - \mathbf{C}) \cdot (\mathbf{P} - \mathbf{C})
-     = (x-\mathbf{C}_x)^2 + (y-\mathbf{C}_y)^2 + (z-\mathbf{C}_z)^2
+     = (x - C_x)^2 + (y - C_y)^2 + (z - C_z)^2
   $$
 </div>
 
@@ -565,7 +564,7 @@ to know if our ray $\mathbf{P}(t) = \mathbf{A} + t\mathbf{b}$ ever hits the sphe
 does hit the sphere, there is some $t$ for which $\mathbf{P}(t)$ satisfies the sphere equation. So
 we are looking for any $t$ where this is true:
 
-  $$ (\mathbf{P}(t) - \mathbf{C})\cdot(\mathbf{P}(t) - \mathbf{C}) = r^2 $$
+  $$ (\mathbf{P}(t) - \mathbf{C}) \cdot (\mathbf{P}(t) - \mathbf{C}) = r^2 $$
 
 or expanding the full form of the ray $\mathbf{P}(t)$:
 
