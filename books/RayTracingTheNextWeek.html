@@ -51,10 +51,10 @@ shutter is open. As long as the objects are where they should be at that time, w
 average answer with a ray that is at exactly a single time. This is fundamentally why random ray
 tracing tends to be simple.
 
-The basic idea is to generate rays at random times while the shutter is open, and intersect the
-model at that one time. The way it is usually done is to have the camera move and the objects move,
-but have each ray exist at exactly one time. This way the “engine” of the ray tracer can just make
-sure the objects are where they need to be for the ray, and the intersection guts don’t change much.
+The basic idea is to generate rays at random times while the shutter is open and intersect the model
+at that one time. The way it is usually done is to have the camera move and the objects move, but
+have each ray exist at exactly one time. This way the “engine” of the ray tracer can just make sure
+the objects are where they need to be for the ray, and the intersection guts don’t change much.
 
 <div class='together'>
 For this we will first need to have a ray store the time it exists at:
@@ -188,10 +188,10 @@ times need not match up with the camera aperture open and close.
     [Listing [moving-sphere]: <kbd>[moving_sphere.h]</kbd> A moving sphere]
 
 <div class='together'>
-An alternative to making a new moving sphere class is to just make them all move, and have the
-stationary ones have the same begin and end point. I’m on the fence about that trade-off between
-fewer classes and more efficient stationary spheres, so let your design taste guide you. The
-intersection code barely needs a change: `center` just needs to become a function `center(time)`:
+An alternative to making a new moving sphere class is to just make them all move, while stationary
+spheres have the same begin and end position. I’m on the fence about that trade-off between fewer
+classes and more efficient stationary spheres, so let your design taste guide you. The intersection
+code barely needs a change: `center` just needs to become a function `center(time)`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool moving_sphere::hit(
@@ -266,9 +266,9 @@ Be sure that in the materials you have the scattered rays be at the time of the 
 
 <div class='together'>
 The code below takes the example diffuse spheres from the scene at the end of the last book, and
-makes them move during the image render. (Think of a camera with shutter opening at time 0, and then
-closing again at time 1.) Each sphere moves from its center $\mathbf{C}$ at time $t=0$ to
-$\mathbf{C} + (0, r/2, 0)$ at time $t=1$, where $r$ is a random number in $[0,1)$:
+makes them move during the image render. (Think of a camera with shutter opening at time 0 and
+closing at time 1.) Each sphere moves from its center $\mathbf{C}$ at time $t=0$ to $\mathbf{C} +
+(0, r/2, 0)$ at time $t=1$, where $r$ is a random number in $[0,1)$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable_list random_scene() {
@@ -356,8 +356,8 @@ the number of objects. But it’s a repeated search on the same model, so we oug
 it a logarithmic search in the spirit of binary search. Because we are sending millions to billions
 of rays on the same model, we can do an analog of sorting the model, and then each ray intersection
 can be a sublinear search. The two most common families of sorting are to 1) divide the space, and
-2) divide the objects. The latter is usually much easier to code up, and just as fast to run for
-most models.
+2) divide the objects. The latter is usually much easier to code up and just as fast to run for most
+models.
 
 <div class='together'>
 The key idea of a bounding volume over a set of primitives is to find a volume that fully encloses
@@ -541,7 +541,7 @@ $(e, E)$ would be:
 If there are any `NaN`s running around there, the compare will return false so we need to be sure
 our bounding boxes have a little padding if we care about grazing cases (and we probably should
 because in a ray tracer all cases come up eventually). With all three dimensions in a loop, and
-passing in the interval $t_{min}$, $t_{max}$ we get:
+passing in the interval $[t_{min}$, $t_{max}]$, we get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -580,9 +580,9 @@ standard library `fmax()` utility. `ffmax()` is quite a bit faster because it do
 `NaN`s and other exceptions.
 
 <div class='together'>
-In reviewing this intersection method, Andrew Kensler at Pixar tried some experiments, and has
-proposed this version of the code which works extremely well on many compilers, and I have adopted
-it as my go-to method:
+In reviewing this intersection method, Andrew Kensler at Pixar tried some experiments and proposed
+the following version of the code. It works extremely well on many compilers, and I have adopted it
+as my go-to method:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline bool aabb::hit(const ray& r, double tmin, double tmax) const {
@@ -607,8 +607,8 @@ it as my go-to method:
 We now need to add a function to compute the bounding boxes of all the hittables. Then we will make
 a hierarchy of boxes over all the primitives, and the individual primitives--like spheres--will live
 at the leaves. That function returns a bool because not all primitives have bounding boxes (_e.g._,
-infinite planes). In addition, objects move so it takes `time1` and `time2` for the interval of the
-frame, and the bounding box will bound the object moving through that interval.
+infinite planes). In addition, moving objects will have a bounding box that encloses the object for
+the entire time interval [`time1`,`time2`].
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable {
@@ -2114,7 +2114,7 @@ We get:
 </div>
 
 <div class='together'>
-This is very noisy because the light is small, but we have a problem: some of the walls are facing
+This is very noisy because the light is small. But we have a problem: some of the walls are facing
 the wrong way. We haven't specified that a diffuse material should behave differently on different
 faces of the object, but what if the Cornell box had a different pattern on the inside and outside
 walls? The rectangle objects are described such that their front faces are always in the

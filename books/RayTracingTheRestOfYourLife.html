@@ -93,7 +93,7 @@ The answer of $\pi$ found will vary from computer to computer based on the initi
 On my computer, this gives me the answer `Estimate of Pi = 3.0880000000`
 
 <div class='together'>
-If we change the program to run forever, and just print out a running estimate:
+If we change the program to run forever and just print out a running estimate:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -194,7 +194,7 @@ One Dimensional MC Integration
 
 Integration is all about computing areas and volumes, so we could have framed
 chapter [A Simple Monte Carlo Program] in an integral form if we wanted to make it maximally
-confusing, but sometimes integration is the most natural and clean way to formulate things.
+confusing. But sometimes integration is the most natural and clean way to formulate things.
 Rendering is often such a problem. Let’s look at a classic integral:
 
 $$ I = \int_{0}^{2} x^2 dx $$
@@ -234,12 +234,12 @@ This suggests a MC approach:
     [Listing [integ-xsq-1]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$]
 </div>
 
-This, as expected, produces approximately the exact answer we get with algebra, $I = 8/3$, but we
-could also do it for functions that we can’t analytically integrate like $\log(\sin(x))$. In
-graphics, we often have functions we can evaluate but can’t write down explicitly, or functions we
-can only probabilistically evaluate. That is in fact what the ray tracing `ray_color()` function of
-the last two books is -- we don’t know what color is seen in every direction, but we can
-statistically estimate it in any given dimension.
+This, as expected, produces approximately the exact answer we get with algebra, $I = 8/3$. We could
+also do it for functions that we can’t analytically integrate like $\log(\sin(x))$. In graphics, we
+often have functions we can evaluate but can’t write down explicitly, or functions we can only
+probabilistically evaluate. That is in fact what the ray tracing `ray_color()` function of the last
+two books is -- we don’t know what color is seen in every direction, but we can statistically
+estimate it in any given dimension.
 
 One problem with the random program we wrote in the first two books is that small light sources
 create too much noise. This is because our uniform sampling doesn’t sample these light sources often
@@ -361,9 +361,9 @@ That means $f$ just undoes whatever $P$ does. So,
 </div>
 
 <div class='together'>
-The -1 means “inverse function”. Ugly notation, but standard. For our purposes, this means that if
-we have PDF $p()$ and cumulative distribution function $P()$, then if we use this "inverse function"
-with a random number, we’ll get what we want:
+The -1 means “inverse function”. Ugly notation, but standard. For our purposes, if we have PDF $p()$
+and cumulative distribution function $P()$, we can use this "inverse function" with a random number
+to get what we want:
 
   $$ e = P^{-1} (\text{random_double}()) $$
 </div>
@@ -577,7 +577,7 @@ code above produces that. Next, we are ready to apply that in ray tracing!
 The key point here is that all the integrals and probability and all that are over the unit sphere.
 The area on the unit sphere is how you measure the directions. Call it direction, solid angle, or
 area -- it’s all the same thing. Solid angle is the term usually used. If you are comfortable with
-that, great! If not, do what I do, and imagine the area on the unit sphere that a set of directions
+that, great! If not, do what I do and imagine the area on the unit sphere that a set of directions
 goes through. The solid angle $\omega$ and the projected area $A$ on the unit sphere are the same
 thing.
 
@@ -603,7 +603,7 @@ Probability of light being absorbed: $1-A$
 
 Here $A$ stands for _albedo_ (latin for _whiteness_). Albedo is a precise technical term in some
 disciplines, but in all cases it is used to define some form of _fractional reflectance_. This
-_fractional reflectance_ (or albedo) will vary with color, and (as we implemented for our glass in
+_fractional reflectance_ (or albedo) will vary with color and (as we implemented for our glass in
 book one) can vary with incident direction.
 
 In most physically based renderers, we would use a set of wavelengths for the light color rather
@@ -622,9 +622,9 @@ The color of a surface in terms of these quantities is:
   $$ Color = \int A \cdot s(direction) \cdot \text{color}(direction) $$
 </div>
 
-Note that $A$ and $s()$ may depend on the view direction, and may depend on the scattering position
-(position on a surface or position within a volume). Therefore, the output color may also vary with
-view direction or scattering position.
+Note that $A$ and $s()$ may depend on the view direction and the scattering position (position on a
+surface or position within a volume). Therefore, the output color may also vary with view direction
+or scattering position.
 
 <div class='together'>
 If we apply the MC basic formula we get the following statistical estimate:
@@ -667,7 +667,7 @@ The numerator and denominator cancel out, and we get:
   $$ Color = A \cdot color(direction) $$
 
 This is exactly what we had in our original `ray_color()` function! However, we need to generalize
-now so we can send extra rays in important directions, such as toward the lights.
+so we can send extra rays in important directions, such as toward the lights.
 
 The treatment above is slightly non-standard because I want the same math to work for surfaces and
 volumes. To do otherwise will make some ugly code.
@@ -702,7 +702,7 @@ would be:
   $$ p(direction) = \frac{1}{2}\cdotp Light(direction) + \frac{1}{2}\cdot pSurface(direction) $$
 </div>
 
-As long as the weights are positive, and add up to one, any such mixture of PDFs is a PDF. Remember,
+As long as the weights are positive and add up to one, any such mixture of PDFs is a PDF. Remember,
 we can use any PDF: _all PDF eventually converge to the correct answer_. So, the game is to figure
 out how to make the PDF larger where the product $s(direction) \cdot color(direction)$ is large. For
 diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is high.
@@ -711,8 +711,9 @@ For a mirror, $s()$ is huge only near one direction, so it matters a lot more. M
 fact make mirrors a special case, and just make the $s/p$ implicit -- our code currently does that.
 
 <div class='together'>
-Let’s do simple refactoring, and temporarily remove all materials that aren’t Lambertian. We can use
-our Cornell Box scene again, and let’s generate the camera in the function that generates the model:
+Let’s do a simple refactoring and temporarily remove all materials that aren’t Lambertian. We can
+use our Cornell Box scene again, and let’s generate the camera in the function that generates the
+model:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable_list cornell_box(camera& cam, double aspect) {
@@ -770,7 +771,7 @@ Reducing that noise is our goal. We’ll do that by constructing a PDF that send
 light.
 </div>
 
-First, let’s instrument the code so that it explicitly samples some PDF, and then normalizes for
+First, let’s instrument the code so that it explicitly samples some PDF and then normalizes for
 that. Remember MC basics: $\int f(x) \approx f(r)/p(r)$. For the Lambertian material, let’s sample
 like we do now: $p(direction) = \cos(\theta) / \pi$.
 
@@ -914,14 +915,14 @@ Let’s build some infrastructure to address this.
 Generating Random Directions
 ====================================================================================================
 
-In this and the next two chapters let’s harden our understanding and tools, and figure out which
+In this and the next two chapters, let’s harden our understanding and tools and figure out which
 Cornell Box is right. Let’s first figure out how to generate random directions, but to simplify
 things let’s assume the z-axis is the surface normal and $\theta$ is the angle from the normal.
 We’ll get them oriented to the surface normal vector in the next chapter. We will only deal with
-distributions that are rotationally symmetric about $z$. So $p(direction) = f(\theta)$. If you
-have had advanced calculus, you may recall that on the sphere in spherical coordinates
-$dA = \sin(\theta) \cdot d\theta \cdot d\phi$. If you haven’t, you’ll have to take my word for the
-next step, but you’ll get it when you take advanced calc.
+distributions that are rotationally symmetric about $z$. So $p(direction) = f(\theta)$. If you have
+had advanced calculus, you may recall that on the sphere in spherical coordinates $dA = \sin(\theta)
+\cdot d\theta \cdot d\phi$. If you haven’t, you’ll have to take my word for the next step, but
+you’ll get it when you take advanced calc.
 
 <div class='together'>
 Given a directional PDF, $p(direction) = f(\theta)$ on the sphere, the 1D PDFs on $\theta$ and
@@ -1261,7 +1262,7 @@ Which produces:
   </div>
 
 Is that right? We still don’t know for sure. Tracking down bugs is hard in the absence of reliable
-reference solutions. Let’s table that for now, and move on to get rid of some of that noise.
+reference solutions. Let’s table that for now and get rid of some of that noise.
 </div>
 
 
@@ -1385,7 +1386,7 @@ down. We can do that by letting the emitted member function of hittable take ext
 </div>
 
 <div class='together'>
-We also need to flip the light so its normals point in the -y direction, and we get:
+We also need to flip the light so its normals point in the -y direction. This gives us:
 
   <div class="render">
 
@@ -1805,12 +1806,12 @@ rays; that’s a personal design preference.
 
 There are some other issues with the code.
 
-The PDF construction is hard coded in the `ray_color()` function, and we should clean that up.
-Probably we should pass something into color about the lights. Unlike BVH construction, we should be
-careful about memory leaks as there are an unbounded number of samples.
+The PDF construction is hard coded in the `ray_color()` function. We should clean that up, probably
+by passing something into color about the lights. Unlike BVH construction, we should be careful
+about memory leaks as there are an unbounded number of samples.
 
 The specular rays (glass and metal) are no longer supported. The math would work out if we just made
-their scattering function a delta function, but that would be floating point disaster. We could
+their scattering function a delta function. But that would be floating point disaster. We could
 either separate out specular reflections, or have surface roughness never be zero and have
 almost-mirrors that look perfectly smooth but don’t generate NaNs. I don’t have an opinion on which
 way to do it (I have tried both and they both have their advantages), but we have smooth metal and
@@ -1818,8 +1819,8 @@ glass code anyway, so I add perfect specular surfaces that do not do explicit f(
 
 We also lack a real background function infrastructure in case we want to add an environment map or
 more interesting functional background. Some environment maps are HDR (the R/G/B components are
-floats rather than 0–255 bytes usually interpreted as 0-1). Our output has been HDR all along, and
-we’ve just been truncating it.
+floats rather than 0–255 bytes usually interpreted as 0-1). Our output has been HDR all along; we’ve
+just been truncating it.
 
 Finally, our renderer is RGB and a more physically based one -- like an automobile manufacturer
 might use -- would probably need to use spectral colors and maybe even polarization. For a movie
