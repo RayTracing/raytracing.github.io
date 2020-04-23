@@ -188,10 +188,10 @@ times need not match up with the camera aperture open and close.
     [Listing [moving-sphere]: <kbd>[moving_sphere.h]</kbd> A moving sphere]
 
 <div class='together'>
-An alternative to making a new moving sphere class is to just make them all move and have the
-stationary ones have the same begin and end point. I’m on the fence about that trade-off between
-fewer classes and more efficient stationary spheres, so let your design taste guide you. The
-intersection code barely needs a change: `center` just needs to become a function `center(time)`:
+An alternative to making a new moving sphere class is to just make them all move, while stationary
+spheres have the same begin and end position. I’m on the fence about that trade-off between fewer
+classes and more efficient stationary spheres, so let your design taste guide you. The intersection
+code barely needs a change: `center` just needs to become a function `center(time)`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool moving_sphere::hit(
@@ -266,9 +266,9 @@ Be sure that in the materials you have the scattered rays be at the time of the 
 
 <div class='together'>
 The code below takes the example diffuse spheres from the scene at the end of the last book, and
-makes them move during the image render. (Think of a camera with shutter opening at time 0 and then
-closing again at time 1.) Each sphere moves from its center $\mathbf{C}$ at time $t=0$ to
-$\mathbf{C} + (0, r/2, 0)$ at time $t=1$, where $r$ is a random number in $[0,1)$:
+makes them move during the image render. (Think of a camera with shutter opening at time 0 and
+closing at time 1.) Each sphere moves from its center $\mathbf{C}$ at time $t=0$ to $\mathbf{C} +
+(0, r/2, 0)$ at time $t=1$, where $r$ is a random number in $[0,1)$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable_list random_scene() {
@@ -354,7 +354,7 @@ little, and when I add rectangles and boxes we won't have to go back and refacto
 The ray-object intersection is the main time-bottleneck in a ray tracer, and the time is linear with
 the number of objects. But it’s a repeated search on the same model, so we ought to be able to make
 it a logarithmic search in the spirit of binary search. Because we are sending millions to billions
-of rays on the same model, we can do an analog of sorting the model and then each ray intersection
+of rays on the same model, we can do an analog of sorting the model, and then each ray intersection
 can be a sublinear search. The two most common families of sorting are to 1) divide the space, and
 2) divide the objects. The latter is usually much easier to code up and just as fast to run for most
 models.
@@ -540,8 +540,8 @@ $(e, E)$ would be:
 <div class='together'>
 If there are any `NaN`s running around there, the compare will return false so we need to be sure
 our bounding boxes have a little padding if we care about grazing cases (and we probably should
-because in a ray tracer all cases come up eventually). With all three dimensions in a loop and
-passing in the interval $t_{min}$, $t_{max}$ we get:
+because in a ray tracer all cases come up eventually). With all three dimensions in a loop, and
+passing in the interval $[t_{min}$, $t_{max}]$, we get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -580,9 +580,9 @@ standard library `fmax()` utility. `ffmax()` is quite a bit faster because it do
 `NaN`s and other exceptions.
 
 <div class='together'>
-In reviewing this intersection method, Andrew Kensler at Pixar tried some experiments and has
-proposed this version of the code which works extremely well on many compilers, and I have adopted
-it as my go-to method:
+In reviewing this intersection method, Andrew Kensler at Pixar tried some experiments and proposed
+the following version of the code. It works extremely well on many compilers, and I have adopted it
+as my go-to method:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline bool aabb::hit(const ray& r, double tmin, double tmax) const {
@@ -605,10 +605,10 @@ it as my go-to method:
 
 <div class='together'>
 We now need to add a function to compute the bounding boxes of all the hittables. Then we will make
-a hierarchy of boxes over all the primitives and the individual primitives, like spheres, will live
+a hierarchy of boxes over all the primitives, and the individual primitives--like spheres--will live
 at the leaves. That function returns a bool because not all primitives have bounding boxes (_e.g._,
-infinite planes). In addition, objects move so it takes `time1` and `time2` for the interval of the
-frame and the bounding box will bound the object moving through that interval.
+infinite planes). In addition, moving objects will have a bounding box that encloses the object for
+the entire time interval [`time1`,`time2`].
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable {
@@ -959,7 +959,7 @@ now you should replace the `vec3(...)` with `make_shared<constant_texture>(vec3(
 
 <div class='together'>
 We can create a checker texture by noting that the sign of sine and cosine just alternates in a
-regular way and if we multiply trig functions in all three dimensions, the sign of that product
+regular way, and if we multiply trig functions in all three dimensions, the sign of that product
 forms a 3D checker pattern.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1502,7 +1502,7 @@ This finally gives something more reasonable looking:
 
 <div class='together'>
 Very often, a composite noise that has multiple summed frequencies is used. This is usually called
-turbulence and is a sum of repeated calls to noise:
+turbulence, and is a sum of repeated calls to noise:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin {
@@ -1585,8 +1585,8 @@ We used the hitpoint p before to index a procedure solid texture like marble. We
 image and use a 2D $(u,v)$ texture coordinate to index into the image.
 
 <div class='together'>
-A direct way to use scaled $(u,v)$ in an image is to round the u and v to integers, and use that as
-$(i,j)$ pixels. This is awkward, because we don’t want to have to change the code when we change
+A direct way to use scaled $(u,v)$ in an image is to round the $u$ and $v$ to integers, and use that
+as $(i,j)$ pixels. This is awkward, because we don’t want to have to change the code when we change
 image resolution. So instead, one of the the most universal unofficial standards in graphics is to
 use texture coordinates instead of image pixel coordinates. These are just some form of fractional
 position in the image. For example, for pixel $(i,j)$ in an $N_x$ by $N_y$ image, the image texture
@@ -1617,8 +1617,8 @@ unit radius sphere on the origin is:
 </div>
 
 <div class='together'>
-We need to invert that. Because of the lovely `<cmath>` function `atan2()` which takes any number
-proportional to sine and cosine and returns the angle, we can pass in $x$ and $y$ (the
+We need to invert that. Because of the lovely `<cmath>` function `atan2()` (which takes any number
+proportional to sine and cosine and returns the angle), we can pass in $x$ and $y$ (the
 $\cos(\theta)$ cancel):
 
   $$ \phi = \text{atan2}(y, x) $$
@@ -2494,7 +2494,7 @@ Volumes
 One thing it’s nice to add to a ray tracer is smoke/fog/mist. These are sometimes called _volumes_
 or _participating media_. Another feature that is nice to add is subsurface scattering, which is
 sort of like dense fog inside an object. This usually adds software architectural mayhem because
-volumes are a different animal than surfaces. But a cute technique is to make a volume a random
+volumes are a different animal than surfaces, but a cute technique is to make a volume a random
 surface. A bunch of smoke can be replaced with a surface that probabilistically might or might not
 be there at every point in the volume. This will make more sense when you see the code.
 
@@ -2631,8 +2631,8 @@ not work with toruses or shapes that contain voids. It's possible to write an im
 handles arbitrary shapes, but we'll leave that as an exercise for the reader.
 
 <div class='together'>
-If we replace the two blocks with smoke and fog (dark and light particles) and make the light bigger
-(and dimmer so it doesn’t blow out the scene) for faster convergence:
+If we replace the two blocks with smoke and fog (dark and light particles), and make the light
+bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable_list cornell_smoke() {
