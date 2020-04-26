@@ -3,7 +3,7 @@
 
 
 
-                               *Ray Tracing: The Rest of Your Life**
+                               **Ray Tracing: The Rest of Your Life**
                                            Peter Shirley
                           edited by Steve Hollasch and Trevor David Black
                                                 <br>
@@ -732,11 +732,12 @@ $s$, and let’s call that $pSurface(direction)$. A great thing about PDFs is th
 linear mixtures of them to form mixture densities that are also PDFs. For example, the simplest
 would be:
 
-  $$ p(direction) = \frac{1}{2}\cdotp Light(direction) + \frac{1}{2}\cdot pSurface(direction) $$
+  $$ p(direction) = \frac{1}{2}\cdotp \text{Light}(direction)
+                  + \frac{1}{2}\cdot \text{pSurface}(direction) $$
 </div>
 
 As long as the weights are positive and add up to one, any such mixture of PDFs is a PDF. Remember,
-we can use any PDF: _all PDF eventually converge to the correct answer_. So, the game is to figure
+we can use any PDF: _all PDFs eventually converge to the correct answer_. So, the game is to figure
 out how to make the PDF larger where the product $s(direction) \cdot color(direction)$ is large. For
 diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is high.
 
@@ -1091,7 +1092,7 @@ it by hand:
 
 <div class='together'>
 Now for integration with importance sampling. $p(direction) = \frac{1}{2\pi}$, so we average $f/p$
-which is $\cos^3(\theta) / (1/(2 \pi))$, and we can test this:
+which is $\cos^3(\theta) / (1/2\pi)$, and we can test this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
@@ -1188,19 +1189,18 @@ world. A picture is a result of the relative positions/orientations of the camer
 long as the camera and scene are described in the same coordinate system, all is well.
 
 <div class='together'>
-Suppose we have an origin $\mathbf{o}$ and cartesian unit vectors $\vec{\mathbf{x}}$,
-$\vec{\mathbf{y}}$, and $\vec{\mathbf{z}}$. When we say a location is (3, -2, 7), we really are
-saying:
+Suppose we have an origin $\mathbf{O}$ and cartesian unit vectors $\mathbf{x}$, $\mathbf{y}$, and
+$\mathbf{z}$. When we say a location is (3,-2,7), we really are saying:
 
-  $$ \text{Location is } \mathbf{o} + 3\vec{\mathbf{x}} - 2\vec{\mathbf{y}} + 7\vec{\mathbf{z}} $$
+  $$ \text{Location is } \mathbf{O} + 3\mathbf{x} - 2\mathbf{y} + 7\mathbf{z} $$
 </div>
 
 <div class='together'>
-If we want to measure coordinates in another coordinate system with origin $\mathbf{o}'$ and basis
-vectors $\vec{\mathbf{u}}$, $\vec{\mathbf{v}}$, and $\vec{\mathbf{w}}$, we can just find the numbers
-$(u, v, w)$ such that:
+If we want to measure coordinates in another coordinate system with origin $\mathbf{O}'$ and basis
+vectors $\mathbf{u}$, $\mathbf{v}$, and $\mathbf{w}$, we can just find the numbers $(u,v,w)$ such
+that:
 
-  $$ \text{Location is } \mathbf{o}' + u\vec{\mathbf{u}} + v\vec{\mathbf{v}} + w\vec{\mathbf{w}} $$
+  $$ \text{Location is } \mathbf{O}' + u\mathbf{u} + v\mathbf{v} + w\mathbf{w} $$
 </div>
 
 
@@ -1209,32 +1209,30 @@ Generating an Orthonormal Basis
 If you take an intro graphics course, there will be a lot of time spent on coordinate systems and
 4×4 coordinate transformation matrices. Pay attention, it’s important stuff in graphics! But we
 won’t need it. What we need to is generate random directions with a set distribution relative to
-$\vec{\mathbf{n}}$. We don’t need an origin because a direction is relative to no specified origin.
-We do need two cotangent vectors that are mutually perpendicular to $\vec{\mathbf{n}}$ and to each
-other.
+$\mathbf{n}$. We don’t need an origin because a direction is relative to no specified origin. We do
+need two cotangent vectors that are mutually perpendicular to $\mathbf{n}$ and to each other.
 
 <div class='together'>
 Some models will come with one or more cotangent vectors. If our model has only one cotangent
 vector, then the process of making an ONB is a nontrivial one. Suppose we have any vector
-$\vec{\mathbf{a}}$ that is of nonzero length and not parallel to $\vec{\mathbf{n}}$. We can get
-vectors $\vec{\mathbf{s}}$ and $\vec{\mathbf{t}}$ perpendicular to $\vec{\mathbf{n}}$ by using the
-property of the cross product that $\vec{\mathbf{c}} \times \vec{\mathbf{d}}$ is perpendicular to
-both $\vec{\mathbf{c}}$ and $\vec{\mathbf{d}}$:
+$\mathbf{a}$ that is of nonzero length and not parallel to $\mathbf{n}$. We can get
+vectors $\mathbf{s}$ and $\mathbf{t}$ perpendicular to $\mathbf{n}$ by using the
+property of the cross product that $\mathbf{c} \times \mathbf{d}$ is perpendicular to
+both $\mathbf{c}$ and $\mathbf{d}$:
 
-  $$ \vec{\mathbf{t}} = \text{unit_vector}(\vec{\mathbf{a}} \times \vec{\mathbf{n}}) $$
+  $$ \mathbf{t} = \text{unit_vector}(\mathbf{a} \times \mathbf{n}) $$
 
-  $$ \vec{\mathbf{s}} = \vec{\mathbf{t}} \times \vec{\mathbf{n}} $$
+  $$ \mathbf{s} = \mathbf{t} \times \mathbf{n} $$
 </div>
 
 <div class='together'>
-This is all well and good, but the catch is that we may not be given an $\vec{\mathbf{a}}$ when we
-load a model, and we don't have an $\vec{\mathbf{a}}$ with our existing program. If we went ahead
-and picked an arbitrary $\vec{\mathbf{a}}$ to use as our initial vector we may get an
-$\vec{\mathbf{a}}$ that is parallel to $\vec{\mathbf{n}}$. A common method is to use an
-if-statement to determine whether $\vec{\mathbf{n}}$ is a particular axis, and if not, use that
-axis.
+This is all well and good, but the catch is that we may not be given an $\mathbf{a}$ when we load a
+model, and we don't have an $\mathbf{a}$ with our existing program. If we went ahead and picked an
+arbitrary $\mathbf{a}$ to use as our initial vector we may get an $\mathbf{a}$ that is parallel to
+$\mathbf{n}$. A common method is to use an if-statement to determine whether $\mathbf{n}$ is a
+particular axis, and if not, use that axis.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none
     if absolute(n.x > 0.9)
         a ← (0, 1, 0)
     else
@@ -1243,10 +1241,10 @@ axis.
 </div>
 
 <div class='together'>
-Once we have an ONB of $\vec{\mathbf{s}}$, $\vec{\mathbf{t}}$, and $\vec{\mathbf{n}}$ and we have a
-$random(x,y,z)$ relative to the Z-axis we can get the vector relative to $\vec{\mathbf{n}}$ as:
+Once we have an ONB of $\mathbf{s}$, $\mathbf{t}$, and $\mathbf{n}$ and we have a $random(x,y,z)$
+relative to the Z-axis we can get the vector relative to $\mathbf{n}$ as:
 
-  $$ \text{Random vector} = x \vec{\mathbf{s}} + y \vec{\mathbf{t}} + z \vec{\mathbf{n}} $$
+  $$ \text{Random vector} = x \mathbf{s} + y \mathbf{t} + z \mathbf{n} $$
 </div>
 
 <div class='together'>
@@ -1479,7 +1477,6 @@ We also need to flip the light so its normals point in the -y direction and we g
 Mixture Densities
 ====================================================================================================
 
-<div class='together'>
 We have used a PDF related to $\cos(\theta)$, and a PDF related to sampling the light. We would like
 a PDF that combines these.
 
@@ -1489,26 +1486,26 @@ An Average of Lighting and Reflection
 A common tool in probability is to mix the densities to form a mixture density. Any weighted average
 of PDFs is a PDF. For example, we could just average the two densities:
 
-  $$ pdf\_mixture(direction) = \frac{1}{2} pdf\_reflection(direction) +
-        \frac{1}{2}pdf\_light(direction)
+  $$ \text{mixture}_\text{pdf}(direction) = \frac{1}{2} \text{reflection}_\text{pdf}(direction)
+                                          + \frac{1}{2} \text{light}_\text{pdf}(direction)
   $$
-</div>
 
 <div class='together'>
 How would we instrument our code to do that? There is a very important detail that makes this not
 quite as easy as one might expect. Choosing the random direction is simple:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none
     if (random_double() < 0.5)
-        Pick direction according to pdf_reflection
+        pick direction according to pdf_reflection
     else
-        Pick direction according to pdf_light
+        pick direction according to pdf_light
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
-But evaluating $pdf\_mixture$ is slightly more subtle. We need to evaluate both $pdf\_reflection$
-and $pdf\_light$ because there are some directions where either PDF could have generated the
-direction. For example, we might generate a direction toward the light using $pdf\_reflection$.
+But evaluating $\text{mixture}_\text{pdf}$ is slightly more subtle. We need to evaluate both
+$\text{reflection}_\text{pdf}$ and $\text{light}_\text{pdf}$ because there are some directions where
+either PDF could have generated the direction. For example, we might generate a direction toward the
+light using $\text{reflection}_\text{pdf}$.
 
 <div class='together'>
 If we step back a bit, we see that there are two functions a PDF needs to support:
@@ -1519,10 +1516,10 @@ If we step back a bit, we see that there are two functions a PDF needs to suppor
 </div>
 
 <div class='together'>
-The details of how this is done under the hood varies for the $pdf\_reflection$ and the $pdf\_light$
-and the mixture density of the two of them, but that is exactly what class hierarchies were invented
-for! It’s never obvious what goes in an abstract class, so my approach is to be greedy and hope a
-minimal interface works, and for the PDF this implies:
+The details of how this is done under the hood varies for the $\text{reflection}_\text{pdf}$ and the
+$\text{light}_\text{pdf}$ and the mixture density of the two of them, but that is exactly what class
+hierarchies were invented for! It’s never obvious what goes in an abstract class, so my approach is
+to be greedy and hope a minimal interface works, and for the PDF this implies:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class pdf {
@@ -1907,9 +1904,9 @@ and glass code anyway, so I add perfect specular surfaces that do not do explici
 calculations.
 
 We also lack a real background function infrastructure in case we want to add an environment map or
-more interesting functional background. Some environment maps are HDR (the R/G/B components are
-floats rather than 0–255 bytes usually interpreted as 0-1). Our output has been HDR all along and
-we’ve just been truncating it.
+more interesting functional background. Some environment maps are HDR (the RGB components are floats
+rather than 0–255 bytes usually interpreted as 0-1). Our output has been HDR all along and we’ve
+just been truncating it.
 
 Finally, our renderer is RGB and a more physically based one -- like an automobile manufacturer
 might use -- would probably need to use spectral colors and maybe even polarization. For a movie

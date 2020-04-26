@@ -391,19 +391,19 @@ The ray Class
 --------------
 <div class='together'>
 The one thing that all ray tracers have is a ray class, and a computation of what color is seen
-along a ray. Let’s think of a ray as a function $\mathbf{p}(t) = \mathbf{a} + t \vec{\mathbf{b}}$.
-Here $\mathbf{p}$ is a 3D position along a line in 3D. $\mathbf{a}$ is the ray origin and
-$\vec{\mathbf{b}}$ is the ray direction. The ray parameter $t$ is a real number (`double` in the
-code). Plug in a different $t$ and $p(t)$ moves the point along the ray. Add in negative $t$ and you
-can go anywhere on the 3D line. For positive $t$, you get only the parts in front of $\mathbf{a}$,
-and this is what is often called a half-line or ray.
+along a ray. Let’s think of a ray as a function $\mathbf{P}(t) = \mathbf{A} + t \mathbf{b}$. Here
+$\mathbf{P}$ is a 3D position along a line in 3D. $\mathbf{A}$ is the ray origin and $\mathbf{b}$ is
+the ray direction. The ray parameter $t$ is a real number (`double` in the code). Plug in a
+different $t$ and $\mathbf{P}(t)$ moves the point along the ray. Add in negative $t$ and you can go
+anywhere on the 3D line. For positive $t$, you get only the parts in front of $\mathbf{A}$, and this
+is what is often called a half-line or ray.
 
   ![Figure [lerp]: Linear interpolation](../images/fig.lerp.jpg)
 
 </div>
 
 <div class='together'>
-The function $p(t)$ in more verbose code form I call `ray::at(t)`:
+The function $\mathbf{P}(t)$ in more verbose code form I call `ray::at(t)`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef RAY_H
@@ -529,66 +529,66 @@ with $t$ going from zero to one. In our case this produces:
 Adding a Sphere
 ====================================================================================================
 
-<div class='together'>
 Let’s add a single object to our ray tracer. People often use spheres in ray tracers because
 calculating whether a ray hits a sphere is pretty straightforward.
 
 
 Ray-Sphere Intersection
 ------------------------
+<div class='together'>
 Recall that the equation for a sphere centered at the origin of radius $R$ is $x^2 + y^2 + z^2 =
 R^2$. Put another way, if a given point $(x,y,z)$ is on the sphere, then $x^2 + y^2 + z^2 = R^2$. If
 the given point $(x,y,z)$ is _inside_ the sphere, then $x^2 + y^2 + z^2 < R^2$, and if a given point
 $(x,y,z)$ is _outside_ the sphere, then $x^2 + y^2 + z^2 > R^2$.
 
-It gets uglier if the sphere center is at $(\mathbf{c}_x, \mathbf{c}_y, \mathbf{c}_z)$:
+It gets uglier if the sphere center is at $(C_x, C_y, C_z)$:
 
-  $$ (x-\mathbf{c}_x)^2 + (y-\mathbf{c}_y)^2 + (z-\mathbf{c}_z)^2 = R^2 $$
+  $$ (x - C_x)^2 + (y - C_y)^2 + (z - C_z)^2 = r^2 $$
 </div>
 
 <div class='together'>
 In graphics, you almost always want your formulas to be in terms of vectors so all the x/y/z stuff
 is under the hood in the `vec3` class. You might note that the vector from center
-$\mathbf{c} = (\mathbf{c}_x,\mathbf{c}_y,\mathbf{c}_z)$ to point $\mathbf{P} = (x,y,z)$ is
-$(\mathbf{p} - \mathbf{c})$, and therefore
+$\mathbf{C} = (C_x,C_y,C_z)$ to point $\mathbf{P} = (x,y,z)$ is $(\mathbf{P} - \mathbf{C})$, and
+therefore
 
-  $$ (\mathbf{p} - \mathbf{c}) \cdot (\mathbf{p} - \mathbf{c})
-     = (x-\mathbf{c}_x)^2 + (y-\mathbf{c}_y)^2 + (z-\mathbf{c}_z)^2
+  $$ (\mathbf{P} - \mathbf{C}) \cdot (\mathbf{P} - \mathbf{C})
+     = (x - C_x)^2 + (y - C_y)^2 + (z - C_z)^2
   $$
 </div>
 
 <div class='together'>
 So the equation of the sphere in vector form is:
 
-  $$ (\mathbf{p} - \mathbf{c}) \cdot (\mathbf{p} - \mathbf{c}) = R^2 $$
+  $$ (\mathbf{P} - \mathbf{C}) \cdot (\mathbf{P} - \mathbf{C}) = r^2 $$
 </div>
 
 <div class='together'>
-We can read this as “any point $\mathbf{p}$ that satisfies this equation is on the sphere”. We want
-to know if our ray $p(t) = \mathbf{a} + t\vec{\mathbf{b}}$ ever hits the sphere anywhere. If it does
-hit the sphere, there is some $t$ for which $p(t)$ satisfies the sphere equation. So we are looking
-for any $t$ where this is true:
+We can read this as “any point $\mathbf{P}$ that satisfies this equation is on the sphere”. We want
+to know if our ray $\mathbf{P}(t) = \mathbf{A} + t\mathbf{b}$ ever hits the sphere anywhere. If it
+does hit the sphere, there is some $t$ for which $\mathbf{P}(t)$ satisfies the sphere equation. So
+we are looking for any $t$ where this is true:
 
-  $$ (p(t) - \mathbf{c})\cdot(p(t) - \mathbf{c}) = R^2 $$
+  $$ (\mathbf{P}(t) - \mathbf{C}) \cdot (\mathbf{P}(t) - \mathbf{C}) = r^2 $$
 
-or expanding the full form of the ray $p(t)$:
+or expanding the full form of the ray $\mathbf{P}(t)$:
 
-  $$ (\mathbf{a} + t \vec{\mathbf{b}} - \mathbf{c})
-      \cdot (\mathbf{a} + t \vec{\mathbf{b}} - \mathbf{c}) = R^2 $$
+  $$ (\mathbf{A} + t \mathbf{b} - \mathbf{C})
+      \cdot (\mathbf{A} + t \mathbf{b} - \mathbf{C}) = r^2 $$
 </div>
 
 <div class='together'>
 The rules of vector algebra are all that we would want here, and if we expand that equation and
 move all the terms to the left hand side we get:
 
-  $$ t^2 \vec{\mathbf{b}}\cdot\vec{\mathbf{b}}
-     + 2t \vec{\mathbf{b}} \cdot \vec{(\mathbf{a}-\mathbf{c})}
-     + \vec{(\mathbf{a}-\mathbf{c})} \cdot \vec{(\mathbf{a}-\mathbf{c})} - R^2 = 0
+  $$ t^2 \mathbf{b} \cdot \mathbf{b}
+     + 2t \mathbf{b} \cdot (\mathbf{A}-\mathbf{C})
+     + (\mathbf{A}-\mathbf{C}) \cdot (\mathbf{A}-\mathbf{C}) - r^2 = 0
   $$
 </div>
 
 <div class='together'>
-The vectors and $R$ in that equation are all constant and known. The unknown is $t$, and the
+The vectors and $r$ in that equation are all constant and known. The unknown is $t$, and the
 equation is a quadratic, like you probably saw in your high school math class. You can solve for $t$
 and there is a square root part that is either positive (meaning two real solutions), negative
 (meaning no real solutions), or zero (meaning one real solution). In graphics, the algebra almost
@@ -669,11 +669,11 @@ the direction of the hit point minus the center:
 On the earth, this implies that the vector from the earth’s center to you points straight up. Let’s
 throw that into the code now, and shade it. We don’t have any lights or anything yet, so let’s just
 visualize the normals with a color map. A common trick used for visualizing normals (because it’s
-easy and somewhat intuitive to assume $\vec{\mathbf{N}}$ is a unit length vector -- so each
+easy and somewhat intuitive to assume $\mathbf{n}$ is a unit length vector -- so each
 component is between -1 and 1) is to map each component to the interval from 0 to 1, and then map
 x/y/z to r/g/b. For the normal, we need the hit point, not just whether we hit or not. Let’s assume
 the closest hit point (smallest $t$). These changes in the code let us compute and visualize
-$\vec{\mathbf{N}}$:
+$\mathbf{n}$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     double hit_sphere(const point3& center, double radius, const ray& r) {
@@ -1466,12 +1466,13 @@ the chapter.)
 
 <div class='together'>
 There are two unit radius spheres tangent to the hit point $p$ of a surface. These two spheres have
-a center of $(p + \vec{N})$ and $(p - \vec{N})$, where $\vec{N}$ is the normal of the surface. The
-sphere with a center at $(p - \vec{N})$ is considered _inside_ the surface, whereas the sphere with
-center $(p + \vec{N})$ is considered _outside_ the surface. Select the tangent unit radius sphere
-that is on the same side of the surface as the ray origin. Pick a random point $s$ inside this unit
-radius sphere and send a ray from the hit point $p$ to the random point $s$ (this is the vector
-$(s-p)$):
+a center of $(\mathbf{P} + \mathbf{n})$ and $(\mathbf{P} - \mathbf{n})$, where $\mathbf{n}$ is the
+normal of the surface. The sphere with a center at $(\mathbf{P} - \mathbf{n})$ is considered
+_inside_ the surface, whereas the sphere with center $(\mathbf{P} + \mathbf{n})$ is considered
+_outside_ the surface. Select the tangent unit radius sphere that is on the same side of the surface
+as the ray origin. Pick a random point $\mathbf{S}$ inside this unit radius sphere and send a ray
+from the hit point $\mathbf{P}$ to the random point $\mathbf{S}$ (this is the vector
+$(\mathbf{S}-\mathbf{P})$):
 
   ![Figure [rand-vector]: Generating a random diffuse bounce ray](../images/fig.rand-vector.jpg)
 
@@ -2020,10 +2021,9 @@ reflected from a metal mirror? Vector math is our friend here:
 </div>
 
 <div class='together'>
-The reflected ray direction in red is just $\vec{\mathbf{V}} + 2\vec{\mathbf{B}}$. In our design,
-$\vec{\mathbf{N}}$ is a unit vector, but $\vec{\mathbf{V}}$ may not be. The length of
-$\vec{\mathbf{B}}$ should be $\vec{\mathbf{V}} \cdot \vec{\mathbf{N}}$. Because $\vec{\mathbf{V}}$
-points in, we will need a minus sign, yielding:
+The reflected ray direction in red is just $\mathbf{v} + 2\mathbf{b}$. In our design, $\mathbf{n}$
+is a unit vector, but $\mathbf{v}$ may not be. The length of $\mathbf{b}$ should be $\mathbf{v}
+\cdot \mathbf{n}$. Because $\mathbf{v}$ points in, we will need a minus sign, yielding:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 reflect(const vec3& v, const vec3& n) {
@@ -2256,15 +2256,15 @@ In order to determine the direction of the refracted ray, we have to solve for $
   $$ \sin\theta' = \frac{\eta}{\eta'} \cdot \sin\theta $$
 
 On the refracted side of the surface there is a refracted ray $\mathbf{R'}$ and a normal
-$\mathbf{N'}$, and there exists an angle, $\theta'$, between them. We can split $\mathbf{R'}$ into
-the parts of the ray that are parallel to $\mathbf{N'}$ and perpendicular to $\mathbf{N'}$:
+$\mathbf{n'}$, and there exists an angle, $\theta'$, between them. We can split $\mathbf{R'}$ into
+the parts of the ray that are parallel to $\mathbf{n'}$ and perpendicular to $\mathbf{n'}$:
 
   $$ \mathbf{R'} = \mathbf{R'}_{\parallel} + \mathbf{R'}_{\bot} $$
 
 If we solve for $\mathbf{R'}_{\parallel}$ and $\mathbf{R'}_{\bot}$ we get:
 
-  $$ \mathbf{R'}_{\parallel} = \frac{\eta}{\eta'} (\mathbf{R} + \cos\theta \mathbf{N}) $$
-  $$ \mathbf{R'}_{\bot} = -\sqrt{1 - |\mathbf{R'}_{\parallel}|^2} \mathbf{N} $$
+  $$ \mathbf{R'}_{\parallel} = \frac{\eta}{\eta'} (\mathbf{R} + \cos\theta \mathbf{n}) $$
+  $$ \mathbf{R'}_{\bot} = -\sqrt{1 - |\mathbf{R'}_{\parallel}|^2} \mathbf{n} $$
 
 You can go ahead and prove this for yourself if you want, but we will treat it as fact and move on.
 The rest of the book will not require you to understand the proof.
@@ -2272,16 +2272,16 @@ The rest of the book will not require you to understand the proof.
 We still need to solve for $\cos\theta$. It is well known that the dot product of two vectors can
 be explained in terms of the cosine of the angle between them:
 
-  $$ \mathbf{A} \cdot \mathbf{B} = |\mathbf{A}| |\mathbf{B}| \cos\theta $$
+  $$ \mathbf{a} \cdot \mathbf{b} = |\mathbf{a}| |\mathbf{b}| \cos\theta $$
 
-If we restrict $\mathbf{A}$ and $\mathbf{B}$ to be unit vectors:
+If we restrict $\mathbf{a}$ and $\mathbf{b}$ to be unit vectors:
 
-  $$ \mathbf{A} \cdot \mathbf{B} = \cos\theta $$
+  $$ \mathbf{a} \cdot \mathbf{b} = \cos\theta $$
 
 We can now rewrite $\mathbf{R'}_{\parallel}$ in terms of known quantities:
 
   $$ \mathbf{R'}_{\parallel} =
-     \frac{\eta}{\eta'} (\mathbf{R} + (\mathbf{-R} \cdot \mathbf{N}) \mathbf{N}) $$
+     \frac{\eta}{\eta'} (\mathbf{R} + (\mathbf{-R} \cdot \mathbf{n}) \mathbf{n}) $$
 
 When we combine them back together, we can write a function to calculate $\mathbf{R'}$:
 
@@ -2382,7 +2382,7 @@ We can solve for `sin_theta` using the trigonometric qualities:
 
 and
 
-  $$ \cos\theta = \mathbf{R} \cdot \mathbf{N} $$
+  $$ \cos\theta = \mathbf{R} \cdot \mathbf{n} $$
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     double cos_theta = ffmin(dot(-unit_direction, rec.normal), 1.0);
