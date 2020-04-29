@@ -1,8 +1,14 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
+# v3.1.1 (in progress)
 
-# v3.1.0 (in progress)
+### _The Next Week_
+- Fix: Introduce Texture Coordinates for Spheres in Chapter 4 to support (u,v) in hit_record (#496)
+
+
+----------------------------------------------------------------------------------------------------
+# v3.1.0 (2020-05-03)
 
 ### Common
 - Fix: Scattered improvements to the text.
@@ -270,4 +276,3 @@ typesetting and source-code cleanup.
 # v1.42.0  (2018-08-26)
 
 - New: First GitHub release of _Ray Tracing: The Next Week_.
-

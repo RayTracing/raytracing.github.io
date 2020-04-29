@@ -957,6 +957,71 @@ ray-object hit point.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hit-record-uv]: <kbd>[hittable.h]</kbd> Adding U,V coordinates to the `hit_record`]
 
+We will also need to compute $(u,v)$ texture coordinates for hittables.
+
+Texture Coordinates for Spheres
+--------------------------------
+For spheres, this is usually based on some form of longitude and latitude, _i.e._, spherical
+coordinates. So if we have a $(\theta,\phi)$ in spherical coordinates, we just need to scale
+$\theta$ and $\phi$ to fractions. If $\theta$ is the angle down from the pole, and $\phi$ is the
+angle around the axis through the poles, the normalization to $[0,1]$ would be:
+
+  $$ u = \frac{\phi}{2\pi} $$
+  $$ v = \frac{\theta}{\pi} $$
+</div>
+
+<div class='together'>
+To compute $\theta$ and $\phi$, for a given hitpoint, the formula for spherical coordinates of a
+unit radius sphere on the origin is:
+
+  $$ x = \cos(\phi) \cos(\theta) $$
+  $$ y = \sin(\phi) \cos(\theta) $$
+  $$ z = \sin(\theta) $$
+</div>
+
+<div class='together'>
+We need to invert that. Because of the lovely `<cmath>` function `atan2()` which takes any number
+proportional to sine and cosine and returns the angle, we can pass in $x$ and $y$ (the
+$\cos(\theta)$ cancel):
+
+  $$ \phi = \text{atan2}(y, x) $$
+</div>
+
+<div class='together'>
+The $atan2$ returns values in the range $-\pi$ to $\pi$, so we need to take a little care there.
+The $\theta$ is more straightforward:
+
+  $$ \theta = \text{asin}(z) $$
+
+which returns numbers in the range $-\pi/2$ to $\pi/2$.
+</div>
+
+<div class='together'>
+So for a sphere, the $(u,v)$ coord computation is accomplished by a utility function that expects
+things on the unit sphere centered at the origin. The call inside sphere::hit should be:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [get-sphere-uv-call]: <kbd>[sphere.h]</kbd> Sphere UV coordinates from hit]
+</div>
+
+<div class='together'>
+The utility function is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    void get_sphere_uv(const vec3& p, double& u, double& v) {
+        auto phi = atan2(p.z(), p.x());
+        auto theta = asin(p.y());
+        u = 1-(phi + pi) / (2*pi);
+        v = (theta + pi/2) / pi;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [get-sphere-uv]: <kbd>[sphere.h]</kbd> get_sphere_uv function]
+</div>
+
+
+
 <div class='together'>
 Now we can make textured materials by replacing the `const color& a` with a texture pointer:
 
@@ -1604,8 +1669,9 @@ Which yields:
 Image Texture Mapping
 ====================================================================================================
 
-We used the hitpoint p before to index a procedure solid texture like marble. We can also read in an
-image and use a 2D $(u,v)$ texture coordinate to index into the image.
+We used the hitpoint p before to compute $(u,v)$ surface coordinates to index a procedure solid
+texture like marble. We can also read in an image and use the 2D $(u,v)$ texture coordinate to
+index into the image.
 
 <div class='together'>
 A direct way to use scaled $(u,v)$ in an image is to round the $u$ and $v$ to integers, and use that
@@ -1619,71 +1685,7 @@ position is:
   $$ v = \frac{j}{N_y-1} $$
 </div>
 
-<div class='together'>
-This is just a fractional position. For a hittable, we need to also return a $u$ and $v$ in the hit
-record.
-
-
-Texture Coordinates for Spheres
---------------------------------
-For spheres, this is usually based on some form of longitude and latitude, _i.e._, spherical
-coordinates. So if we have a $(\theta,\phi)$ in spherical coordinates, we just need to scale
-$\theta$ and $\phi$ to fractions. If $\theta$ is the angle down from the pole, and $\phi$ is the
-angle around the axis through the poles, the normalization to $[0,1]$ would be:
-
-  $$ u = \frac{\phi}{2\pi} $$
-  $$ v = \frac{\theta}{\pi} $$
-</div>
-
-<div class='together'>
-To compute $\theta$ and $\phi$, for a given hitpoint, the formula for spherical coordinates of a
-unit radius sphere on the origin is:
-
-  $$ x = \cos(\phi) \cos(\theta) $$
-  $$ y = \sin(\phi) \cos(\theta) $$
-  $$ z = \sin(\theta) $$
-</div>
-
-<div class='together'>
-We need to invert that. Because of the lovely `<cmath>` function `atan2()` (which takes any number
-proportional to sine and cosine and returns the angle), we can pass in $x$ and $y$ (the
-$\cos(\theta)$ cancel):
-
-  $$ \phi = \text{atan2}(y, x) $$
-</div>
-
-<div class='together'>
-The $atan2$ returns values in the range $-\pi$ to $\pi$, so we need to take a little care there.
-The $\theta$ is more straightforward:
-
-  $$ \theta = \text{asin}(z) $$
-
-which returns numbers in the range $-\pi/2$ to $\pi/2$.
-</div>
-
-<div class='together'>
-So for a sphere, the $(u,v)$ coord computation is accomplished by a utility function that expects
-things on the unit sphere centered at the origin. The call inside sphere::hit should be:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [get-sphere-uv-call]: <kbd>[sphere.h]</kbd> Sphere UV coordinates from hit]
-</div>
-
-<div class='together'>
-The utility function is:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void get_sphere_uv(const vec3& p, double& u, double& v) {
-        auto phi = atan2(p.z(), p.x());
-        auto theta = asin(p.y());
-        u = 1-(phi + pi) / (2*pi);
-        v = (theta + pi/2) / pi;
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [get-sphere-uv]: <kbd>[sphere.h]</kbd> get_sphere_uv function]
-</div>
+This is just a fractional position.
 
 
 Storing Texture Image Data
@@ -2152,7 +2154,7 @@ Let’s make the 5 walls and the light of the box:
         objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
         objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
         objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
-        objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));     
+        objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
         return objects;
     }
