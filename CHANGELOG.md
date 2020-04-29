@@ -24,6 +24,7 @@ Change Log -- Ray Tracing in One Weekend
 
 ### _The Next Week_
 - Change: Large rewrite of the `image_texture` class. Now handles image loading too. (#434)
+- Fix: Introduce Texture Coordinates for Spheres in Chapter 4 to support (u,v) in hit_record (#496)
 
 
 ---------------------------------------------------------------------------------------------------
