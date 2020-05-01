@@ -17,7 +17,7 @@ Overview
 ====================================================================================================
 
 I’ve taught many graphics classes over the years. Often I do them in ray tracing, because you are
-forced to write all the code but you can still get cool images with no API. I decided to adapt my
+forced to write all the code, but you can still get cool images with no API. I decided to adapt my
 course notes into a how-to, to get you to a cool program as quickly as possible. It will not be a
 full-featured ray tracer, but it does have the indirect lighting which has made ray tracing a staple
 in movies. Follow these steps, and the architecture of the ray tracer you produce will be good for
@@ -64,7 +64,7 @@ Output an Image
 ====================================================================================================
 
 Whenever you start a renderer, you need a way to see an image. The most straightforward way is to
-write it to a file. The catch is, there are so many formats and many of those are complex. I always
+write it to a file. The catch is, there are so many formats. Many of those are complex. I always
 start with a plain text ppm file. Here’s a nice description from Wikipedia:
 
   ![](../images/img.ppm-example.jpg)
@@ -355,9 +355,9 @@ Rays, a Simple Camera, and Background
 ====================================================================================================
 
 <div class='together'>
-The one thing that all ray tracers have is a ray class, and a computation of what color is seen
-along a ray. Let’s think of a ray as a function $\mathbf{p}(t) = \mathbf{a} + t \vec{\mathbf{b}}$.
-Here $\mathbf{p}$ is a 3D position along a line in 3D. $\mathbf{a}$ is the ray origin and
+The one thing that all ray tracers have is a ray class and a computation of what color is seen along
+a ray. Let’s think of a ray as a function $\mathbf{p}(t) = \mathbf{a} + t \vec{\mathbf{b}}$. Here
+$\mathbf{p}$ is a 3D position along a line in 3D. $\mathbf{a}$ is the ray origin, and
 $\vec{\mathbf{b}}$ is the ray direction. The ray parameter $t$ is a real number (`double` in the
 code). Plug in a different $t$ and $p(t)$ moves the point along the ray. Add in negative $t$ and you
 can go anywhere on the 3D line. For positive $t$, you get only the parts in front of $\mathbf{a}$,
@@ -411,7 +411,7 @@ I’ve often gotten into trouble using square images for debugging because I tra
 often, so I’ll stick with a 200×100 image. I’ll put the “eye” (or camera center if you think of a
 camera) at $(0,0,0)$. I will have the y-axis go up, and the x-axis to the right. In order to respect
 the convention of a right handed coordinate system, into the screen is the negative z-axis. I will
-traverse the screen from the lower left hand corner and use two offset vectors along the screen
+traverse the screen from the lower left hand corner, and use two offset vectors along the screen
 sides to move the ray endpoint across the screen. Note that I do not make the ray direction a unit
 length vector because I think not doing that makes for simpler and slightly faster code.
 
@@ -535,8 +535,8 @@ or expanding the full form of the ray $p(t)$:
 </div>
 
 <div class='together'>
-The rules of vector algebra are all that we would want here, and if we expand that equation and
-move all the terms to the left hand side we get:
+The rules of vector algebra are all that we would want here. If we expand that equation and move all
+the terms to the left hand side we get:
 
   $$ t^2 \vec{\mathbf{b}}\cdot\vec{\mathbf{b}}
      + 2t \vec{\mathbf{b}} \cdot \vec{(\mathbf{a}-\mathbf{c})}
@@ -715,11 +715,11 @@ Using these observations, we can now simplify the sphere-intersection code to th
 
 
 Now, how about several spheres? While it is tempting to have an array of spheres, a very clean
-solution is the make an “abstract class” for anything a ray might hit and make both a sphere and a
+solution is the make an “abstract class” for anything a ray might hit, and make both a sphere and a
 list of spheres just something you can hit. What that class should be called is something of a
 quandary -- calling it an “object” would be good if not for “object oriented” programming. “Surface”
 is often used, with the weakness being maybe we will want volumes. “hittable” emphasizes the member
-function that unites them. I don’t love any of these but I will go with “hittable”.
+function that unites them. I don’t love any of these, but I will go with “hittable”.
 
 <div class='together'>
 This `hittable` abstract class will have a hit function that takes in a ray. Most ray tracers have
@@ -864,11 +864,12 @@ information:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [normals-point-against]: <kbd>[sphere.h]</kbd> Remembering the side of the surface]
 
-The decision whether to have normals always point out or always point against the ray is based on
-whether you want to determine the side of the surface at the time of geometry or at the time of
-coloring. In this book we have more material types than we have geometry types, so we'll go for
-less work and put the determination at geometry time. This is simply a matter of preference and
-you'll see both implementations in the literature.
+We can set things up so that normals always point “outward” from the surface, or always point
+against the incident ray. This decision is determined by whether you want to determine the side of
+the surface at the time of geometry intersection or at the time of coloring. In this book we have
+more material types than we have geometry types, so we'll go for less work and put the determination
+at geometry time. This is simply a matter of preference, and you'll see both implementations in the
+literature.
 
 We add the `front_face` bool to the `hit_record` struct. I know that we’ll also want motion blur at
 some point, so I’ll also add a time input variable.
@@ -1178,7 +1179,7 @@ Antialiasing
 
 When a real camera takes a picture, there are usually no jaggies along edges because the edge pixels
 are a blend of some foreground and some background. We can get the same effect by averaging a bunch
-of samples inside each pixel. We will not bother with stratification, which is controversial but is
+of samples inside each pixel. We will not bother with stratification. This is controversial, but is
 usual for my programs. For some ray tracers it is critical, but the kind of general one we are
 writing doesn’t benefit very much from it and it makes the code uglier. We abstract the camera class
 a bit so we can make a cooler camera later.
@@ -1385,7 +1386,7 @@ ideal diffuse surfaces. (I used to do it as a lazy hack that approximates mathem
 Lambertian.)
 
 (Reader Vassillen Chizhov proved that the lazy hack is indeed just a lazy hack and is inaccurate.
-The correct representation of ideal Lambertian isn't much more work and is presented at the end of
+The correct representation of ideal Lambertian isn't much more work, and is presented at the end of
 the chapter.)
 
 <div class='together'>
@@ -1394,7 +1395,7 @@ a center of $(p + \vec{N})$ and $(p - \vec{N})$, where $\vec{N}$ is the normal o
 sphere with a center at $(p - \vec{N})$ is considered _inside_ the surface, whereas the sphere with
 center $(p + \vec{N})$ is considered _outside_ the surface. Select the tangent unit radius sphere
 that is on the same side of the surface as the ray origin. Pick a random point $s$ inside this unit
-radius sphere and send a ray from the hit point $p$ to the random point $s$ (this is the vector
+radius sphere, and send a ray from the hit point $p$ to the random point $s$ (this is the vector
 $(s-p)$):
 
   ![Figure [rand-vector]: Generating a random diffuse bounce ray](../images/fig.rand-vector.jpg)
@@ -1869,7 +1870,7 @@ within `hit_record`. See the highlighted lines below:
 
 <div class='together'>
 For the Lambertian (diffuse) case we already have, it can either scatter always and attenuate by its
-reflectance $R$, or it can scatter with no attenuation but absorb the fraction $1-R$ of the rays. Or
+reflectance $R$, or it can scatter with no attenuation but absorb the fraction $1-R$ of the rays, or
 it could be a mixture of those strategies. For Lambertian materials we get this simple class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2090,7 +2091,7 @@ Dielectrics
 
 Clear materials such as water, glass, and diamonds are dielectrics. When a light ray hits them, it
 splits into a reflected ray and a refracted (transmitted) ray. We’ll handle that by randomly
-choosing between reflection or refraction and only generating one scattered ray per interaction.
+choosing between reflection or refraction, and only generating one scattered ray per interaction.
 
 <div class='together'>
 The hardest part to debug is the refracted ray. I usually first just have all the light refract if
@@ -2208,7 +2209,7 @@ And the dielectric material that always refracts is:
 
 <div class='together'>
 That definitely doesn't look right. One troublesome practical issue is that when the ray is in the
-material with the higher refractive index, there is no real solution to Snell’s law and thus there
+material with the higher refractive index, there is no real solution to Snell’s law, and thus there
 is no refraction possible. If we refer back to Snell's law and the derivation of $\sin\theta'$:
 
   $$ \sin\theta' = \frac{\eta}{\eta'} \cdot \sin\theta $$
@@ -2221,8 +2222,8 @@ The value of $\sin\theta'$ cannot be greater than 1. So, if,
 
   $$ \frac{1.5}{1.0} \cdot \sin\theta > 1.0 $$
 
-The equality between the two sides of the equation is broken and a solution cannot exist. If a
-solution does not exist the glass cannot refract and must reflect the ray:
+The equality between the two sides of the equation is broken, and a solution cannot exist. If a
+solution does not exist, the glass cannot refract, and therefore must reflect the ray:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     if(etai_over_etat * sin_theta > 1.0) {
@@ -2386,8 +2387,8 @@ This yields our full glass material:
 
 <div class='together'>
 An interesting and easy trick with dielectric spheres is to note that if you use a negative radius,
-the geometry is unaffected but the surface normal points inward, so it can be used as a bubble
-to make a hollow glass sphere:
+the geometry is unaffected, but the surface normal points inward. This can be used as a bubble to
+make a hollow glass sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     world.add(make_shared<sphere>(vec3(0,0,-1), 0.5, make_shared<lambertian>(vec3(0.1, 0.2, 0.5))));
@@ -2606,9 +2607,9 @@ want defocus blur.
 
 <div class="together">
 A real camera has a complicated compound lens. For our code we could simulate the order: sensor,
-then lens, then aperture, and figure out where to send the rays and flip the image once computed
-(the image is projected upside down on the film). Graphics people usually use a thin lens
-approximation:
+then lens, then aperture. Then we could figure out where to send the rays, and flip the image after
+it's computed (the image is projected upside down on the film). Graphics people, however, usually
+use a thin lens approximation:
 
   ![Figure [cam-lens]: Camera lens model](../images/fig.cam-lens.jpg)
 
@@ -2803,35 +2804,35 @@ This gives:
 </div>
 
 An interesting thing you might note is the glass balls don’t really have shadows which makes them
-look like they are floating. This is not a bug (you don’t see glass balls much in real life, where
-they also look a bit strange and indeed seem to float on cloudy days). A point on the big sphere
+look like they are floating. This is not a bug -- you don’t see glass balls much in real life, where
+they also look a bit strange, and indeed seem to float on cloudy days. A point on the big sphere
 under a glass ball still has lots of light hitting it because the sky is re-ordered rather than
 blocked.
 
 You now have a cool ray tracer! What next?
 
-  1. Lights. You can do this explicitly, by sending shadow rays to lights, or it can be done
+  1. Lights -- You can do this explicitly, by sending shadow rays to lights, or it can be done
      implicitly by making some objects emit light, biasing scattered rays toward them, and then
      downweighting those rays to cancel out the bias. Both work. I am in the minority in favoring
      the latter approach.
 
-  2. Triangles. Most cool models are in triangle form. The model I/O is the worst and almost
+  2. Triangles -- Most cool models are in triangle form. The model I/O is the worst and almost
      everybody tries to get somebody else’s code to do this.
 
-  3. Surface textures. This lets you paste images on like wall paper. Pretty easy and a good thing
+  3. Surface Textures -- This lets you paste images on like wall paper. Pretty easy and a good thing
      to do.
 
-  4. Solid textures. Ken Perlin has his code online. Andrew Kensler has some very cool info at his
+  4. Solid textures -- Ken Perlin has his code online. Andrew Kensler has some very cool info at his
      blog.
 
-  5. Volumes and media. Cool stuff and will challenge your software architecture. I favor making
+  5. Volumes and Media -- Cool stuff and will challenge your software architecture. I favor making
      volumes have the hittable interface and probabilistically have intersections based on density.
      Your rendering code doesn’t even have to know it has volumes with that method.
 
-  6. Parallelism. Run $N$ copies of your code on $N$ cores with different random seeds. Average the
-     $N$ runs. This averaging can also be done hierarchically where $N/2$ pairs can be averaged to
-     get $N/4$ images, and pairs of those can be averaged. That method of parallelism should extend
-     well into the thousands of cores with very little coding.
+  6. Parallelism -- Run $N$ copies of your code on $N$ cores with different random seeds. Average
+     the $N$ runs. This averaging can also be done hierarchically where $N/2$ pairs can be averaged
+     to get $N/4$ images, and pairs of those can be averaged. That method of parallelism should
+     extend well into the thousands of cores with very little coding.
 
 Have fun, and please send me your cool images!
 
