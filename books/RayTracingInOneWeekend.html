@@ -1146,9 +1146,6 @@ file.
         return degrees * pi / 180;
     }
 
-    inline double ffmin(double a, double b) { return a <= b ? a : b; }
-    inline double ffmax(double a, double b) { return a >= b ? a : b; }
-
     // Common Headers
 
     #include "ray.h"
@@ -2385,7 +2382,7 @@ and
   $$ \cos\theta = \mathbf{R} \cdot \mathbf{n} $$
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    double cos_theta = ffmin(dot(-unit_direction, rec.normal), 1.0);
+    double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
     double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
     if(etai_over_etat * sin_theta > 1.0) {
         // Must Reflect
@@ -2416,7 +2413,7 @@ And the dielectric material that always refracts (when possible) is:
 
                 vec3 unit_direction = unit_vector(r_in.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                double cos_theta = ffmin(dot(-unit_direction, rec.normal), 1.0);
+                double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
                 double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
                 if (etai_over_etat * sin_theta > 1.0 ) {
                     vec3 reflected = reflect(unit_direction, rec.normal);
@@ -2495,7 +2492,7 @@ This yields our full glass material:
                 double etai_over_etat = (rec.front_face) ? (1.0 / ref_idx) : (ref_idx);
 
                 vec3 unit_direction = unit_vector(r_in.direction());
-                double cos_theta = ffmin(dot(-unit_direction, rec.normal), 1.0);
+                double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
                 double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
                 if (etai_over_etat * sin_theta > 1.0 ) {
                     vec3 reflected = reflect(unit_direction, rec.normal);

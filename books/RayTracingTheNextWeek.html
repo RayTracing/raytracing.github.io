@@ -584,12 +584,12 @@ passing in the interval $[t_{min}$, $t_{max}]$, we get:
 
             bool hit(const ray& r, double tmin, double tmax) const {
                 for (int a = 0; a < 3; a++) {
-                    auto t0 = ffmin((_min[a] - r.origin()[a]) / r.direction()[a],
-                                    (_max[a] - r.origin()[a]) / r.direction()[a]);
-                    auto t1 = ffmax((_min[a] - r.origin()[a]) / r.direction()[a],
-                                    (_max[a] - r.origin()[a]) / r.direction()[a]);
-                    tmin = ffmax(t0, tmin);
-                    tmax = ffmin(t1, tmax);
+                    auto t0 = fmin((_min[a] - r.origin()[a]) / r.direction()[a],
+                                   (_max[a] - r.origin()[a]) / r.direction()[a]);
+                    auto t1 = fmax((_min[a] - r.origin()[a]) / r.direction()[a],
+                                   (_max[a] - r.origin()[a]) / r.direction()[a]);
+                    tmin = fmax(t0, tmin);
+                    tmax = fmin(t1, tmax);
                     if (tmax <= tmin)
                         return false;
                 }
@@ -602,10 +602,6 @@ passing in the interval $[t_{min}$, $t_{max}]$, we get:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [aabb]: <kbd>[aabb.h]</kbd> Axis-aligned bounding box class]
 </div>
-
-Note that we use the simple custom `ffmax()` function (defined in `rtweekend.h`) instead of the C++
-standard library `fmax()` utility. `ffmax()` is quite a bit faster because it doesn’t worry about
-`NaN`s and other exceptions.
 
 
 An Optimized AABB Hit Method
@@ -722,13 +718,13 @@ boxes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     aabb surrounding_box(aabb box0, aabb box1) {
-        point3 small(ffmin(box0.min().x(), box1.min().x()),
-                   ffmin(box0.min().y(), box1.min().y()),
-                   ffmin(box0.min().z(), box1.min().z()));
+        point3 small(fmin(box0.min().x(), box1.min().x()),
+                     fmin(box0.min().y(), box1.min().y()),
+                     fmin(box0.min().z(), box1.min().z()));
 
-        point3 big(ffmax(box0.max().x(), box1.max().x()),
-                   ffmax(box0.max().y(), box1.max().y()),
-                   ffmax(box0.max().z(), box1.max().z()));
+        point3 big(fmax(box0.max().x(), box1.max().x()),
+                   fmax(box0.max().y(), box1.max().y()),
+                   fmax(box0.max().z(), box1.max().z()));
 
         return aabb(small,big);
     }
@@ -1595,7 +1591,7 @@ turbulence, and is a sum of repeated calls to noise:
                     temp_p *= 2;
                 }
 
-                return fabs(accum);
+                return ffabs(accum);
             }
             ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2553,8 +2549,8 @@ With constructor:
                     vec3 tester(newx, y, newz);
 
                     for (int c = 0; c < 3; c++) {
-                        min[c] = ffmin(min[c], tester[c]);
-                        max[c] = ffmax(max[c], tester[c]);
+                        min[c] = fmin(min[c], tester[c]);
+                        max[c] = fmax(max[c], tester[c]);
                     }
                 }
             }
