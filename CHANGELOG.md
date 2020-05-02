@@ -9,6 +9,8 @@ Change Log -- Ray Tracing in One Weekend
 - New: subchapters throughout all three books (#267)
 - Change: Minor change to use new `point3` and `color` type aliases for `vec3` (#422)
 - Change: Renamed `constant_texture` to `solid_color`, add RGB constructor (#452)
+- Change: Math notation to bold uppercase points, bold lowercase no-barb vectors (#412)
+- Change: Switch from `ffmin`/`ffmax` to standard `fmin`/`fmax` (#444, #491)
 
 ### _In One Weekend_
 - Fix: Update image and size for first PPM image
