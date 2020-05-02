@@ -12,6 +12,7 @@
 #include "rtweekend.h"
 
 #include "camera.h"
+#include "color.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
@@ -118,7 +119,7 @@ int main() {
                 ray r = cam.get_ray(u, v);
                 pixel_color += ray_color(r, world, max_depth);
             }
-            pixel_color.write_color(std::cout, samples_per_pixel);
+            write_color(std::cout, pixel_color, samples_per_pixel);
         }
     }
 
