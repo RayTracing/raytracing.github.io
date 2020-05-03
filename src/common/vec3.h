@@ -11,8 +11,10 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
+#include <cmath>
 #include <iostream>
 
+using std::sqrt;
 
 class vec3 {
     public:
