@@ -1,7 +1,7 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
-----------------------------------------------------------------------------------------------------
+
 # v3.1.0 (in progress)
 
 ### Common
@@ -10,6 +10,7 @@ Change Log -- Ray Tracing in One Weekend
 - New: Add explanation for padding `aarect` in the zero dimension (#488)
 - Change: Minor change to use new `point3` and `color` type aliases for `vec3` (#422)
 - Change: Renamed `constant_texture` to `solid_color`, add RGB constructor (#452)
+- Change: Moved `vec3::write_color()` method to utility function in `color.h` header (#502)
 - Change: Math notation to bold uppercase points, bold lowercase no-barb vectors (#412)
 - Change: Switch from `ffmin`/`ffmax` to standard `fmin`/`fmax` (#444, #491)
 
@@ -21,20 +22,14 @@ Change Log -- Ray Tracing in One Weekend
 - Fix: Improve image size and aspect ratio calculation to make size changes easier
 - Fix: Added `t` parameter back into `hit_record` at correct place
 - Fix: image basic vectors off by one
+- Fix: Correct typo in "What's next?" list to rejoin split paragraph on "Lights." Adjust numbering
+  in rest of list.
 - Change: First image size changed to 256x256
 - Change: Default image sizes changed from 200x100 to 384x216
 - Change: Define image aspect ratio up front, then image height from that and the image width
 
 ### _The Next Week_
 - Change: Large rewrite of the `image_texture` class. Now handles image loading too. (#434)
-
-
----------------------------------------------------------------------------------------------------
-# v3.0.3 (in progress)
-
-### _In One Weekend_
-- Fix: Correct typo in "What's next?" list to rejoin split paragraph on "Lights." Adjust numbering
-  in rest of list.
 
 
 ----------------------------------------------------------------------------------------------------
