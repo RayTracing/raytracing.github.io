@@ -157,8 +157,8 @@ rotate_y::rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
                 vec3 tester(newx, y, newz);
 
                 for (int c = 0; c < 3; c++) {
-                    min[c] = ffmin(min[c], tester[c]);
-                    max[c] = ffmax(max[c], tester[c]);
+                    min[c] = fmin(min[c], tester[c]);
+                    max[c] = fmax(max[c], tester[c]);
                 }
             }
         }

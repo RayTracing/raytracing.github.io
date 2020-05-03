@@ -798,11 +798,7 @@ model:
 <div class='together'>
 At 500×500 my code produces this image in 10min on 1 core of my Macbook:
 
-  <div class="render">
-
-  ![Cornell box, refactored](../images/img.cornell-refactor1.jpg)
-
-  </div>
+  ![Cornell box, refactored](../images/img.cornell-refactor1.jpg class=pixel)
 
 Reducing that noise is our goal. We’ll do that by constructing a PDF that sends more rays to the
 light.
@@ -945,11 +941,7 @@ randomly from the hemisphere above the surface. This would be $p(direction) = \f
 <div class='together'>
 And again I _should_ get the same picture except with different variance, but I don’t!
 
-  <div class="render">
-
-  ![Cornell box, with different sampling strategy](../images/img.cornell-refactor2.jpg)
-
-  </div>
+  ![Cornell box, with different sampling strategy](../images/img.cornell-refactor2.jpg class=pixel)
 
 </div>
 
@@ -1317,11 +1309,8 @@ We can rewrite our Lambertian material using this to get:
 <div class='together'>
 Which produces:
 
-  <div class="render">
-
-  ![Cornell box, with orthonormal basis scatter function](../images/img.cornell-ortho.jpg)
-
-  </div>
+  ![Cornell box, with orthonormal basis scatter function
+  ](../images/img.cornell-ortho.jpg class=pixel)
 
 Is that right? We still don’t know for sure. Tracking down bugs is hard in the absence of reliable
 reference solutions. Let’s table that for now and get rid of some of that noise.
@@ -1426,11 +1415,8 @@ that math and get the concept, we can add it (see the highlighted region):
 <div class='together'>
 With 10 samples per pixel this yields:
 
-  <div class="render">
-
-  ![Cornell box, sampling only the light, 10 samples per pixel](../images/img.cornell-samplight.jpg)
-
-  </div>
+  ![Cornell box, sampling only the light, 10 samples per pixel
+  ](../images/img.cornell-samplight.jpg class=pixel)
 
 </div>
 
@@ -1461,11 +1447,8 @@ down. We can do that by letting the emitted member function of hittable take ext
 <div class='together'>
 We also need to flip the light so its normals point in the -y direction. This gives us:
 
-  <div class="render">
-
-  ![Cornell box, light emitted only in the downward direction](../images/img.cornell-lightdown.jpg)
-
-  </div>
+  ![Cornell box, light emitted only in the downward direction
+  ](../images/img.cornell-lightdown.jpg class=pixel)
 
 </div>
 
@@ -1614,11 +1597,7 @@ change variable `pdf` to some other variable name to avoid a name conflict with 
 This yields an apparently matching result so all we’ve done so far is refactor where `pdf` is
 computed:
 
-  <div class="render">
-
-  ![Cornell box with a cosine density _pdf_](../images/img.cornell-cospdf.jpg)
-
-  </div>
+  ![Cornell box with a cosine density _pdf_](../images/img.cornell-cospdf.jpg class=pixel)
 
 </div>
 
@@ -1746,11 +1725,8 @@ And then change `ray_color()`:
 <div class='together'>
 At 10 samples per pixel we get:
 
-  <div class="render">
-
-  ![Cornell box, sampling a hittable light, 10 samples per pixel](../images/img.cornell-samphit.jpg)
-
-  </div>
+  ![Cornell box, sampling a hittable light, 10 samples per pixel
+  ](../images/img.cornell-samphit.jpg class=pixel)
 
 </div>
 
@@ -1841,11 +1817,8 @@ And plugging it into `ray_color()`:
 <div class='together'>
 1000 samples per pixel yields:
 
-  <div class="render">
-
-  ![Cornell box, mixture density of cosine and light sampling](../images/img.cornell-coslight.jpg)
-
-  </div>
+  ![Cornell box, mixture density of cosine and light sampling
+  ](../images/img.cornell-coslight.jpg class=pixel)
 
 </div>
 
@@ -2176,11 +2149,7 @@ We also need to change the block to metal.
 The resulting image has a noisy reflection on the ceiling because the directions toward the box are
 not sampled with more density.
 
-  <div class="render">
-
-  ![Cornell box with arbitrary PDF functions](../images/img.cornell-flexpdf.jpg)
-
-  </div>
+  ![Cornell box with arbitrary PDF functions](../images/img.cornell-flexpdf.jpg class=pixel)
 
 </div>
 
@@ -2325,11 +2294,8 @@ This yields a noisy box, but the caustic under the sphere is good. It took five 
 sampling the light did for my code. This is probably because those rays that hit the glass are
 expensive!
 
-  <div class="render">
-
-  ![Cornell box with glass sphere, using new PDF functions](../images/img.cornell-glass.jpg)
-
-  </div>
+  ![Cornell box with glass sphere, using new PDF functions
+  ](../images/img.cornell-glass.jpg class=pixel)
 
 </div>
 
@@ -2375,11 +2341,8 @@ We assemble a list to pass to `ray_color()` `from main()`:
 <div class='together'>
 And we get a decent image with 1000 samples as before:
 
-  <div class="render">
-
-  ![Cornell box, using a mixture of glass & light PDFs](../images/img.cornell-glasslight.jpg)
-
-  </div>
+  ![Cornell box, using a mixture of glass & light PDFs
+  ](../images/img.cornell-glasslight.jpg class=pixel)
 
 </div>
 
@@ -2404,24 +2367,28 @@ million rays or so.
 So big decision: sweep this bug under the rug and check for `NaN`s, or just kill `NaN`s and hope
 this doesn't come back to bite us later. I will always opt for the lazy strategy, especially when I
 know floating point is hard. First, how do we check for a `NaN`? The one thing I always remember
-for `NaN`s is that a `NaN` does not equal itself. Using this trick, we update the
-`vec3::write_color()` function to replace any NaN components with zero:
+for `NaN`s is that a `NaN` does not equal itself. Using this trick, we update the `write_color()`
+function to replace any NaN components with zero:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void write_color(std::ostream &out, int samples_per_pixel) {
+    void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
+        auto r = pixel_color.x();
+        auto g = pixel_color.y();
+        auto b = pixel_color.z();
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        // Replace NaN component values with zero.
-        if (e[0] != e[0]) e[0] = 0.0;
-        if (e[1] != e[1]) e[1] = 0.0;
-        if (e[2] != e[2]) e[2] = 0.0;
+        // Replace NaN components with zero. See explanation in Ray Tracing: The Rest of Your Life.
+        if (r != r) r = 0.0;
+        if (g != g) g = 0.0;
+        if (b != b) b = 0.0;
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        // Divide the color total by the number of samples and gamma-correct
-        // for a gamma value of 2.0.
+        // Divide the color by the number of samples and gamma-correct for gamma=2.0.
         auto scale = 1.0 / samples_per_pixel;
-        auto r = sqrt(scale * e[0]);
-        auto g = sqrt(scale * e[1]);
-        auto b = sqrt(scale * e[2]);
+        r = sqrt(scale * r);
+        g = sqrt(scale * g);
+        b = sqrt(scale * b);
 
         // Write the translated [0,255] value of each color component.
         out << static_cast<int>(256 * clamp(r, 0.0, 0.999)) << ' '
@@ -2429,17 +2396,13 @@ for `NaN`s is that a `NaN` does not equal itself. Using this trick, we update th
             << static_cast<int>(256 * clamp(b, 0.0, 0.999)) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [write-color-nan]: <kbd>[vec3.h]</kbd> NaN-tolerant write_color function]
+    [Listing [write-color-nan]: <kbd>[color.h]</kbd> NaN-tolerant write_color function]
 </div>
 
 <div class='together'>
 Happily, the black specks are gone:
 
-  <div class="render">
-
-  ![Cornell box with anti-acne color function](../images/img.book3-final.jpg)
-
-  </div>
+  ![Cornell box with anti-acne color function](../images/img.book3-final.jpg class=pixel)
 
 </div>
 
