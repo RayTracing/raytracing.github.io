@@ -6,7 +6,8 @@ Change Log -- Ray Tracing in One Weekend
 
 ### Common
 - Fix: Scattered improvements to the text.
-- New: subchapters throughout all three books (#267)
+- New: Subchapters throughout all three books (#267)
+- New: Add explanation for padding `aarect` in the zero dimension (#488)
 - Change: Minor change to use new `point3` and `color` type aliases for `vec3` (#422)
 - Change: Renamed `constant_texture` to `solid_color`, add RGB constructor (#452)
 

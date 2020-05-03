@@ -1999,6 +1999,11 @@ Once we have $t$, we can plug that into the equations for $x$ and $y$:
 
 It is a hit if $x_0 < x < x_1$ and $y_0 < y < y_1$.
 
+Because our rectangles are axis-aligned, their bounding boxes will have an infinitely-thin side.
+This can be a problem when dividing them up with our axis-aligned bounding volume hierarchy. To
+counter this, all hittable objects should get a bounding box that has finite width along every
+dimension. For our rectangles, we'll just pad the box a bit on the infnitely-thin side.
+
 <div class='together'>
 The actual `xy_rect` class is thus:
 
@@ -2013,7 +2018,9 @@ The actual `xy_rect` class is thus:
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
-                output_box =  aabb(point3(x0,y0, k-0.0001), point3(x1, y1, k+0.0001));
+                // The bounding box must have non-zero width in each dimension, so pad the Z
+                // dimension a small amount.
+                output_box = aabb(point3(x0,y0, k-0.0001), point3(x1, y1, k+0.0001));
                 return true;
             }
 
@@ -2117,7 +2124,9 @@ This is xz and yz:
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
-                output_box =  aabb(point3(x0,k-0.0001,z0), point3(x1, k+0.0001, z1));
+                // The bounding box must have non-zero width in each dimension, so pad the Y
+                // dimension a small amount.
+                output_box = aabb(point3(x0,k-0.0001,z0), point3(x1, k+0.0001, z1));
                 return true;
             }
 
@@ -2136,7 +2145,9 @@ This is xz and yz:
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
-                output_box =  aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
+                // The bounding box must have non-zero width in each dimension, so pad the X
+                // dimension a small amount.
+                output_box = aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
                 return true;
             }
 

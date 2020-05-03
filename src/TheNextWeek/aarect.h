@@ -27,6 +27,8 @@ class xy_rect: public hittable {
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            // The bounding box must have non-zero width in each dimension, so pad the Z
+            // dimension a small amount.
             output_box = aabb(point3(x0,y0, k-0.0001), point3(x1, y1, k+0.0001));
             return true;
         }
@@ -47,6 +49,8 @@ class xz_rect: public hittable {
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            // The bounding box must have non-zero width in each dimension, so pad the Y
+            // dimension a small amount.
             output_box = aabb(point3(x0,k-0.0001,z0), point3(x1, k+0.0001, z1));
             return true;
         }
@@ -67,6 +71,8 @@ class yz_rect: public hittable {
         virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
 
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            // The bounding box must have non-zero width in each dimension, so pad the X
+            // dimension a small amount.
             output_box = aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
             return true;
         }

@@ -1679,19 +1679,7 @@ And we change `xz_rect` to implement those functions:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class xz_rect: public hittable {
         public:
-            xz_rect() {}
-
-            xz_rect(
-                double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<material> mat)
-                : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
-
-            virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
-
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
-                output_box = aabb(point3(x0,k-0.0001,z0), point3(x1, k+0.0001, z1));
-                return true;
-            }
-
+            ...
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             virtual double pdf_value(const point3& origin, const vec3& v) const {
@@ -1710,12 +1698,6 @@ And we change `xz_rect` to implement those functions:
                 auto random_point = point3(random_double(x0,x1), k, random_double(z0,z1));
                 return random_point - origin;
             }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        public:
-            shared_ptr<material> mp;
-            double x0, x1, z0, z1, k;
-    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [xz-rect-pdf]: <kbd>[aarect.h]</kbd> XZ rect with pdf]
 </div>
