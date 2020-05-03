@@ -18,7 +18,7 @@ Overview
 
 In _Ray Tracing in One Weekend_ and _Ray Tracing: the Next Week_, you built a “real” ray tracer.
 
-In this volume, I assume you will be pursuing a career related to ray tracing and we will dive into
+In this volume, I assume you will be pursuing a career related to ray tracing, and we will dive into
 the math of creating a very serious ray tracer. When you are done you should be ready to start
 messing with the many serious commercial ray tracers underlying the movie and product design
 industries. There are many many things I do not cover in this short volume; I dive into only one of
@@ -193,7 +193,7 @@ Interestingly, the stratified method is not only better, it converges with a bet
 Unfortunately, this advantage decreases with the dimension of the problem (so for example, with the
 3D sphere volume version the gap would be less). This is called the *Curse of Dimensionality*. We
 are going to be very high dimensional (each reflection adds two dimensions), so I won't stratify in
-this book. But if you are ever doing single-reflection or shadowing or some strictly 2D problem, you
+this book, but if you are ever doing single-reflection or shadowing or some strictly 2D problem, you
 definitely want to stratify.
 
 
@@ -248,12 +248,12 @@ This suggests a MC approach:
     [Listing [integ-xsq-1]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$]
 </div>
 
-This, as expected, produces approximately the exact answer we get with algebra, $I = 8/3$. But we
-could also do it for functions that we can’t analytically integrate like $\log(\sin(x))$. In
-graphics, we often have functions we can evaluate but can’t write down explicitly, or functions we
-can only probabilistically evaluate. That is in fact what the ray tracing `ray_color()` function of
-the last two books is -- we don’t know what color is seen in every direction, but we can
-statistically estimate it in any given dimension.
+This, as expected, produces approximately the exact answer we get with algebra, $I = 8/3$. We could
+also do it for functions that we can’t analytically integrate like $\log(\sin(x))$. In graphics, we
+often have functions we can evaluate but can’t write down explicitly, or functions we can only
+probabilistically evaluate. That is in fact what the ray tracing `ray_color()` function of the last
+two books is -- we don’t know what color is seen in every direction, but we can statistically
+estimate it in any given dimension.
 
 One problem with the random program we wrote in the first two books is that small light sources
 create too much noise. This is because our uniform sampling doesn’t sample these light sources often
@@ -301,7 +301,7 @@ Constructing a PDF
 -------------------
 Let’s make a _PDF_ and use it a bit to understand it more. Suppose I want a random number $r$
 between 0 and 2 whose probability is proportional to itself: $r$. We would expect the PDF $p(r)$ to
-look something like the figure below. But how high should it be?
+look something like the figure below, but how high should it be?
 
   ![Figure [linear-pdf]: A linear PDF](../images/fig.linear-pdf.jpg)
 
@@ -315,8 +315,8 @@ convention, and we should pick something that is convenient. Just as with histog
 
 <div class='together'>
 where $C$ is a scaling constant. We may as well make $C = 1$ for cleanliness, and that is exactly
-what is done in probability. And we know the probability $r$ has the value 1 somewhere, so for
-this case
+what is done in probability. We also know the probability $r$ has the value 1 somewhere, so for this
+case
 
   $$ \text{area}(p(r), 0, 2) = 1 $$
 </div>
@@ -381,9 +381,9 @@ That means $f$ just undoes whatever $P$ does. So,
 </div>
 
 <div class='together'>
-The -1 means “inverse function”. Ugly notation, but standard. For our purposes what this means is,
-if we have PDF $p()$ and cumulative distribution function $P()$, then if we use this "inverse
-function" with a random number we’ll get what we want:
+The -1 means “inverse function”. Ugly notation, but standard. For our purposes, if we have PDF $p()$
+and cumulative distribution function $P()$, we can use this "inverse function" with a random number
+to get what we want:
 
   $$ e = P^{-1} (\text{random_double}()) $$
 </div>
@@ -449,7 +449,7 @@ sampling_.
 
 <div class='together'>
 If we take that same code with uniform samples so the PDF = $1/2$ over the range [0,2] we can use
-the machinery to get `x = random_double(0,2)` and the code is:
+the machinery to get `x = random_double(0,2)`, and the code is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     inline double pdf(double x) {
@@ -544,7 +544,7 @@ Suppose we have this integral over all directions:
   $$ \int cos^2(\theta) $$
 
 <div class='together'>
-By MC integration, we should just be able to sample $\cos^2(\theta) / p(\text{direction})$. But what
+By MC integration, we should just be able to sample $\cos^2(\theta) / p(\text{direction})$, but what
 is direction in that context? We could make it based on polar coordinates, so $p$ would be in terms
 of $(\theta, \phi)$. However you do it, remember that a PDF has to integrate to 1 and represent the
 relative probability of that direction being sampled. We have a method from the last books to take
@@ -571,8 +571,8 @@ uniform random samples in or on a unit sphere:
 
 <div class='together'>
 Now what is the PDF of these uniform points? As a density on the unit sphere, it is $1/\text{area}$
-of the sphere or $1/(4\pi)$. If the integrand is $\cos^2(\theta)$ and $\theta$ is the angle with the
-z axis:
+of the sphere or $1/(4\pi)$. If the integrand is $\cos^2(\theta)$, and $\theta$ is the angle with
+the z axis:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline double pdf(const vec3& p) {
@@ -652,9 +652,9 @@ The color of a surface in terms of these quantities is:
   $$ Color = \int A \cdot s(direction) \cdot \text{color}(direction) $$
 </div>
 
-Note that $A$ and $s()$ may depend on the view direction and may depend on the scattering position
-(position on a surface or position within a volume). Therefore, the output color may also vary with
-view direction or scattering position.
+Note that $A$ and $s()$ may depend on the view direction or the scattering position (position on a
+surface or position within a volume). Therefore, the output color may also vary with view direction
+or scattering position.
 
 
 The Scattering PDF
@@ -695,12 +695,12 @@ If we sample using a PDF that equals the scattering PDF:
 
   $$ p(direction) = s(direction) = \frac{\cos(\theta)}{\pi} $$
 
-The numerator and denominator cancel out and we get:
+The numerator and denominator cancel out, and we get:
 
   $$ Color = A \cdot color(direction) $$
 
-This is exactly what we had in our original `ray_color()` function! But we need to generalize now so
-we can send extra rays in important directions such as toward the lights.
+This is exactly what we had in our original `ray_color()` function! However, we need to generalize
+so we can send extra rays in important directions, such as toward the lights.
 
 The treatment above is slightly non-standard because I want the same math to work for surfaces and
 volumes. To do otherwise will make some ugly code.
@@ -742,7 +742,7 @@ out how to make the PDF larger where the product $s(direction) \cdot color(direc
 diffuse surfaces, this is mainly a matter of guessing where $color(direction)$ is high.
 
 For a mirror, $s()$ is huge only near one direction, so it matters a lot more. Most renderers in
-fact make mirrors a special case and just make the $s/p$ implicit -- our code currently does that.
+fact make mirrors a special case, and just make the $s/p$ implicit -- our code currently does that.
 
 
 Returning to the Cornell Box
@@ -955,8 +955,8 @@ And again I _should_ get the same picture except with different variance, but I 
 
 It’s pretty close to our old picture, but there are differences that are not noise. The front of the
 tall box is much more uniform in color. So I have the most difficult kind of bug to find in a Monte
-Carlo program -- a bug that produces a reasonable looking image. And I don’t know if the bug is the
-first version of the program or the second, or even in both!
+Carlo program -- a bug that produces a reasonable looking image. I also don’t know if the bug is the
+first version of the program, or the second, or both!
 
 Let’s build some infrastructure to address this.
 
@@ -965,19 +965,19 @@ Let’s build some infrastructure to address this.
 Generating Random Directions
 ====================================================================================================
 
-In this and the next two chapters let’s harden our understanding and tools and figure out which
+In this and the next two chapters, let’s harden our understanding and tools and figure out which
 Cornell Box is right.
 
 
 Random Directions Relative to the Z Axis
 -----------------------------------------
-Let’s first figure out how to generate random directions, but to simplify things let’s assume the
-z-axis is the surface normal and $\theta$ is the angle from the normal. We’ll get them oriented to
+Let’s first figure out how to generate random directions. To simplify things, let’s assume the
+z-axis is the surface normal, and $\theta$ is the angle from the normal. We’ll get them oriented to
 the surface normal vector in the next chapter. We will only deal with distributions that are
 rotationally symmetric about $z$. So $p(direction) = f(\theta)$. If you have had advanced calculus,
 you may recall that on the sphere in spherical coordinates $dA = \sin(\theta) \cdot d\theta \cdot
 d\phi$. If you haven’t, you’ll have to take my word for the next step, but you’ll get it when you
-take advanced calc.
+take advanced calculus.
 
 <div class='together'>
 Given a directional PDF, $p(direction) = f(\theta)$ on the sphere, the 1D PDFs on $\theta$ and
@@ -1017,7 +1017,7 @@ Solving for $\cos(\theta)$ gives:
 
   $$ \cos(\theta) = 1 - 2 r_2 $$
 
-We don’t solve for theta because we probably only need to know $\cos(\theta)$ anyway and don’t want
+We don’t solve for theta because we probably only need to know $\cos(\theta)$ anyway, and don’t want
 needless $\arccos()$ calls running around.
 </div>
 
@@ -1074,7 +1074,7 @@ Uniform Sampling a Hemisphere
 ------------------------------
 <div class='together'>
 Now let’s derive uniform on the hemisphere. The density being uniform on the hemisphere means
-$p(direction) = \frac{1}{2\pi}$ and just changing the constant in the theta equations yields:
+$p(direction) = \frac{1}{2\pi}$. Just changing the constant in the theta equations yields:
 
   $$ \cos(\theta) = 1 - r_2 $$
 </div>
@@ -1241,22 +1241,20 @@ particular axis, and if not, use that axis.
 </div>
 
 <div class='together'>
-Once we have an ONB of $\mathbf{s}$, $\mathbf{t}$, and $\mathbf{n}$ and we have a $random(x,y,z)$
-relative to the Z-axis we can get the vector relative to $\mathbf{n}$ as:
+Once we have an ONB of $\mathbf{s}$, $\mathbf{t}$, and $\mathbf{n}$, and we have a $random(x,y,z)$
+relative to the Z-axis, we can get the vector relative to $\mathbf{n}$ as:
 
   $$ \text{Random vector} = x \mathbf{s} + y \mathbf{t} + z \mathbf{n} $$
 </div>
 
-<div class='together'>
 You may notice we used similar math to get rays from a camera. That could be viewed as a change to
 the camera’s natural coordinate system.
 
 
-The onb Class
+The ONB Class
 --------------
-Should we make a class for ONBs or are utility functions
-enough? I’m not sure, but let’s make a class because it won't really be more complicated than
-utility functions:
+Should we make a class for ONBs, or are utility functions enough? I’m not sure, but let’s make a
+class because it won't really be more complicated than utility functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class onb {
@@ -1292,7 +1290,6 @@ utility functions:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [class-onb]: <kbd>[onb.h]</kbd> Orthonormal basis class]
-</div>
 
 <div class='together'>
 We can rewrite our Lambertian material using this to get:
@@ -1327,7 +1324,7 @@ Which produces:
   </div>
 
 Is that right? We still don’t know for sure. Tracking down bugs is hard in the absence of reliable
-reference solutions. Let’s table that for now and move on to get rid of some of that noise.
+reference solutions. Let’s table that for now and get rid of some of that noise.
 </div>
 
 
@@ -1347,8 +1344,8 @@ and send a ray in that direction. We also need to know the PDF, $p(direction)$. 
 Getting the PDF of a Light
 ---------------------------
 For a light of area $A$, if we sample uniformly on that light, the PDF on the surface of the light
-is $\frac{1}{A}$. But what is it on the area of the unit sphere that defines directions?
-Fortunately, there is a simple correspondence, as outlined in the diagram:
+is $\frac{1}{A}$. What is it on the area of the unit sphere that defines directions? Fortunately,
+there is a simple correspondence, as outlined in the diagram:
 
   ![Figure [light-pdf]: Projection of light shape onto PDF](../images/fig.light-pdf.jpg)
 
@@ -1462,7 +1459,7 @@ down. We can do that by letting the emitted member function of hittable take ext
 </div>
 
 <div class='together'>
-We also need to flip the light so its normals point in the -y direction and we get:
+We also need to flip the light so its normals point in the -y direction. This gives us:
 
   <div class="render">
 
@@ -1872,7 +1869,7 @@ And plugging it into `ray_color()`:
 
 We’ve basically gotten this same picture (with different levels of noise) with several different
 sampling patterns. It looks like the original picture was slightly wrong! Note by “wrong” here I
-mean not a correct Lambertian picture. But Lambertian is just an ideal approximation to matte, so
+mean not a correct Lambertian picture. Yet Lambertian is just an ideal approximation to matte, so
 our original picture was some other accidental approximation to matte. I don’t think the new one is
 any better, but we can at least compare it more easily with other Lambertian renderers.
 
@@ -1882,30 +1879,29 @@ Some Architectural Decisions
 ====================================================================================================
 
 I won't write any code in this chapter. We’re at a crossroads where I need to make some
-architectural decisions. The mixture-density approach is to not have traditional shadow rays and is
+architectural decisions. The mixture-density approach is to not have traditional shadow rays, and is
 something I personally like, because in addition to lights you can sample windows or bright cracks
 under doors or whatever else you think might be bright. But most programs branch, and send one or
-more terminal rays to lights explicitly and one according to the reflective distribution of the
+more terminal rays to lights explicitly, and one according to the reflective distribution of the
 surface. This could be a time you want faster convergence on more restricted scenes and add shadow
 rays; that’s a personal design preference.
 
 There are some other issues with the code.
 
-The PDF construction is hard coded in the `ray_color()` function and we should clean that up.
-Probably we should pass something into color about the lights. Unlike BVH construction, we should be
-careful about memory leaks as there are an unbounded number of samples.
+The PDF construction is hard coded in the `ray_color()` function. We should clean that up, probably
+by passing something into color about the lights. Unlike BVH construction, we should be careful
+about memory leaks as there are an unbounded number of samples.
 
 The specular rays (glass and metal) are no longer supported. The math would work out if we just made
 their scattering function a delta function. But that would be floating point disaster. We could
 either separate out specular reflections, or have surface roughness never be zero and have
 almost-mirrors that look perfectly smooth but don’t generate NaNs. I don’t have an opinion on which
-way to do it -- I have tried both and they both have their advantages -- but we have smooth metal
-and glass code anyway, so I add perfect specular surfaces that do not do explicit f()/p()
-calculations.
+way to do it (I have tried both and they both have their advantages), but we have smooth metal and
+glass code anyway, so I add perfect specular surfaces that do not do explicit f()/p() calculations.
 
 We also lack a real background function infrastructure in case we want to add an environment map or
 more interesting functional background. Some environment maps are HDR (the RGB components are floats
-rather than 0–255 bytes usually interpreted as 0-1). Our output has been HDR all along and we’ve
+rather than 0–255 bytes usually interpreted as 0-1). Our output has been HDR all along; we’ve
 just been truncating it.
 
 Finally, our renderer is RGB and a more physically based one -- like an automobile manufacturer
@@ -2475,11 +2471,12 @@ organizing a physically based renderer’s sampling approach. Now you can explor
 potential paths.
 
 If you want to explore Monte Carlo methods, look into bidirectional and path spaced approaches such
-as Metropolis. Your probability space won't be over solid angle but will instead be over path space,
-where a path is a multidimensional point in a high-dimensional space. Don’t let that scare you -- if
-you can describe an object with an array of numbers, mathematicians call it a point in the space of
-all possible arrays of such points. That’s not just for show. Once you get a clean abstraction like
-that, your code can get clean too. Clean abstractions are what programming is all about!
+as Metropolis. Your probability space won't be over solid angle, but will instead be over path
+space, where a path is a multidimensional point in a high-dimensional space. Don’t let that scare
+you -- if you can describe an object with an array of numbers, mathematicians call it a point in the
+space of all possible arrays of such points. That’s not just for show. Once you get a clean
+abstraction like that, your code can get clean too. Clean abstractions are what programming is all
+about!
 
 If you want to do movie renderers, look at the papers out of studios and Solid Angle. They are
 surprisingly open about their craft.
@@ -2491,7 +2488,7 @@ If you want to do hard-core physically based renderers, convert your renderer fr
 I am a big fan of each ray having a random wavelength and almost all the RGBs in your program
 turning into floats. It sounds inefficient, but it isn’t!
 
-Regardless of what direction you take, add a glossy BRDF model. There are many to choose from and
+Regardless of what direction you take, add a glossy BRDF model. There are many to choose from, and
 each has its advantages.
 
 Have fun!
