@@ -5,7 +5,8 @@ Change Log -- Ray Tracing in One Weekend
 # v3.1.0 (2020-05-03)
 
 ### Common
-- Fix: Scattered improvements to the text.
+- Fix: Scattered improvements to the text
+- Fix: Include cmath in vec3.h (#501)
 - New: Subchapters throughout all three books (#267)
 - New: Add explanation for padding `aarect` in the zero dimension (#488)
 - Change: Minor change to use new `point3` and `color` type aliases for `vec3` (#422)
