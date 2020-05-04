@@ -27,6 +27,7 @@ Change Log -- Ray Tracing in One Weekend
 - Change: First image size changed to 256x256
 - Change: Default image sizes changed from 200x100 to 384x216
 - Change: Define image aspect ratio up front, then image height from that and the image width
+- Change: The C++ `<random>` version of `random_double()` no longer depends on `<functional>` header
 
 ### _The Next Week_
 - Change: Large rewrite of the `image_texture` class. Now handles image loading too. (#434)
