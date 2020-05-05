@@ -1,33 +1,46 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
+# v3.1.1 (in progress)
 
-# v3.1.0 (in progress)
+### _In One Weekend_
+- Change: The C++ `<random>` version of `random_double()` no longer depends on `<functional>` header
+
+
+----------------------------------------------------------------------------------------------------
+# v3.1.0 (2020-05-03)
+
+This minor upgrade adds some fixes and changes that are a bit more than just patches. The text now
+has subchapter headings to help readers browse content and get a bit more context. We're introducing
+new type aliases `point3` and `color` for `vec3` to better indicate the underlying mathematical
+types of parameters and variables. Overall, a bunch of small improvements that we'd recommend
+adopting, but may warrant comparison with any current projects.
 
 ### Common
-- Fix: Scattered improvements to the text.
+- Fix: Include cmath in vec3.h (#501)
+- Fix: Scattered improvements to the text
 - New: Subchapters throughout all three books (#267)
 - New: Add explanation for padding `aarect` in the zero dimension (#488)
 - Change: Minor change to use new `point3` and `color` type aliases for `vec3` (#422)
 - Change: Renamed `constant_texture` to `solid_color`, add RGB constructor (#452)
 - Change: Moved `vec3::write_color()` method to utility function in `color.h` header (#502)
-- Change: Math notation to bold uppercase points, bold lowercase no-barb vectors (#412)
 - Change: Switch from `ffmin`/`ffmax` to standard `fmin`/`fmax` (#444, #491)
+- Change: Math notation to bold uppercase points, bold lowercase no-barb vectors (#412)
+- Change: Books use Markdeep's image class=pixel for rendered image fidelity (#498)
 
 ### _In One Weekend_
+- Fix: Improve image size and aspect ratio calculation to make size changes easier
+- Fix: Added `t` parameter back into `hit_record` at correct place
+- Fix: image basic vectors off by one
 - Fix: Update image and size for first PPM image
 - Fix: Update image and size for blue-to-white gradient image
 - Fix: Update image and size for simple red sphere render
 - Fix: Update image and size for sphere with normal-vector coloring
-- Fix: Improve image size and aspect ratio calculation to make size changes easier
-- Fix: Added `t` parameter back into `hit_record` at correct place
-- Fix: image basic vectors off by one
 - Fix: Correct typo in "What's next?" list to rejoin split paragraph on "Lights." Adjust numbering
   in rest of list.
-- Change: First image size changed to 256x256
-- Change: Default image sizes changed from 200x100 to 384x216
 - Change: Define image aspect ratio up front, then image height from that and the image width
-- Change: The C++ `<random>` version of `random_double()` no longer depends on `<functional>` header
+- Change: Default image sizes changed from 200x100 to 384x216
+- Change: First image size changed to 256x256
 
 ### _The Next Week_
 - Change: Large rewrite of the `image_texture` class. Now handles image loading too. (#434)
