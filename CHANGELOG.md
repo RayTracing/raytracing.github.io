@@ -276,3 +276,4 @@ typesetting and source-code cleanup.
 # v1.42.0  (2018-08-26)
 
 - New: First GitHub release of _Ray Tracing: The Next Week_.
+
