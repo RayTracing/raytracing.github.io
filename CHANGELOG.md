@@ -1,6 +1,10 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
+# v4.0.0 (in progress)
+
+
+----------------------------------------------------------------------------------------------------
 # v3.1.0 (2020-05-03)
 
 This minor upgrade adds some fixes and changes that are a bit more than just patches. The text now
