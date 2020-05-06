@@ -7,7 +7,7 @@
                                            Peter Shirley
                           edited by Steve Hollasch and Trevor David Black
                                                 <br>
-                                     Version 3.1.0-wip, 2020-XX-XX
+                                     Version 3.1.0, 2020-05-03
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -1290,15 +1290,12 @@ addressed this issue with the `<random>` header (if imperfectly according to som
 If you want to use this, you can obtain a random number with the conditions we need as follows:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include <functional>
     #include <random>
 
     inline double random_double() {
         static std::uniform_real_distribution<double> distribution(0.0, 1.0);
         static std::mt19937 generator;
-        static std::function<double()> rand_generator =
-            std::bind(distribution, generator);
-        return rand_generator();
+        return generator(distribution);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-double-alt]: <kbd>[rtweekend.h]</kbd> random_double(), alternate implemenation]
