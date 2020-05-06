@@ -5,6 +5,17 @@ Change Log -- Ray Tracing in One Weekend
 
 
 ----------------------------------------------------------------------------------------------------
+# v3.1.1 (in progress)
+
+### _In One Weekend_
+- Change: The C++ `<random>` version of `random_double()` no longer depends on `<functional>` header
+
+### _The Next Week_
+- Fix: Introduce "Texture Coordinates for Spheres" in Chapter 4 to support (u,v) coordinates in
+  `hit_record` (#496)
+
+
+----------------------------------------------------------------------------------------------------
 # v3.1.0 (2020-05-03)
 
 This minor upgrade adds some fixes and changes that are a bit more than just patches. The text now
