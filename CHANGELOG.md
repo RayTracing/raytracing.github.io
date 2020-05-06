@@ -5,6 +5,13 @@ Change Log -- Ray Tracing in One Weekend
 
 ### _In One Weekend_
 - Change: The C++ `<random>` version of `random_double()` no longer depends on `<functional>` header
+- Change: Refactored `random_scene()`. More named intermediate values, sync'ed with source. (#489)
+
+### _The Next Week_
+- Fix: Added clarification about updating lambertian variables from `color` to `solid_color`.
+- Fix: Corrected for-loop indices (they differed from the version in book 1) in `random_scene()`.
+- Change: Refactored `random_scene()`. More named intermediate values, sync'ed with version in
+  _In One Weekend_ and with source. Added highlight for update from last version in book 1. (#489)
 
 
 ----------------------------------------------------------------------------------------------------
