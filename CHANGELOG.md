@@ -14,6 +14,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Corrected for-loop indices (they differed from the version in book 1) in `random_scene()`.
   - Fix: Introduce "Texture Coordinates for Spheres" in Chapter 4 to support (u,v) coordinates in
     `hit_record` (#496)
+  - Fix: Small correction: we now use `std::sort` instead of `qsort` (#490)
   - Change: Refactored `random_scene()`. More named intermediate values, sync'ed with version in
     _In One Weekend_ and with source. Added highlight for update from last version in book 1. (#489)
   - Change: The C++ `<random>` version of `random_double()` no longer depends on `<functional>`
