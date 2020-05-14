@@ -19,8 +19,8 @@
 class material;
 
 void get_sphere_uv(const point3& p, double& u, double& v) {
-    auto phi = atan2(p.z(), p.x());
-    auto theta = asin(p.y());
+    auto phi = atan2(p.y(), p.x());
+    auto theta = asin(p.z());
     u = 1-(phi + pi) / (2*pi);
     v = (theta + pi/2) / pi;
 }
