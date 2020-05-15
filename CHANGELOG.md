@@ -4,6 +4,7 @@ Change Log -- Ray Tracing in One Weekend
 # v3.1.1 (in progress)
 
 ### _In One Weekend_
+  - Fix: Camera initialization with explicit up vector (#537)
   - Change: The C++ `<random>` version of `random_double()` no longer depends on `<functional>`
     header.
   - Change: Refactored `random_scene()`. More named intermediate values, sync'ed with source.
