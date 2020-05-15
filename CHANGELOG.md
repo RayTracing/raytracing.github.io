@@ -3,6 +3,10 @@ Change Log -- Ray Tracing in One Weekend
 
 # v3.1.1 (in progress)
 
+### Common
+  - Change: Camera code improvements to make it more robust when any particular value changes. Also,
+    the code develops in a smoother series of iterations as the book progresses. (#536)
+
 ### _In One Weekend_
   - Change: The C++ `<random>` version of `random_double()` no longer depends on `<functional>`
     header.
