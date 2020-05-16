@@ -1,7 +1,7 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
-# v3.1.1 (in progress)
+# v3.1.1 (2020-05-16)
 
 ### Common
   - Change: Camera code improvements to make it more robust when any particular value changes. Also,
@@ -9,6 +9,7 @@ Change Log -- Ray Tracing in One Weekend
 
 ### _In One Weekend_
   - Fix: Camera initialization with explicit up vector (#537)
+  - Fix: Changed some text around the camera model and the camera defocus blur model (#536)
   - Change: The C++ `<random>` version of `random_double()` no longer depends on `<functional>`
     header.
   - Change: Refactored `random_scene()`. More named intermediate values, sync'ed with source.
