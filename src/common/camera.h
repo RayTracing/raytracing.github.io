@@ -19,31 +19,33 @@ class camera {
         camera() : camera(point3(0,0,-1), point3(0,0,0), vec3(0,1,0), 40, 1, 0, 10) {}
 
         camera(
-            point3 lookfrom, point3 lookat, vec3 vup,
+            point3 lookfrom,
+            point3 lookat,
+            vec3   vup,
             double vfov, // vertical field-of-view in degrees
-            double aspect_ratio, double aperture, double focus_dist,
-            double t0 = 0, double t1 = 0
+            double aspect_ratio,
+            double aperture,
+            double focus_dist,
+            double t0 = 0,
+            double t1 = 0
         ) {
-            origin = lookfrom;
-            lens_radius = aperture / 2;
-            time0 = t0;
-            time1 = t1;
-
             auto theta = degrees_to_radians(vfov);
-            auto half_height = tan(theta/2);
-            auto half_width = aspect_ratio * half_height;
+            auto h = tan(theta/2);
+            auto viewport_height = 2.0 * h;
+            auto viewport_width = aspect_ratio * viewport_height;
 
             w = unit_vector(lookfrom - lookat);
             u = unit_vector(cross(vup, w));
             v = cross(w, u);
 
-            lower_left_corner = origin
-                              - half_width*focus_dist*u
-                              - half_height*focus_dist*v
-                              - focus_dist*w;
+            origin = lookfrom;
+            horizontal = focus_dist * viewport_width * u;
+            vertical = focus_dist * viewport_height * v;
+            lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
 
-            horizontal = 2*half_width*focus_dist*u;
-            vertical = 2*half_height*focus_dist*v;
+            lens_radius = aperture / 2;
+            time0 = t0;
+            time1 = t1;
         }
 
         ray get_ray(double s, double t) const {
