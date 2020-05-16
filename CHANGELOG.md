@@ -16,6 +16,8 @@ Change Log -- Ray Tracing in One Weekend
 # v3.1.1 (2020-05-16)
 
 ### Common
+  - Fix: Refactoring the camera code in v3.1.0 missed updating the viewport to match, resulting in
+    distorted renders (#536)
   - Change: Camera code improvements to make it more robust when any particular value changes. Also,
     the code develops in a smoother series of iterations as the book progresses. (#536)
 
