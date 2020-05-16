@@ -472,8 +472,9 @@ common.
 In addition to setting up the pixel dimensions for the rendered image, we also need to set up a
 virtual viewport through which to pass our scene rays. For the standard square pixel spacing, the
 viewport's aspect ratio should be the same as our rendered image. We'll just pick a viewport two
-units in height. Ultimately, changing the scale of the viewport (while holding the focal distance
-constant) is equivalent to changing the viewing angle, or “zoom” of the image.
+units in height. We'll also set the distance between the projection plane and the projection point
+to be one unit. This is referred to as the “focal length”, not to be confused with “focus distance”,
+which we'll present later.
 
 I’ll put the “eye” (or camera center if you think of a camera) at $(0,0,0)$. I will have the y-axis
 go up, and the x-axis to the right. In order to respect the convention of a right handed coordinate
@@ -2728,16 +2729,19 @@ aware of only using “defocus blur” among friends.
 The reason we defocus blur in real cameras is because they need a big hole (rather than just a
 pinhole) to gather light. This would defocus everything, but if we stick a lens in the hole, there
 will be a certain distance where everything is in focus. You can think of a lens this way: all light
-rays coming _from_ a specific point at the focal distance -- and that hit the lens -- will be bent
+rays coming _from_ a specific point at the focus distance -- and that hit the lens -- will be bent
 back _to_ a single point on the image sensor.
 
-In a physical camera, the distance to that plane where things are in focus is controlled by the
-distance between the lens and the film/sensor. That is why you see the lens move relative to the
-camera when you change what is in focus (that may happen in your phone camera too, but the sensor
-moves). The “aperture” is a hole to control how big the lens is effectively. For a real camera, if
-you need more light you make the aperture bigger, and will get more defocus blur. For our virtual
-camera, we can have a perfect sensor and never need more light, so we only have an aperture when we
-want defocus blur.
+We call the distance between the projection point and the plane where everything is in perfect focus
+the _focus distance_. Be aware that the focus distance is not the same as the focal length -- the
+_focal length_ is the distance between the projection point and the image plane.
+
+In a physical camera, the focus distance is controlled by the distance between the lens and the
+film/sensor. That is why you see the lens move relative to the camera when you change what is in
+focus (that may happen in your phone camera too, but the sensor moves). The “aperture” is a hole to
+control how big the lens is effectively. For a real camera, if you need more light you make the
+aperture bigger, and will get more defocus blur. For our virtual camera, we can have a perfect
+sensor and never need more light, so we only have an aperture when we want defocus blur.
 
 
 A Thin Lens Approximation
