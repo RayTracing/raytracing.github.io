@@ -7,7 +7,7 @@
                                            Peter Shirley
                           edited by Steve Hollasch and Trevor David Black
                                                 <br>
-                                     Version 3.1.0, 2020-05-03
+                                     Version 3.1.1, 2020-05-16
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -108,35 +108,37 @@ to camera because for now it is not allowed to move; it just sends out rays over
     class camera {
         public:
             camera(
-                point3 lookfrom, point3 lookat, vec3 vup,
+                point3 lookfrom,
+                point3 lookat,
+                vec3   vup,
                 double vfov, // vertical field-of-view in degrees
-                double aspect_ratio, double aperture, double focus_dist,
+                double aspect_ratio,
+                double aperture,
+                double focus_dist,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                double t0 = 0, double t1 = 0
+                double t0 = 0,
+                double t1 = 0
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ) {
-                origin = lookfrom;
-                lens_radius = aperture / 2;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                time0 = t0;
-                time1 = t1;
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 auto theta = degrees_to_radians(vfov);
-                auto half_height = tan(theta/2);
-                auto half_width = aspect * half_height;
+                auto h = tan(theta/2);
+                auto viewport_height = 2.0 * h;
+                auto viewport_width = aspect_ratio * viewport_height;
 
                 w = unit_vector(lookfrom - lookat);
                 u = unit_vector(cross(vup, w));
                 v = cross(w, u);
 
-                lower_left_corner = origin
-                                  - half_width*focus_dist*u
-                                  - half_height*focus_dist*v
-                                  - focus_dist*w;
+                origin = lookfrom;
+                horizontal = focus_dist * viewport_width * u;
+                vertical = focus_dist * viewport_height * v;
+                lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
 
-                horizontal = 2*half_width*focus_dist*u;
-                vertical = 2*half_height*focus_dist*v;
+                lens_radius = aperture / 2;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                time0 = t0;
+                time1 = t1;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
             ray get_ray(double s, double t) const {
@@ -292,40 +294,49 @@ closing at time 1.) Each sphere moves from its center $\mathbf{C}$ at time $t=0$
     hittable_list random_scene() {
         hittable_list world;
 
-        world.add(make_shared<sphere>(
-            point3(0,-1000,0), 1000, make_shared<lambertian>(color(0.5, 0.5, 0.5))));
+        auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
+        world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
 
-        int i = 1;
-        for (int a = -10; a < 10; a++) {
-            for (int b = -10; b < 10; b++) {
+        for (int a = -11; a < 11; a++) {
+            for (int b = -11; b < 11; b++) {
                 auto choose_mat = random_double();
                 point3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
-                if ((center - vec3(4, .2, 0)).length() > 0.9) {
+
+                if ((center - vec3(4, 0.2, 0)).length() > 0.9) {
+                    shared_ptr<material> sphere_material;
+
                     if (choose_mat < 0.8) {
                         // diffuse
                         auto albedo = color::random() * color::random();
+                        sphere_material = make_shared<lambertian>(albedo);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                        auto center2 = center + vec3(0, random_double(0,.5), 0);
                         world.add(make_shared<moving_sphere>(
-                            center, center + vec3(0, random_double(0,.5), 0), 0.0, 1.0, 0.2,
-                            make_shared<lambertian>(albedo)));
+                            center, center2, 0.0, 1.0, 0.2, sphere_material));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                     } else if (choose_mat < 0.95) {
                         // metal
-                        auto albedo = color::random(.5, 1);
-                        auto fuzz = random_double(0, .5);
-                        world.add(
-                            make_shared<sphere>(center, 0.2, make_shared<metal>(albedo, fuzz)));
+                        auto albedo = color::random(0.5, 1);
+                        auto fuzz = random_double(0, 0.5);
+                        sphere_material = make_shared<metal>(albedo, fuzz);
+                        world.add(make_shared<sphere>(center, 0.2, sphere_material));
                     } else {
                         // glass
-                        world.add(make_shared<sphere>(center, 0.2, make_shared<dielectric>(1.5)));
+                        sphere_material = make_shared<dielectric>(1.5);
+                        world.add(make_shared<sphere>(center, 0.2, sphere_material));
                     }
                 }
             }
         }
 
-        world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, make_shared<dielectric>(1.5)));
-        world.add(make_shared<sphere>(
-            point3(-4, 1, 0), 1.0, make_shared<lambertian>(color(0.4, 0.2, 0.1))));
-        world.add(make_shared<sphere>(
-            point3(4, 1, 0), 1.0, make_shared<metal>(color(0.7, 0.6, 0.5), 0.0)));
+        auto material1 = make_shared<dielectric>(1.5);
+        world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, material1));
+
+        auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
+        world.add(make_shared<sphere>(point3(-4, 1, 0), 1.0, material2));
+
+        auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
+        world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
         return world;
     }
@@ -802,7 +813,7 @@ but that is for speed not correctness. I’ll choose the middle ground, and at e
 list along one axis. I’ll go for simplicity:
 
   1. randomly choose an axis
-  2. sort the primitives using library qsort
+  2. sort the primitives (`using std::sort`)
   3. put half in each subtree
 
 </div>
@@ -1054,7 +1065,7 @@ Now we can make textured materials by replacing the `const color& a` with a text
 </div>
 
 <div class='together'>
-Where you used to have
+Where you used to have code like this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...make_shared<lambertian>(color(0.5, 0.5, 0.5))
@@ -1067,6 +1078,8 @@ now you should replace the `color(...)` with `make_shared<solid_color>(...)`
         ...make_shared<lambertian>(make_shared<solid_color>(0.5, 0.5, 0.5))
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [lam-textured]: <kbd>[main.cc]</kbd> Lambertian material with texture]
+
+Update all three occurrences of lambertian in the `random_scene()` function in `main.cc`.
 </div>
 
 
@@ -1107,7 +1120,8 @@ If we add this to our `random_scene()` function’s base sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     auto checker = make_shared<checker_texture>(
-        make_shared<solid_color>(0.2, 0.3, 0.1), make_shared<solid_color>(0.9, 0.9, 0.9)
+        make_shared<solid_color>(0.2, 0.3, 0.1),
+        make_shared<solid_color>(0.9, 0.9, 0.9)
     );
 
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
@@ -1131,7 +1145,8 @@ If we add a new scene:
         hittable_list objects;
 
         auto checker = make_shared<checker_texture>(
-            make_shared<solid_color>(0.2, 0.3, 0.1), make_shared<solid_color>(0.9, 0.9, 0.9)
+            make_shared<solid_color>(0.2, 0.3, 0.1),
+            make_shared<solid_color>(0.9, 0.9, 0.9)
         );
 
         objects.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker)));

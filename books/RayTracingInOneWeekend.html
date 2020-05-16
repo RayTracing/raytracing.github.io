@@ -7,7 +7,7 @@
                                            Peter Shirley
                           edited by Steve Hollasch and Trevor David Black
                                                 <br>
-                                     Version 3.1.0, 2020-05-03
+                                     Version 3.1.1, 2020-05-16
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -466,12 +466,22 @@ simple camera for getting the code up and running. I also make a simple `ray_col
 that returns the color of the background (a simple gradient).
 
 I’ve often gotten into trouble using square images for debugging because I transpose $x$ and $y$ too
-often, so I’ll stick with a 200×100 image. I’ll put the “eye” (or camera center if you think of a
-camera) at $(0,0,0)$. I will have the y-axis go up, and the x-axis to the right. In order to respect
-the convention of a right handed coordinate system, into the screen is the negative z-axis. I will
-traverse the screen from the lower left hand corner, and use two offset vectors along the screen
-sides to move the ray endpoint across the screen. Note that I do not make the ray direction a unit
-length vector because I think not doing that makes for simpler and slightly faster code.
+often, so I’ll use a non-square image. For now we'll use a 16:9 aspect ratio, since that's so
+common.
+
+In addition to setting up the pixel dimensions for the rendered image, we also need to set up a
+virtual viewport through which to pass our scene rays. For the standard square pixel spacing, the
+viewport's aspect ratio should be the same as our rendered image. We'll just pick a viewport two
+units in height. We'll also set the distance between the projection plane and the projection point
+to be one unit. This is referred to as the “focal length”, not to be confused with “focus distance”,
+which we'll present later.
+
+I’ll put the “eye” (or camera center if you think of a camera) at $(0,0,0)$. I will have the y-axis
+go up, and the x-axis to the right. In order to respect the convention of a right handed coordinate
+system, into the screen is the negative z-axis. I will traverse the screen from the lower left hand
+corner, and use two offset vectors along the screen sides to move the ray endpoint across the
+screen. Note that I do not make the ray direction a unit length vector because I think not doing
+that makes for simpler and slightly faster code.
 
   ![Figure [cam-geom]: Camera geometry](../images/fig-1.03-cam-geom.jpg)
 
@@ -497,19 +507,25 @@ for now because we’ll add antialiasing later):
 
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        point3 origin(0.0, 0.0, 0.0);
-        vec3 horizontal(4.0, 0.0, 0.0);
-        vec3 vertical(0.0, 2.25, 0.0);
-        point3 lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0,0,1);
+        auto viewport_height = 2.0;
+        auto viewport_width = aspect_ratio * viewport_height;
+        auto focal_length = 1.0;
+
+        auto origin = point3(0, 0, 0);
+        auto horizontal = vec3(viewport_width, 0, 0);
+        auto vertical = vec3(0, viewport_height, 0);
+        auto lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         for (int j = image_height-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 auto u = double(i) / (image_width-1);
                 auto v = double(j) / (image_height-1);
-                ray r(origin, lower_left_corner + u*horizontal + v*vertical);
+                ray r(origin, lower_left_corner + u*horizontal + v*vertical - origin);
                 color pixel_color = ray_color(r);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 write_color(std::cout, pixel_color);
@@ -1202,10 +1218,14 @@ And the new main:
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        point3 lower_left_corner(-2.0, -1.0, -1.0);
-        vec3 horizontal(4.0, 0.0, 0.0);
-        vec3 vertical(0.0, 2.0, 0.0);
-        point3 origin(0.0, 0.0, 0.0);
+        auto viewport_height = 2.0;
+        auto viewport_width = aspect_ratio * viewport_height;
+        auto focal_length = 1.0;
+
+        auto origin = point3(0, 0, 0);
+        auto horizontal = vec3(viewport_width, 0, 0);
+        auto vertical = vec3(0, viewport_height, 0);
+        auto lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1314,7 +1334,8 @@ samples. The colors of these rays are then averaged:
 </div>
 
 <div class='together'>
-Putting that all together yields a camera class encapsulating our simple axis-aligned camera from
+Now's a good time to create a `camera` class to manage our virtual camera and the related tasks of
+scene scampling. The following class implements a simple camera using the axis-aligned camera from
 before:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1326,10 +1347,15 @@ before:
     class camera {
         public:
             camera() {
-                lower_left_corner = point3(-2.0, -1.0, -1.0);
-                horizontal = vec3(4.0, 0.0, 0.0);
-                vertical = vec3(0.0, 2.0, 0.0);
-                origin = point3(0.0, 0.0, 0.0);
+                auto aspect_ratio = 16.0 / 9.0;
+                auto viewport_height = 2.0;
+                auto viewport_width = aspect_ratio * viewport_height;
+                auto focal_length = 1.0;
+
+                origin = point3(0, 0, 0);
+                horizontal = vec3(viewport_width, 0.0, 0.0);
+                vertical = vec3(0.0, viewport_height, 0.0);
+                lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
             }
 
             ray get_ray(double u, double v) const {
@@ -1400,9 +1426,11 @@ Main is also changed:
         world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
         world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
 
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         camera cam;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         for (int j = image_height-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
@@ -1885,7 +1913,6 @@ that the pointer is to a class, which the “class material” in the hittable c
         double t;
         bool front_face;
 
-
         inline void set_face_normal(const ray& r, const vec3& outward_normal) {
             front_face = dot(r.direction(), outward_normal) < 0;
             normal = front_face ? outward_normal :-outward_normal;
@@ -2110,6 +2137,7 @@ Now let’s add some metal spheres to our scene:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         camera cam;
+
         for (int j = image_height-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
@@ -2556,16 +2584,17 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
                 double vfov, // vertical field-of-view in degrees
                 double aspect_ratio
             ) {
-                origin = point3(0.0, 0.0, 0.0);
-
                 auto theta = degrees_to_radians(vfov);
-                auto half_height = tan(theta/2);
-                auto half_width = aspect_ratio * half_height;
+                auto h = tan(theta/2);
+                auto viewport_height = 2.0 * h;
+                auto viewport_width = aspect_ratio * viewport_height;
 
-                lower_left_corner = point3(-half_width, -half_height, -1.0);
+                auto focal_length = 1.0;
 
-                horizontal = vec3(2*half_width, 0.0, 0.0);
-                vertical = vec3(0.0, 2*half_height, 0.0);
+                origin = point3(0, 0, 0);
+                horizontal = vec3(viewport_width, 0.0, 0.0);
+                vertical = vec3(0.0, viewport_height, 0.0);
+                lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -2631,29 +2660,28 @@ camera horizontally level until you decide to experiment with crazy camera angle
         public:
             camera(
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                point3 lookfrom, point3 lookat, vec3 vup,
+                point3 lookfrom,
+                point3 lookat,
+                vec3   vup,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 double vfov, // vertical field-of-view in degrees
                 double aspect_ratio
             ) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                origin = lookfrom;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                vec3 u, v, w;
-
                 auto theta = degrees_to_radians(vfov);
-                auto half_height = tan(theta/2);
-                auto half_width = aspect_ratio * half_height;
+                auto h = tan(theta/2);
+                auto viewport_height = 2.0 * h;
+                auto viewport_width = aspect_ratio * viewport_height;
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                w = unit_vector(lookfrom - lookat);
-                u = unit_vector(cross(vup, w));
-                v = cross(w, u);
+                auto w = unit_vector(lookfrom - lookat);
+                auto u = unit_vector(cross(vup, w));
+                auto v = cross(w, u);
 
-                lower_left_corner = origin - half_width*u - half_height*v - w;
-
-                horizontal = 2*half_width*u;
-                vertical = 2*half_height*v;
+                origin = lookfrom;
+                horizontal = viewport_width * u;
+                vertical = viewport_height * v;
+                lower_left_corner = origin - horizontal/2 - vertical/2 - w;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
@@ -2674,7 +2702,7 @@ camera horizontally level until you decide to experiment with crazy camera angle
 This allows us to change the viewpoint:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    camera cam(point3(-2,2,1), point3(0,0,-1), vup, 90, aspect_ratio);
+    camera cam(point3(-2,2,1), point3(0,0,-1), vec3(0,1,0), 90, aspect_ratio);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-free-view]: <kbd>[main.cc]</kbd> Scene with alternate viewpoint]
 
@@ -2706,16 +2734,19 @@ aware of only using “defocus blur” among friends.
 The reason we defocus blur in real cameras is because they need a big hole (rather than just a
 pinhole) to gather light. This would defocus everything, but if we stick a lens in the hole, there
 will be a certain distance where everything is in focus. You can think of a lens this way: all light
-rays coming _from_ a specific point at the focal distance -- and that hit the lens -- will be bent
+rays coming _from_ a specific point at the focus distance -- and that hit the lens -- will be bent
 back _to_ a single point on the image sensor.
 
-In a physical camera, the distance to that plane where things are in focus is controlled by the
-distance between the lens and the film/sensor. That is why you see the lens move relative to the
-camera when you change what is in focus (that may happen in your phone camera too, but the sensor
-moves). The “aperture” is a hole to control how big the lens is effectively. For a real camera, if
-you need more light you make the aperture bigger, and will get more defocus blur. For our virtual
-camera, we can have a perfect sensor and never need more light, so we only have an aperture when we
-want defocus blur.
+We call the distance between the projection point and the plane where everything is in perfect focus
+the _focus distance_. Be aware that the focus distance is not the same as the focal length -- the
+_focal length_ is the distance between the projection point and the image plane.
+
+In a physical camera, the focus distance is controlled by the distance between the lens and the
+film/sensor. That is why you see the lens move relative to the camera when you change what is in
+focus (that may happen in your phone camera too, but the sensor moves). The “aperture” is a hole to
+control how big the lens is effectively. For a real camera, if you need more light you make the
+aperture bigger, and will get more defocus blur. For our virtual camera, we can have a perfect
+sensor and never need more light, so we only have an aperture when we want defocus blur.
 
 
 A Thin Lens Approximation
@@ -2733,8 +2764,8 @@ use a thin lens approximation:
 <div class="together">
 We don’t need to simulate any of the inside of the camera. For the purposes of rendering an image
 outside the camera, that would be unnecessary complexity. Instead, I usually start rays from the
-surface of the lens, and send them toward a virtual film plane, by finding the projection of the
-film on the plane that is in focus (at the distance `focus_dist`).
+lens, and send them toward the focus plane (`focus_dist` away from the lens), where everything on
+that plane is in perfect focus.
 
   ![Figure [cam-film-plane]: Camera focus plane](../images/fig-1.18-cam-film-plane.jpg)
 
@@ -2764,31 +2795,35 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
     class camera {
         public:
             camera(
-                point3 lookfrom, point3 lookat, vec3 vup,
+                point3 lookfrom,
+                point3 lookat,
+                vec3   vup,
                 double vfov, // vertical field-of-view in degrees
+                double aspect_ratio,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                double aspect_ratio, double aperture, double focus_dist
-            ) {
-                origin = lookfrom;
-                lens_radius = aperture / 2;
+                double aperture,
+                double focus_dist
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
+            ) {
                 auto theta = degrees_to_radians(vfov);
-                auto half_height = tan(theta/2);
-                auto half_width = aspect_ratio * half_height;
+                auto h = tan(theta/2);
+                auto viewport_height = 2.0 * h;
+                auto viewport_width = aspect_ratio * viewport_height;
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 w = unit_vector(lookfrom - lookat);
                 u = unit_vector(cross(vup, w));
                 v = cross(w, u);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
+                origin = lookfrom;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                lower_left_corner = origin
-                                  - half_width * focus_dist * u
-                                  - half_height * focus_dist * v
-                                  - focus_dist * w;
+                horizontal = focus_dist * viewport_width * u;
+                vertical = focus_dist * viewport_height * v;
+                lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
 
-                horizontal = 2*half_width*focus_dist*u;
-                vertical = 2*half_height*focus_dist*v;
+                lens_radius = aperture / 2;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
@@ -2851,41 +2886,45 @@ First let’s make the image on the cover of this book -- lots of random spheres
     hittable_list random_scene() {
         hittable_list world;
 
-        world.add(make_shared<sphere>(
-            point3(0,-1000,0), 1000, make_shared<lambertian>(color(0.5, 0.5, 0.5))));
+        auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
+        world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
 
-        int i = 1;
         for (int a = -11; a < 11; a++) {
             for (int b = -11; b < 11; b++) {
                 auto choose_mat = random_double();
                 point3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
+
                 if ((center - vec3(4, 0.2, 0)).length() > 0.9) {
+                    shared_ptr<material> sphere_material;
+
                     if (choose_mat < 0.8) {
                         // diffuse
                         auto albedo = color::random() * color::random();
-                        world.add(
-                            make_shared<sphere>(center, 0.2, make_shared<lambertian>(albedo)));
+                        sphere_material = make_shared<lambertian>(albedo);
+                        world.add(make_shared<sphere>(center, 0.2, sphere_material));
                     } else if (choose_mat < 0.95) {
                         // metal
-                        auto albedo = color::random(.5, 1);
-                        auto fuzz = random_double(0, .5);
-                        world.add(
-                            make_shared<sphere>(center, 0.2, make_shared<metal>(albedo, fuzz)));
+                        auto albedo = color::random(0.5, 1);
+                        auto fuzz = random_double(0, 0.5);
+                        sphere_material = make_shared<metal>(albedo, fuzz);
+                        world.add(make_shared<sphere>(center, 0.2, sphere_material));
                     } else {
                         // glass
-                        world.add(make_shared<sphere>(center, 0.2, make_shared<dielectric>(1.5)));
+                        sphere_material = make_shared<dielectric>(1.5);
+                        world.add(make_shared<sphere>(center, 0.2, sphere_material));
                     }
                 }
             }
         }
 
-        world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, make_shared<dielectric>(1.5)));
+        auto material1 = make_shared<dielectric>(1.5);
+        world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, material1));
 
-        world.add(
-            make_shared<sphere>(point3(-4, 1, 0), 1.0, make_shared<lambertian>(color(.4, .2, .1))));
+        auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
+        world.add(make_shared<sphere>(point3(-4, 1, 0), 1.0, material2));
 
-        world.add(
-            make_shared<sphere>(point3(4, 1, 0), 1.0, make_shared<metal>(color(.7, .6, .5), 0.0)));
+        auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
+        world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
         return world;
     }
