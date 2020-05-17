@@ -3,6 +3,14 @@ Change Log -- Ray Tracing in One Weekend
 
 # v3.2.0 (in progress)
 
+### Common
+  - Removed: now that the code handles ray-surface intersection from either side, we no longer need
+    the `flip_face` class, so we've deleted it from the text and from the code (#482, #270)
+
+### _The Next Week_
+  - Removed: Deleted the section covering the old `flip_face` class, renumbered images as this
+    eliminated the rendering with missing Cornell box faces (#482)
+
 
 ----------------------------------------------------------------------------------------------------
 # v3.1.2 (in progress)
