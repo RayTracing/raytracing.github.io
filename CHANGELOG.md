@@ -3,6 +3,9 @@ Change Log -- Ray Tracing in One Weekend
 
 # v3.2.0 (in progress)
 
+### Common
+  - Change: Renamed and explicitly numbered book images and figures (#495)
+
 
 ----------------------------------------------------------------------------------------------------
 # v3.1.2 (in progress)
