@@ -97,6 +97,7 @@ class dielectric : public material {
 class diffuse_light : public material {
     public:
         diffuse_light(shared_ptr<texture> a) : emit(a) {}
+        diffuse_light(color c) : emit(make_shared<solid_color>(c)) {}
 
         virtual color emitted(
             const ray& r_in, const hit_record& rec, double u, double v, const point3& p
@@ -130,6 +131,7 @@ class isotropic : public material {
 
 class lambertian : public material {
     public:
+        lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
         lambertian(shared_ptr<texture> a) : albedo(a) {}
 
         virtual bool scatter(
