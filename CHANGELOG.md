@@ -10,6 +10,7 @@ Change Log -- Ray Tracing in One Weekend
 ### _The Next Week_
   - Removed: Deleted the section covering the old `flip_face` class, renumbered images as this
     eliminated the rendering with missing Cornell box faces (#482)
+  - Change: Renamed and explicitly numbered book images and figures (#495)
 
 
 ----------------------------------------------------------------------------------------------------
