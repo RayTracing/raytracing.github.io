@@ -21,10 +21,16 @@
 class constant_medium : public hittable  {
     public:
         constant_medium(shared_ptr<hittable> b, double d, shared_ptr<texture> a)
-            : boundary(b), neg_inv_density(-1/d)
-        {
-            phase_function = make_shared<isotropic>(a);
-        }
+            : boundary(b),
+              neg_inv_density(-1/d),
+              phase_function(make_shared<isotropic>(a))
+            {}
+
+        constant_medium(shared_ptr<hittable> b, double d, color c)
+            : boundary(b),
+              neg_inv_density(-1/d),
+              phase_function(make_shared<isotropic>(make_shared<solid_color>(c)))
+            {}
 
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 
