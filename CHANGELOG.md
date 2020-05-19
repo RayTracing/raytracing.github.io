@@ -3,6 +3,9 @@ Change Log -- Ray Tracing in One Weekend
 
 # v3.1.2 (in progress)
 
+### _The Rest of Your Life_
+  - Fix: missing closing parenthesis in listing 10 (#603)
+
 
 ----------------------------------------------------------------------------------------------------
 # v3.1.1 (2020-05-16)
