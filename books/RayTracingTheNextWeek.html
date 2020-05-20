@@ -1041,6 +1041,7 @@ Now we can make textured materials by replacing the `const color& a` with a text
     class lambertian : public material {
         public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
             lambertian(shared_ptr<texture> a) : albedo(a) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -1064,24 +1065,6 @@ Now we can make textured materials by replacing the `const color& a` with a text
     [Listing [lambertian-textured]: <kbd>[material.h]</kbd> Lambertian material with texture]
 </div>
 
-<div class='together'>
-Where you used to have code like this:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        ...make_shared<lambertian>(color(0.5, 0.5, 0.5))
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [lam-solid]: <kbd>[main.cc]</kbd> Lambertian material with solid color]
-
-now you should replace the `color(...)` with `make_shared<solid_color>(...)`
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        ...make_shared<lambertian>(make_shared<solid_color>(0.5, 0.5, 0.5))
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [lam-textured]: <kbd>[main.cc]</kbd> Lambertian material with texture]
-
-Update all three occurrences of lambertian in the `random_scene()` function in `main.cc`.
-</div>
-
 
 A Checker Texture
 ------------------
@@ -1094,7 +1077,12 @@ forms a 3D checker pattern.
     class checker_texture : public texture {
         public:
             checker_texture() {}
-            checker_texture(shared_ptr<texture> t0, shared_ptr<texture> t1): even(t0), odd(t1) {}
+
+            checker_texture(shared_ptr<texture> t0, shared_ptr<texture> t1)
+                : even(t0), odd(t1) {}
+
+            checker_texture(color c1, color c2)
+                : even(make_shared<solid_color>(c1)) , odd(make_shared<solid_color>(c2)) {}
 
             virtual color value(double u, double v, const point3& p) const {
                 auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
@@ -1119,10 +1107,7 @@ This is in the spirit of shader networks introduced by Pat Hanrahan back in the 
 If we add this to our `random_scene()` function’s base sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    auto checker = make_shared<checker_texture>(
-        make_shared<solid_color>(0.2, 0.3, 0.1),
-        make_shared<solid_color>(0.9, 0.9, 0.9)
-    );
+    auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
 
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1144,10 +1129,7 @@ If we add a new scene:
     hittable_list two_spheres() {
         hittable_list objects;
 
-        auto checker = make_shared<checker_texture>(
-            make_shared<solid_color>(0.2, 0.3, 0.1),
-            make_shared<solid_color>(0.9, 0.9, 0.9)
-        );
+        auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
 
         objects.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker)));
         objects.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker)));
@@ -1843,6 +1825,7 @@ the ray what color it is and performs no reflection. It’s very simple:
     class diffuse_light : public material  {
         public:
             diffuse_light(shared_ptr<texture> a) : emit(a) {}
+            diffuse_light(color c) : emit(make_shared<solid_color>(c)) {}
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
@@ -2028,7 +2011,7 @@ If we set up a rectangle as a light:
         objects.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
         objects.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(pertext)));
 
-        auto difflight = make_shared<diffuse_light>(make_shared<solid_color>(4,4,4));
+        auto difflight = make_shared<diffuse_light>(color(4,4,4));
         objects.add(make_shared<sphere>(point3(0,7,0), 2, difflight));
         objects.add(make_shared<xy_rect>(3, 5, 1, 3, -2, difflight));
 
@@ -2163,10 +2146,10 @@ Let’s make the 5 walls and the light of the box:
     hittable_list cornell_box() {
         hittable_list objects;
 
-        auto red   = make_shared<lambertian>(make_shared<solid_color>(.65, .05, .05));
-        auto white = make_shared<lambertian>(make_shared<solid_color>(.73, .73, .73));
-        auto green = make_shared<lambertian>(make_shared<solid_color>(.12, .45, .15));
-        auto light = make_shared<diffuse_light>(make_shared<solid_color>(15, 15, 15));
+        auto red   = make_shared<lambertian>(color(.65, .05, .05));
+        auto white = make_shared<lambertian>(color(.73, .73, .73));
+        auto green = make_shared<lambertian>(color(.12, .45, .15));
+        auto light = make_shared<diffuse_light>(color(15, 15, 15));
 
         objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
         objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
@@ -2540,10 +2523,16 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
     class constant_medium : public hittable {
         public:
             constant_medium(shared_ptr<hittable> b, double d, shared_ptr<texture> a)
-                : boundary(b), neg_inv_density(-1/d)
-            {
-                phase_function = make_shared<isotropic>(a);
-            }
+                : boundary(b),
+                  neg_inv_density(-1/d),
+                  phase_function(make_shared<isotropic>(a))
+                {}
+
+            constant_medium(shared_ptr<hittable> b, double d, color c)
+                : boundary(b),
+                  neg_inv_density(-1/d),
+                  phase_function(make_shared<isotropic>(color(c)))
+                {}
 
             virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
 
@@ -2658,10 +2647,10 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
     hittable_list cornell_smoke() {
         hittable_list objects;
 
-        auto red   = make_shared<lambertian>(make_shared<solid_color>(.65, .05, .05));
-        auto white = make_shared<lambertian>(make_shared<solid_color>(.73, .73, .73));
-        auto green = make_shared<lambertian>(make_shared<solid_color>(.12, .45, .15));
-        auto light = make_shared<diffuse_light>(make_shared<solid_color>(7, 7, 7));
+        auto red   = make_shared<lambertian>(color(.65, .05, .05));
+        auto white = make_shared<lambertian>(color(.73, .73, .73));
+        auto green = make_shared<lambertian>(color(.12, .45, .15));
+        auto light = make_shared<diffuse_light>(color(7, 7, 7));
 
         objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
         objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
@@ -2678,8 +2667,8 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
         box2 = make_shared<rotate_y>(box2, -18);
         box2 = make_shared<translate>(box2, vec3(130,0,65));
 
-        objects.add(make_shared<constant_medium>(box1, 0.01, make_shared<solid_color>(0,0,0)));
-        objects.add(make_shared<constant_medium>(box2, 0.01, make_shared<solid_color>(1,1,1)));
+        objects.add(make_shared<constant_medium>(box1, 0.01, color(0,0,0)));
+        objects.add(make_shared<constant_medium>(box2, 0.01, color(1,1,1)));
 
         return objects;
     }
@@ -2707,7 +2696,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     hittable_list final_scene() {
         hittable_list boxes1;
-        auto ground = make_shared<lambertian>(make_shared<solid_color>(0.48, 0.83, 0.53));
+        auto ground = make_shared<lambertian>(color(0.48, 0.83, 0.53));
 
         const int boxes_per_side = 20;
         for (int i = 0; i < boxes_per_side; i++) {
@@ -2728,13 +2717,12 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 
         objects.add(make_shared<bvh_node>(boxes1, 0, 1));
 
-        auto light = make_shared<diffuse_light>(make_shared<solid_color>(7, 7, 7));
+        auto light = make_shared<diffuse_light>(color(7, 7, 7));
         objects.add(make_shared<xz_rect>(123, 423, 147, 412, 554, light));
 
         auto center1 = point3(400, 400, 200);
         auto center2 = center1 + vec3(30,0,0);
-        auto moving_sphere_material =
-            make_shared<lambertian>(make_shared<solid_color>(0.7, 0.3, 0.1));
+        auto moving_sphere_material = make_shared<lambertian>(color(0.7, 0.3, 0.1));
         objects.add(make_shared<moving_sphere>(center1, center2, 0, 1, 50, moving_sphere_material));
 
         objects.add(make_shared<sphere>(point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
@@ -2744,12 +2732,9 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 
         auto boundary = make_shared<sphere>(point3(360,150,145), 70, make_shared<dielectric>(1.5));
         objects.add(boundary);
-        objects.add(make_shared<constant_medium>(
-            boundary, 0.2, make_shared<solid_color>(0.2, 0.4, 0.9)
-        ));
+        objects.add(make_shared<constant_medium>(boundary, 0.2, color(0.2, 0.4, 0.9)));
         boundary = make_shared<sphere>(point3(0, 0, 0), 5000, make_shared<dielectric>(1.5));
-        objects.add(make_shared<constant_medium>(
-            boundary, .0001, make_shared<solid_color>(1,1,1)));
+        objects.add(make_shared<constant_medium>(boundary, .0001, color(1,1,1)));
 
         auto emat = make_shared<lambertian>(make_shared<image_texture>("earthmap.jpg"));
         objects.add(make_shared<sphere>(point3(400,200,400), 100, emat));
@@ -2757,7 +2742,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         objects.add(make_shared<sphere>(point3(220,280,300), 80, make_shared<lambertian>(pertext)));
 
         hittable_list boxes2;
-        auto white = make_shared<lambertian>(make_shared<solid_color>(.73, .73, .73));
+        auto white = make_shared<lambertian>(color(.73, .73, .73));
         int ns = 1000;
         for (int j = 0; j < ns; j++) {
             boxes2.add(make_shared<sphere>(point3::random(0,165), 10, white));

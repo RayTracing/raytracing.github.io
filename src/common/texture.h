@@ -45,7 +45,12 @@ class solid_color : public texture {
 class checker_texture : public texture {
     public:
         checker_texture() {}
-        checker_texture(shared_ptr<texture> t0, shared_ptr<texture> t1): even(t0), odd(t1) {}
+
+        checker_texture(shared_ptr<texture> t0, shared_ptr<texture> t1)
+            : even(t0), odd(t1) {}
+
+        checker_texture(color c1, color c2)
+            : even(make_shared<solid_color>(c1)) , odd(make_shared<solid_color>(c2)) {}
 
         virtual color value(double u, double v, const vec3& p) const {
             auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
