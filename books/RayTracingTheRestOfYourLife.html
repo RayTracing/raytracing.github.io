@@ -777,7 +777,7 @@ model:
 
         shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
         box2 = make_shared<rotate_y>(box2, -18);
-        box2 = make_shared<translate>(box2, vec3(130,0,65);
+        box2 = make_shared<translate>(box2, vec3(130,0,65));
         world.add(box2);
 
         point3 lookfrom(278, 278, -800);
@@ -857,8 +857,8 @@ And _Lambertian_ material becomes:
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
             ) const {
-                point3 target = rec.p + rec.normal + random_unit_vector();
-                scattered = ray(rec.p, unit_vector(target-rec.p), r_in.time());
+                auto direction = rec.normal + random_unit_vector();
+                scattered = ray(rec.p, unit_vector(direction), r_in.time());
                 alb = albedo->value(rec.u, rec.v, rec.p);
                 pdf = dot(rec.normal, scattered.direction()) / pi;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -928,13 +928,17 @@ Now, just for the experience, try a different sampling strategy. As in the first
 randomly from the hemisphere above the surface. This would be $p(direction) = \frac{1}{2\pi}$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool scatter(
+    virtual bool scatter(
         const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
     ) const {
-        vec3 direction = random_in_hemisphere(rec.normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto direction = random_in_hemisphere(rec.normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         scattered = ray(rec.p, unit_vector(direction), r_in.time());
         alb = albedo->value(rec.u, rec.v, rec.p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         pdf = 0.5 / pi;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1292,13 +1296,13 @@ class because it won't really be more complicated than utility functions:
 We can rewrite our Lambertian material using this to get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool scatter(
+    virtual bool scatter(
         const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
     ) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         onb uvw;
         uvw.build_from_w(rec.normal);
-        vec3 direction = uvw.local(random_cosine_direction());
+        auto direction = uvw.local(random_cosine_direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         scattered = ray(rec.p, unit_vector(direction), r_in.time());
         alb = albedo->value(rec.u, rec.v, rec.p);
@@ -1393,10 +1397,10 @@ that math and get the concept, we can add it (see the highlighted region):
             return emitted;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        auto on_light = vec3(random_double(213,343), 554, random_double(227,332));
+        auto on_light = point3(random_double(213,343), 554, random_double(227,332));
         auto to_light = on_light - rec.p;
         auto distance_squared = to_light.length_squared();
-        to_light.make_unit_vector();
+        to_light = unit_vector(to_light);
 
         if (dot(to_light, rec.normal) < 0)
             return emitted;
@@ -1952,7 +1956,9 @@ The Lambertian material becomes simpler:
             lambertian(shared_ptr<texture> a) : albedo(a) {}
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const {
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, scatter_record& srec
+            ) const {
                 srec.is_specular = false;
                 srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
                 srec.pdf_ptr = new cosine_pdf(rec.normal);

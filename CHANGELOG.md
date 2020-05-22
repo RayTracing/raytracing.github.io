@@ -14,6 +14,11 @@ Change Log -- Ray Tracing in One Weekend
 ----------------------------------------------------------------------------------------------------
 # v3.1.2 (in progress)
 
+### _The Rest of Your Life_
+  - Fix: Missing closing parenthesis in listing 10 (#603)
+  - Fix: Tiny improvements to the lambertian::scatter() development (#604)
+  - Fix: Correct geometry type and unit vector method in `ray_color()`, listing 20 (#606)
+
 
 ----------------------------------------------------------------------------------------------------
 # v3.1.1 (2020-05-16)
