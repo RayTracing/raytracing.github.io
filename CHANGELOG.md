@@ -7,9 +7,21 @@ Change Log -- Ray Tracing in One Weekend
 ----------------------------------------------------------------------------------------------------
 # v3.2.0 (in progress)
 
+### Common
+  - Change: Renamed and explicitly numbered book images and figures (#495)
+  - New: Added alternative constructors that take color arguments in addition to the constructors
+    that take `shared_ptr<texture>` arguments, simplifying calling code. This applies to the
+    following classes: `checker_texture`, `constant_medium`, `diffuse_light`, and `lambertian`.
+    (#516)
+
 
 ----------------------------------------------------------------------------------------------------
 # v3.1.2 (in progress)
+
+### _The Rest of Your Life_
+  - Fix: Missing closing parenthesis in listing 10 (#603)
+  - Fix: Tiny improvements to the lambertian::scatter() development (#604)
+  - Fix: Correct geometry type and unit vector method in `ray_color()`, listing 20 (#606)
 
 
 ----------------------------------------------------------------------------------------------------
