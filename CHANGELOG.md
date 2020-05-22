@@ -3,8 +3,11 @@ Change Log -- Ray Tracing in One Weekend
 
 # v3.1.2 (in progress)
 
+### _In One Weekend_
+  - Fix: Corrected geometry type when computing distance between two points, final scene (#609)
+
 ### _The Rest of Your Life_
-  - Fix: missing closing parenthesis in listing 10 (#603)
+  - Fix: Missing closing parenthesis in listing 10 (#603)
 
 
 ----------------------------------------------------------------------------------------------------
