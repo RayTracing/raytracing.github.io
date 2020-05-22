@@ -8,6 +8,7 @@ Change Log -- Ray Tracing in One Weekend
 
 ### _The Rest of Your Life_
   - Fix: Missing closing parenthesis in listing 10 (#603)
+  - Fix: Tiny improvements to the lambertian::scatter() development (#604)
 
 
 ----------------------------------------------------------------------------------------------------
