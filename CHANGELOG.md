@@ -4,6 +4,7 @@ Change Log -- Ray Tracing in One Weekend
 # v3.1.2 (in progress)
 
 ### _In One Weekend_
+  - Fix: Correct typo: "Intance Translation" -> "Instance Translation"
   - Fix: Corrected geometry type when computing distance between two points, final scene (#609)
 
 ### _The Rest of Your Life_
