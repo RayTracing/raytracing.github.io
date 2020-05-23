@@ -1801,9 +1801,9 @@ And plugging it into `ray_color()`:
         shared_ptr<hittable> light_shape =
             make_shared<xz_rect>(213, 343, 227, 332, 554, make_shared<material>());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        hittable_pdf p0(light_shape, rec.p);
-        cosine_pdf p1(rec.normal);
-        mixture_pdf p(&p0, &p1);
+        auto p0 = make_shared<hittable_pdf>(light_shape, rec.p);
+        auto p1 = make_shared<cosine_pdf>(rec.normal);
+        mixture_pdf p(p0, p1);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         scattered = ray(rec.p, p.generate(), r.time());
