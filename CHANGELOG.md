@@ -5,11 +5,14 @@ Change Log -- Ray Tracing in One Weekend
 
 ### _In One Weekend_
   - Fix: Correct typo: "Intance Translation" -> "Instance Translation"
+  - Fix: Corrected geometry type when computing distance between two points, final scene (#609)
 
 ### _The Rest of Your Life_
   - Fix: Missing closing parenthesis in listing 10 (#603)
   - Fix: Tiny improvements to the lambertian::scatter() development (#604)
   - Fix: Correct geometry type and unit vector method in `ray_color()`, listing 20 (#606)
+  - Fix: Listing 30, `mixture_pdf` needs `shared_ptr` arguments (#608)
+  - Fix: Listing 28, 30: `light_shape` should have default material, not `0` (#607)
 
 
 ----------------------------------------------------------------------------------------------------
