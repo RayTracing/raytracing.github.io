@@ -199,6 +199,7 @@ instead write to the error output stream (`std::cerr`):
             }
         }
 
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         std::cerr << "\nDone.\n";
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -374,9 +375,10 @@ the standard output stream.
 <div class='together'>
 Now we can change our main to use this:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "color.h"
     #include "vec3.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     #include <iostream>
 
@@ -490,20 +492,29 @@ Below in code, the ray `r` goes to approximately the pixel centers (I won’t wo
 for now because we’ll add antialiasing later):
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "color.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "ray.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "vec3.h"
 
     #include <iostream>
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     color ray_color(const ray& r) {
         vec3 unit_direction = unit_vector(r.direction());
         auto t = 0.5*(unit_direction.y() + 1.0);
         return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         const auto aspect_ratio = 16.0 / 9.0;
-        const int image_width = 384;
+        const int image_width = 400;
         const int image_height = static_cast<int>(image_width / aspect_ratio);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
@@ -754,11 +765,19 @@ Simplifying the Ray-Sphere Intersection Code
 Let’s revisit the ray-sphere equation:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 oc = r.origin() - center;
-    auto a = dot(r.direction(), r.direction());
-    auto b = 2.0 * dot(oc, r.direction());
-    auto c = dot(oc, oc) - radius*radius;
-    auto discriminant = b*b - 4*a*c;
+    double hit_sphere(const point3& center, double radius, const ray& r) {
+        vec3 oc = r.origin() - center;
+        auto a = dot(r.direction(), r.direction());
+        auto b = 2.0 * dot(oc, r.direction());
+        auto c = dot(oc, oc) - radius*radius;
+        auto discriminant = b*b - 4*a*c;
+
+        if (discriminant < 0) {
+            return -1.0;
+        } else {
+            return (-b - sqrt(discriminant) ) / (2.0*a);
+        }
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-sphere-before]: <kbd>[main.cc]</kbd> Ray-sphere intersection code (before)]
 
@@ -778,16 +797,22 @@ quadratic equation if $b = 2h$:
 Using these observations, we can now simplify the sphere-intersection code to this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 oc = r.origin() - center;
-    auto a = r.direction().length_squared();
-    auto half_b = dot(oc, r.direction());
-    auto c = oc.length_squared() - radius*radius;
-    auto discriminant = half_b*half_b - a*c;
+    double hit_sphere(const point3& center, double radius, const ray& r) {
+        vec3 oc = r.origin() - center;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto a = r.direction().length_squared();
+        auto half_b = dot(oc, r.direction());
+        auto c = oc.length_squared() - radius*radius;
+        auto discriminant = half_b*half_b - a*c;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-    if (discriminant < 0) {
-        return -1.0;
-    } else {
-        return (-half_b - sqrt(discriminant) ) / a;
+        if (discriminant < 0) {
+            return -1.0;
+        } else {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            return (-half_b - sqrt(discriminant) ) / a;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-sphere-after]: <kbd>[main.cc]</kbd> Ray-sphere intersection code (after)]
@@ -822,7 +847,6 @@ the abstract class:
         point3 p;
         vec3 normal;
         double t;
-
     };
 
     class hittable {
@@ -929,7 +953,7 @@ sphere.
         ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-normal-comparison]: <kbd>[sphere.h]</kbd> Comparing the ray and the normal]
+    [Listing [ray-normal-comparison]: Comparing the ray and the normal]
 
 
 If we decide to have the normals always point against the ray, we won't be able to use the dot
@@ -949,7 +973,7 @@ information:
         front_face = true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [normals-point-against]: <kbd>[sphere.h]</kbd> Remembering the side of the surface]
+    [Listing [normals-point-against]: Remembering the side of the surface]
 
 We can set things up so that normals always point “outward” from the surface, or always point
 against the incident ray. This decision is determined by whether you want to determine the side of
@@ -970,6 +994,7 @@ calculation for us.
     struct hit_record {
         point3 p;
         vec3 normal;
+        double t;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         bool front_face;
 
@@ -1190,6 +1215,7 @@ And the new main:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "rtweekend.h"
 
+    #include "color.h"
     #include "hittable_list.h"
     #include "sphere.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1213,7 +1239,7 @@ And the new main:
 
     int main() {
         const auto aspect_ratio = 16.0 / 9.0;
-        const int image_width = 384;
+        const int image_width = 400;
         const int image_height = static_cast<int>(image_width / aspect_ratio);
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
@@ -1240,12 +1266,9 @@ And the new main:
                 auto u = double(i) / (image_width-1);
                 auto v = double(j) / (image_height-1);
                 ray r(origin, lower_left_corner + u*horizontal + v*vertical);
-
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 color pixel_color = ray_color(r, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
                 write_color(std::cout, pixel_color);
             }
         }
@@ -1411,10 +1434,15 @@ samples) when writing out the color. In addition, we'll add a handy utility func
 <div class='together'>
 Main is also changed:
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "camera.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    ...
+
     int main() {
         const auto aspect_ratio = 16.0 / 9.0;
-        const int image_width = 384;
+        const int image_width = 400;
         const int image_height = static_cast<int>(image_width / aspect_ratio);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         const int samples_per_pixel = 100;
@@ -1453,13 +1481,9 @@ Main is also changed:
     [Listing [main-multi-sample]: <kbd>[main.cc]</kbd> Rendering with multi-sampled pixels]
 </div>
 
-<div class='together'>
-Zooming into the image that is produced, the big change is in edge pixels that are part background
-and part foreground:
+Zooming into the image that is produced, we can see the difference in edge pixels.
 
-  ![Image 6: Close-up of antialiased pixels](../images/img-1.06-antialias.png class=pixel)
-
-</div>
+  ![Image 6: Before and after antialiasng](../images/img-1.06-antialias.png class=pixel)
 
 
 
@@ -1505,7 +1529,7 @@ as the ray origin. Pick a random point $\mathbf{S}$ inside this unit radius sphe
 from the hit point $\mathbf{P}$ to the random point $\mathbf{S}$ (this is the vector
 $(\mathbf{S}-\mathbf{P})$):
 
-  ![Figure [rand-vec]: Generating a random diffuse bounce ray](../images/fig-1.09.rand-vec.jpg)
+  ![Figure [rand-vec]: Generating a random diffuse bounce ray](../images/fig-1.09-rand-vec.jpg)
 
 </div>
 
@@ -1576,12 +1600,12 @@ depth, returning no light contribution at the maximum depth:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         hit_record rec;
 
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
             return color(0,0,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
 
         if (world.hit(r, 0, infinity, rec)) {
             point3 target = rec.p + rec.normal + random_in_unit_sphere();
@@ -1599,7 +1623,7 @@ depth, returning no light contribution at the maximum depth:
 
     int main() {
         const auto aspect_ratio = 16.0 / 9.0;
-        const int image_width = 384;
+        const int image_width = 400;
         const int image_height = static_cast<int>(image_width / aspect_ratio);
         const int samples_per_pixel = 100;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1632,7 +1656,7 @@ depth, returning no light contribution at the maximum depth:
 <div class='together'>
 This gives us:
 
-  ![Image 7: First render of a diffuse sphere](../images/img-1.07-first-diffuse.jpg class=pixel)
+  ![Image 7: First render of a diffuse sphere](../images/img-1.07-first-diffuse.png class=pixel)
 
 </div>
 
@@ -1677,7 +1701,7 @@ square-root:
 That yields light grey, as we desire:
 
   ![Image 8: Diffuse sphere, with gamma correction
-  ](../images/img-1.08-gamma-correct.jpg class=pixel)
+  ](../images/img-1.08-gamma-correct.png class=pixel)
 
 </div>
 
@@ -1897,10 +1921,10 @@ that the pointer is to a class, which the “class material” in the hittable c
     #ifndef HITTABLE_H
     #define HITTABLE_H
 
-    #include "rtweekend.h"
-    #include "ray.h"
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "rtweekend.h"
+
     class material;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -2113,30 +2137,40 @@ A Scene with Metal Spheres
 Now let’s add some metal spheres to our scene:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "material.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    ...
+
     int main() {
         const auto aspect_ratio = 16.0 / 9.0;
-        const int image_width = 384;
+        const int image_width = 400;
         const int image_height = static_cast<int>(image_width / aspect_ratio);
         const int samples_per_pixel = 100;
         const int max_depth = 50;
 
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
+        camera cam;
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         hittable_list world;
 
-        world.add(make_shared<sphere>(
-            point3(0,0,-1), 0.5, make_shared<lambertian>(color(0.7, 0.3, 0.3))));
+        auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
+        auto material_center = make_shared<lambertian>(color(0.7, 0.3, 0.3));
+        auto material_left   = make_shared<metal>(color(0.8, 0.8, 0.8));
+        auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2));
 
-        world.add(make_shared<sphere>(
-            point3(0,-100.5,-1), 100, make_shared<lambertian>(color(0.8, 0.8, 0.0))));
-
-        world.add(make_shared<sphere>(point3(1,0,-1), 0.5, make_shared<metal>(color(.8,.6,.2))));
-        world.add(make_shared<sphere>(point3(-1,0,-1), 0.5, make_shared<metal>(color(.8,.8,.8))));
+        world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
+        world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
+        world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
+        world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        camera cam;
 
         for (int j = image_height-1; j >= 0; --j) {
             std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
@@ -2207,16 +2241,28 @@ absorb those.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [metal-fuzz]: <kbd>[material.h]</kbd> Metal spheres with fuzziness]
+    [Listing [metal-fuzz]: <kbd>[material.h]</kbd> Metal material fuzziness]
 
 </div>
 
-<div class='together'>
 We can try that out by adding fuzziness 0.3 and 1.0 to the metals:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+        ...
+        auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
+        auto material_center = make_shared<lambertian>(color(0.7, 0.3, 0.3));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto material_left   = make_shared<metal>(color(0.8, 0.8, 0.8), 0.3);
+        auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 1.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [metal-fuzz-spheres]: <kbd>[main.cc]</kbd> Metal spheres with fuzziness]
 
   ![Image 12: Fuzzed metal](../images/img-1.12-metal-fuzz.png class=pixel)
 
-</div>
 
 
 
@@ -2317,12 +2363,7 @@ And the dielectric material that always refracts is:
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const {
                 attenuation = color(1.0, 1.0, 1.0);
-                double etai_over_etat;
-                if (rec.front_face) {
-                    etai_over_etat = 1.0 / ref_idx;
-                } else {
-                    etai_over_etat = ref_idx;
-                }
+                double etai_over_etat = rec.front_face ? (1.0 / ref_idx) : ref_idx;
 
                 vec3 unit_direction = unit_vector(r_in.direction());
                 vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
@@ -2364,11 +2405,10 @@ The equality between the two sides of the equation is broken, and a solution can
 solution does not exist, the glass cannot refract, and therefore must reflect the ray:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    if(etai_over_etat * sin_theta > 1.0) {
+    if (etai_over_etat * sin_theta > 1.0) {
         // Must Reflect
         ...
-    }
-    else {
+    } else {
         // Can Refract
         ...
     }
@@ -2393,11 +2433,10 @@ and
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
     double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
-    if(etai_over_etat * sin_theta > 1.0) {
+    if (etai_over_etat * sin_theta > 1.0) {
         // Must Reflect
         ...
-    }
-    else {
+    } else {
         // Can Refract
         ...
     }
@@ -2418,7 +2457,7 @@ And the dielectric material that always refracts (when possible) is:
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const {
                 attenuation = color(1.0, 1.0, 1.0);
-                double etai_over_etat = (rec.front_face) ? (1.0 / ref_idx) : (ref_idx);
+                double etai_over_etat = rec.front_face ? (1.0 / ref_idx) : ref_idx;
 
                 vec3 unit_direction = unit_vector(r_in.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2448,16 +2487,12 @@ Attenuation is always 1 -- the glass surface absorbs nothing. If we try that out
 parameters:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    world.add(make_shared<sphere>(
-        point3(0,0,-1), 0.5, make_shared<lambertian>(color(0.1, 0.2, 0.5))));
-
-    world.add(make_shared<sphere>(
-        point3(0,-100.5,-1), 100, make_shared<lambertian>(color(0.8, 0.8, 0.0))));
-
-    world.add(make_shared<sphere>(point3(1,0,-1), 0.5, make_shared<metal>(color(.8, .6, .2), 0.0)));
-    world.add(make_shared<sphere>(point3(-1,0,-1), 0.5, make_shared<dielectric>(1.5)));
+    auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
+    auto material_left   = make_shared<dielectric>(1.5);
+    auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [scene-dielectric]: <kbd>[main.cc]</kbd> Scene with dielectric sphere]
+    [Listing [scene-dielectric]: <kbd>[main.cc]</kbd> Scene with dielectric and shiny sphere]
 
 We get:
 
@@ -2495,7 +2530,7 @@ This yields our full glass material:
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const {
                 attenuation = color(1.0, 1.0, 1.0);
-                double etai_over_etat = (rec.front_face) ? (1.0 / ref_idx) : (ref_idx);
+                double etai_over_etat = rec.front_face ? (1.0 / ref_idx) : ref_idx;
 
                 vec3 unit_direction = unit_vector(r_in.direction());
                 double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
@@ -2535,11 +2570,13 @@ the geometry is unaffected, but the surface normal points inward. This can be us
 make a hollow glass sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    world.add(make_shared<sphere>(point3(0,0,-1), 0.5, make_shared<lambertian>(color(.1, .2, .5))));
-    world.add(make_shared<sphere>(point3(0,-100.5,-1), 100, make_shared<lambertian>(color(.8,.8,0.))));
-    world.add(make_shared<sphere>(point3(1,0,-1), 0.5, make_shared<metal>(color(.8, .6, .2), 0.3)));
-    world.add(make_shared<sphere>(point3(-1,0,-1), 0.5, make_shared<dielectric>(1.5)));
-    world.add(make_shared<sphere>(point3(-1,0,-1), -0.45, make_shared<dielectric>(1.5)));
+    world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
+    world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
+    world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),  -0.4, material_left));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-hollow-glass]: <kbd>[main.cc]</kbd> Scene with hollow glass sphere]
 </div>
@@ -2613,13 +2650,24 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
 </div>
 
 <div class='together'>
-When calling it with camera `cam(90, double(image_width)/image_height)` and these spheres:
+When calling it with camera `cam(90, aspect_ratio)` and these spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    auto R = cos(pi/4);
-    hittable_list world;
-    world.add(make_shared<sphere>(point3(-R,0,-1), R, make_shared<lambertian>(color(0, 0, 1))));
-    world.add(make_shared<sphere>(point3( R,0,-1), R, make_shared<lambertian>(color(1, 0, 0))));
+    int main() {
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        camera cam(90.0, aspect_ratio);
+
+        auto R = cos(pi/4);
+        hittable_list world;
+
+        auto material_left  = make_shared<lambertian>(color(0,0,1));
+        auto material_right = make_shared<lambertian>(color(1,0,0));
+
+        world.add(make_shared<sphere>(point3(-R, 0, -1), R, material_left));
+        world.add(make_shared<sphere>(point3( R, 0, -1), R, material_right));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-wide-angle]: <kbd>[main.cc]</kbd> Scene with wide-angle camera]
 
@@ -2699,10 +2747,24 @@ camera horizontally level until you decide to experiment with crazy camera angle
     [Listing [camera-orient]: <kbd>[camera.h]</kbd> Positionable and orientable camera]
 
 <div class='together'>
-This allows us to change the viewpoint:
+We'll change back to the prior scene, and use the new viewpoint:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     camera cam(point3(-2,2,1), point3(0,0,-1), vec3(0,1,0), 90, aspect_ratio);
+
+    auto R = cos(pi/4);
+    hittable_list world;
+
+    auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
+    auto material_left   = make_shared<dielectric>(1.5);
+    auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
+
+    world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
+    world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
+    world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
+    world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0), -0.45, material_left));
+    world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-free-view]: <kbd>[main.cc]</kbd> Scene with alternate viewpoint]
 
@@ -2799,8 +2861,8 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
                 point3 lookat,
                 vec3   vup,
                 double vfov, // vertical field-of-view in degrees
-                double aspect_ratio,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                double aspect_ratio,
                 double aperture,
                 double focus_dist
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2827,8 +2889,9 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
-            ray get_ray(double s, double t) const {
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            ray get_ray(double s, double t) const {
                 vec3 rd = lens_radius * random_in_unit_disk();
                 vec3 offset = u * rd.x() + v * rd.y();
 
@@ -2882,7 +2945,7 @@ A Final Render
 <div class='together'>
 First let’s make the image on the cover of this book -- lots of random spheres:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     hittable_list random_scene() {
         hittable_list world;
 
@@ -2928,19 +2991,40 @@ First let’s make the image on the cover of this book -- lots of random spheres
 
         return world;
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
-        ...
-        auto world = random_scene();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        const auto aspect_ratio = 3.0 / 2.0;
+        const int image_width = 1200;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        const int image_height = static_cast<int>(image_width / aspect_ratio);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        const int samples_per_pixel = 500;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        const int max_depth = 50;
 
+        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         point3 lookfrom(13,2,3);
         point3 lookat(0,0,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 vup(0,1,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto dist_to_focus = 10.0;
         auto aperture = 0.1;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
-        ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto world = random_scene();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        for (int j = image_height-1; j >= 0; --j) {
+            ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-final]: <kbd>[main.cc]</kbd> Final scene]
