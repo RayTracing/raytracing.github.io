@@ -28,12 +28,12 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Listing 42: Don't need to include `ray.h` when using `rtweekend.h`
   - Fix: Listing 48: Add missing `material.h` include
   - Fix: Listing 61: Include updated `cam` declaration, show context w/highlighting
+  - Fix: Listing 62: Highlight rename of `camera::get_ray()` parameters to s, t (#616)
   - Fix: Listing 63: Show reverted scene declarations
   - Fix: Listing 68: Show final scene render parameters with highlighting
   - New: Listing 50: Show the updated material definitions
 
 ### _The Next Week
-
   - Fix: Listing 7: Show reverted viewing parameters from book 1 final scene
 
 
