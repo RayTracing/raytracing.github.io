@@ -22,7 +22,7 @@ Change Log -- Ray Tracing in One Weekend
   - Change: Listing 61: Refactored material and geometry declarations
   - Fix: Corrected various missed change highlights in code listings
   - Fix: Listing 7: Added missing `color.h`, `vec3.h` includes
-  - Fix: Listing 18: Add missing `double t` member of struct `hit_record`
+  - Fix: Listing 18: Add missing `double t` member of struct `hit_record` (#428)
   - Fix: Listing 24: Add missing `color.h` include
   - Fix: Listing 30: Add missing `camera.h` include
   - Fix: Listing 42: Don't need to include `ray.h` when using `rtweekend.h`
