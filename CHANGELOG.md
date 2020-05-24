@@ -33,7 +33,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Listing 68: Show final scene render parameters with highlighting
   - New: Listing 50: Show the updated material definitions
 
-### _The Next Week
+### _The Next Week_
   - Fix: Listing 7: Show reverted viewing parameters from book 1 final scene
 
 
