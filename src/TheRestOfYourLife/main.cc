@@ -101,27 +101,37 @@ hittable_list cornell_box(camera& cam, double aspect) {
 
 
 int main() {
+
+    // Image
+
     const auto aspect_ratio = 1.0 / 1.0;
     const int image_width = 600;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
     const int samples_per_pixel = 100;
     const int max_depth = 50;
 
-    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
-
-    color background(0,0,0);
-
-    camera cam;
-    auto world = cornell_box(cam, aspect_ratio);
+    // World
 
     auto lights = make_shared<hittable_list>();
     lights->add(make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>()));
     lights->add(make_shared<sphere>(point3(190, 90, 190), 90, shared_ptr<material>()));
 
+    auto world = cornell_box(cam, aspect_ratio);
+
+    // Camera
+
+    color background(0,0,0);
+
+    camera cam;
+
+    // Render
+
+    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
     for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
         for (int i = 0; i < image_width; ++i) {
-            color pixel_color;
+            color pixel_color(0,0,0);
             for (int s = 0; s < samples_per_pixel; ++s) {
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);

@@ -328,21 +328,22 @@ hittable_list final_scene() {
 
 
 int main() {
+
+    // Image
+
     const auto aspect_ratio = 1.0 / 1.0;
     const int image_width = 600;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-
-    hittable_list world;
-
     int samples_per_pixel = 100;
     int max_depth = 50;
 
+    // World
+
+    hittable_list world;
+
     point3 lookfrom;
     point3 lookat;
-    vec3 vup(0,1,0);
     auto vfov = 40.0;
-    auto aperture = 0.0;
-    auto dist_to_focus = 10.0;
     color background(0,0,0);
 
     switch (0) {
@@ -422,14 +423,22 @@ int main() {
             break;
     }
 
-    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    // Camera
+
+    vec3 vup(0,1,0);
+    auto aperture = 0.0;
+    auto dist_to_focus = 10.0;
 
     camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+
+    // Render
+
+    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
     for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
         for (int i = 0; i < image_width; ++i) {
-            color pixel_color;
+            color pixel_color(0,0,0);
             for (int s = 0; s < samples_per_pixel; ++s) {
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
