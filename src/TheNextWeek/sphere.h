@@ -49,7 +49,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
     if (discriminant > 0) {
         auto root = sqrt(discriminant);
 
-        auto temp = (-half_b - root)/a;
+        auto temp = (-half_b - root) / a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
             rec.p = r.at(rec.t);
@@ -60,7 +60,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
             return true;
         }
 
-        temp = (-half_b + root)/a;
+        temp = (-half_b + root) / a;
         if (temp < t_max && temp > t_min) {
             rec.t = temp;
             rec.p = r.at(rec.t);
@@ -74,5 +74,6 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
 
     return false;
 }
+
 
 #endif

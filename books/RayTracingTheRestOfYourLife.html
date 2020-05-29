@@ -552,19 +552,21 @@ relative probability of that direction being sampled. We have a method from the 
 uniform random samples in or on a unit sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 random_unit_vector() {
+        auto a = random_double(0, 2*pi);
+        auto z = random_double(-1, 1);
+        auto r = sqrt(1 - z*z);
+        return vec3(r*cos(a), r*sin(a), z);
+    }
+
+    ...
+
     vec3 random_in_unit_sphere() {
         while (true) {
             auto p = vec3::random(-1,1);
             if (p.length_squared() >= 1) continue;
             return p;
         }
-    }
-
-    vec3 random_unit_vector() {
-        auto a = random_double(0, 2*pi);
-        auto z = random_double(-1, 1);
-        auto r = sqrt(1 - z*z);
-        return vec3(r*cos(a), r*sin(a), z);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-unit-vector]: <kbd>[vec3.h]</kbd> Random vector of unit length]
@@ -1667,7 +1669,7 @@ instrumentation to all `hittable` subclasses, we’ll add two dummy functions to
 And we change `xz_rect` to implement those functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class xz_rect: public hittable {
+    class xz_rect : public hittable {
         public:
             ...
 
@@ -2290,6 +2292,8 @@ We can first try just sampling the sphere rather than the light:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     shared_ptr<hittable> light_shape = make_shared<xz_rect>(213, 343, 227, 332, 554, 0);
     shared_ptr<hittable> glass_sphere = make_shared<sphere>(point3(190, 90, 190), 90, 0);
+
+    ...
 
     for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
