@@ -16,6 +16,7 @@ Change Log -- Ray Tracing in One Weekend
     that take `shared_ptr<texture>` arguments, simplifying calling code. This applies to the
     following classes: `checker_texture`, `constant_medium`, `diffuse_light`, and `lambertian`.
     (#516)
+  - Fix: "Intance" typo in Chapter 8.1 to "Instance" (#629)
 
 ### _In One Weekend_
   - Change: Updated all rendered images except for 1.13, 1.14 (#179, #547, #548, #549, #550, #551,
