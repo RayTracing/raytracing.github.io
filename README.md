@@ -26,22 +26,13 @@ wanted to change after a year of organization. The biggest change in the text is
 chapters into subchapters. There is no one biggest change in the source, but there are a large
 number of small and significant changes. 
 
-2020-March-23 — v3.0.0 is out! Following the major v2.0.0 release, we finally had the chance to dig
-into some of the larger changes we'd been wanting to make for a long time. This is a large change
-across the books and entire source code. The new source code now builds using CMake, for most
-platforms and build systems. We've refactored a good deal of the project source, cleaning things up,
-refactoring, adding new functionality where it made sense, and generally trying to simplify the code
-with the goal of making it easier to understand and modify. Finally, this release includes a number
-of changes to areas of the book that have given readers difficulties. Enjoy!
 
 Directory Structure
 -------------------
 The organization of this repository is meant to be simple and self-evident at a glance:
 
 ### books/
-This folder contains the text of the books in the markdeep markup language. This folder also
-contains the acknowledgments which are shared across all three books. Lastly, it contains
-the javascript for the markdeep script.
+This folder contains the three raytracing books (in HTML), and some supporting material.
 
 ### images/
 Contains all of the images and figures of the books. Can also be used to compare your results.
@@ -59,6 +50,7 @@ are stored.
 ### src/<book>/
 Contains the source specific to any one book. Their is no sharing of source outside of the common
 directory.
+
 
 Source Code
 -----------
@@ -85,7 +77,6 @@ primary operating systems. Feel free to add your own implementation to the list!
 ### Branches
 The `master` branch contains the code at latest release. All ongoing development, with all of the
 latest changes, can be found in the `dev-patch`, `dev-minor`, and `dev-major` branches.
-
 
 
 Building and Running
