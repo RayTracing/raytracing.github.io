@@ -34,6 +34,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Listing 30: Add missing `camera.h` include
   - Fix: Listing 42: Don't need to include `ray.h` when using `rtweekend.h`
   - Fix: Listing 48: Add missing `material.h` include
+  - Fix: Listing 51: `refract()` function was missing `fabs()` on `sqrt()` argument (#559
   - Fix: Listing 61: Include updated `cam` declaration, show context w/highlighting
   - Fix: Listing 62: Highlight rename of `camera::get_ray()` parameters to s, t (#616)
   - Fix: Listing 63: Show reverted scene declarations
