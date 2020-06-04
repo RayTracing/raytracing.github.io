@@ -1,7 +1,7 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
-# v3.1.2 (in progress)
+# v3.1.2 (2020-06-03)
 
 ### _In One Weekend_
   - Fix: Correct typo: "Intance Translation" -> "Instance Translation"
