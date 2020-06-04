@@ -1719,7 +1719,8 @@ And then change `ray_color()`:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        shared_ptr<hittable> light_shape = make_shared<xz_rect>(213, 343, 227, 332, 554, 0);
+        shared_ptr<hittable> light_shape =
+            make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>());
         hittable_pdf p(light_shape, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -1806,13 +1807,12 @@ And plugging it into `ray_color()`:
         if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
             return emitted;
 
-
+        shared_ptr<hittable> light_shape =
+            make_shared<xz_rect>(213, 343, 227, 332, 554, make_shared<material>());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        shared_ptr<hittable> light_ptr = make_shared<xz_rect>(213, 343, 227, 332, 554, 0);
-        hittable_pdf p0(light_ptr, rec.p);
-
-        cosine_pdf p1(rec.normal);
-        mixture_pdf p(&p0, &p1);
+        auto p0 = make_shared<hittable_pdf>(light_shape, rec.p);
+        auto p1 = make_shared<cosine_pdf>(rec.normal);
+        mixture_pdf p(p0, p1);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         scattered = ray(rec.p, p.generate(), r.time());
