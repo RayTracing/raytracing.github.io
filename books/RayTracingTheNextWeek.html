@@ -223,7 +223,7 @@ code barely needs a change: `center` just needs to become a function `center(tim
         if (discriminant > 0) {
             auto root = sqrt(discriminant);
 
-            auto temp = (-half_b - root)/a;
+            auto temp = (-half_b - root) / a;
             if (temp < t_max && temp > t_min) {
                 rec.t = temp;
                 rec.p = r.at(rec.t);
@@ -349,15 +349,34 @@ closing at time 1.) Each sphere moves from its center $\mathbf{C}$ at time $t=0$
 And with these viewing parameters:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    const auto aspect_ratio = double(image_width) / image_height;
-    ...
-    point3 lookfrom(13,2,3);
-    point3 lookat(0,0,0);
-    vec3 vup(0,1,0);
-    auto dist_to_focus = 10.0;
-    auto aperture = 0.0;
+    int main() {
 
-    camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+        // Image
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        const auto aspect_ratio = 16.0 / 9.0;
+        const int image_width = 400;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        const int image_height = static_cast<int>(image_width / aspect_ratio);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        const int samples_per_pixel = 100;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        const int max_depth = 50;
+
+        ...
+
+        // Camera
+
+        point3 lookfrom(13,2,3);
+        point3 lookat(0,0,0);
+        vec3 vup(0,1,0);
+        auto dist_to_focus = 10.0;
+        auto aperture = 0.1;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-spheres-moving-camera]: <kbd>[main.cc]</kbd> Viewing parameters]
 
@@ -1898,6 +1917,13 @@ the new `emitted` value.
 
     int main() {
         ...
+
+        // Render
+
+        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
+        for (int j = image_height-1; j >= 0; --j) {
+            ...
         const color background(0,0,0);
         ...
                     pixel_color += ray_color(r, background, world, max_depth);
@@ -1948,7 +1974,7 @@ dimension. For our rectangles, we'll just pad the box a bit on the infnitely-thi
 The actual `xy_rect` class is thus:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class xy_rect: public hittable {
+    class xy_rect : public hittable {
         public:
             xy_rect() {}
 
@@ -2047,7 +2073,7 @@ Now let’s add the other two axes and the famous Cornell Box.
 This is xz and yz:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class xz_rect: public hittable {
+    class xz_rect : public hittable {
         public:
             xz_rect() {}
 
@@ -2068,7 +2094,7 @@ This is xz and yz:
             double x0, x1, z0, z1, k;
     };
 
-    class yz_rect: public hittable {
+    class yz_rect : public hittable {
         public:
             yz_rect() {}
 
@@ -2185,82 +2211,9 @@ And the view info:
 <div class='together'>
 We get:
 
-  ![Image 18: Initial empty Cornell box](../images/img-2.18-cornell-initial.jpg class=pixel)
+  ![Image 18: Empty Cornell box](../images/img-2.18-cornell-empty.jpg class=pixel)
 
-</div>
-
-
-Flipped Objects
-----------------
-<div class='together'>
-This is very noisy because the light is small. But we have a problem: some of the walls are facing
-the wrong way. We haven't specified that a diffuse material should behave differently on different
-faces of the object, but what if the Cornell box had a different pattern on the inside and outside
-walls? The rectangle objects are described such that their front faces are always in the directions
-$(1,0,0)$, $(0,1,0)$, or $(0,0,1)$. We need a way to switch the faces of an object. Let’s make a
-hittable that does nothing but hold another hittable, and flips the face:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class flip_face : public hittable {
-        public:
-            flip_face(shared_ptr<hittable> p) : ptr(p) {}
-
-            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
-                if (!ptr->hit(r, t_min, t_max, rec))
-                    return false;
-
-                rec.front_face = !rec.front_face;
-                return true;
-            }
-
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
-                return ptr->bounding_box(t0, t1, output_box);
-            }
-
-        public:
-            shared_ptr<hittable> ptr;
-    };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [flip-face]: <kbd>[hittable.h]</kbd> Flip-Face function]
-</div>
-
-<div class='together'>
-This makes Cornell:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hittable_list cornell_box() {
-        hittable_list objects;
-
-        auto red   = make_shared<lambertian>(color(.65, .05, .05));
-        auto white = make_shared<lambertian>(color(.73, .73, .73));
-        auto green = make_shared<lambertian>(color(.12, .45, .15));
-        auto light = make_shared<diffuse_light>(color(15, 15, 15));
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        objects.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
-        objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        objects.add(make_shared<flip_face>(make_shared<xz_rect>(0, 555, 0, 555, 555, white)));
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        objects.add(make_shared<flip_face>(make_shared<xy_rect>(0, 555, 0, 555, 555, white)));
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        return objects;
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [cornell-box-flipped]: <kbd>[main.cc]</kbd> Empty Cornell box with flipped rectangles]
-</div>
-
-<div class='together'>
-And voila:
-
-  ![Image 19: Empty Cornell box with fixed walls](../images/img-2.19-cornell-empty.jpg class=pixel)
-
+This image is very noisy because the light is small.
 </div>
 
 
@@ -2272,7 +2225,7 @@ The Cornell Box usually has two blocks in it. These are rotated relative to the 
 make an axis-aligned block primitive that holds 6 rectangles:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class box: public hittable  {
+    class box : public hittable  {
         public:
             box() {}
             box(const point3& p0, const point3& p1, shared_ptr<material> ptr);
@@ -2295,16 +2248,13 @@ make an axis-aligned block primitive that holds 6 rectangles:
         box_max = p1;
 
         sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr));
-        sides.add(make_shared<flip_face>(
-            make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr)));
+        sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr));
 
         sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), ptr));
-        sides.add(make_shared<flip_face>(
-            make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr)));
+        sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr));
 
         sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr));
-        sides.add(make_shared<flip_face>(
-            make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr)));
+        sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
     }
 
     bool box::hit(const ray& r, double t0, double t1, hit_record& rec) const {
@@ -2327,7 +2277,7 @@ Now we can add two blocks (but not rotated)
 <div class='together'>
 This gives:
 
-  ![Image 20: Cornell box with two blocks](../images/img-2.20-cornell-blocks.jpg class=pixel)
+  ![Image 19: Cornell box with two blocks](../images/img-2.19-cornell-blocks.jpg class=pixel)
 
 </div>
 
@@ -2345,8 +2295,12 @@ subtract 2 off the x-component of the ray origin.
 </div>
 
 
-Intance Translation
+Instance Translation
+<<<<<<< HEAD
 --------------------
+=======
+---------------------
+>>>>>>> dev-patch
 <div class='together'>
 Whether you think of this as a move or a change of coordinates is up to you. The code for this, to
 move any underlying hittable is a _translate_ instance.
@@ -2555,7 +2509,7 @@ And the changes to Cornell are:
 <div class='together'>
 Which yields:
 
-  ![Image 21: Standard Cornell box scene](../images/img-2.21-cornell-standard.jpg class=pixel)
+  ![Image 20: Standard Cornell box scene](../images/img-2.20-cornell-standard.jpg class=pixel)
 
 </div>
 
@@ -2728,12 +2682,12 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
         auto green = make_shared<lambertian>(color(.12, .45, .15));
         auto light = make_shared<diffuse_light>(color(7, 7, 7));
 
-        objects.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
+        objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
         objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
         objects.add(make_shared<xz_rect>(113, 443, 127, 432, 554, light));
-        objects.add(make_shared<flip_face>(make_shared<xz_rect>(0, 555, 0, 555, 555, white)));
+        objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
         objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-        objects.add(make_shared<flip_face>(make_shared<xy_rect>(0, 555, 0, 555, 555, white)));
+        objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
         shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
         box1 = make_shared<rotate_y>(box1,  15);
@@ -2755,7 +2709,7 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
 <div class='together'>
 We get:
 
-  ![Image 22: Cornell box with blocks of smoke](../images/img-2.22-cornell-smoke.jpg class=pixel)
+  ![Image 21: Cornell box with blocks of smoke](../images/img-2.21-cornell-smoke.jpg class=pixel)
 
 </div>
 
@@ -2839,7 +2793,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 <div class='together'>
 Running it with 10,000 rays per pixel yields:
 
-  ![Image 23: Final scene](../images/img-2.23-book2-final.jpg)
+  ![Image 22: Final scene](../images/img-2.22-book2-final.jpg)
 
 </div>
 

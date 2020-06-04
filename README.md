@@ -21,26 +21,62 @@ versions, use the print function in your browser.
 
 News
 -----
-2020-March-23 — v3.0.0 is out! Following the major v2.0.0 release, we finally had the chance to dig
-into some of the larger changes we'd been wanting to make for a long time. This is a large change
-across the books and entire source code. The new source code now builds using CMake, for most
-platforms and build systems. We've refactored a good deal of the project source, cleaning things up,
-refactoring, adding new functionality where it made sense, and generally trying to simplify the code
-with the goal of making it easier to understand and modify. Finally, this release includes a number
-of changes to areas of the book that have given readers difficulties. Enjoy!
+2020-May-5 — v3.1.0 is out! A smaller minor level patch to iron out a few of the larger things we
+wanted to change after a year of organization. The biggest change in the text is the separation of
+chapters into subchapters. There is no one biggest change in the source, but there are a large
+number of small and significant changes. 
 
 
-Branches
----------
-The `master` branch contains the code at latest release. All ongoing development, with all of the
-latest changes, can be found in the `dev-patch`, `dev-minor`, and `dev-major` branches.
+Directory Structure
+-------------------
+The organization of this repository is meant to be simple and self-evident at a glance:
+
+### books/
+This folder contains the three raytracing books (in HTML), and some supporting material.
+
+### images/
+Contains all of the images and figures of the books. Can also be used to compare your results.
+
+### style/
+Contains the css for the books and the site.
+
+### src/
+Contains the source.
+
+### src/common/
+Contains any headers that are common to two or more books. This is also where external headers
+are stored.
+
+### src/<book>/
+Contains the source specific to any one book. Their is no sharing of source outside of the common
+directory.
 
 
-Downloading The Source Code
-----------------------------
+Source Code
+-----------
+### Intent
+This repository is not meant to act as its own tutorial. The source presented here is provided so
+you can compare your work when progressing through the book. We strongly recommend reading and
+following along with the book to understand the source.
+
+### Downloading The Source Code
 The [GitHub home][] for this project contains all source and documentation associated with the _Ray
 Tracing in One Weekend_ series of books. To clone or download the source code, see the green "Clone
 or download" button in the upper right of the project home page.
+
+### Programming Language
+This book is written in C++, and uses some modern features of C++11. The language and features were
+chosen to be broadly understood by the largest collection of programmers. It is not meant to
+represent ideal C++ code.
+
+### Implementations in Other Languages
+The _Ray Tracing in One Weekend_ series has a long history of implementations in other programming
+languages (see [_Implementations in Other Languages_][implementations]), and across all three
+primary operating systems. Feel free to add your own implementation to the list!
+
+### Branches
+The `master` branch contains the code at latest release. All ongoing development, with all of the
+latest changes, can be found in the `dev-patch`, `dev-minor`, and `dev-major` branches.
 
 
 Building and Running
@@ -117,3 +153,4 @@ review the [CONTRIBUTING][] document for the most effective way to proceed.
 [web1]:                     https://raytracing.github.io/books/RayTracingInOneWeekend.html
 [web2]:                     https://raytracing.github.io/books/RayTracingTheNextWeek.html
 [web3]:                     https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html
+[implementations]:          https://github.com/RayTracing/raytracing.github.io/wiki/Implementations-in-Other-Languages

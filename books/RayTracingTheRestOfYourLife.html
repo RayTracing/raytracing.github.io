@@ -552,19 +552,21 @@ relative probability of that direction being sampled. We have a method from the 
 uniform random samples in or on a unit sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 random_unit_vector() {
+        auto a = random_double(0, 2*pi);
+        auto z = random_double(-1, 1);
+        auto r = sqrt(1 - z*z);
+        return vec3(r*cos(a), r*sin(a), z);
+    }
+
+    ...
+
     vec3 random_in_unit_sphere() {
         while (true) {
             auto p = vec3::random(-1,1);
             if (p.length_squared() >= 1) continue;
             return p;
         }
-    }
-
-    vec3 random_unit_vector() {
-        auto a = random_double(0, 2*pi);
-        auto z = random_double(-1, 1);
-        auto r = sqrt(1 - z*z);
-        return vec3(r*cos(a), r*sin(a), z);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-unit-vector]: <kbd>[vec3.h]</kbd> Random vector of unit length]
@@ -763,12 +765,12 @@ model:
         auto green = make_shared<lambertian>(color(.12, .45, .15));
         auto light = make_shared<diffuse_light>(color(15, 15, 15));
 
-        world.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
+        world.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
         world.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
-        world.add(make_shared<flip_face>(make_shared<xz_rect>(213, 343, 227, 332, 554, light)));
-        world.add(make_shared<flip_face>(make_shared<xz_rect>(0, 555, 0, 555, 555, white)));
+        world.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
+        world.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
         world.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-        world.add(make_shared<flip_face>(make_shared<xy_rect>(0, 555, 0, 555, 555, white)));
+        world.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
         shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
         box1 = make_shared<rotate_y>(box1, 15);
@@ -1667,7 +1669,7 @@ instrumentation to all `hittable` subclasses, we’ll add two dummy functions to
 And we change `xz_rect` to implement those functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class xz_rect: public hittable {
+    class xz_rect : public hittable {
         public:
             ...
 
@@ -1717,7 +1719,8 @@ And then change `ray_color()`:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        shared_ptr<hittable> light_shape = make_shared<xz_rect>(213, 343, 227, 332, 554, 0);
+        shared_ptr<hittable> light_shape =
+            make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>());
         hittable_pdf p(light_shape, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -1804,13 +1807,12 @@ And plugging it into `ray_color()`:
         if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
             return emitted;
 
-
+        shared_ptr<hittable> light_shape =
+            make_shared<xz_rect>(213, 343, 227, 332, 554, make_shared<material>());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        shared_ptr<hittable> light_ptr = make_shared<xz_rect>(213, 343, 227, 332, 554, 0);
-        hittable_pdf p0(light_ptr, rec.p);
-
-        cosine_pdf p1(rec.normal);
-        mixture_pdf p(&p0, &p1);
+        auto p0 = make_shared<hittable_pdf>(light_shape, rec.p);
+        auto p1 = make_shared<cosine_pdf>(rec.normal);
+        mixture_pdf p(p0, p1);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         scattered = ray(rec.p, p.generate(), r.time());
@@ -2121,12 +2123,12 @@ We also need to change the block to metal.
         auto green = make_shared<lambertian>(color(.12, .45, .15));
         auto light = make_shared<diffuse_light>(color(15, 15, 15));
 
-        world.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
+        world.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
         world.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
-        world.add(make_shared<flip_face>(make_shared<xz_rect>(213, 343, 227, 332, 554, light)));
-        world.add(make_shared<flip_face>(make_shared<xz_rect>(0, 555, 0, 555, 555, white)));
+        world.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
+        world.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
         world.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-        world.add(make_shared<flip_face>(make_shared<xy_rect>(0, 555, 0, 555, 555, white)));
+        world.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2290,6 +2292,8 @@ We can first try just sampling the sphere rather than the light:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     shared_ptr<hittable> light_shape = make_shared<xz_rect>(213, 343, 227, 332, 554, 0);
     shared_ptr<hittable> glass_sphere = make_shared<sphere>(point3(190, 90, 190), 90, 0);
+
+    ...
 
     for (int j = image_height-1; j >= 0; --j) {
         std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
