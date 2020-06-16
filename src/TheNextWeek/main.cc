@@ -331,8 +331,8 @@ int main() {
 
     // Image
 
-    const auto aspect_ratio = 1.0 / 1.0;
-    const int image_width = 600;
+    const auto aspect_ratio = 16.0 / 9.0;
+    const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
     int samples_per_pixel = 100;
     int max_depth = 50;
@@ -344,39 +344,41 @@ int main() {
     point3 lookfrom;
     point3 lookat;
     auto vfov = 40.0;
+    auto aperture = 0.0;
     color background(0,0,0);
 
     switch (0) {
         case 1:
             world = random_scene();
+            background = color(0.70, 0.80, 1.00);
             lookfrom = point3(13,2,3);
             lookat = point3(0,0,0);
             vfov = 20.0;
-            background = color(0.70, 0.80, 1.00);
+            aperture = 0.1;
             break;
 
         case 2:
             world = two_spheres();
+            background = color(0.70, 0.80, 1.00);
             lookfrom = point3(13,2,3);
             lookat = point3(0,0,0);
             vfov = 20.0;
-            background = color(0.70, 0.80, 1.00);
             break;
 
         case 3:
             world = two_perlin_spheres();
+            background = color(0.70, 0.80, 1.00);
             lookfrom = point3(13,2,3);
             lookat = point3(0,0,0);
             vfov = 20.0;
-            background = color(0.70, 0.80, 1.00);
             break;
 
         case 4:
             world = earth();
+            background = color(0.70, 0.80, 1.00);
             lookfrom = point3(0,0,12);
             lookat = point3(0,0,0);
             vfov = 20.0;
-            background = color(0.70, 0.80, 1.00);
             break;
 
         case 5:
@@ -426,7 +428,6 @@ int main() {
     // Camera
 
     vec3 vup(0,1,0);
-    auto aperture = 0.0;
     auto dist_to_focus = 10.0;
 
     camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
