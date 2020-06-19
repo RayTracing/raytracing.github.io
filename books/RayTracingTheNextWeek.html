@@ -708,7 +708,7 @@ For a sphere, that `bounding_box` function is easy:
             ...
             virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool sphere::bounding_box(double t0, double t1, aabb& output_box) const;
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ...
     };
@@ -1536,6 +1536,8 @@ Smoothing out the Result
 To make it smooth, we can linearly interpolate:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     inline double trilinear_interp(double c[2][2][2], double u, double v, double w) {
         auto accum = 0.0;
         for (int i=0; i < 2; i++)
@@ -1548,6 +1550,8 @@ To make it smooth, we can linearly interpolate:
         return accum;
     }
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     class perlin {
         public:
             ...
@@ -1555,6 +1559,8 @@ To make it smooth, we can linearly interpolate:
                 auto u = p.x() - floor(p.x());
                 auto v = p.y() - floor(p.y());
                 auto w = p.z() - floor(p.z());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
                 int i = floor(p.x());
                 int j = floor(p.y());
                 int k = floor(p.z());
@@ -1570,6 +1576,7 @@ To make it smooth, we can linearly interpolate:
                             ];
 
                 return trilinear_interp(c, u, v, w);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
             ...
         }
@@ -1581,7 +1588,7 @@ To make it smooth, we can linearly interpolate:
 And we get:
 
   ![Image 8: Perlin texture with trilinear interpolation
-  ](../images/img-2.08-perlin-trilerp.jpg class=pixel)
+  ](../images/img-2.08-perlin-trilerp.png class=pixel)
 
 </div>
 
@@ -1620,7 +1627,7 @@ a Hermite cubic to round off the interpolation:
 This gives a smoother looking image:
 
   ![Image 9: Perlin texture, trilinearly interpolated, smoothed
-  ](../images/img-2.09-perlin-trilerp-smooth.jpg class=pixel)
+  ](../images/img-2.09-perlin-trilerp-smooth.png class=pixel)
 
 </div>
 
@@ -1634,7 +1641,9 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
     class noise_texture : public texture {
         public:
             noise_texture() {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             noise_texture(double sc) : scale(sc) {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             virtual color value(double u, double v, const point3& p) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1644,14 +1653,36 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
 
         public:
             perlin noise;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             double scale;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-smoothed-2]: <kbd>[texture.h]</kbd> Perlin smoothed, higher frequency]
+</div>
+
+<div class='together'>
+We then add that scale to the `two_perlin_spheres()` scene description::
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hittable_list two_perlin_spheres() {
+        hittable_list objects;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto pertext = make_shared<noise_texture>(4);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        objects.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
+        objects.add(make_shared<sphere>(point3(0, 2, 0), 2, make_shared<lambertian>(pertext)));
+
+        return objects;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scale-perlin]: <kbd>[main.cc]</kbd> Perlin-textured spheres with a scale to the noise]
+</div>
 
 which gives:
 
-  ![Image 10: Perlin texture, higher frequency](../images/img-2.10-perlin-hifreq.jpg class=pixel)
+  ![Image 10: Perlin texture, higher frequency](../images/img-2.10-perlin-hifreq.png class=pixel)
 
 </div>
 
@@ -1669,10 +1700,13 @@ reasonable set of irregular directions, and I won't bother to make them exactly 
     class perlin {
         public:
             perlin() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 ranvec = new vec3[point_count];
-
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 for (int i = 0; i < point_count; ++i) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                     ranvec[i] = unit_vector(vec3::random(-1,1));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 }
 
                 perm_x = perlin_generate_perm();
@@ -1681,14 +1715,19 @@ reasonable set of irregular directions, and I won't bother to make them exactly 
             }
 
             ~perlin() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 delete[] ranvec;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 delete[] perm_x;
                 delete[] perm_y;
                 delete[] perm_z;
             }
         ...
         private:
+            static const int point_count = 256;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3* ranvec;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             int* perm_x;
             int* perm_y;
             int* perm_z;
@@ -1706,24 +1745,33 @@ The Perlin class `noise()` method is now:
         public:
             ...
             double noise(const point3& p) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 auto u = p.x() - floor(p.x());
                 auto v = p.y() - floor(p.y());
                 auto w = p.z() - floor(p.z());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 int i = floor(p.x());
                 int j = floor(p.y());
                 int k = floor(p.z());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 c[2][2][2];
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
                 for (int di=0; di < 2; di++)
                     for (int dj=0; dj < 2; dj++)
                         for (int dk=0; dk < 2; dk++)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                             c[di][dj][dk] = ranvec[
                                 perm_x[(i+di) & 255] ^
                                 perm_y[(j+dj) & 255] ^
                                 perm_z[(k+dk) & 255]
                             ];
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 return perlin_interp(c, u, v, w);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
             ...
         }
@@ -1739,7 +1787,7 @@ And the interpolation becomes a bit more complicated:
         ...
         private:
             ...
-            inline double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
+            inline double perlin_interp(vec3 c[2][2][2], double u, double v, double w) const {
                 auto uu = u*u*(3-2*u);
                 auto vv = v*v*(3-2*v);
                 auto ww = w*w*(3-2*w);
@@ -1792,7 +1840,7 @@ perlin output back to between 0 and 1.
 This finally gives something more reasonable looking:
 
   ![Image 11: Perlin texture, shifted off integer values
-  ](../images/img-2.11-perlin-shift.jpg class=pixel)
+  ](../images/img-2.11-perlin-shift.png class=pixel)
 
 </div>
 
@@ -1829,9 +1877,30 @@ turbulence, and is a sum of repeated calls to noise:
 Here `fabs()` is the absolute value function defined in `<cmath>`.
 
 <div class='together'>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class noise_texture : public texture {
+        public:
+            noise_texture() {}
+            noise_texture(double sc) : scale(sc) {}
+
+            virtual color value(double u, double v, const point3& p) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                return color(1,1,1) * noise.turb(scale * p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            }
+
+        public:
+            perlin noise;
+            double scale;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [noise-tex-2]: <kbd>[texture.h]</kbd> Noise texture with turbulence]
+</div>
+
+<div class='together'>
 Used directly, turbulence gives a sort of camouflage netting appearance:
 
-  ![Image 12: Perlin texture with turbulence](../images/img-2.12-perlin-turb.jpg class=pixel)
+  ![Image 12: Perlin texture with turbulence](../images/img-2.12-perlin-turb.png class=pixel)
 
 </div>
 
@@ -1862,11 +1931,11 @@ effect is:
             double scale;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [noise-tex-2]: <kbd>[texture.h]</kbd> Noise texture with turbulence]
+    [Listing [noise-tex-3]: <kbd>[texture.h]</kbd> Noise texture with marbled texture]
 
 Which yields:
 
-  ![Image 13: Perlin noise, marbled texture](../images/img-2.13-perlin-marble.jpg class=pixel)
+  ![Image 13: Perlin noise, marbled texture](../images/img-2.13-perlin-marble.png class=pixel)
 
 </div>
 
@@ -1904,8 +1973,11 @@ the resulting image data.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
     #include "rtw_stb_image.h"
+    #include "perlin.h"
 
     #include <iostream>
+
+    ...
 
     class image_texture : public texture {
         public:
@@ -1965,13 +2037,34 @@ the resulting image data.
 
 <div class='together'>
 The representation of a packed array in that order is pretty standard. Thankfully, the [stb_image][]
-package makes that super simple -- just include the header `rtw_stb_image.h` (found in the project
-source code at `src/common/rtw_stb_image.h`) in `main.h`:
+package makes that super simple -- just write a header called `rtw_stb_image.h` that also deals with
+some compiler warnings:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtw_stb_image.h"
+    #ifndef RTWEEKEND_STB_IMAGE_H
+    #define RTWEEKEND_STB_IMAGE_H
+
+    // Disable pedantic warnings for this external library.
+    #ifdef _MSC_VER
+        // Microsoft Visual C++ Compiler
+        #pragma warning (push, 0)
+    #endif
+
+    #define STB_IMAGE_IMPLEMENTATION
+    #include "external/stb_image.h"
+
+    // Restore warning levels.
+    #ifdef _MSC_VER
+        // Microsoft Visual C++ Compiler
+        #pragma warning (pop)
+    #endif
+
+    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [incl-stb-img]: Including the STB image package]
+    [Listing [rtw-stb-image]: <kbd>[rtw_stb_image.h]</kbd> Include the stb_image package]
+
+The above assumes that you have copied the `stb_image.h` into a folder called `export`. Adjust as per
+your directory structure.
 </div>
 
 
@@ -2003,10 +2096,39 @@ We start to see some of the power of all colors being textures -- we can assign 
 to the lambertian material, and lambertian doesn’t need to be aware of it.
 
 <div class='together'>
-To test this, assign it to a sphere, and then temporarily cripple the `ray_color()` function in main
-to just return attenuation. You should get something like:
+To test this, throw it into main:
 
-  ![Image 15: Earth-mapped sphere](../images/img-2.15-earth-sphere.jpg class=pixel)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+        ...
+        switch (0) {
+            ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+            default:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            case 3:
+                ...
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            default:
+            case 4:
+                world = earth();
+                background = color(0.70, 0.80, 1.00);
+                lookfrom = point3(13,2,3);
+                lookat = point3(0,0,0);
+                vfov = 20.0;
+                break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-perlin-view]: <kbd>[main.cc]</kbd> Viewing parameters]
+
+If the photo comes back with a large cyan sphere in the middle, then stb_image failed to find your
+Earth map photo. The program will look for the file in the same directory as the executable. Make
+sure to copy the Earth into your build directory, or rewrite `earth()` to point somewhere else.
+
+  ![Image 15: Earth-mapped sphere](../images/img-2.15-earth-sphere.png class=pixel)
 
 </div>
 
