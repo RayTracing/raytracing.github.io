@@ -856,9 +856,9 @@ And _Lambertian_ material becomes:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool scatter(
+            bool scatter(
                 const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
-            ) const {
+            ) const override{
                 auto direction = rec.normal + random_unit_vector();
                 scattered = ray(rec.p, unit_vector(direction), r_in.time());
                 alb = albedo->value(rec.u, rec.v, rec.p);
@@ -930,9 +930,9 @@ Now, just for the experience, try a different sampling strategy. As in the first
 randomly from the hemisphere above the surface. This would be $p(direction) = \frac{1}{2\pi}$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    virtual bool scatter(
+    bool scatter(
         const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
-    ) const {
+    ) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto direction = random_in_hemisphere(rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1298,9 +1298,9 @@ class because it won't really be more complicated than utility functions:
 We can rewrite our Lambertian material using this to get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    virtual bool scatter(
+    bool scatter(
         const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
-    ) const {
+    ) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         onb uvw;
         uvw.build_from_w(rec.normal);
@@ -1444,8 +1444,8 @@ and there is a small space between light and ceiling. We probably want to have t
 down. We can do that by letting the emitted member function of hittable take extra information:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    virtual color emitted(const ray& r_in, const hit_record& rec, double u, double v,
-        const point3& p) const {
+    color emitted(const ray& r_in, const hit_record& rec, double u, double v,
+        const point3& p) const override{
 
         if (rec.front_face)
             return emit->value(u, v, p);
@@ -1550,12 +1550,12 @@ First, let’s try a cosine density:
         public:
             cosine_pdf(const vec3& w) { uvw.build_from_w(w); }
 
-            virtual double value(const vec3& direction) const {
+            double value(const vec3& direction) const override{
                 auto cosine = dot(unit_vector(direction), uvw.w());
                 return (cosine <= 0) ? 0 : cosine/pi;
             }
 
-            virtual vec3 generate() const {
+            vec3 generate() const override{
                 return uvw.local(random_cosine_direction());
             }
 
@@ -1625,11 +1625,11 @@ Now we can try sampling directions toward a `hittable`, like the light.
         public:
             hittable_pdf(shared_ptr<hittable> p, const point3& origin) : ptr(p), o(origin) {}
 
-            virtual double value(const vec3& direction) const {
+            double value(const vec3& direction) const override{
                 return ptr->pdf_value(o, direction);
             }
 
-            virtual vec3 generate() const {
+            vec3 generate() const override{
                 return ptr->random(o);
             }
 
@@ -1674,7 +1674,8 @@ And we change `xz_rect` to implement those functions:
             ...
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual double pdf_value(const point3& origin, const vec3& v) const {
+            double pdf_value(const point3& origin, const vec3& v) const
+            override{
                 hit_record rec;
                 if (!this->hit(ray(origin, v), 0.001, infinity, rec))
                     return 0;
@@ -1686,7 +1687,7 @@ And we change `xz_rect` to implement those functions:
                 return distance_squared / (cosine * area);
             }
 
-            virtual vec3 random(const point3& origin) const {
+            vec3 random(const point3& origin) const override{
                 auto random_point = point3(random_double(x0,x1), k, random_double(z0,z1));
                 return random_point - origin;
             }
@@ -1759,11 +1760,11 @@ class is straightforward:
                 p[1] = p1;
             }
 
-            virtual double value(const vec3& direction) const {
+            double value(const vec3& direction) const override{
                 return 0.5 * p[0]->value(direction) + 0.5 *p[1]->value(direction);
             }
 
-            virtual vec3 generate() const {
+            vec3 generate() const override{
                 if (random_double() < 0.5)
                     return p[0]->generate();
                 else
@@ -1958,9 +1959,9 @@ The Lambertian material becomes simpler:
             lambertian(shared_ptr<texture> a) : albedo(a) {}
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool scatter(
+            bool scatter(
                 const ray& r_in, const hit_record& rec, scatter_record& srec
-            ) const {
+            ) const override{
                 srec.is_specular = false;
                 srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
                 srec.pdf_ptr = new cosine_pdf(rec.normal);
@@ -2038,9 +2039,9 @@ is easy to fix.
         public:
             metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool scatter(
+            bool scatter(
                 const ray& r_in, const hit_record& rec, scatter_record& srec
-            ) const {
+            ) const override {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
                 srec.specular_ray = ray(rec.p, reflected+fuzz*random_in_unit_sphere());
                 srec.attenuation = albedo;

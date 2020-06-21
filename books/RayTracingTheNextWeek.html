@@ -190,7 +190,8 @@ times need not match up with the camera aperture open and close.
                 : center0(cen0), center1(cen1), time0(t0), time1(t1), radius(r), mat_ptr(m)
             {};
 
-            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+            bool hit(const ray& r, double tmin, double tmax, hit_record& rec)
+            const override;
 
             point3 center(double time) const;
 
@@ -272,9 +273,9 @@ Be sure that in the materials you have the scattered rays be at the time of the 
         public:
             lambertian(const color& a) : albedo(a) {}
 
-            virtual bool scatter(
+            bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const {
+            ) const override{
                 vec3 scatter_direction = rec.normal + random_unit_vector();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 scattered = ray(rec.p, scatter_direction, r_in.time());
@@ -706,9 +707,11 @@ For a sphere, that `bounding_box` function is easy:
     class sphere : public hittable {
         public:
             ...
-            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+            bool hit(const ray& r, double tmin, double tmax, hit_record& rec)
+            const override;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool sphere::bounding_box(double t0, double t1, aabb& output_box) const;
+            bool sphere::bounding_box(double t0, double t1, aabb& output_box)
+            const override;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ...
     };
@@ -739,9 +742,11 @@ and compute the box of those two boxes:
     class moving_sphere : public hittable {
         public:
             ...
-            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+            bool hit(const ray& r, double tmin, double tmax, hit_record& rec)
+            const override;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
+            bool bounding_box(double t0, double t1, aabb& output_box) const
+            override;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ...
     };
@@ -780,9 +785,11 @@ the fly because it is only usually called at BVH construction.
     class hittable_list : public hittable {
         public:
             ...
-            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+            bool hit(const ray& r, double tmin, double tmax, hit_record& rec)
+            const override;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
+            bool bounding_box(double t0, double t1, aabb& output_box) const
+            override;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     };
@@ -855,8 +862,10 @@ a class:
                 std::vector<shared_ptr<hittable>>& objects,
                 size_t start, size_t end, double time0, double time1);
 
-            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
+            bool hit(const ray& r, double tmin, double tmax, hit_record& rec)
+            const override;
+            bool bounding_box(double t0, double t1, aabb& output_box) const
+            override;
 
         public:
             shared_ptr<hittable> left;
@@ -1045,7 +1054,7 @@ The First Texture Class: Constant Texture
             solid_color(double red, double green, double blue)
               : solid_color(color(red,green,blue)) {}
 
-            virtual color value(double u, double v, const vec3& p) const {
+            color value(double u, double v, const vec3& p) const override{
                 return color_value;
             }
 
@@ -1186,9 +1195,9 @@ Now we can make textured materials by replacing the `const color& a` with a text
             lambertian(shared_ptr<texture> a) : albedo(a) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            virtual bool scatter(
+            bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const {
+            ) const override {
                 vec3 scatter_direction = rec.normal + random_unit_vector();
                 scattered = ray(rec.p, scatter_direction, r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1225,7 +1234,7 @@ forms a 3D checker pattern.
             checker_texture(color c1, color c2)
                 : even(make_shared<solid_color>(c1)) , odd(make_shared<solid_color>(c2)) {}
 
-            virtual color value(double u, double v, const point3& p) const {
+            color value(double u, double v, const point3& p) const override{
                 auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
                 if (sines < 0)
                     return odd->value(u, v, p);
@@ -1464,7 +1473,7 @@ Now if we create an actual texture that takes these floats between 0 and 1 and c
         public:
             noise_texture() {}
 
-            virtual color value(double u, double v, const point3& p) const {
+            color value(double u, double v, const point3& p) const override{
                 return color(1,1,1) * noise.noise(p);
             }
 
@@ -1636,7 +1645,7 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
             noise_texture() {}
             noise_texture(double sc) : scale(sc) {}
 
-            virtual color value(double u, double v, const point3& p) const {
+            color value(double u, double v, const point3& p) const override{
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 return color(1,1,1) * noise.noise(scale * p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1774,7 +1783,7 @@ perlin output back to between 0 and 1.
             noise_texture() {}
             noise_texture(double sc) : scale(sc) {}
 
-            virtual color value(double u, double v, const point3& p) const {
+            color value(double u, double v, const point3& p) const override{
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 return color(1,1,1) * 0.5 * (1.0 + noise.noise(scale * p));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1851,7 +1860,7 @@ effect is:
             noise_texture() {}
             noise_texture(double sc) : scale(sc) {}
 
-            virtual color value(double u, double v, const point3& p) const {
+            color value(double u, double v, const point3& p) const override{
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 return color(1,1,1) * 0.5 * (1 + sin(scale*p.z() + 10*noise.turb(p)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1932,7 +1941,7 @@ the resulting image data.
                 delete data;
             }
 
-            virtual color value(double u, double v, const vec3& p) const {
+            color value(double u, double v, const vec3& p) const override{
                 // If we have no texture data, then return solid cyan as a debugging aid.
                 if (data == nullptr)
                     return color(0,1,1);
@@ -2033,13 +2042,13 @@ the ray what color it is and performs no reflection. It’s very simple:
             diffuse_light(shared_ptr<texture> a) : emit(a) {}
             diffuse_light(color c) : emit(make_shared<solid_color>(c)) {}
 
-            virtual bool scatter(
+            bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const {
+            ) const override {
                 return false;
             }
 
-            virtual color emitted(double u, double v, const point3& p) const {
+            color emitted(double u, double v, const point3& p) const override{
                 return emit->value(u, v, p);
             }
 
@@ -2168,9 +2177,11 @@ The actual `xy_rect` class is thus:
             xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, shared_ptr<material> mat)
                 : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
 
-            virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
+            bool hit(const ray& r, double t0, double t1, hit_record& rec)
+            const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            bool bounding_box(double t0, double t1, aabb& output_box) const
+            override{
                 // The bounding box must have non-zero width in each dimension, so pad the Z
                 // dimension a small amount.
                 output_box = aabb(point3(x0,y0, k-0.0001), point3(x1, y1, k+0.0001));
@@ -2267,9 +2278,11 @@ This is xz and yz:
             xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<material> mat)
                 : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
-            virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
+            bool hit(const ray& r, double t0, double t1, hit_record& rec)
+            const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            bool bounding_box(double t0, double t1, aabb& output_box) const
+            override{
                 // The bounding box must have non-zero width in each dimension, so pad the Y
                 // dimension a small amount.
                 output_box = aabb(point3(x0,k-0.0001,z0), point3(x1, k+0.0001, z1));
@@ -2288,9 +2301,11 @@ This is xz and yz:
             yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<material> mat)
                 : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
-            virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
+            bool hit(const ray& r, double t0, double t1, hit_record& rec)
+            const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            bool bounding_box(double t0, double t1, aabb& output_box) const
+            override{
                 // The bounding box must have non-zero width in each dimension, so pad the X
                 // dimension a small amount.
                 output_box = aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
@@ -2417,9 +2432,11 @@ make an axis-aligned block primitive that holds 6 rectangles:
             box() {}
             box(const point3& p0, const point3& p1, shared_ptr<material> ptr);
 
-            virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
+            bool hit(const ray& r, double t0, double t1, hit_record& rec)
+            const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            bool bounding_box(double t0, double t1, aabb& output_box) const
+            override{
                 output_box = aabb(box_min, box_max);
                 return true;
             }
@@ -2498,8 +2515,10 @@ move any underlying hittable is a _translate_ instance.
             translate(shared_ptr<hittable> p, const vec3& displacement)
                 : ptr(p), offset(displacement) {}
 
-            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
+            bool hit(const ray& r, double t_min, double t_max, hit_record&
+            rec) const override;
+            bool bounding_box(double t0, double t1, aabb& output_box) const
+            override;
 
         public:
             shared_ptr<hittable> ptr;
@@ -2583,8 +2602,10 @@ For a y-rotation class we have:
         public:
             rotate_y(shared_ptr<hittable> p, double angle);
 
-            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            bool hit(const ray& r, double t_min, double t_max, hit_record&
+            rec) const override;
+            bool bounding_box(double t0, double t1, aabb& output_box) const
+            override{
                 output_box = bbox;
                 return hasbox;
             }
@@ -2751,9 +2772,11 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
                   phase_function(make_shared<isotropic>(color(c)))
                 {}
 
-            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
+            bool hit(const ray& r, double t_min, double t_max, hit_record&
+            rec) const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            bool bounding_box(double t0, double t1, aabb& output_box) const
+            override{
                 return boundary->bounding_box(t0, t1, output_box);
             }
 
@@ -2774,9 +2797,9 @@ The scattering function of isotropic picks a uniform random direction:
         public:
             isotropic(shared_ptr<texture> a) : albedo(a) {}
 
-            virtual bool scatter(
+            bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const  {
+            ) const  override{
                 scattered = ray(rec.p, random_in_unit_sphere(), r_in.time());
                 attenuation = albedo->value(rec.u, rec.v, rec.p);
                 return true;
