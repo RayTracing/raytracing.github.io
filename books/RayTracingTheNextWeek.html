@@ -177,6 +177,9 @@ We also need a moving object. I’ll create a sphere class that has its center m
 times need not match up with the camera aperture open and close.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef MOVING_SPHERE_H
+    #define MOVING_SPHERE_H
+
     #include "rtweekend.h"
 
     #include "hittable.h"
@@ -204,6 +207,8 @@ times need not match up with the camera aperture open and close.
     point3 moving_sphere::center(double time) const{
         return center0 + ((time - time0) / (time1 - time0))*(center1 - center0);
     }
+
+    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [moving-sphere]: <kbd>[moving_sphere.h]</kbd> A moving sphere]
 
@@ -613,6 +618,9 @@ because in a ray tracer all cases come up eventually). With all three dimensions
 passing in the interval $[t_{min}$, $t_{max}]$, we get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef AABB_H
+    #define AABB_H
+
     #include "rtweekend.h"
 
     class aabb {
@@ -640,6 +648,8 @@ passing in the interval $[t_{min}$, $t_{max}]$, we get:
             point3 _min;
             point3 _max;
     };
+
+    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [aabb]: <kbd>[aabb.h]</kbd> Axis-aligned bounding box class]
 </div>
@@ -708,7 +718,7 @@ For a sphere, that `bounding_box` function is easy:
             ...
             virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool sphere::bounding_box(double t0, double t1, aabb& output_box) const;
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ...
     };
@@ -839,6 +849,9 @@ the root just be a node we point to. I am a fan of the one class design when fea
 a class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef BVH_H
+    #define BVH_H
+
     #include "rtweekend.h"
     #include "hittable.h"
 
@@ -868,6 +881,8 @@ a class:
         output_box = box;
         return true;
     }
+
+    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [bvh]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy]
 </div>
@@ -1030,6 +1045,9 @@ The First Texture Class: Constant Texture
 ------------------------------------------
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef TEXTURE_H
+    #define TEXTURE_H
+
     #include "rtweekend.h"
 
     class texture {
@@ -1052,6 +1070,8 @@ The First Texture Class: Constant Texture
         private:
             color color_value;
     };
+
+    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [texture]: <kbd>[texture.h]</kbd> A texture class]
 
@@ -1309,12 +1329,10 @@ The following changes set up our main function:
     point3 lookat;
     auto vfov = 40.0;
     auto aperture = 0.0;
-    color background(0,0,0);
 
     switch (0) {
         case 1:
             world = random_scene();
-            background = color(0.70, 0.80, 1.00);
             lookfrom = point3(13,2,3);
             lookat = point3(0,0,0);
             vfov = 20.0;
@@ -1324,7 +1342,6 @@ The following changes set up our main function:
         default:
         case 2:
             world = two_spheres();
-            background = color(0.70, 0.80, 1.00);
             lookfrom = point3(13,2,3);
             lookat = point3(0,0,0);
             vfov = 20.0;
@@ -1391,6 +1408,9 @@ Let’s just use some sort of hashing to scramble this, instead of tiling. This 
 code to make it all happen:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef PERLIN_H
+    #define PERLIN_H
+
     class perlin {
         public:
             perlin() {
@@ -1450,6 +1470,8 @@ code to make it all happen:
                 }
             }
     };
+
+    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin]: <kbd>[perlin.h]</kbd> A Perlin texture class and functions]
 </div>
@@ -1510,7 +1532,6 @@ With a similar scene setup to before:
             default:
             case 3:
                 world = two_perlin_spheres();
-                background = color(0.70, 0.80, 1.00);
                 lookfrom = point3(13,2,3);
                 lookat = point3(0,0,0);
                 vfov = 20.0;
@@ -1536,6 +1557,8 @@ Smoothing out the Result
 To make it smooth, we can linearly interpolate:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     inline double trilinear_interp(double c[2][2][2], double u, double v, double w) {
         auto accum = 0.0;
         for (int i=0; i < 2; i++)
@@ -1548,6 +1571,8 @@ To make it smooth, we can linearly interpolate:
         return accum;
     }
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     class perlin {
         public:
             ...
@@ -1555,6 +1580,8 @@ To make it smooth, we can linearly interpolate:
                 auto u = p.x() - floor(p.x());
                 auto v = p.y() - floor(p.y());
                 auto w = p.z() - floor(p.z());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
                 int i = floor(p.x());
                 int j = floor(p.y());
                 int k = floor(p.z());
@@ -1570,6 +1597,7 @@ To make it smooth, we can linearly interpolate:
                             ];
 
                 return trilinear_interp(c, u, v, w);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
             ...
         }
@@ -1581,7 +1609,7 @@ To make it smooth, we can linearly interpolate:
 And we get:
 
   ![Image 8: Perlin texture with trilinear interpolation
-  ](../images/img-2.08-perlin-trilerp.jpg class=pixel)
+  ](../images/img-2.08-perlin-trilerp.png class=pixel)
 
 </div>
 
@@ -1620,7 +1648,7 @@ a Hermite cubic to round off the interpolation:
 This gives a smoother looking image:
 
   ![Image 9: Perlin texture, trilinearly interpolated, smoothed
-  ](../images/img-2.09-perlin-trilerp-smooth.jpg class=pixel)
+  ](../images/img-2.09-perlin-trilerp-smooth.png class=pixel)
 
 </div>
 
@@ -1634,7 +1662,9 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
     class noise_texture : public texture {
         public:
             noise_texture() {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             noise_texture(double sc) : scale(sc) {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             virtual color value(double u, double v, const point3& p) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1644,14 +1674,36 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
 
         public:
             perlin noise;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             double scale;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-smoothed-2]: <kbd>[texture.h]</kbd> Perlin smoothed, higher frequency]
+</div>
+
+<div class='together'>
+We then add that scale to the `two_perlin_spheres()` scene description:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hittable_list two_perlin_spheres() {
+        hittable_list objects;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto pertext = make_shared<noise_texture>(4);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        objects.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
+        objects.add(make_shared<sphere>(point3(0, 2, 0), 2, make_shared<lambertian>(pertext)));
+
+        return objects;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scale-perlin]: <kbd>[main.cc]</kbd> Perlin-textured spheres with a scale to the noise]
+</div>
 
 which gives:
 
-  ![Image 10: Perlin texture, higher frequency](../images/img-2.10-perlin-hifreq.jpg class=pixel)
+  ![Image 10: Perlin texture, higher frequency](../images/img-2.10-perlin-hifreq.png class=pixel)
 
 </div>
 
@@ -1669,10 +1721,13 @@ reasonable set of irregular directions, and I won't bother to make them exactly 
     class perlin {
         public:
             perlin() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 ranvec = new vec3[point_count];
-
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 for (int i = 0; i < point_count; ++i) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                     ranvec[i] = unit_vector(vec3::random(-1,1));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 }
 
                 perm_x = perlin_generate_perm();
@@ -1681,14 +1736,19 @@ reasonable set of irregular directions, and I won't bother to make them exactly 
             }
 
             ~perlin() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 delete[] ranvec;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 delete[] perm_x;
                 delete[] perm_y;
                 delete[] perm_z;
             }
         ...
         private:
+            static const int point_count = 256;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3* ranvec;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             int* perm_x;
             int* perm_y;
             int* perm_z;
@@ -1706,24 +1766,33 @@ The Perlin class `noise()` method is now:
         public:
             ...
             double noise(const point3& p) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 auto u = p.x() - floor(p.x());
                 auto v = p.y() - floor(p.y());
                 auto w = p.z() - floor(p.z());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 int i = floor(p.x());
                 int j = floor(p.y());
                 int k = floor(p.z());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 c[2][2][2];
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
                 for (int di=0; di < 2; di++)
                     for (int dj=0; dj < 2; dj++)
                         for (int dk=0; dk < 2; dk++)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                             c[di][dj][dk] = ranvec[
                                 perm_x[(i+di) & 255] ^
                                 perm_y[(j+dj) & 255] ^
                                 perm_z[(k+dk) & 255]
                             ];
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 return perlin_interp(c, u, v, w);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
             ...
         }
@@ -1739,7 +1808,7 @@ And the interpolation becomes a bit more complicated:
         ...
         private:
             ...
-            inline double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
+            inline double perlin_interp(vec3 c[2][2][2], double u, double v, double w) const {
                 auto uu = u*u*(3-2*u);
                 auto vv = v*v*(3-2*v);
                 auto ww = w*w*(3-2*w);
@@ -1792,7 +1861,7 @@ perlin output back to between 0 and 1.
 This finally gives something more reasonable looking:
 
   ![Image 11: Perlin texture, shifted off integer values
-  ](../images/img-2.11-perlin-shift.jpg class=pixel)
+  ](../images/img-2.11-perlin-shift.png class=pixel)
 
 </div>
 
@@ -1829,9 +1898,30 @@ turbulence, and is a sum of repeated calls to noise:
 Here `fabs()` is the absolute value function defined in `<cmath>`.
 
 <div class='together'>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class noise_texture : public texture {
+        public:
+            noise_texture() {}
+            noise_texture(double sc) : scale(sc) {}
+
+            virtual color value(double u, double v, const point3& p) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                return color(1,1,1) * noise.turb(scale * p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            }
+
+        public:
+            perlin noise;
+            double scale;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [noise-tex-2]: <kbd>[texture.h]</kbd> Noise texture with turbulence]
+</div>
+
+<div class='together'>
 Used directly, turbulence gives a sort of camouflage netting appearance:
 
-  ![Image 12: Perlin texture with turbulence](../images/img-2.12-perlin-turb.jpg class=pixel)
+  ![Image 12: Perlin texture with turbulence](../images/img-2.12-perlin-turb.png class=pixel)
 
 </div>
 
@@ -1862,11 +1952,11 @@ effect is:
             double scale;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [noise-tex-2]: <kbd>[texture.h]</kbd> Noise texture with turbulence]
+    [Listing [noise-tex-3]: <kbd>[texture.h]</kbd> Noise texture with marbled texture]
 
 Which yields:
 
-  ![Image 13: Perlin noise, marbled texture](../images/img-2.13-perlin-marble.jpg class=pixel)
+  ![Image 13: Perlin noise, marbled texture](../images/img-2.13-perlin-marble.png class=pixel)
 
 </div>
 
@@ -1904,8 +1994,11 @@ the resulting image data.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
     #include "rtw_stb_image.h"
+    #include "perlin.h"
 
     #include <iostream>
+
+    ...
 
     class image_texture : public texture {
         public:
@@ -1965,13 +2058,34 @@ the resulting image data.
 
 <div class='together'>
 The representation of a packed array in that order is pretty standard. Thankfully, the [stb_image][]
-package makes that super simple -- just include the header `rtw_stb_image.h` (found in the project
-source code at `src/common/rtw_stb_image.h`) in `main.h`:
+package makes that super simple -- just write a header called `rtw_stb_image.h` that also deals with
+some compiler warnings:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtw_stb_image.h"
+    #ifndef RTWEEKEND_STB_IMAGE_H
+    #define RTWEEKEND_STB_IMAGE_H
+
+    // Disable pedantic warnings for this external library.
+    #ifdef _MSC_VER
+        // Microsoft Visual C++ Compiler
+        #pragma warning (push, 0)
+    #endif
+
+    #define STB_IMAGE_IMPLEMENTATION
+    #include "external/stb_image.h"
+
+    // Restore warning levels.
+    #ifdef _MSC_VER
+        // Microsoft Visual C++ Compiler
+        #pragma warning (pop)
+    #endif
+
+    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [incl-stb-img]: Including the STB image package]
+    [Listing [rtw-stb-image]: <kbd>[rtw_stb_image.h]</kbd> Include the stb_image package]
+
+The above assumes that you have copied the `stb_image.h` into a folder called `external`. Adjust
+according to your directory structure.
 </div>
 
 
@@ -2003,10 +2117,38 @@ We start to see some of the power of all colors being textures -- we can assign 
 to the lambertian material, and lambertian doesn’t need to be aware of it.
 
 <div class='together'>
-To test this, assign it to a sphere, and then temporarily cripple the `ray_color()` function in main
-to just return attenuation. You should get something like:
+To test this, throw it into main:
 
-  ![Image 15: Earth-mapped sphere](../images/img-2.15-earth-sphere.jpg class=pixel)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+        ...
+        switch (0) {
+            ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+            default:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            case 3:
+                ...
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            default:
+            case 4:
+                world = earth();
+                lookfrom = point3(13,2,3);
+                lookat = point3(0,0,0);
+                vfov = 20.0;
+                break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-earth-view]: <kbd>[main.cc]</kbd> Viewing parameters]
+
+If the photo comes back with a large cyan sphere in the middle, then stb_image failed to find your
+Earth map photo. The program will look for the file in the same directory as the executable. Make
+sure to copy the Earth into your build directory, or rewrite `earth()` to point somewhere else.
+
+  ![Image 15: Earth-mapped sphere](../images/img-2.15-earth-sphere.png class=pixel)
 
 </div>
 
@@ -2024,7 +2166,7 @@ Emissive Materials
 -------------------
 <div class='together'>
 First, let’s make a light emitting material. We need to add an emitted function (we could also add
-it to `hit_record instead` -- that’s a matter of design taste). Like the background, it just tells
+it to `hit_record` instead -- that’s a matter of design taste). Like the background, it just tells
 the ray what color it is and performs no reflection. It’s very simple:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2080,13 +2222,18 @@ do this, we’ll add a background color parameter to our `ray_color` function, a
 the new `emitted` value.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     color ray_color(const ray& r, const color& background, const hittable& world, int depth) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
             return color(0,0,0);
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // If the ray hits nothing, return the background color.
         if (!world.hit(r, 0.001, infinity, rec))
             return background;
@@ -2099,25 +2246,90 @@ the new `emitted` value.
             return emitted;
 
         return emitted + attenuation * ray_color(scattered, background, world, depth-1);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ...
 
     int main() {
         ...
 
-        // Render
+        point3 lookfrom;
+        point3 lookat;
+        auto vfov = 40.0;
+        auto aperture = 0.0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        color background(0,0,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+        switch (0) {
+            case 1:
+                world = random_scene();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                background = color(0.70, 0.80, 1.00);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                lookfrom = point3(13,2,3);
+                lookat = point3(0,0,0);
+                vfov = 20.0;
+                aperture = 0.1;
+                break;
 
-        for (int j = image_height-1; j >= 0; --j) {
-            ...
-        const color background(0,0,0);
+            case 2:
+                world = two_spheres();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                background = color(0.70, 0.80, 1.00);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                lookfrom = point3(13,2,3);
+                lookat = point3(0,0,0);
+                vfov = 20.0;
+                break;
+
+            case 3:
+                world = two_perlin_spheres();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                background = color(0.70, 0.80, 1.00);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                lookfrom = point3(13,2,3);
+                lookat = point3(0,0,0);
+                vfov = 20.0;
+                break;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+            default:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            case 4:
+                world = earth();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                background = color(0.70, 0.80, 1.00);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                lookfrom = point3(13,2,3);
+                lookat = point3(0,0,0);
+                vfov = 20.0;
+                break;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            default:
+            case 5:
+                background = color(0.0, 0.0, 0.0);
+                break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+
         ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                     pixel_color += ray_color(r, background, world, max_depth);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-emitted]: <kbd>[main.cc]</kbd> ray_color function for emitting materials]
+
+Since we're removing the code that we used to determine the color of the sky when a ray hit it, we
+need to pass in a new color value for our old scene renders. We've elected to stick with a flat
+bluish-white for the whole sky. You could always pass in a boolean to switch between the previous
+skybox code versus the new solid color background. We're keeping it simple here.
+
 </div>
 
 
@@ -2161,11 +2373,15 @@ dimension. For our rectangles, we'll just pad the box a bit on the infnitely-thi
 The actual `xy_rect` class is thus:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef AARECT_H
+    #define AARECT_H
+
     class xy_rect : public hittable {
         public:
             xy_rect() {}
 
-            xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, shared_ptr<material> mat)
+            xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, 
+                shared_ptr<material> mat)
                 : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
 
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
@@ -2181,6 +2397,8 @@ The actual `xy_rect` class is thus:
             shared_ptr<material> mp;
             double x0, x1, y0, y1, k;
     };
+
+    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [xy-rect]: <kbd>[aarect.h]</kbd> XY-plane rectangle objects]
 </div>
@@ -2225,7 +2443,6 @@ If we set up a rectangle as a light:
         objects.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(pertext)));
 
         auto difflight = make_shared<diffuse_light>(color(4,4,4));
-        objects.add(make_shared<sphere>(point3(0,7,0), 2, difflight));
         objects.add(make_shared<xy_rect>(3, 5, 1, 3, -2, difflight));
 
         return objects;
@@ -2235,9 +2452,50 @@ If we set up a rectangle as a light:
 </div>
 
 <div class='together'>
+And then create a new scene, making careful attention to set the background color black:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+    #include "camera.h"
+    #include "color.h"
+    #include "hittable_list.h"
+    #include "material.h"
+    #include "moving_sphere.h"
+    #include "sphere.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "aarect.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    #include <iostream>
+    ...
+    int main() {
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        const int samples_per_pixel = 400;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+        switch (0) {
+            ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            default:
+            case 5:
+                world = simple_light();
+                background = color(0,0,0);
+                lookfrom = point3(26,3,6);
+                lookat = point3(0,2,0);
+                vfov = 20.0;
+                break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rectangle-light]: <kbd>[main.cc]</kbd> Rectangle light scene with black background]
+
+<div class='together'>
 We get:
 
-  ![Image 16: Scene with rectangle light source](../images/img-2.16-rect-light.jpg class=pixel)
+  ![Image 16: Scene with rectangle light source](../images/img-2.16-rect-light.png class=pixel)
 
 </div>
 
@@ -2247,7 +2505,7 @@ Note that the light is brighter than $(1,1,1)$. This allows it to be bright enou
 Fool around with making some spheres lights too.
 
   ![Image 17: Scene with rectangle and sphere light sources
-  ](../images/img-2.17-rect-sphere-light.jpg class=pixel)
+  ](../images/img-2.17-rect-sphere-light.png class=pixel)
 
 </div>
 
@@ -2264,7 +2522,8 @@ This is xz and yz:
         public:
             xz_rect() {}
 
-            xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<material> mat)
+            xz_rect(double _x0, double _x1, double _z0, double _z1, double _k,
+                shared_ptr<material> mat)
                 : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
@@ -2285,7 +2544,8 @@ This is xz and yz:
         public:
             yz_rect() {}
 
-            yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<material> mat)
+            yz_rect(double _y0, double _y1, double _z0, double _z1, double _k,
+                shared_ptr<material> mat)
                 : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
             virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const;
@@ -2369,7 +2629,7 @@ Let’s make the 5 walls and the light of the box:
         objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
         objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
         objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
-        objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));     
+        objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
         return objects;
     }
@@ -2378,27 +2638,47 @@ Let’s make the 5 walls and the light of the box:
 </div>
 
 <div class='together'>
-And the view info:
+Add the view and scene info:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    const auto aspect_ratio = double(image_width) / image_height;
-    ...
-    point3 lookfrom(278, 278, -800);
-    point3 lookat(278,278,0);
-    vec3 vup(0,1,0);
-    auto dist_to_focus = 10.0;
-    auto aperture = 0.0;
-    auto vfov = 40.0;
 
-    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+    int main() {
+        // Image
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        const auto aspect_ratio = 1.0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+        switch (0) {
+            ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+            default:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            case 5:
+                ...
+                break;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            default:
+            case 6:
+                world = cornell_box();
+                background = color(0,0,0);
+                lookfrom = point3(278, 278, -800);
+                lookat = point3(278, 278, 0);
+                vfov = 40.0;
+                break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+        ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [cornell-box-view]: <kbd>[main.cc]</kbd> Viewing parameters]
+    [Listing [cornell-box-view]: <kbd>[main.cc]</kbd> Changing aspect ratio and viewing parameters]
 </div>
 
 <div class='together'>
 We get:
 
-  ![Image 18: Empty Cornell box](../images/img-2.18-cornell-empty.jpg class=pixel)
+  ![Image 18: Empty Cornell box](../images/img-2.18-cornell-empty.png class=pixel)
 
 This image is very noisy because the light is small.
 </div>
@@ -2412,6 +2692,14 @@ The Cornell Box usually has two blocks in it. These are rotated relative to the 
 make an axis-aligned block primitive that holds 6 rectangles:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef BOX_H
+    #define BOX_H
+
+    #include "rtweekend.h"
+
+    #include "aarect.h"
+    #include "hittable_list.h"
+
     class box : public hittable  {
         public:
             box() {}
@@ -2447,6 +2735,8 @@ make an axis-aligned block primitive that holds 6 rectangles:
     bool box::hit(const ray& r, double t0, double t1, hit_record& rec) const {
         return sides.hit(r, t0, t1, rec);
     }
+
+    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [box-class]: <kbd>[box.h]</kbd> A box object]
 
@@ -2454,6 +2744,8 @@ make an axis-aligned block primitive that holds 6 rectangles:
 Now we can add two blocks (but not rotated)
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "box.h"
+    ...
     objects.add(make_shared<box>(point3(130, 0, 65), point3(295, 165, 230), white));
     objects.add(make_shared<box>(point3(265, 0, 295), point3(430, 330, 460), white));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2464,7 +2756,7 @@ Now we can add two blocks (but not rotated)
 <div class='together'>
 This gives:
 
-  ![Image 19: Cornell box with two blocks](../images/img-2.19-cornell-blocks.jpg class=pixel)
+  ![Image 19: Cornell box with two blocks](../images/img-2.19-cornell-blocks.png class=pixel)
 
 </div>
 
@@ -2483,11 +2775,7 @@ subtract 2 off the x-component of the ray origin.
 
 
 Instance Translation
-<<<<<<< HEAD
---------------------
-=======
 ---------------------
->>>>>>> dev-patch
 <div class='together'>
 Whether you think of this as a move or a change of coordinates is up to you. The code for this, to
 move any underlying hittable is a _translate_ instance.
@@ -2604,7 +2892,7 @@ For a y-rotation class we have:
 With constructor:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    rotate_y::rotate_y(shared_ptr<hittable>, double angle) : ptr(p) {
+    rotate_y::rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
         auto radians = degrees_to_radians(angle);
         sin_theta = sin(radians);
         cos_theta = cos(radians);
@@ -2696,7 +2984,7 @@ And the changes to Cornell are:
 <div class='together'>
 Which yields:
 
-  ![Image 20: Standard Cornell box scene](../images/img-2.20-cornell-standard.jpg class=pixel)
+  ![Image 20: Standard Cornell box scene](../images/img-2.20-cornell-standard.png class=pixel)
 
 </div>
 
@@ -2737,6 +3025,15 @@ distance is outside the volume, then there is no “hit”. For a constant volum
 density $C$ and the boundary. I’ll use another hittable for the boundary. The resulting class is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef CONSTANT_MEDIUM_H
+    #define CONSTANT_MEDIUM_H
+
+    #include "rtweekend.h"
+
+    #include "hittable.h"
+    #include "material.h"
+    #include "texture.h"
+
     class constant_medium : public hittable {
         public:
             constant_medium(shared_ptr<hittable> b, double d, shared_ptr<texture> a)
@@ -2748,7 +3045,7 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
             constant_medium(shared_ptr<hittable> b, double d, color c)
                 : boundary(b),
                   neg_inv_density(-1/d),
-                  phase_function(make_shared<isotropic>(color(c)))
+                  phase_function(make_shared<isotropic>(make_shared<solid_color>(c)))
                 {}
 
             virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
@@ -2762,6 +3059,8 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
             shared_ptr<material> phase_function;
             double neg_inv_density;
     };
+
+    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [const-med-class]: <kbd>[constant_medium.h]</kbd> Constant medium class]
 </div>
@@ -2861,6 +3160,9 @@ If we replace the two blocks with smoke and fog (dark and light particles), and 
 bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "constant_medium.h"
+    ...
+
     hittable_list cornell_smoke() {
         hittable_list objects;
 
@@ -2896,7 +3198,7 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
 <div class='together'>
 We get:
 
-  ![Image 21: Cornell box with blocks of smoke](../images/img-2.21-cornell-smoke.jpg class=pixel)
+  ![Image 21: Cornell box with blocks of smoke](../images/img-2.21-cornell-smoke.png class=pixel)
 
 </div>
 
@@ -2973,6 +3275,27 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         );
 
         return objects;
+    }
+
+    int main() {
+        // Image
+
+        const auto aspect_ratio = 1.0;
+        const int image_width = 800;
+        const int image_height = static_cast<int>(image_width / aspect_ratio);
+        const int samples_per_pixel = 10000;
+        const int max_depth = 50;
+        ...
+
+        default:
+        case 8:
+            world = final_scene();
+            background = color(0,0,0);
+            lookfrom = point3(478, 278, -600);
+            lookat = point3(278, 278, 0);
+            vfov = 40.0;
+            break;
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-final]: <kbd>[main.cc]</kbd> Final scene]
