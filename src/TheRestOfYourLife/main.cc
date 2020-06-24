@@ -112,14 +112,14 @@ int main() {
 
     point3 lookfrom(278, 278, -800);
     point3 lookat(278, 278, 0);
-    vec3 up(0, 1, 0);
+    vec3 vup(0, 1, 0);
     auto dist_to_focus = 10.0;
     auto aperture = 0.0;
     auto vfov = 40.0;
     auto t0 = 0.0;
     auto t1 = 1.0;
 
-    camera cam(lookfrom, lookat, up, vfov, aspect_ratio, aperture, dist_to_focus, t0, t1);
+    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, t0, t1);
     
     // Render
 
