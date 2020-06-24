@@ -3045,7 +3045,7 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
             constant_medium(shared_ptr<hittable> b, double d, color c)
                 : boundary(b),
                   neg_inv_density(-1/d),
-                  phase_function(make_shared<isotropic>(make_shared<solid_color>(c)))
+                  phase_function(make_shared<isotropic>(c))
                 {}
 
             virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
@@ -3071,6 +3071,7 @@ The scattering function of isotropic picks a uniform random direction:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class isotropic : public material {
         public:
+            isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
             isotropic(shared_ptr<texture> a) : albedo(a) {}
 
             virtual bool scatter(

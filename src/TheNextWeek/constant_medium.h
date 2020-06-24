@@ -29,7 +29,7 @@ class constant_medium : public hittable  {
         constant_medium(shared_ptr<hittable> b, double d, color c)
             : boundary(b),
               neg_inv_density(-1/d),
-              phase_function(make_shared<isotropic>(make_shared<solid_color>(c)))
+              phase_function(make_shared<isotropic>(c))
             {}
 
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
