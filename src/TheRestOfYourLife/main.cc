@@ -62,7 +62,7 @@ color ray_color(
 }
 
 
-hittable_list cornell_box(camera& cam, double aspect) {
+hittable_list cornell_box() {
     hittable_list world;
 
     auto red   = make_shared<lambertian>(color(.65, .05, .05));
@@ -85,23 +85,11 @@ hittable_list cornell_box(camera& cam, double aspect) {
     auto glass = make_shared<dielectric>(1.5);
     world.add(make_shared<sphere>(point3(190,90,190), 90 , glass));
 
-    point3 lookfrom(278, 278, -800);
-    point3 lookat(278, 278, 0);
-    vec3 up(0, 1, 0);
-    auto dist_to_focus = 10.0;
-    auto aperture = 0.0;
-    auto vfov = 40.0;
-    auto t0 = 0.0;
-    auto t1 = 1.0;
-
-    cam = camera(lookfrom, lookat, up, vfov, aspect, aperture, dist_to_focus, t0, t1);
-
     return world;
 }
 
 
 int main() {
-
     // Image
 
     const auto aspect_ratio = 1.0 / 1.0;
@@ -116,14 +104,23 @@ int main() {
     lights->add(make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>()));
     lights->add(make_shared<sphere>(point3(190, 90, 190), 90, shared_ptr<material>()));
 
-    auto world = cornell_box(cam, aspect_ratio);
-
-    // Camera
+    auto world = cornell_box();
 
     color background(0,0,0);
 
-    camera cam;
+    // Camera
 
+    point3 lookfrom(278, 278, -800);
+    point3 lookat(278, 278, 0);
+    vec3 vup(0, 1, 0);
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.0;
+    auto vfov = 40.0;
+    auto t0 = 0.0;
+    auto t1 = 1.0;
+
+    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, t0, t1);
+    
     // Render
 
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";

@@ -40,9 +40,12 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Listing 63: Show reverted scene declarations
   - Fix: Listing 68: Show final scene render parameters with highlighting
   - New: Listing 50: Show the updated material definitions
+  - New: Add new isotropic constructor taking color argument (#644)
 
 ### _The Next Week_
   - Fix: Listing 7: Show reverted viewing parameters from book 1 final scene
+  - Change: Listing 10: Separate out world & camera definitions in main (#646)
+  - New: Add new isotropic constructor taking color argument (#644)
 
 
 ----------------------------------------------------------------------------------------------------

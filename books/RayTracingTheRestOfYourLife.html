@@ -751,13 +751,16 @@ fact make mirrors a special case, and just make the $s/p$ implicit -- our code c
 
 Returning to the Cornell Box
 -----------------------------
-<div class='together'>
 Let’s do a simple refactoring and temporarily remove all materials that aren’t Lambertian. We can
 use our Cornell Box scene again, and let’s generate the camera in the function that generates the
-model:
+model.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hittable_list cornell_box(camera& cam, double aspect) {
+    ...
+    color ray_color(
+        ...
+
+    hittable_list cornell_box() {
         hittable_list world;
 
         auto red   = make_shared<lambertian>(color(.65, .05, .05));
@@ -782,6 +785,30 @@ model:
         box2 = make_shared<translate>(box2, vec3(130,0,65));
         world.add(box2);
 
+        return world;
+    }
+
+    int main() {
+        // Image
+
+        const auto aspect_ratio = 1.0 / 1.0;
+        const int image_width = 600;
+        const int image_height = static_cast<int>(image_width / aspect_ratio);
+        const int samples_per_pixel = 100;
+        const int max_depth = 50;
+
+        // World
+
+        auto lights = make_shared<hittable_list>();
+        lights->add(make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>()));
+        lights->add(make_shared<sphere>(point3(190, 90, 190), 90, shared_ptr<material>()));
+
+        auto world = cornell_box();
+
+        color background(0,0,0);
+
+        // Camera
+
         point3 lookfrom(278, 278, -800);
         point3 lookat(278, 278, 0);
         vec3 vup(0, 1, 0);
@@ -791,13 +818,17 @@ model:
         auto t0 = 0.0;
         auto t1 = 1.0;
 
-        cam = camera(lookfrom, lookat, vup, vfov, aspect, aperture, dist_to_focus, t0, t1);
+        camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, t0, t1);
 
-        return world;
+        // Render
+
+        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
+        for (int j = image_height-1; j >= 0; --j) {
+            ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [cornell-box]: <kbd>[main.cc]</kbd> Cornell box, refactored]
-</div>
 
 <div class='together'>
 At 500×500 my code produces this image in 10min on 1 core of my Macbook:
