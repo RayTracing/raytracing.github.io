@@ -6,6 +6,8 @@ Change Log -- Ray Tracing in One Weekend
 ### Common
   - Removed: now that the code handles ray-surface intersection from either side, we no longer need
     the `flip_face` class, so we've deleted it from the text and from the code (#482, #270)
+  - Change: Added header guards to the text of all three books whenever a new header file was
+    introduced
 
 ### _The Next Week_
   - Removed: Deleted the section covering the old `flip_face` class, renumbered images as this
@@ -46,10 +48,6 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Listing 7: Show reverted viewing parameters from book 1 final scene
   - Change: Listing 10: Separate out world & camera definitions in main (#646)
   - New: Add new isotropic constructor taking color argument (#644)
-
-
-----------------------------------------------------------------------------------------------------
-# v3.1.3 (in progress)
 
 
 ----------------------------------------------------------------------------------------------------
