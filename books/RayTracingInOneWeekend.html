@@ -1002,11 +1002,6 @@ We add the `front_face` bool to the `hit_record` struct. We'll also add a functi
 calculation for us.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef HITTABLE_H
-    #define HITTABLE_H
-
-    #include "ray.h"
-
     struct hit_record {
         point3 p;
         vec3 normal;
@@ -1020,13 +1015,6 @@ calculation for us.
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
-
-    class hittable {
-        public:
-            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
-    };
-
-    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hittable-time-side]: <kbd>[hittable.h]</kbd> The hittable class with time and side]
 
@@ -1962,12 +1950,10 @@ other so there is some circularity of the references. In C++ you just need to al
 that the pointer is to a class, which the “class material” in the hittable class below does:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef HITTABLE_H
-    #define HITTABLE_H
-
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "rtweekend.h"
+    #include "ray.h"
 
     class material;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1986,13 +1972,6 @@ that the pointer is to a class, which the “class material” in the hittable c
             normal = front_face ? outward_normal :-outward_normal;
         }
     };
-
-    class hittable {
-        public:
-            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
-    };
-
-    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hit-with-material]: <kbd>[hittable.h]</kbd> Hit record with added material pointer]
 </div>
