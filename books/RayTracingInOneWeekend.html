@@ -2346,14 +2346,14 @@ In order to determine the direction of the refracted ray, we have to solve for $
 
 On the refracted side of the surface there is a refracted ray $\mathbf{R'}$ and a normal
 $\mathbf{n'}$, and there exists an angle, $\theta'$, between them. We can split $\mathbf{R'}$ into
-the parts of the ray that are parallel to $\mathbf{n'}$ and perpendicular to $\mathbf{n'}$:
+the parts of the ray that are perpendicular to $\mathbf{n'}$ and parallel to $\mathbf{n'}$:
 
-  $$ \mathbf{R'} = \mathbf{R'}_{\parallel} + \mathbf{R'}_{\bot} $$
+  $$ \mathbf{R'} = \mathbf{R'}_{\bot} + \mathbf{R'}_{\parallel} $$
 
-If we solve for $\mathbf{R'}_{\parallel}$ and $\mathbf{R'}_{\bot}$ we get:
+If we solve for $\mathbf{R'}_{\bot}$ and $\mathbf{R'}_{\parallel}$ we get:
 
-  $$ \mathbf{R'}_{\parallel} = \frac{\eta}{\eta'} (\mathbf{R} + \cos\theta \mathbf{n}) $$
-  $$ \mathbf{R'}_{\bot} = -\sqrt{1 - |\mathbf{R'}_{\parallel}|^2} \mathbf{n} $$
+  $$ \mathbf{R'}_{\bot} = \frac{\eta}{\eta'} (\mathbf{R} + \cos\theta \mathbf{n}) $$
+  $$ \mathbf{R'}_{\parallel} = -\sqrt{1 - |\mathbf{R'}_{\bot}|^2} \mathbf{n} $$
 
 You can go ahead and prove this for yourself if you want, but we will treat it as fact and move on.
 The rest of the book will not require you to understand the proof.
@@ -2367,9 +2367,9 @@ If we restrict $\mathbf{a}$ and $\mathbf{b}$ to be unit vectors:
 
   $$ \mathbf{a} \cdot \mathbf{b} = \cos\theta $$
 
-We can now rewrite $\mathbf{R'}_{\parallel}$ in terms of known quantities:
+We can now rewrite $\mathbf{R'}_{\bot}$ in terms of known quantities:
 
-  $$ \mathbf{R'}_{\parallel} =
+  $$ \mathbf{R'}_{\bot} =
      \frac{\eta}{\eta'} (\mathbf{R} + (\mathbf{-R} \cdot \mathbf{n}) \mathbf{n}) $$
 
 When we combine them back together, we can write a function to calculate $\mathbf{R'}$:
@@ -2377,9 +2377,9 @@ When we combine them back together, we can write a function to calculate $\mathb
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat) {
         auto cos_theta = dot(-uv, n);
-        vec3 r_out_parallel =  etai_over_etat * (uv + cos_theta*n);
-        vec3 r_out_perp = -sqrt(fabs(1.0 - r_out_parallel.length_squared())) * n;
-        return r_out_parallel + r_out_perp;
+        vec3 r_out_perp =  etai_over_etat * (uv + cos_theta*n);
+        vec3 r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
+        return r_out_perp + r_out_parallel;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [refract]: <kbd>[vec3.h]</kbd> Refraction function]

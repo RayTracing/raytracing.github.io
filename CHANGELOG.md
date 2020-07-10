@@ -29,6 +29,7 @@ Change Log -- Ray Tracing in One Weekend
   - Change: Listing 52: Refactored assignment of `etai_over_etat`
   - Change: Listing 56: Refactored material declarations
   - Change: Listing 61: Refactored material and geometry declarations
+  - Fix: Rewrote refracted ray perpendicular and parallel components for correctness
   - Fix: Corrected various missed change highlights in code listings
   - Fix: Listing 7: Added missing `color.h`, `vec3.h` includes
   - Fix: Listing 18: Add missing `double t` member of struct `hit_record` (#428)
