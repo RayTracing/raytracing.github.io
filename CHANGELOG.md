@@ -9,17 +9,6 @@ Change Log -- Ray Tracing in One Weekend
   - Change: Added header guards to the text of all three books whenever a new header file was
     introduced
 
-### _The Next Week_
-  - Removed: Deleted the section covering the old `flip_face` class, renumbered images as this
-    eliminated the rendering with missing Cornell box faces (#482, #661)
-  - Change: Renamed and explicitly numbered book images and figures (#495)
-  - Fix: Reduced code duplication in dielectric::scatter() function
-  - New: Added alternative constructors that take color arguments in addition to the constructors
-    that take `shared_ptr<texture>` arguments, simplifying calling code. This applies to the
-    following classes: `checker_texture`, `constant_medium`, `diffuse_light`, and `lambertian`.
-    (#516)
-  - Fix: "Intance" typo in Chapter 8.1 to "Instance" (#629)
-
 ### _In One Weekend_
   - Change: Updated all rendered images except for 1.13, 1.14 (#179, #547, #548, #549, #550, #551,
     #552, #553, #554, #555, #556, #557, #560, #561, #562, #563, #564, #565, #566)
@@ -46,9 +35,20 @@ Change Log -- Ray Tracing in One Weekend
   - New: Add new isotropic constructor taking color argument (#644)
 
 ### _The Next Week_
+  - Removed: Deleted the section covering the old `flip_face` class, renumbered images as this
+    eliminated the rendering with missing Cornell box faces (#482, #661)
+  - Change: Renamed and explicitly numbered book images and figures (#495)
+  - Fix: Reduced code duplication in dielectric::scatter() function
+  - New: Added alternative constructors that take color arguments in addition to the constructors
+    that take `shared_ptr<texture>` arguments, simplifying calling code. This applies to the
+    following classes: `checker_texture`, `constant_medium`, `diffuse_light`, and `lambertian`.
+    (#516)
+  - Fix: "Intance" typo in Chapter 8.1 to "Instance" (#629)
   - Fix: Listing 7: Show reverted viewing parameters from book 1 final scene
   - Change: Listing 10: Separate out world & camera definitions in main (#646)
   - New: Add new isotropic constructor taking color argument (#644)
+  - Removed: scenes 7 & 9 from the original (`cornell_balls` and `cornell_final`). There are now a
+    total of eight scenes for the second book (#653, #620)
 
 
 ----------------------------------------------------------------------------------------------------
