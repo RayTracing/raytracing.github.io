@@ -1493,7 +1493,56 @@ down. We can do that by letting the emitted member function of hittable take ext
 </div>
 
 <div class='together'>
-We also need to flip the light so its normals point in the -y direction. This gives us:
+We also need to flip the light so its normals point in the $-y$ direction:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class flip_face : public hittable {
+        public:
+            flip_face(shared_ptr<hittable> p) : ptr(p) {}
+
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+                if (!ptr->hit(r, t_min, t_max, rec))
+                    return false;
+
+                rec.front_face = !rec.front_face;
+                return true;
+            }
+
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+                return ptr->bounding_box(t0, t1, output_box);
+            }
+
+        public:
+            shared_ptr<hittable> ptr;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [flip-face]: <kbd>[hittable.h]</kbd> We use a hittable object to flip the light]
+
+Making sure to call this in our world definition:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hittable_list cornell_box() {
+        hittable_list world;
+
+        auto red   = make_shared<lambertian>(color(.65, .05, .05));
+        auto white = make_shared<lambertian>(color(.73, .73, .73));
+        auto green = make_shared<lambertian>(color(.12, .45, .15));
+        auto light = make_shared<diffuse_light>(color(15, 15, 15));
+
+        world.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
+        world.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        world.add(make_shared<flip_face>(make_shared<xz_rect>(213, 343, 227, 332, 554, light)));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        world.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
+        world.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+        world.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [flipping-light]: <kbd>[main.cc]</kbd> Flip the light in our cornell box scene]
+
+This gives us:
 
   ![Image 5: Cornell box, light emitted only in the downward direction
   ](../images/img-3.05-cornell-lightdown.jpg class=pixel)

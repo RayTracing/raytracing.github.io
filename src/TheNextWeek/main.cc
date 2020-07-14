@@ -152,12 +152,12 @@ hittable_list cornell_box() {
     auto green = make_shared<lambertian>(color(.12, .45, .15));
     auto light = make_shared<diffuse_light>(color(15,15,15));
 
-    objects.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
     objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
     objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
-    objects.add(make_shared<flip_face>(make_shared<xz_rect>(0, 555, 0, 555, 555, white)));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
     objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-    objects.add(make_shared<flip_face>(make_shared<xy_rect>(0, 555, 0, 555, 555, white)));
+    objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
     shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
     box1 = make_shared<rotate_y>(box1,  15);
@@ -181,12 +181,12 @@ hittable_list cornell_balls() {
     auto green = make_shared<lambertian>(color(.12, .45, .15));
     auto light = make_shared<diffuse_light>(color(5, 5, 5));
 
-    objects.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
     objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
     objects.add(make_shared<xz_rect>(113, 443, 127, 432, 554, light));
-    objects.add(make_shared<flip_face>(make_shared<xz_rect>(0, 555, 0, 555, 555, white)));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
     objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-    objects.add(make_shared<flip_face>(make_shared<xy_rect>(0, 555, 0, 555, 555, white)));
+    objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
     auto boundary = make_shared<sphere>(point3(160,100,145), 100, make_shared<dielectric>(1.5));
     objects.add(boundary);
@@ -209,12 +209,12 @@ hittable_list cornell_smoke() {
     auto green = make_shared<lambertian>(color(.12, .45, .15));
     auto light = make_shared<diffuse_light>(color(7, 7, 7));
 
-    objects.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
     objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
     objects.add(make_shared<xz_rect>(113, 443, 127, 432, 554, light));
-    objects.add(make_shared<flip_face>(make_shared<xz_rect>(0, 555, 0, 555, 555, white)));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
     objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-    objects.add(make_shared<flip_face>(make_shared<xy_rect>(0, 555, 0, 555, 555, white)));
+    objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
     shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
     box1 = make_shared<rotate_y>(box1,  15);
@@ -243,12 +243,12 @@ hittable_list cornell_final() {
     auto green = make_shared<lambertian>(color(.12, .45, .15));
     auto light = make_shared<diffuse_light>(color(7, 7, 7));
 
-    objects.add(make_shared<flip_face>(make_shared<yz_rect>(0, 555, 0, 555, 555, green)));
+    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
     objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
     objects.add(make_shared<xz_rect>(123, 423, 147, 412, 554, light));
-    objects.add(make_shared<flip_face>(make_shared<xz_rect>(0, 555, 0, 555, 555, white)));
+    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
     objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-    objects.add(make_shared<flip_face>(make_shared<xy_rect>(0, 555, 0, 555, 555, white)));
+    objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
     shared_ptr<hittable> boundary2 =
         make_shared<box>(point3(0,0,0), point3(165,165,165), make_shared<dielectric>(1.5));
