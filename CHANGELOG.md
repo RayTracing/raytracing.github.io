@@ -11,7 +11,7 @@ Change Log -- Ray Tracing in One Weekend
 
 ### _The Next Week_
   - Removed: Deleted the section covering the old `flip_face` class, renumbered images as this
-    eliminated the rendering with missing Cornell box faces (#482)
+    eliminated the rendering with missing Cornell box faces (#482, #661)
   - Change: Renamed and explicitly numbered book images and figures (#495)
   - Fix: Reduced code duplication in dielectric::scatter() function
   - New: Added alternative constructors that take color arguments in addition to the constructors
