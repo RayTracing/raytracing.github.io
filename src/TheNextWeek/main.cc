@@ -160,7 +160,7 @@ hittable_list cornell_box() {
     objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
     shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
-    box1 = make_shared<rotate_y>(box1,  15);
+    box1 = make_shared<rotate_y>(box1, 15);
     box1 = make_shared<translate>(box1, vec3(265,0,295));
     objects.add(box1);
 
@@ -168,34 +168,6 @@ hittable_list cornell_box() {
     box2 = make_shared<rotate_y>(box2, -18);
     box2 = make_shared<translate>(box2, vec3(130,0,65));
     objects.add(box2);
-
-    return objects;
-}
-
-
-hittable_list cornell_balls() {
-    hittable_list objects;
-
-    auto red   = make_shared<lambertian>(color(.65, .05, .05));
-    auto white = make_shared<lambertian>(color(.73, .73, .73));
-    auto green = make_shared<lambertian>(color(.12, .45, .15));
-    auto light = make_shared<diffuse_light>(color(5, 5, 5));
-
-    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
-    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
-    objects.add(make_shared<xz_rect>(113, 443, 127, 432, 554, light));
-    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
-    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-    objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
-
-    auto boundary = make_shared<sphere>(point3(160,100,145), 100, make_shared<dielectric>(1.5));
-    objects.add(boundary);
-    objects.add(make_shared<constant_medium>(boundary, 0.1, color(1,1,1)));
-
-    shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
-    box1 = make_shared<rotate_y>(box1, 15);
-    box1 = make_shared<translate>(box1, vec3(265,0,295));
-    objects.add(box1);
 
     return objects;
 }
@@ -217,7 +189,7 @@ hittable_list cornell_smoke() {
     objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
     shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
-    box1 = make_shared<rotate_y>(box1,  15);
+    box1 = make_shared<rotate_y>(box1, 15);
     box1 = make_shared<translate>(box1, vec3(265,0,295));
 
     shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
@@ -226,37 +198,6 @@ hittable_list cornell_smoke() {
 
     objects.add(make_shared<constant_medium>(box1, 0.01, color(0,0,0)));
     objects.add(make_shared<constant_medium>(box2, 0.01, color(1,1,1)));
-
-    return objects;
-}
-
-
-hittable_list cornell_final() {
-    hittable_list objects;
-
-    auto pertext = make_shared<noise_texture>(0.1);
-
-    auto mat = make_shared<lambertian>(make_shared<image_texture>("earthmap.jpg"));
-
-    auto red   = make_shared<lambertian>(color(.65, .05, .05));
-    auto white = make_shared<lambertian>(color(.73, .73, .73));
-    auto green = make_shared<lambertian>(color(.12, .45, .15));
-    auto light = make_shared<diffuse_light>(color(7, 7, 7));
-
-    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
-    objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
-    objects.add(make_shared<xz_rect>(123, 423, 147, 412, 554, light));
-    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
-    objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-    objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
-
-    shared_ptr<hittable> boundary2 =
-        make_shared<box>(point3(0,0,0), point3(165,165,165), make_shared<dielectric>(1.5));
-    boundary2 = make_shared<rotate_y>(boundary2, -18);
-    boundary2 = make_shared<translate>(boundary2, vec3(130,0,65));
-
-    objects.add(boundary2);
-    objects.add(make_shared<constant_medium>(boundary2, 0.2, color(0.9, 0.9, 0.9)));
 
     return objects;
 }
@@ -397,27 +338,13 @@ int main() {
             break;
 
         case 7:
-            world = cornell_balls();
-            lookfrom = point3(278, 278, -800);
-            lookat = point3(278, 278, 0);
-            vfov = 40.0;
-            break;
-
-        case 8:
             world = cornell_smoke();
             lookfrom = point3(278, 278, -800);
             lookat = point3(278, 278, 0);
             vfov = 40.0;
             break;
 
-        case 9:
-            world = cornell_final();
-            lookfrom = point3(278, 278, -800);
-            lookat = point3(278, 278, 0);
-            vfov = 40.0;
-            break;
-
-        case 10:
+        case 8:
             world = final_scene();
             lookfrom = point3(478, 278, -600);
             lookat = point3(278, 278, 0);

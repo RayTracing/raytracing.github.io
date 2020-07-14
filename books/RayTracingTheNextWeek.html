@@ -2969,7 +2969,7 @@ And the changes to Cornell are:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     shared_ptr<hittable> box1 = make_shared<box>(point3(0, 0, 0), point3(165, 330, 165), white);
-    box1 = make_shared<rotate_y>(box1,  15);
+    box1 = make_shared<rotate_y>(box1, 15);
     box1 = make_shared<translate>(box1, vec3(265,0,295));
     objects.add(box1);
 
@@ -3180,7 +3180,7 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
         objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
         shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
-        box1 = make_shared<rotate_y>(box1,  15);
+        box1 = make_shared<rotate_y>(box1, 15);
         box1 = make_shared<translate>(box1, vec3(265,0,295));
 
         shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
@@ -3191,6 +3191,22 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
         objects.add(make_shared<constant_medium>(box2, 0.01, color(1,1,1)));
 
         return objects;
+    }
+
+    ...
+
+    int main() {
+        ...
+        switch (0) {
+            ...
+            default:
+            case 7:
+                world = cornell_smoke();
+                lookfrom = point3(278, 278, -800);
+                lookat = point3(278, 278, 0);
+                vfov = 40.0;
+                break;
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [cornell-smoke]: <kbd>[main.cc]</kbd> Cornell box, with smoke]
