@@ -4,10 +4,18 @@ Change Log -- Ray Tracing in One Weekend
 # v3.2.0 (in progress)
 
 ### Common
-  - Removed: now that the code handles ray-surface intersection from either side, we no longer need
+  - Delete: now that the code handles ray-surface intersection from either side, we no longer need
     the `flip_face` class, so we've deleted it from the text and from the code (#482, #270)
+  - Delete: vestigial `vec3::write_color()` method (now in color.h)
+  - Change: All images and figures renamed to follow more logical convention, using the following
+    pattern: {fig,img}-<book>.<sequence>-<title>.<filetype>
+  - Change: `main()` function gets organized into image, world, camera, and render chunks
   - Change: Added header guards to the text of all three books whenever a new header file was
-    introduced
+    introduced, consistent with source code (#645)
+  - New: `isotropic` constructor taking color argument (#644)
+  - New: Added alternative constructors that take color arguments in addition to the constructors
+    that take `shared_ptr<texture>` arguments, simplifying calling code. This applies to the
+    classes `checker_texture`, `constant_medium`, `diffuse_light`, and `lambertian` (#516)
 
 ### _In One Weekend_
   - Change: Updated all rendered images except for 1.13, 1.14 (#179, #547, #548, #549, #550, #551,
@@ -18,7 +26,7 @@ Change Log -- Ray Tracing in One Weekend
   - Change: Listing 52: Refactored assignment of `etai_over_etat`
   - Change: Listing 56: Refactored material declarations
   - Change: Listing 61: Refactored material and geometry declarations
-  - Fix: Rewrote refracted ray perpendicular and parallel components for correctness
+  - Fix: Rewrote refracted ray perpendicular and parallel components for correctness (#526)
   - Fix: Corrected various missed change highlights in code listings
   - Fix: Listing 7: Added missing `color.h`, `vec3.h` includes
   - Fix: Listing 18: Add missing `double t` member of struct `hit_record` (#428)
@@ -35,20 +43,24 @@ Change Log -- Ray Tracing in One Weekend
   - New: Add new isotropic constructor taking color argument (#644)
 
 ### _The Next Week_
-  - Removed: Deleted the section covering the old `flip_face` class, renumbered images as this
+  - Delete: Deleted the section covering the old `flip_face` class, renumbered images as this
     eliminated the rendering with missing Cornell box faces (#482, #661)
+  - Delete: scenes 7 & 9 from the original (`cornell_balls` and `cornell_final`), and made the
+    source and book consistent with each other. There are now a total of eight scenes for the second
+    book (#653, #620)
+  - Change: Updated most rendered images for book 2.
   - Change: Renamed and explicitly numbered book images and figures (#495)
+  - Change: Listing 10: Separate out world & camera definitions in main (#646)
   - Fix: Reduced code duplication in dielectric::scatter() function
-  - New: Added alternative constructors that take color arguments in addition to the constructors
-    that take `shared_ptr<texture>` arguments, simplifying calling code. This applies to the
-    following classes: `checker_texture`, `constant_medium`, `diffuse_light`, and `lambertian`.
-    (#516)
   - Fix: "Intance" typo in Chapter 8.1 to "Instance" (#629)
   - Fix: Listing 7: Show reverted viewing parameters from book 1 final scene
-  - Change: Listing 10: Separate out world & camera definitions in main (#646)
+  - Fix: Listing caption for filename moving-sphere.h
   - New: Add new isotropic constructor taking color argument (#644)
-  - Removed: scenes 7 & 9 from the original (`cornell_balls` and `cornell_final`). There are now a
-    total of eight scenes for the second book (#653, #620)
+
+### _The Rest of Your Life_
+  - Change: use `vup` for camera, as in other two books
+  - Fix: world and camera setup in `main()`, and include full body in book listing (#646)
+  - New: `flip_face` moved to book 3, where it's needed for the light source (#661)
 
 
 ----------------------------------------------------------------------------------------------------
