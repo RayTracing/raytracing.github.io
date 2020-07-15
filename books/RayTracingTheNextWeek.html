@@ -1063,7 +1063,7 @@ The First Texture Class: Constant Texture
             solid_color(double red, double green, double blue)
               : solid_color(color(red,green,blue)) {}
 
-            virtual color value(double u, double v, const vec3& p) const {
+            virtual color value(double u, double v, const vec3& p) const override {
                 return color_value;
             }
 
@@ -1245,7 +1245,7 @@ forms a 3D checker pattern.
             checker_texture(color c1, color c2)
                 : even(make_shared<solid_color>(c1)) , odd(make_shared<solid_color>(c2)) {}
 
-            virtual color value(double u, double v, const point3& p) const {
+            virtual color value(double u, double v, const point3& p) const override {
                 auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
                 if (sines < 0)
                     return odd->value(u, v, p);
@@ -1486,7 +1486,7 @@ Now if we create an actual texture that takes these floats between 0 and 1 and c
         public:
             noise_texture() {}
 
-            virtual color value(double u, double v, const point3& p) const {
+            virtual color value(double u, double v, const point3& p) const override {
                 return color(1,1,1) * noise.noise(p);
             }
 
@@ -1666,7 +1666,7 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
             noise_texture(double sc) : scale(sc) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            virtual color value(double u, double v, const point3& p) const {
+            virtual color value(double u, double v, const point3& p) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 return color(1,1,1) * noise.noise(scale * p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1843,7 +1843,7 @@ perlin output back to between 0 and 1.
             noise_texture() {}
             noise_texture(double sc) : scale(sc) {}
 
-            virtual color value(double u, double v, const point3& p) const {
+            virtual color value(double u, double v, const point3& p) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 return color(1,1,1) * 0.5 * (1.0 + noise.noise(scale * p));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1904,7 +1904,7 @@ Here `fabs()` is the absolute value function defined in `<cmath>`.
             noise_texture() {}
             noise_texture(double sc) : scale(sc) {}
 
-            virtual color value(double u, double v, const point3& p) const {
+            virtual color value(double u, double v, const point3& p) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 return color(1,1,1) * noise.turb(scale * p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1941,7 +1941,7 @@ effect is:
             noise_texture() {}
             noise_texture(double sc) : scale(sc) {}
 
-            virtual color value(double u, double v, const point3& p) const {
+            virtual color value(double u, double v, const point3& p) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 return color(1,1,1) * 0.5 * (1 + sin(scale*p.z() + 10*noise.turb(p)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2025,7 +2025,7 @@ the resulting image data.
                 delete data;
             }
 
-            virtual color value(double u, double v, const vec3& p) const {
+            virtual color value(double u, double v, const vec3& p) const override {
                 // If we have no texture data, then return solid cyan as a debugging aid.
                 if (data == nullptr)
                     return color(0,1,1);
