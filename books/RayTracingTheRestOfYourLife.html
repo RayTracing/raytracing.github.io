@@ -1500,7 +1500,9 @@ We also need to flip the light so its normals point in the $-y$ direction:
         public:
             flip_face(shared_ptr<hittable> p) : ptr(p) {}
 
-            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+            virtual bool hit(
+                const ray& r, double t_min, double t_max, hit_record& rec) const override {
+
                 if (!ptr->hit(r, t_min, t_max, rec))
                     return false;
 
@@ -1508,7 +1510,7 @@ We also need to flip the light so its normals point in the $-y$ direction:
                 return true;
             }
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
                 return ptr->bounding_box(t0, t1, output_box);
             }
 
@@ -1764,7 +1766,7 @@ And we change `xz_rect` to implement those functions:
             ...
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual double pdf_value(const point3& origin, const vec3& v) const {
+            virtual double pdf_value(const point3& origin, const vec3& v) const override {
                 hit_record rec;
                 if (!this->hit(ray(origin, v), 0.001, infinity, rec))
                     return 0;
@@ -1776,7 +1778,7 @@ And we change `xz_rect` to implement those functions:
                 return distance_squared / (cosine * area);
             }
 
-            virtual vec3 random(const point3& origin) const {
+            virtual vec3 random(const point3& origin) const override {
                 auto random_point = point3(random_double(x0,x1), k, random_double(z0,z1));
                 return random_point - origin;
             }

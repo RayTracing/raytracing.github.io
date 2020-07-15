@@ -26,10 +26,12 @@ class hittable_list : public hittable  {
         void clear() { objects.clear(); }
         void add(shared_ptr<hittable> object) { objects.push_back(object); }
 
-        virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
-        virtual double pdf_value(const vec3 &o, const vec3 &v) const;
-        virtual vec3 random(const vec3 &o) const;
+        virtual bool hit(
+            const ray& r, double tmin, double tmax, hit_record& rec) const override;
+
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+        virtual double pdf_value(const vec3 &o, const vec3 &v) const override;
+        virtual vec3 random(const vec3 &o) const override;
 
     public:
         std::vector<shared_ptr<hittable>> objects;
