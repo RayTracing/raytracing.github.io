@@ -16,7 +16,7 @@
 #include "hittable.h"
 
 
-class xy_rect: public hittable {
+class xy_rect : public hittable {
     public:
         xy_rect() {}
 
@@ -38,7 +38,7 @@ class xy_rect: public hittable {
         double x0, x1, y0, y1, k;
 };
 
-class xz_rect: public hittable {
+class xz_rect : public hittable {
     public:
         xz_rect() {}
 
@@ -77,7 +77,7 @@ class xz_rect: public hittable {
         double x0, x1, z0, z1, k;
 };
 
-class yz_rect: public hittable {
+class yz_rect : public hittable {
     public:
         yz_rect() {}
 
