@@ -4,21 +4,25 @@ Change Log -- Ray Tracing in One Weekend
 # v3.2.0 (in progress)
 
 ### Common
-  - Removed: now that the code handles ray-surface intersection from either side, we no longer need
-    the `flip_face` class, so we've deleted it from the text and from the code (#482, #270)
+  - Delete: vestigial `vec3::write_color()` method (now in color.h)
+  - Change: All images and figures renamed to follow more logical convention, using the following
+    pattern: `{fig,img}-<book>.<sequence>-<title>.<filetype>` (#495)
+  - Change: `main()` function gets organized into image, world, camera, and render chunks
   - Change: Added header guards to the text of all three books whenever a new header file was
-    introduced
+    introduced, consistent with source code (#645)
+  - New: Added constructors that take `color` arguments in addition to the constructors
+    taking `shared_ptr<texture>` arguments, simplifying calling code. Applies to `checker_texture`,
+    `constant_medium`, `diffuse_light`, `lambertian`, and `isotropic` (#516, #644)
 
 ### _In One Weekend_
   - Change: Updated all rendered images except for 1.13, 1.14 (#179, #547, #548, #549, #550, #551,
     #552, #553, #554, #555, #556, #557, #560, #561, #562, #563, #564, #565, #566)
-  - Change: Standard render width changed to 400
+  - Change: Standard working render width changed to 400 pixels
   - Change: Image 6 is now a before-and-after pair to illustrate antialiasing
   - Change: Listing 48: Refactored material and geometry declarations
   - Change: Listing 52: Refactored assignment of `etai_over_etat`
   - Change: Listing 56: Refactored material declarations
   - Change: Listing 61: Refactored material and geometry declarations
-  - Fix: Rewrote refracted ray perpendicular and parallel components for correctness
   - Fix: Corrected various missed change highlights in code listings
   - Fix: Listing 7: Added missing `color.h`, `vec3.h` includes
   - Fix: Listing 18: Add missing `double t` member of struct `hit_record` (#428)
@@ -26,29 +30,31 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Listing 30: Add missing `camera.h` include
   - Fix: Listing 42: Don't need to include `ray.h` when using `rtweekend.h`
   - Fix: Listing 48: Add missing `material.h` include
-  - Fix: Listing 51: `refract()` function was missing `fabs()` on `sqrt()` argument (#559
+  - Fix: Listing 51: `refract()` function was missing `fabs()` on `sqrt()` argument (#559)
   - Fix: Listing 61: Include updated `cam` declaration, show context w/highlighting
   - Fix: Listing 62: Highlight rename of `camera::get_ray()` parameters to s, t (#616)
   - Fix: Listing 63: Show reverted scene declarations
   - Fix: Listing 68: Show final scene render parameters with highlighting
+  - Fix: Rewrote refracted ray perpendicular and parallel components for correctness (#526)
   - New: Listing 50: Show the updated material definitions
-  - New: Add new isotropic constructor taking color argument (#644)
 
 ### _The Next Week_
-  - Removed: Deleted the section covering the old `flip_face` class, renumbered images as this
-    eliminated the rendering with missing Cornell box faces (#482, #661)
-  - Change: Renamed and explicitly numbered book images and figures (#495)
-  - Fix: Reduced code duplication in dielectric::scatter() function
-  - New: Added alternative constructors that take color arguments in addition to the constructors
-    that take `shared_ptr<texture>` arguments, simplifying calling code. This applies to the
-    following classes: `checker_texture`, `constant_medium`, `diffuse_light`, and `lambertian`.
-    (#516)
+  - Delete: Deleted the section covering the old `flip_face` class, renumbered images as this
+    eliminated the rendering with missing Cornell box faces (#270, #482, #661)
+  - Delete: scenes 7 & 9 from the original (`cornell_balls` and `cornell_final`), as these were not
+    covered in the book. Made the source and book consistent with each other. There are now a total
+    of eight scenes for the second book (#653, #620)
+  - Change: Updated most rendered images for book 2: 2.01-2.03, 2.07-2.13, 2.15-2.22.
+  - Change: Listing 10: Separate out world & camera definitions in main (#646)
+  - Fix: Reduced code duplication in `dielectric::scatter()` function
   - Fix: "Intance" typo in Chapter 8.1 to "Instance" (#629)
   - Fix: Listing 7: Show reverted viewing parameters from book 1 final scene
-  - Change: Listing 10: Separate out world & camera definitions in main (#646)
-  - New: Add new isotropic constructor taking color argument (#644)
-  - Removed: scenes 7 & 9 from the original (`cornell_balls` and `cornell_final`). There are now a
-    total of eight scenes for the second book (#653, #620)
+  - Fix: Typo in listing caption for filename `moving-sphere.h`
+
+### _The Rest of Your Life_
+  - Change: use `vup` for camera, as in other two books
+  - Fix: world and camera setup in `main()`, and include full body in book listing (#646)
+  - New: `flip_face` moved to book 3, where it's needed for the light source (#661)
 
 
 ----------------------------------------------------------------------------------------------------
