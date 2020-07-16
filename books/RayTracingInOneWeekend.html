@@ -888,7 +888,8 @@ And here’s the sphere:
             sphere() {}
             sphere(point3 cen, double r) : center(cen), radius(r) {};
 
-            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+            virtual bool hit(
+                const ray& r, double tmin, double tmax, hit_record& rec) const override;
 
         public:
             point3 center;
@@ -1086,7 +1087,8 @@ that stores a list of `hittable`s:
             void clear() { objects.clear(); }
             void add(shared_ptr<hittable> object) { objects.push_back(object); }
 
-            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+            virtual bool hit(
+                const ray& r, double tmin, double tmax, hit_record& rec) const override;
 
         public:
             std::vector<shared_ptr<hittable>> objects;
@@ -1996,7 +1998,8 @@ within `hit_record`. See the highlighted lines below:
                 : center(cen), radius(r), mat_ptr(m) {};
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+            virtual bool hit(
+                const ray& r, double tmin, double tmax, hit_record& rec) const override;
 
         public:
             point3 center;
@@ -2059,7 +2062,7 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const {
+            ) const override {
                 vec3 scatter_direction = rec.normal + random_unit_vector();
                 scattered = ray(rec.p, scatter_direction);
                 attenuation = albedo;
@@ -2110,7 +2113,7 @@ The metal material just reflects rays using that formula:
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const {
+            ) const override {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
                 scattered = ray(rec.p, reflected);
                 attenuation = albedo;
@@ -2257,7 +2260,7 @@ absorb those.
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const {
+            ) const override {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());
@@ -2395,7 +2398,7 @@ And the dielectric material that always refracts is:
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const {
+            ) const override {
                 attenuation = color(1.0, 1.0, 1.0);
                 double etai_over_etat = rec.front_face ? (1.0 / ref_idx) : ref_idx;
 
@@ -2505,7 +2508,7 @@ And the dielectric material that always refracts (when possible) is:
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const {
+            ) const override {
                 attenuation = color(1.0, 1.0, 1.0);
                 double etai_over_etat = rec.front_face ? (1.0 / ref_idx) : ref_idx;
 
@@ -2580,7 +2583,7 @@ This yields our full glass material:
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const {
+            ) const override {
                 attenuation = color(1.0, 1.0, 1.0);
                 double etai_over_etat = rec.front_face ? (1.0 / ref_idx) : ref_idx;
 

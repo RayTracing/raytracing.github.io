@@ -4,6 +4,8 @@ Change Log -- Ray Tracing in One Weekend
 # v3.2.0 (in progress)
 
 ### Common
+  - Bug: Found a bug in book 3 source `isotropic::scatter()` method. Commented out, using default
+    (as it was previously). (#669)
   - Delete: vestigial `vec3::write_color()` method (now in color.h)
   - Change: All images and figures renamed to follow more logical convention, using the following
     pattern: `{fig,img}-<book>.<sequence>-<title>.<filetype>` (#495)
@@ -13,6 +15,12 @@ Change Log -- Ray Tracing in One Weekend
   - New: Added constructors that take `color` arguments in addition to the constructors
     taking `shared_ptr<texture>` arguments, simplifying calling code. Applies to `checker_texture`,
     `constant_medium`, `diffuse_light`, `lambertian`, and `isotropic` (#516, #644)
+  - Change: Added `override` keywords throughout. This keyword marks a subclass method as one that
+    is intended to override a superclass method. It makes the code a bit easier to understand, and
+    ensures that your function is actually overriding the method you think it is. Which is good,
+    because it already caught an existing bug in _The Rest of Your Life_ source. This change
+    includes commenting out the book 3 `isotropic::scatter()` method, which was accidentally ignored
+    anyway. (#639, #669)
 
 ### _In One Weekend_
   - Change: Updated all rendered images except for 1.13, 1.14 (#179, #547, #548, #549, #550, #551,

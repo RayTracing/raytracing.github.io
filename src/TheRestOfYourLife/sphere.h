@@ -17,15 +17,18 @@
 #include "onb.h"
 
 
-class sphere: public hittable  {
+class sphere : public hittable  {
     public:
         sphere() {}
         sphere(point3 cen, double r, shared_ptr<material> m)
             : center(cen), radius(r), mat_ptr(m) {};
-        virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
-        virtual double pdf_value(const point3& o, const vec3& v) const;
-        virtual vec3 random(const point3& o) const;
+
+        virtual bool hit(
+            const ray& r, double tmin, double tmax, hit_record& rec) const override;
+
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+        virtual double pdf_value(const point3& o, const vec3& v) const override;
+        virtual vec3 random(const point3& o) const override;
 
     public:
         point3 center;

@@ -24,8 +24,10 @@ class moving_sphere : public hittable {
             : center0(cen0), center1(cen1), time0(t0), time1(t1), radius(r), mat_ptr(m)
         {};
 
-        virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
+        virtual bool hit(
+            const ray& r, double tmin, double tmax, hit_record& rec) const override;
+
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
 
         point3 center(double time) const;
 

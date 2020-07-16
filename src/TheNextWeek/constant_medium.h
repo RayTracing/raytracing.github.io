@@ -32,9 +32,10 @@ class constant_medium : public hittable  {
               phase_function(make_shared<isotropic>(c))
             {}
 
-        virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
+        virtual bool hit(
+            const ray& r, double t_min, double t_max, hit_record& rec) const override;
 
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
             return boundary->bounding_box(t0, t1, output_box);
         }
 

@@ -43,7 +43,7 @@ class lambertian : public material {
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-        ) const {
+        ) const override {
             vec3 scatter_direction = rec.normal + random_unit_vector();
             scattered = ray(rec.p, scatter_direction, r_in.time());
             attenuation = albedo->value(rec.u, rec.v, rec.p);
@@ -61,7 +61,7 @@ class metal : public material {
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-        ) const {
+        ) const override {
             vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
             scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
             attenuation = albedo;
@@ -80,7 +80,7 @@ class dielectric : public material {
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-        ) const {
+        ) const override {
             attenuation = color(1.0, 1.0, 1.0);
             double etai_over_etat = (rec.front_face) ? (1.0 / ref_idx) : ref_idx;
 
@@ -113,11 +113,11 @@ class diffuse_light : public material {
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-        ) const {
+        ) const override {
             return false;
         }
 
-        virtual color emitted(double u, double v, const point3& p) const {
+        virtual color emitted(double u, double v, const point3& p) const override {
             return emit->value(u, v, p);
         }
 
@@ -133,7 +133,7 @@ class isotropic : public material {
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-        ) const {
+        ) const override {
             scattered = ray(rec.p, random_in_unit_sphere(), r_in.time());
             attenuation = albedo->value(rec.u, rec.v, rec.p);
             return true;

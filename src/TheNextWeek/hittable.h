@@ -45,8 +45,10 @@ class translate : public hittable {
         translate(shared_ptr<hittable> p, const vec3& displacement)
             : ptr(p), offset(displacement) {}
 
-        virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
+        virtual bool hit(
+            const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
 
     public:
         shared_ptr<hittable> ptr;
@@ -82,8 +84,10 @@ class rotate_y : public hittable {
     public:
         rotate_y(shared_ptr<hittable> p, double angle);
 
-        virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+        virtual bool hit(
+            const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
             output_box = bbox;
             return hasbox;
         }
