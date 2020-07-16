@@ -4,10 +4,18 @@ Change Log -- Ray Tracing in One Weekend
 # v3.2.0 (in progress)
 
 ### Common
+  - Bug: Found a bug in book 3 source `isotropic::scatter()` method. Commented out, using default
+    (as it was previously). (#669)
   - Removed: now that the code handles ray-surface intersection from either side, we no longer need
     the `flip_face` class, so we've deleted it from the text and from the code (#482, #270)
   - Change: Added header guards to the text of all three books whenever a new header file was
     introduced
+  - Change: Added `override` keywords throughout. This keyword marks a subclass method as one that
+    is intended to override a superclass method. It makes the code a bit easier to understand, and
+    ensures that your function is actually overriding the method you think it is. Which is good,
+    because it already caught an existing bug in _The Rest of Your Life_ source. This change
+    includes commenting out the book 3 `isotropic::scatter()` method, which was accidentally ignored
+    anyway. (#639, #669)
 
 ### _In One Weekend_
   - Change: Updated all rendered images except for 1.13, 1.14 (#179, #547, #548, #549, #550, #551,
