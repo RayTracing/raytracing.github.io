@@ -52,8 +52,9 @@ Change Log -- Ray Tracing in One Weekend
   - Delete: scenes 7 & 9 from the original (`cornell_balls` and `cornell_final`), as these were not
     covered in the book. Made the source and book consistent with each other. There are now a total
     of eight scenes for the second book (#653, #620)
-  - Change: Updated most rendered images for book 2: 2.01-2.03, 2.07-2.13, 2.15-2.22.
   - Change: Listing 10: Separate out world & camera definitions in main (#646)
+  - Change: Updated most rendered images for book 2: 2.01-2.03, 2.07-2.13, 2.15-2.22.
+  - Change: Scenes get custom image parameters (#650)
   - Fix: Reduced code duplication in `dielectric::scatter()` function
   - Fix: "Intance" typo in Chapter 8.1 to "Instance" (#629)
   - Fix: Listing 7: Show reverted viewing parameters from book 1 final scene
