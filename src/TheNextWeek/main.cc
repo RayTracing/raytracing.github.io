@@ -272,9 +272,8 @@ int main() {
 
     // Image
 
-    const auto aspect_ratio = 16.0 / 9.0;
-    const int image_width = 400;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
+    auto aspect_ratio = 16.0 / 9.0;
+    int image_width = 400;
     int samples_per_pixel = 100;
     int max_depth = 50;
 
@@ -324,6 +323,7 @@ int main() {
 
         case 5:
             world = simple_light();
+            samples_per_pixel = 400;
             lookfrom = point3(26,3,6);
             lookat = point3(0,2,0);
             vfov = 20.0;
@@ -332,6 +332,9 @@ int main() {
         default:
         case 6:
             world = cornell_box();
+            aspect_ratio = 1.0;
+            image_width = 600;
+            samples_per_pixel = 200;
             lookfrom = point3(278, 278, -800);
             lookat = point3(278, 278, 0);
             vfov = 40.0;
@@ -339,6 +342,9 @@ int main() {
 
         case 7:
             world = cornell_smoke();
+            aspect_ratio = 1.0;
+            image_width = 600;
+            samples_per_pixel = 200;
             lookfrom = point3(278, 278, -800);
             lookat = point3(278, 278, 0);
             vfov = 40.0;
@@ -346,6 +352,9 @@ int main() {
 
         case 8:
             world = final_scene();
+            aspect_ratio = 1.0;
+            image_width = 800;
+            samples_per_pixel = 10000;
             lookfrom = point3(478, 278, -600);
             lookat = point3(278, 278, 0);
             vfov = 40.0;
@@ -354,8 +363,9 @@ int main() {
 
     // Camera
 
-    vec3 vup(0,1,0);
-    auto dist_to_focus = 10.0;
+    const vec3 vup(0,1,0);
+    const auto dist_to_focus = 10.0;
+    const int image_height = static_cast<int>(image_width / aspect_ratio);
 
     camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
 
