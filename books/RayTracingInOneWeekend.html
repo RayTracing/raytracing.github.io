@@ -4,10 +4,10 @@
 
 
                                    **Ray Tracing in One Weekend**
-                                           Peter Shirley
-                          edited by Steve Hollasch and Trevor David Black
+                                         [Peter Shirley][]
+                      edited by [Steve Hollasch][] and [Trevor David Black][]
                                                 <br>
-                                     Version 3.2.0-alpha, 2020-XX-XX
+                                     Version 3.2.0, 2020-07-18
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -888,7 +888,8 @@ And here’s the sphere:
             sphere() {}
             sphere(point3 cen, double r) : center(cen), radius(r) {};
 
-            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+            virtual bool hit(
+                const ray& r, double tmin, double tmax, hit_record& rec) const override;
 
         public:
             point3 center;
@@ -1002,11 +1003,6 @@ We add the `front_face` bool to the `hit_record` struct. We'll also add a functi
 calculation for us.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef HITTABLE_H
-    #define HITTABLE_H
-
-    #include "ray.h"
-
     struct hit_record {
         point3 p;
         vec3 normal;
@@ -1020,13 +1016,6 @@ calculation for us.
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
-
-    class hittable {
-        public:
-            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
-    };
-
-    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hittable-time-side]: <kbd>[hittable.h]</kbd> The hittable class with time and side]
 
@@ -1098,7 +1087,8 @@ that stores a list of `hittable`s:
             void clear() { objects.clear(); }
             void add(shared_ptr<hittable> object) { objects.push_back(object); }
 
-            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+            virtual bool hit(
+                const ray& r, double tmin, double tmax, hit_record& rec) const override;
 
         public:
             std::vector<shared_ptr<hittable>> objects;
@@ -1962,12 +1952,10 @@ other so there is some circularity of the references. In C++ you just need to al
 that the pointer is to a class, which the “class material” in the hittable class below does:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef HITTABLE_H
-    #define HITTABLE_H
-
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "rtweekend.h"
+    #include "ray.h"
 
     class material;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1986,13 +1974,6 @@ that the pointer is to a class, which the “class material” in the hittable c
             normal = front_face ? outward_normal :-outward_normal;
         }
     };
-
-    class hittable {
-        public:
-            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
-    };
-
-    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hit-with-material]: <kbd>[hittable.h]</kbd> Hit record with added material pointer]
 </div>
@@ -2017,7 +1998,8 @@ within `hit_record`. See the highlighted lines below:
                 : center(cen), radius(r), mat_ptr(m) {};
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
+            virtual bool hit(
+                const ray& r, double tmin, double tmax, hit_record& rec) const override;
 
         public:
             point3 center;
@@ -2080,7 +2062,7 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const {
+            ) const override {
                 vec3 scatter_direction = rec.normal + random_unit_vector();
                 scattered = ray(rec.p, scatter_direction);
                 attenuation = albedo;
@@ -2131,7 +2113,7 @@ The metal material just reflects rays using that formula:
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const {
+            ) const override {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
                 scattered = ray(rec.p, reflected);
                 attenuation = albedo;
@@ -2278,7 +2260,7 @@ absorb those.
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const {
+            ) const override {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());
@@ -2367,14 +2349,14 @@ In order to determine the direction of the refracted ray, we have to solve for $
 
 On the refracted side of the surface there is a refracted ray $\mathbf{R'}$ and a normal
 $\mathbf{n'}$, and there exists an angle, $\theta'$, between them. We can split $\mathbf{R'}$ into
-the parts of the ray that are parallel to $\mathbf{n'}$ and perpendicular to $\mathbf{n'}$:
+the parts of the ray that are perpendicular to $\mathbf{n'}$ and parallel to $\mathbf{n'}$:
 
-  $$ \mathbf{R'} = \mathbf{R'}_{\parallel} + \mathbf{R'}_{\bot} $$
+  $$ \mathbf{R'} = \mathbf{R'}_{\bot} + \mathbf{R'}_{\parallel} $$
 
-If we solve for $\mathbf{R'}_{\parallel}$ and $\mathbf{R'}_{\bot}$ we get:
+If we solve for $\mathbf{R'}_{\bot}$ and $\mathbf{R'}_{\parallel}$ we get:
 
-  $$ \mathbf{R'}_{\parallel} = \frac{\eta}{\eta'} (\mathbf{R} + \cos\theta \mathbf{n}) $$
-  $$ \mathbf{R'}_{\bot} = -\sqrt{1 - |\mathbf{R'}_{\parallel}|^2} \mathbf{n} $$
+  $$ \mathbf{R'}_{\bot} = \frac{\eta}{\eta'} (\mathbf{R} + \cos\theta \mathbf{n}) $$
+  $$ \mathbf{R'}_{\parallel} = -\sqrt{1 - |\mathbf{R'}_{\bot}|^2} \mathbf{n} $$
 
 You can go ahead and prove this for yourself if you want, but we will treat it as fact and move on.
 The rest of the book will not require you to understand the proof.
@@ -2388,9 +2370,9 @@ If we restrict $\mathbf{a}$ and $\mathbf{b}$ to be unit vectors:
 
   $$ \mathbf{a} \cdot \mathbf{b} = \cos\theta $$
 
-We can now rewrite $\mathbf{R'}_{\parallel}$ in terms of known quantities:
+We can now rewrite $\mathbf{R'}_{\bot}$ in terms of known quantities:
 
-  $$ \mathbf{R'}_{\parallel} =
+  $$ \mathbf{R'}_{\bot} =
      \frac{\eta}{\eta'} (\mathbf{R} + (\mathbf{-R} \cdot \mathbf{n}) \mathbf{n}) $$
 
 When we combine them back together, we can write a function to calculate $\mathbf{R'}$:
@@ -2398,9 +2380,9 @@ When we combine them back together, we can write a function to calculate $\mathb
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat) {
         auto cos_theta = dot(-uv, n);
-        vec3 r_out_parallel =  etai_over_etat * (uv + cos_theta*n);
-        vec3 r_out_perp = -sqrt(fabs(1.0 - r_out_parallel.length_squared())) * n;
-        return r_out_parallel + r_out_perp;
+        vec3 r_out_perp =  etai_over_etat * (uv + cos_theta*n);
+        vec3 r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
+        return r_out_perp + r_out_parallel;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [refract]: <kbd>[vec3.h]</kbd> Refraction function]
@@ -2416,7 +2398,7 @@ And the dielectric material that always refracts is:
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const {
+            ) const override {
                 attenuation = color(1.0, 1.0, 1.0);
                 double etai_over_etat = rec.front_face ? (1.0 / ref_idx) : ref_idx;
 
@@ -2526,7 +2508,7 @@ And the dielectric material that always refracts (when possible) is:
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const {
+            ) const override {
                 attenuation = color(1.0, 1.0, 1.0);
                 double etai_over_etat = rec.front_face ? (1.0 / ref_idx) : ref_idx;
 
@@ -2601,7 +2583,7 @@ This yields our full glass material:
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const {
+            ) const override {
                 attenuation = color(1.0, 1.0, 1.0);
                 double etai_over_etat = rec.front_face ? (1.0 / ref_idx) : ref_idx;
 
@@ -3177,6 +3159,85 @@ Have fun, and please send me your cool images!
 
 
                                (insert acknowledgments.md.html here)
+
+
+Citing This Book
+====================================================================================================
+Consistent citations make it easier to identify the source, location and versions of this work. If
+you are citing this book, we ask that you try to use one of the following forms if possible.
+
+Basic Data
+-----------
+  - **Title (series)**: “Ray Tracing in One Weekend Series”
+  - **Title (book)**: “Ray Tracing in One Weekend”
+  - **Author**: Peter Shirley
+  - **Editors**: Steve Hollasch, Trevor David Black
+  - **Version/Edition**: v3.2.0
+  - **Date**: 2020-07-18
+  - **URL (series)**: https://raytracing.github.io/
+  - **URL (book)**: https://raytracing.github.io/books/RayTracingInOneWeekend.html
+
+Snippets
+---------
+
+  ### Markdown
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [_Ray Tracing in One Weekend_](https://raytracing.github.io/books/RayTracingInOneWeekend.html)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ### HTML
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    <a href='https://raytracing.github.io/books/RayTracingInOneWeekend.html'>
+        <cite>Ray Tracing in One Weekend</cite>
+    </a>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ### LaTeX and BibTex
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~\cite{Shirley2020RTW1}
+
+    @misc{Shirley2020RTW1,
+       title = {Ray Tracing in One Weekend},
+       author = {Peter Shirley},
+       year = {2020},
+       month = {July},
+       note = {\small \texttt{https://raytracing.github.io/books/RayTracingInOneWeekend.html},
+       url = {https://raytracing.github.io/books/RayTracingInOneWeekend.html}
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ### BibLaTeX
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    \usepackage{biblatex}
+
+    ~\cite{Shirley2020RTW1}
+
+    @online{Shirley2020RTW1,
+       title = {Ray Tracing in One Weekend},
+       author = {Peter Shirley},
+       year = {2020},
+       month = {July},
+       url = {https://raytracing.github.io/books/RayTracingInOneWeekend.html}
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ### IEEE
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    “Ray Tracing in One Weekend.” raytracing.github.io/books/RayTracingInOneWeekend.html
+    (accessed MMM. DD, YYYY)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ### MLA:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Ray Tracing in One Weekend. raytracing.github.io/books/RayTracingInOneWeekend.html
+    Accessed DD MMM. YYYY.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+[Peter Shirley]:      https://github.com/petershirley
+[Steve Hollasch]:     https://github.com/hollasch
+[Trevor David Black]: https://github.com/trevordblack
 
 
 

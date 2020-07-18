@@ -5,27 +5,67 @@ Change Log -- Ray Tracing in One Weekend
 
 
 ----------------------------------------------------------------------------------------------------
-# v3.2.0 (in progress)
+# v3.2.0 (2020-07-18)
+
+We're still chasing that elusive stable project state where we're mostly done with large changes,
+yet we keep finding more and more to tweak and improve. Besides the usual batch of corrections and
+small improvements, for this change we plodded through the complete code progression for both books
+one and two (_In One Weekend_ and _The Next Week_). This caught a _lot_ of issues (to our dismay),
+and allowed us to generate a complete set of new render images for both books, to catch up with all
+of the changes we've been making. The end result is that readers should find a significantly better
+agreement between the book and their code as they progress, and their renders should also generally
+match.
+
+Besides the new rendered images, we also much improved the image parameters, which were frequently
+missing from the previous version, leaving readers to guess at their values, or go to the code to
+try to figure out how we created some of the images. In general, our working renders are now 400
+pixels wide, usually 16:9 aspect ratio. We now use an explicit aspect ratio and deduce the image
+height and other camera values, so you can tweak your render size just by changing the image width
+(instead of updating a bunch of dependent parameters).
+
+One interesting late change we made was adding explicit C++ `override` labels to subclass methods.
+We did this mostly to aid code readers, but were surprised to find that it actually caught a pretty
+significant bug hiding in our code (see entry in common changes below).
+
+You'll also see a new citation section at the end of the books, to encourage uniform citations out
+in the world, making it easier for people to refer to and track these books.
+
+As is typical, though we roughly follow [semantic versioning](https://semver.org/), we're
+considering this release a minor change instead of a major one. It's a common reflex, because people
+generally have a (misguided) aversion to bumping the major version a lot. We consider it minor
+because most of the changes are quite local, some classes get new constructors and any variances
+should be quite simple and easy to fix up. Still, one might consider this more properly a major
+version bump.
+
+For our next larger-than-patch release, we're beginning a large revisit of book 3,
+_Ray Tracing: The Rest of Your Life_. There's a lot of work to do, and this will likely be a
+significant change and improvement. We're hoping that changes to books one and two will be small,
+but that's never worked out for us before. Ah, dreams.
 
 ### Common
-  - Removed: now that the code handles ray-surface intersection from either side, we no longer need
-    the `flip_face` class, so we've deleted it from the text and from the code (#482, #270)
-
-### _The Next Week_
-  - Removed: Deleted the section covering the old `flip_face` class, renumbered images as this
-    eliminated the rendering with missing Cornell box faces (#482)
-  - Change: Renamed and explicitly numbered book images and figures (#495)
-  - Fix: Reduced code duplication in dielectric::scatter() function
-  - New: Added alternative constructors that take color arguments in addition to the constructors
-    that take `shared_ptr<texture>` arguments, simplifying calling code. This applies to the
-    following classes: `checker_texture`, `constant_medium`, `diffuse_light`, and `lambertian`.
-    (#516)
-  - Fix: "Intance" typo in Chapter 8.1 to "Instance" (#629)
+  - Bug: Found a bug in book 3 source `isotropic::scatter()` method. Commented out, using default
+    (as it was previously). (#669)
+  - Delete: vestigial `vec3::write_color()` method (now in color.h)
+  - Change: All images and figures renamed to follow more logical convention, using the following
+    pattern: `{fig,img}-<book>.<sequence>-<title>.<filetype>` (#495)
+  - Change: `main()` function gets organized into image, world, camera, and render chunks
+  - Change: Added header guards to the text of all three books whenever a new header file was
+    introduced, consistent with source code (#645)
+  - New: Added constructors that take `color` arguments in addition to the constructors
+    taking `shared_ptr<texture>` arguments, simplifying calling code. Applies to `checker_texture`,
+    `constant_medium`, `diffuse_light`, `lambertian`, and `isotropic` (#516, #644)
+  - Change: Added `override` keywords throughout. This keyword marks a subclass method as one that
+    is intended to override a superclass method. It makes the code a bit easier to understand, and
+    ensures that your function is actually overriding the method you think it is. Which is good,
+    because it already caught an existing bug in _The Rest of Your Life_ source. This change
+    includes commenting out the book 3 `isotropic::scatter()` method, which was accidentally ignored
+    anyway. (#639, #669)
+  - New: each book gets a section of recommended citation examples (#500)
 
 ### _In One Weekend_
   - Change: Updated all rendered images except for 1.13, 1.14 (#179, #547, #548, #549, #550, #551,
     #552, #553, #554, #555, #556, #557, #560, #561, #562, #563, #564, #565, #566)
-  - Change: Standard render width changed to 400
+  - Change: Standard working render width changed to 400 pixels
   - Change: Image 6 is now a before-and-after pair to illustrate antialiasing
   - Change: Listing 48: Refactored material and geometry declarations
   - Change: Listing 52: Refactored assignment of `etai_over_etat`
@@ -38,19 +78,32 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Listing 30: Add missing `camera.h` include
   - Fix: Listing 42: Don't need to include `ray.h` when using `rtweekend.h`
   - Fix: Listing 48: Add missing `material.h` include
-  - Fix: Listing 51: `refract()` function was missing `fabs()` on `sqrt()` argument (#559
+  - Fix: Listing 51: `refract()` function was missing `fabs()` on `sqrt()` argument (#559)
   - Fix: Listing 61: Include updated `cam` declaration, show context w/highlighting
   - Fix: Listing 62: Highlight rename of `camera::get_ray()` parameters to s, t (#616)
   - Fix: Listing 63: Show reverted scene declarations
   - Fix: Listing 68: Show final scene render parameters with highlighting
+  - Fix: Rewrote refracted ray perpendicular and parallel components for correctness (#526)
   - New: Listing 50: Show the updated material definitions
 
 ### _The Next Week_
+  - Delete: Deleted the section covering the old `flip_face` class, renumbered images as this
+    eliminated the rendering with missing Cornell box faces (#270, #482, #661)
+  - Delete: scenes 7 & 9 from the original (`cornell_balls` and `cornell_final`), as these were not
+    covered in the book. Made the source and book consistent with each other. There are now a total
+    of eight scenes for the second book (#653, #620)
+  - Change: Listing 10: Separate out world & camera definitions in main (#646)
+  - Change: Updated most rendered images for book 2: 2.01-2.03, 2.07-2.13, 2.15-2.22.
+  - Change: Scenes get custom image parameters (#650)
+  - Fix: Reduced code duplication in `dielectric::scatter()` function
+  - Fix: "Intance" typo in Chapter 8.1 to "Instance" (#629)
   - Fix: Listing 7: Show reverted viewing parameters from book 1 final scene
+  - Fix: Typo in listing caption for filename `moving-sphere.h`
 
-
-----------------------------------------------------------------------------------------------------
-# v3.1.3 (in progress)
+### _The Rest of Your Life_
+  - Change: use `vup` for camera, as in other two books
+  - Fix: world and camera setup in `main()`, and include full body in book listing (#646)
+  - New: `flip_face` moved to book 3, where it's needed for the light source (#661)
 
 
 ----------------------------------------------------------------------------------------------------

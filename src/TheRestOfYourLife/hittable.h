@@ -61,7 +61,9 @@ class flip_face : public hittable {
     public:
         flip_face(shared_ptr<hittable> p) : ptr(p) {}
 
-        virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+        virtual bool hit(
+            const ray& r, double t_min, double t_max, hit_record& rec) const override {
+
             if (!ptr->hit(r, t_min, t_max, rec))
                 return false;
 
@@ -69,7 +71,7 @@ class flip_face : public hittable {
             return true;
         }
 
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
             return ptr->bounding_box(t0, t1, output_box);
         }
 
@@ -83,8 +85,10 @@ class translate : public hittable {
         translate(shared_ptr<hittable> p, const vec3& displacement)
             : ptr(p), offset(displacement) {}
 
-        virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
+        virtual bool hit(
+            const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
 
     public:
         shared_ptr<hittable> ptr;
@@ -120,8 +124,10 @@ class rotate_y : public hittable {
     public:
         rotate_y(shared_ptr<hittable> p, double angle);
 
-        virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const {
+        virtual bool hit(
+            const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
             output_box = bbox;
             return hasbox;
         }

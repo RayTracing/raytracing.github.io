@@ -30,8 +30,10 @@ class bvh_node : public hittable  {
             std::vector<shared_ptr<hittable>>& objects,
             size_t start, size_t end, double time0, double time1);
 
-        virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
+        virtual bool hit(
+            const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
 
     public:
         shared_ptr<hittable> left;

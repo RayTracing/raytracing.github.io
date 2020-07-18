@@ -16,13 +16,16 @@
 #include "hittable.h"
 
 
-class sphere: public hittable  {
+class sphere : public hittable  {
     public:
         sphere() {}
         sphere(point3 cen, double r, shared_ptr<material> m)
             : center(cen), radius(r), mat_ptr(m) {};
-        virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const;
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const;
+
+        virtual bool hit(
+            const ray& r, double tmin, double tmax, hit_record& rec) const override;
+
+        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
 
     public:
         point3 center;
@@ -37,6 +40,15 @@ bool sphere::bounding_box(double t0, double t1, aabb& output_box) const {
         center + vec3(radius, radius, radius));
     return true;
 }
+
+
+void get_sphere_uv(const point3& p, double& u, double& v) {
+    auto phi = atan2(p.z(), p.x());
+    auto theta = asin(p.y());
+    u = 1-(phi + pi) / (2*pi);
+    v = (theta + pi/2) / pi;
+}
+
 
 bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
     vec3 oc = r.origin() - center;

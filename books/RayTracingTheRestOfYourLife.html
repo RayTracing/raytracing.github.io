@@ -4,10 +4,10 @@
 
 
                                **Ray Tracing: The Rest of Your Life**
-                                           Peter Shirley
-                          edited by Steve Hollasch and Trevor David Black
+                                         [Peter Shirley][]
+                      edited by [Steve Hollasch][] and [Trevor David Black][]
                                                 <br>
-                                     Version 3.2.0-alpha, 2020-XX-XX
+                                     Version 3.2.0, 2020-07-18
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -751,13 +751,16 @@ fact make mirrors a special case, and just make the $s/p$ implicit -- our code c
 
 Returning to the Cornell Box
 -----------------------------
-<div class='together'>
 Let’s do a simple refactoring and temporarily remove all materials that aren’t Lambertian. We can
 use our Cornell Box scene again, and let’s generate the camera in the function that generates the
-model:
+model.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hittable_list cornell_box(camera& cam, double aspect) {
+    ...
+    color ray_color(
+        ...
+
+    hittable_list cornell_box() {
         hittable_list world;
 
         auto red   = make_shared<lambertian>(color(.65, .05, .05));
@@ -782,6 +785,30 @@ model:
         box2 = make_shared<translate>(box2, vec3(130,0,65));
         world.add(box2);
 
+        return world;
+    }
+
+    int main() {
+        // Image
+
+        const auto aspect_ratio = 1.0 / 1.0;
+        const int image_width = 600;
+        const int image_height = static_cast<int>(image_width / aspect_ratio);
+        const int samples_per_pixel = 100;
+        const int max_depth = 50;
+
+        // World
+
+        auto lights = make_shared<hittable_list>();
+        lights->add(make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>()));
+        lights->add(make_shared<sphere>(point3(190, 90, 190), 90, shared_ptr<material>()));
+
+        auto world = cornell_box();
+
+        color background(0,0,0);
+
+        // Camera
+
         point3 lookfrom(278, 278, -800);
         point3 lookat(278, 278, 0);
         vec3 vup(0, 1, 0);
@@ -791,13 +818,17 @@ model:
         auto t0 = 0.0;
         auto t1 = 1.0;
 
-        cam = camera(lookfrom, lookat, vup, vfov, aspect, aperture, dist_to_focus, t0, t1);
+        camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, t0, t1);
 
-        return world;
+        // Render
+
+        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
+        for (int j = image_height-1; j >= 0; --j) {
+            ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [cornell-box]: <kbd>[main.cc]</kbd> Cornell box, refactored]
-</div>
 
 <div class='together'>
 At 500×500 my code produces this image in 10min on 1 core of my Macbook:
@@ -858,7 +889,7 @@ And _Lambertian_ material becomes:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
-            ) const {
+            ) const override {
                 auto direction = rec.normal + random_unit_vector();
                 scattered = ray(rec.p, unit_vector(direction), r_in.time());
                 alb = albedo->value(rec.u, rec.v, rec.p);
@@ -932,7 +963,7 @@ randomly from the hemisphere above the surface. This would be $p(direction) = \f
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     virtual bool scatter(
         const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
-    ) const {
+    ) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto direction = random_in_hemisphere(rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1260,6 +1291,9 @@ Should we make a class for ONBs, or are utility functions enough? I’m not sure
 class because it won't really be more complicated than utility functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef ONB_H
+    #define ONB_H
+
     class onb {
         public:
             onb() {}
@@ -1291,6 +1325,8 @@ class because it won't really be more complicated than utility functions:
         axis[1] = unit_vector(cross(w(), a));
         axis[0] = cross(w(), v());
     }
+
+    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [class-onb]: <kbd>[onb.h]</kbd> Orthonormal basis class]
 
@@ -1300,7 +1336,7 @@ We can rewrite our Lambertian material using this to get:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     virtual bool scatter(
         const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
-    ) const {
+    ) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         onb uvw;
         uvw.build_from_w(rec.normal);
@@ -1445,7 +1481,7 @@ down. We can do that by letting the emitted member function of hittable take ext
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     virtual color emitted(const ray& r_in, const hit_record& rec, double u, double v,
-        const point3& p) const {
+        const point3& p) const override {
 
         if (rec.front_face)
             return emit->value(u, v, p);
@@ -1457,7 +1493,58 @@ down. We can do that by letting the emitted member function of hittable take ext
 </div>
 
 <div class='together'>
-We also need to flip the light so its normals point in the -y direction. This gives us:
+We also need to flip the light so its normals point in the $-y$ direction:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class flip_face : public hittable {
+        public:
+            flip_face(shared_ptr<hittable> p) : ptr(p) {}
+
+            virtual bool hit(
+                const ray& r, double t_min, double t_max, hit_record& rec) const override {
+
+                if (!ptr->hit(r, t_min, t_max, rec))
+                    return false;
+
+                rec.front_face = !rec.front_face;
+                return true;
+            }
+
+            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
+                return ptr->bounding_box(t0, t1, output_box);
+            }
+
+        public:
+            shared_ptr<hittable> ptr;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [flip-face]: <kbd>[hittable.h]</kbd> We use a hittable object to flip the light]
+
+Making sure to call this in our world definition:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hittable_list cornell_box() {
+        hittable_list world;
+
+        auto red   = make_shared<lambertian>(color(.65, .05, .05));
+        auto white = make_shared<lambertian>(color(.73, .73, .73));
+        auto green = make_shared<lambertian>(color(.12, .45, .15));
+        auto light = make_shared<diffuse_light>(color(15, 15, 15));
+
+        world.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
+        world.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        world.add(make_shared<flip_face>(make_shared<xz_rect>(213, 343, 227, 332, 554, light)));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        world.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
+        world.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+        world.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [flipping-light]: <kbd>[main.cc]</kbd> Flip the light in our cornell box scene]
+
+This gives us:
 
   ![Image 5: Cornell box, light emitted only in the downward direction
   ](../images/img-3.05-cornell-lightdown.jpg class=pixel)
@@ -1514,6 +1601,9 @@ hierarchies were invented for! It’s never obvious what goes in an abstract cla
 to be greedy and hope a minimal interface works, and for the PDF this implies:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef PDF_H
+    #define PDF_H
+
     class pdf {
         public:
             virtual ~pdf() {}
@@ -1521,6 +1611,8 @@ to be greedy and hope a minimal interface works, and for the PDF this implies:
             virtual double value(const vec3& direction) const = 0;
             virtual vec3 generate() const = 0;
     };
+
+    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [class-pdf]: <kbd>[pdf.h]</kbd> The `pdf` class]
 </div>
@@ -1550,12 +1642,12 @@ First, let’s try a cosine density:
         public:
             cosine_pdf(const vec3& w) { uvw.build_from_w(w); }
 
-            virtual double value(const vec3& direction) const {
+            virtual double value(const vec3& direction) const override {
                 auto cosine = dot(unit_vector(direction), uvw.w());
                 return (cosine <= 0) ? 0 : cosine/pi;
             }
 
-            virtual vec3 generate() const {
+            virtual vec3 generate() const override {
                 return uvw.local(random_cosine_direction());
             }
 
@@ -1625,11 +1717,11 @@ Now we can try sampling directions toward a `hittable`, like the light.
         public:
             hittable_pdf(shared_ptr<hittable> p, const point3& origin) : ptr(p), o(origin) {}
 
-            virtual double value(const vec3& direction) const {
+            virtual double value(const vec3& direction) const override {
                 return ptr->pdf_value(o, direction);
             }
 
-            virtual vec3 generate() const {
+            virtual vec3 generate() const override {
                 return ptr->random(o);
             }
 
@@ -1674,7 +1766,7 @@ And we change `xz_rect` to implement those functions:
             ...
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual double pdf_value(const point3& origin, const vec3& v) const {
+            virtual double pdf_value(const point3& origin, const vec3& v) const override {
                 hit_record rec;
                 if (!this->hit(ray(origin, v), 0.001, infinity, rec))
                     return 0;
@@ -1686,7 +1778,7 @@ And we change `xz_rect` to implement those functions:
                 return distance_squared / (cosine * area);
             }
 
-            virtual vec3 random(const point3& origin) const {
+            virtual vec3 random(const point3& origin) const override {
                 auto random_point = point3(random_double(x0,x1), k, random_double(z0,z1));
                 return random_point - origin;
             }
@@ -1759,11 +1851,11 @@ class is straightforward:
                 p[1] = p1;
             }
 
-            virtual double value(const vec3& direction) const {
+            virtual double value(const vec3& direction) const override {
                 return 0.5 * p[0]->value(direction) + 0.5 *p[1]->value(direction);
             }
 
-            virtual vec3 generate() const {
+            virtual vec3 generate() const override {
                 if (random_double() < 0.5)
                     return p[0]->generate();
                 else
@@ -1960,7 +2052,7 @@ The Lambertian material becomes simpler:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, scatter_record& srec
-            ) const {
+            ) const override {
                 srec.is_specular = false;
                 srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
                 srec.pdf_ptr = new cosine_pdf(rec.normal);
@@ -2040,7 +2132,7 @@ is easy to fix.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, scatter_record& srec
-            ) const {
+            ) const override {
                 vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
                 srec.specular_ray = ray(rec.p, reflected+fuzz*random_in_unit_sphere());
                 srec.attenuation = albedo;
@@ -2459,12 +2551,92 @@ each has its advantages.
 
 Have fun!
 
-Peter Shirley<br>
+[Peter Shirley][]<br>
 Salt Lake City, March, 2016
 
 
 
                                (insert acknowledgments.md.html here)
+
+
+
+Citing This Book
+====================================================================================================
+Consistent citations make it easier to identify the source, location and versions of this work. If
+you are citing this book, we ask that you try to use one of the following forms if possible.
+
+Basic Data
+-----------
+  - **Title (series)**: “Ray Tracing in One Weekend Series”
+  - **Title (book)**: “Ray Tracing: The Rest of Your Life”
+  - **Author**: Peter Shirley
+  - **Editors**: Steve Hollasch, Trevor David Black
+  - **Version/Edition**: v3.2.0
+  - **Date**: 2020-07-18
+  - **URL (series)**: https://raytracing.github.io/
+  - **URL (book)**: https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html
+
+Snippets
+---------
+
+  ### Markdown
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [_Ray Tracing: The Rest of Your Life_](https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ### HTML
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    <a href='https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html'>
+        <cite>Ray Tracing: The Rest of Your Life</cite>
+    </a>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ### LaTeX and BibTex
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~\cite{Shirley2020RTW2}
+
+    @misc{Shirley2020RTW2,
+       title = {Ray Tracing: The Rest of Your Life},
+       author = {Peter Shirley},
+       year = {2020},
+       month = {July},
+       note = {\small \texttt{https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html},
+       url = {https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html}
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ### BibLaTeX
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    \usepackage{biblatex}
+
+    ~\cite{Shirley2020RTW2}
+
+    @online{Shirley2020RTW2,
+       title = {Ray Tracing: The Rest of Your Life},
+       author = {Peter Shirley},
+       year = {2020},
+       month = {July},
+       url = {https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html}
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ### IEEE
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    “Ray Tracing: The Rest of Your Life.”
+    raytracing.github.io/books/RayTracingTheRestOfYourLife.html
+    (accessed MMM. DD, YYYY)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ### MLA:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Ray Tracing: The Rest of Your Life. raytracing.github.io/books/RayTracingTheRestOfYourLife.html
+    Accessed DD MMM. YYYY.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+[Peter Shirley]:      https://github.com/petershirley
+[Steve Hollasch]:     https://github.com/hollasch
+[Trevor David Black]: https://github.com/trevordblack
 
 
 

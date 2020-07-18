@@ -61,7 +61,7 @@ class lambertian : public material {
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, scatter_record& srec
-        ) const {
+        ) const override {
             srec.is_specular = false;
             srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
             srec.pdf_ptr = make_shared<cosine_pdf>(rec.normal);
@@ -70,7 +70,7 @@ class lambertian : public material {
 
         double scattering_pdf(
             const ray& r_in, const hit_record& rec, const ray& scattered
-        ) const {
+        ) const override {
             auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
             return cosine < 0 ? 0 : cosine/pi;
         }
@@ -86,7 +86,7 @@ class metal : public material {
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, scatter_record& srec
-        ) const {
+        ) const override {
             vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
             srec.specular_ray =
                 ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
@@ -108,7 +108,7 @@ class dielectric : public material {
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, scatter_record& srec
-        ) const {
+        ) const override {
             srec.is_specular = true;
             srec.pdf_ptr = nullptr;
             srec.attenuation = color(1.0, 1.0, 1.0);
@@ -143,7 +143,7 @@ class diffuse_light : public material {
 
         virtual color emitted(
             const ray& r_in, const hit_record& rec, double u, double v, const point3& p
-        ) const {
+        ) const override {
             if (!rec.front_face)
                 return color(0,0,0);
             return emit->value(u, v, p);
@@ -156,15 +156,22 @@ class diffuse_light : public material {
 
 class isotropic : public material {
     public:
+        isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
         isotropic(shared_ptr<texture> a) : albedo(a) {}
+
+        #if 0
+        // Issue #669
+        // This method doesn't match the signature in the base `material` class, so this one's
+        // never actually called. Disabling this definition until we sort this out.
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-        ) const {
+        ) const override {
             scattered = ray(rec.p, random_in_unit_sphere(), r_in.time());
             attenuation = albedo->value(rec.u, rec.v, rec.p);
             return true;
         }
+        #endif
 
     public:
         shared_ptr<texture> albedo;
