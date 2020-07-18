@@ -3,6 +3,41 @@ Change Log -- Ray Tracing in One Weekend
 
 # v3.2.0 (2020-07-18)
 
+We're still chasing that elusive stable project state where we're mostly done with large changes,
+yet we keep finding more and more to tweak and improve. Besides the usual batch of corrections and
+small improvements, for this change we plodded through the complete code progression for both books
+one and two (_In One Weekend_ and _The Next Week_). This caught a _lot_ of issues (to our dismay),
+and allowed us to generate a complete set of new render images for both books, to catch up with all
+of the changes we've been making. The end result is that readers should find a significantly better
+agreement between the book and their code as they progress, and their renders should also generally
+match.
+
+Besides the new rendered images, we also much improved the image parameters, which were frequently
+missing from the previous version, leaving readers to guess at their values, or go to the code to
+try to figure out how we created some of the images. In general, our working renders are now 400
+pixels wide, usually 16:9 aspect ratio. We now use an explicit aspect ratio and deduce the image
+height and other camera values, so you can tweak your render size just by changing the image width
+(instead of updating a bunch of dependent parameters).
+
+One interesting late change we made was adding explicit C++ `override` labels to subclass methods.
+We did this mostly to aid code readers, but were surprised to find that it actually caught a pretty
+significant bug hiding in our code (see entry in common changes below).
+
+You'll also see a new citation section at the end of the books, to encourage uniform citations out
+in the world, making it easier for people to refer to and track these books.
+
+As is typical, though we roughly follow [semantic versioning](https://semver.org/), we're
+considering this release a minor change instead of a major one. It's a common reflex, because people
+generally have a (misguided) aversion to bumping the major version a lot. We consider it minor
+because most of the changes are quite local, some classes get new constructors and any variances
+should be quite simple and easy to fix up. Still, one might consider this more properly a major
+version bump.
+
+For our next larger-than-patch release, we're beginning a large revisit of book 3,
+_Ray Tracing: The Rest of Your Life_. There's a lot of work to do, and this will likely be a
+significant change and improvement. We're hoping that changes to books one and two will be small,
+but that's never worked out for us before. Ah, dreams.
+
 ### Common
   - Bug: Found a bug in book 3 source `isotropic::scatter()` method. Commented out, using default
     (as it was previously). (#669)
