@@ -1,7 +1,7 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
-# v3.2.0 (in progress)
+# v3.2.0 (2020-07-18)
 
 ### Common
   - Bug: Found a bug in book 3 source `isotropic::scatter()` method. Commented out, using default
@@ -21,6 +21,7 @@ Change Log -- Ray Tracing in One Weekend
     because it already caught an existing bug in _The Rest of Your Life_ source. This change
     includes commenting out the book 3 `isotropic::scatter()` method, which was accidentally ignored
     anyway. (#639, #669)
+  - New: each book gets a section of recommended citation examples (#500)
 
 ### _In One Weekend_
   - Change: Updated all rendered images except for 1.13, 1.14 (#179, #547, #548, #549, #550, #551,
