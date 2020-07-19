@@ -1,6 +1,23 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
+# v3.3.0 (in progress)
+
+### Common
+  - Bug:
+  - Delete:
+  - Change:
+  - New:
+  - Fix:
+
+### _In One Weekend_
+
+### _The Next Week_
+
+### _The Rest of Your Life_
+
+
+----------------------------------------------------------------------------------------------------
 # v3.2.0 (2020-07-18)
 
 We're still chasing that elusive stable project state where we're mostly done with large changes,
