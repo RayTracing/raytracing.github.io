@@ -116,11 +116,13 @@ int main() {
     auto dist_to_focus = 10.0;
     auto aperture = 0.0;
     auto vfov = 40.0;
-    auto t0 = 0.0;
-    auto t1 = 1.0;
+    const auto time_start = 0.0;
+    const auto time_end = 1.0;
 
-    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, t0, t1);
-    
+    camera cam(
+        lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus,
+        time_start, time_end);
+
     // Render
 
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
