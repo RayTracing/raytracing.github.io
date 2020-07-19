@@ -117,8 +117,8 @@ to camera because for now it is not allowed to move; it just sends out rays over
                 double aperture,
                 double focus_dist,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                double t0 = 0,
-                double t1 = 0
+                double time_start = 0,
+                double time_end = 0
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ) {
                 auto theta = degrees_to_radians(vfov);
@@ -137,8 +137,8 @@ to camera because for now it is not allowed to move; it just sends out rays over
 
                 lens_radius = aperture / 2;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                time0 = t0;
-                time1 = t1;
+                time0 = time_start;
+                time1 = time_end;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
@@ -392,10 +392,14 @@ And with these viewing parameters:
         auto dist_to_focus = 10.0;
         auto aperture = 0.1;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        const auto time_start = 0.0;
+        const auto time_end = 1.0;
         int image_height = static_cast<int>(image_width / aspect_ratio);
 
 
-        camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+        camera cam(
+            lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus,
+            time_start, time_end);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-spheres-moving-camera]: <kbd>[main.cc]</kbd> Viewing parameters]
 
@@ -1363,9 +1367,13 @@ The following changes set up our main function:
 
     vec3 vup(0,1,0);
     auto dist_to_focus = 10.0;
+    const auto time_start = 0.0;
+    const auto time_end = 1.0;
     int image_height = static_cast<int>(image_width / aspect_ratio);
 
-    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+    camera cam(
+        lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus,
+        time_start, time_end);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     // Render

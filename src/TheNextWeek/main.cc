@@ -366,8 +366,12 @@ int main() {
     const vec3 vup(0,1,0);
     const auto dist_to_focus = 10.0;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
+    const auto time_start = 0.0;
+    const auto time_end = 1.0;
 
-    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+    camera cam(
+        lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus,
+        time_start, time_end);
 
     // Render
 
