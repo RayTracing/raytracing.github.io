@@ -20,8 +20,11 @@ class moving_sphere : public hittable {
     public:
         moving_sphere() {}
         moving_sphere(
-            point3 ctr0, point3 ctr1, double t0, double t1, double r, shared_ptr<material> m)
-            : center0(ctr0), center1(ctr1), time0(t0), time1(t1), radius(r), mat_ptr(m)
+            point3 ctr0, point3 ctr1, double r, shared_ptr<material> m,
+            double time_start, double time_end)
+            :
+            center0(ctr0), center1(ctr1), radius(r), mat_ptr(m),
+            time0(time_start), time1(time_end)
         {};
 
         virtual bool hit(
