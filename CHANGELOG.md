@@ -1,6 +1,13 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
+# v3.2.1 (in progress)
+
+### _In One Weekend_
+  - Fix: replace old anti-alias result image with before-and-after image (#679)
+
+
+----------------------------------------------------------------------------------------------------
 # v3.2.0 (2020-07-18)
 
 We're still chasing that elusive stable project state where we're mostly done with large changes,
