@@ -27,8 +27,8 @@ class moving_sphere : public hittable {
             time0(time_start), time1(time_end)
         {};
 
-        virtual bool hit(
-            const ray& r, double tmin, double tmax, hit_record& rec) const override;
+        virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+            const override;
 
         virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
 
@@ -59,8 +59,7 @@ bool moving_sphere::bounding_box(double t0, double t1, aabb& output_box) const {
 }
 
 
-// replace "center" with "center(r.time())"
-bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+bool moving_sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
     vec3 oc = r.origin() - center(r.time());
     auto a = r.direction().length_squared();
     auto half_b = dot(oc, r.direction());
@@ -72,7 +71,7 @@ bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& re
         auto root = sqrt(discriminant);
 
         auto temp = (-half_b - root)/a;
-        if (temp < t_max && temp > t_min) {
+        if (ray_tmin < temp && temp < ray_tmax) {
             rec.t = temp;
             rec.p = r.at(rec.t);
             vec3 outward_normal = (rec.p - center(r.time())) / radius;
@@ -82,7 +81,7 @@ bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& re
         }
 
         temp = (-half_b + root)/a;
-        if (temp < t_max && temp > t_min) {
+        if (ray_tmin < temp && temp < ray_tmax) {
             rec.t = temp;
             rec.p = r.at(rec.t);
             vec3 outward_normal = (rec.p - center(r.time())) / radius;

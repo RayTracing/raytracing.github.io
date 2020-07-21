@@ -1503,10 +1503,10 @@ We also need to flip the light so its normals point in the $-y$ direction:
         public:
             flip_face(shared_ptr<hittable> p) : ptr(p) {}
 
-            virtual bool hit(
-                const ray& r, double t_min, double t_max, hit_record& rec) const override {
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override {
 
-                if (!ptr->hit(r, t_min, t_max, rec))
+                if (!ptr->hit(r, ray_tmin, ray_tmax, rec))
                     return false;
 
                 rec.front_face = !rec.front_face;
@@ -1743,7 +1743,9 @@ instrumentation to all `hittable` subclasses, we’ll add two dummy functions to
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable {
         public:
-            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const = 0;
+
             virtual bool bounding_box(double t0, double t1, aabb& output_box) const = 0;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
