@@ -710,7 +710,8 @@ the entire time interval [`time1`,`time2`].
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const = 0;
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const = 0;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ...
     };
@@ -730,14 +731,15 @@ For a sphere, that `bounding_box` function is easy:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ...
     };
 
     ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    bool sphere::bounding_box(double t0, double t1, aabb& output_box) const {
+    bool sphere::bounding_box(double time_start, double time_end, aabb& output_box) const {
         output_box = aabb(
             center - vec3(radius, radius, radius),
             center + vec3(radius, radius, radius));
@@ -766,7 +768,8 @@ and compute the box of those two boxes:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ...
     };
@@ -774,13 +777,13 @@ and compute the box of those two boxes:
     ...
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    bool moving_sphere::bounding_box(double t0, double t1, aabb& output_box) const {
+    bool moving_sphere::bounding_box(double time_start, double time_end, aabb& output_box) const {
         aabb box0(
-            center(t0) - vec3(radius, radius, radius),
-            center(t0) + vec3(radius, radius, radius));
+            center(time_start) - vec3(radius, radius, radius),
+            center(time_start) + vec3(radius, radius, radius));
         aabb box1(
-            center(t1) - vec3(radius, radius, radius),
-            center(t1) + vec3(radius, radius, radius));
+            center(time_end) - vec3(radius, radius, radius),
+            center(time_end) + vec3(radius, radius, radius));
         output_box = surrounding_box(box0, box1);
         return true;
     }
@@ -810,7 +813,8 @@ the fly because it is only usually called at BVH construction.
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     };
@@ -818,14 +822,14 @@ the fly because it is only usually called at BVH construction.
     ...
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    bool hittable_list::bounding_box(double t0, double t1, aabb& output_box) const {
+    bool hittable_list::bounding_box(double time_start, double time_end, aabb& output_box) const {
         if (objects.empty()) return false;
 
         aabb temp_box;
         bool first_box = true;
 
         for (const auto& object : objects) {
-            if (!object->bounding_box(t0, t1, temp_box)) return false;
+            if (!object->bounding_box(time_start, time_end, temp_box)) return false;
             output_box = first_box ? temp_box : surrounding_box(output_box, temp_box);
             first_box = false;
         }
@@ -889,7 +893,8 @@ a class:
             virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
                 const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override;
 
         public:
             shared_ptr<hittable> left;
@@ -897,7 +902,7 @@ a class:
             aabb box;
     };
 
-    bool bvh_node::bounding_box(double t0, double t1, aabb& output_box) const {
+    bool bvh_node::bounding_box(double time_start, double time_end, aabb& output_box) const {
         output_box = box;
         return true;
     }
@@ -2412,10 +2417,12 @@ The actual `xy_rect` class is thus:
             virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
                 const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override {
+
                 // The bounding box must have non-zero width in each dimension, so pad the Z
                 // dimension a small amount.
-                output_box = aabb(point3(x0,y0, k-0.0001), point3(x1, y1, k+0.0001));
+                output_box = aabb(point3(x0, y0, k-0.0001), point3(x1, y1, k+0.0001));
                 return true;
             }
 
@@ -2552,10 +2559,12 @@ This is xz and yz:
             virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
                 const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override {
+
                 // The bounding box must have non-zero width in each dimension, so pad the Y
                 // dimension a small amount.
-                output_box = aabb(point3(x0,k-0.0001,z0), point3(x1, k+0.0001, z1));
+                output_box = aabb(point3(x0, k-0.0001, z0), point3(x1, k+0.0001, z1));
                 return true;
             }
 
@@ -2575,7 +2584,9 @@ This is xz and yz:
             virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
                 const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override {
+
                 // The bounding box must have non-zero width in each dimension, so pad the X
                 // dimension a small amount.
                 output_box = aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
@@ -2731,7 +2742,9 @@ make an axis-aligned block primitive that holds 6 rectangles:
             virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
                 const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override {
+
                 output_box = aabb(box_min, box_max);
                 return true;
             }
@@ -2813,7 +2826,8 @@ move any underlying hittable is a _translate_ instance.
             virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
                 const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override;
 
         public:
             shared_ptr<hittable> ptr;
@@ -2831,8 +2845,8 @@ move any underlying hittable is a _translate_ instance.
         return true;
     }
 
-    bool translate::bounding_box(double t0, double t1, aabb& output_box) const {
-        if (!ptr->bounding_box(t0, t1, output_box))
+    bool translate::bounding_box(double time_start, double time_end, aabb& output_box) const {
+        if (!ptr->bounding_box(time_start, time_end, output_box))
             return false;
 
         output_box = aabb(
@@ -2900,7 +2914,9 @@ For a y-rotation class we have:
             virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
                 const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override {
+
                 output_box = bbox;
                 return hasbox;
             }
@@ -3079,8 +3095,10 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
             virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
                 const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
-                return boundary->bounding_box(t0, t1, output_box);
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override {
+
+                return boundary->bounding_box(time_start, time_end, output_box);
             }
 
         public:

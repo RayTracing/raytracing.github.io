@@ -35,8 +35,10 @@ class constant_medium : public hittable  {
         virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
             const override;
 
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
-            return boundary->bounding_box(t0, t1, output_box);
+        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override {
+
+            return boundary->bounding_box(time_start, time_end, output_box);
         }
 
     public:
