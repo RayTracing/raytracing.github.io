@@ -866,7 +866,8 @@ the abstract class:
 
     class hittable {
         public:
-            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const = 0;
     };
 
     #endif
@@ -889,15 +890,15 @@ And here’s the sphere:
             sphere() {}
             sphere(point3 ctr, double r) : center(ctr), radius(r) {};
 
-            virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
         public:
             point3 center;
             double radius;
     };
 
-    bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    bool sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
         vec3 oc = r.origin() - center;
         auto a = r.direction().length_squared();
         auto half_b = dot(oc, r.direction());
@@ -908,7 +909,7 @@ And here’s the sphere:
             auto root = sqrt(discriminant);
 
             auto temp = (-half_b - root) / a;
-            if (temp < t_max && temp > t_min) {
+            if (ray_tmin < temp && temp < ray_tmax) {
                 rec.t = temp;
                 rec.p = r.at(rec.t);
                 rec.normal = (rec.p - center) / radius;
@@ -916,7 +917,7 @@ And here’s the sphere:
             }
 
             temp = (-half_b + root) / a;
-            if (temp < t_max && temp > t_min) {
+            if (ray_tmin < temp && temp < ray_tmax) {
                 rec.t = temp;
                 rec.p = r.at(rec.t);
                 rec.normal = (rec.p - center) / radius;
@@ -1024,7 +1025,7 @@ calculation for us.
 And then we add the surface side determination to the class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    bool sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
         vec3 oc = r.origin() - center;
         auto a = r.direction().length_squared();
         auto half_b = dot(oc, r.direction());
@@ -1034,7 +1035,7 @@ And then we add the surface side determination to the class:
         if (discriminant > 0) {
             auto root = sqrt(discriminant);
             auto temp = (-half_b - root) / a;
-            if (temp < t_max && temp > t_min) {
+            if (ray_tmin < temp && temp < ray_tmax) {
                 rec.t = temp;
                 rec.p = r.at(rec.t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1044,7 +1045,7 @@ And then we add the surface side determination to the class:
                 return true;
             }
             temp = (-half_b + root) / a;
-            if (temp < t_max && temp > t_min) {
+            if (ray_tmin < temp && temp < ray_tmax) {
                 rec.t = temp;
                 rec.p = r.at(rec.t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1088,20 +1089,20 @@ that stores a list of `hittable`s:
             void clear() { objects.clear(); }
             void add(shared_ptr<hittable> object) { objects.push_back(object); }
 
-            virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
         public:
             std::vector<shared_ptr<hittable>> objects;
     };
 
-    bool hittable_list::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    bool hittable_list::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
         hit_record temp_rec;
         bool hit_anything = false;
-        auto closest_so_far = t_max;
+        auto closest_so_far = ray_tmax;
 
         for (const auto& object : objects) {
-            if (object->hit(r, t_min, closest_so_far, temp_rec)) {
+            if (object->hit(r, ray_tmin, closest_so_far, temp_rec)) {
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
                 rec = temp_rec;
@@ -1999,8 +2000,8 @@ within `hit_record`. See the highlighted lines below:
                 : center(ctr), radius(r), mat_ptr(m) {};
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
         public:
             point3 center;
@@ -2010,7 +2011,7 @@ within `hit_record`. See the highlighted lines below:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
 
-    bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    bool sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
         vec3 oc = r.origin() - center;
         auto a = r.direction().length_squared();
         auto half_b = dot(oc, r.direction());
@@ -2020,7 +2021,7 @@ within `hit_record`. See the highlighted lines below:
         if (discriminant > 0) {
             auto root = sqrt(discriminant);
             auto temp = (-half_b - root) / a;
-            if (temp < t_max && temp > t_min) {
+            if (ray_tmin < temp && temp < ray_tmax) {
                 rec.t = temp;
                 rec.p = r.at(rec.t);
                 vec3 outward_normal = (rec.p - center) / radius;
@@ -2031,7 +2032,7 @@ within `hit_record`. See the highlighted lines below:
                 return true;
             }
             temp = (-half_b + root) / a;
-            if (temp < t_max && temp > t_min) {
+            if (ray_tmin < temp && temp < ray_tmax) {
                 rec.t = temp;
                 rec.p = r.at(rec.t);
                 vec3 outward_normal = (rec.p - center) / radius;
