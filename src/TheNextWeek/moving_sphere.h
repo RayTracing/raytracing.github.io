@@ -30,7 +30,8 @@ class moving_sphere : public hittable {
         virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
             const override;
 
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override;
 
         point3 center(double time) const;
 
@@ -47,13 +48,13 @@ point3 moving_sphere::center(double time) const{
 }
 
 
-bool moving_sphere::bounding_box(double t0, double t1, aabb& output_box) const {
+bool moving_sphere::bounding_box(double time_start, double time_end, aabb& output_box) const {
     aabb box0(
-        center(t0) - vec3(radius, radius, radius),
-        center(t0) + vec3(radius, radius, radius));
+        center(time_start) - vec3(radius, radius, radius),
+        center(time_start) + vec3(radius, radius, radius));
     aabb box1(
-        center(t1) - vec3(radius, radius, radius),
-        center(t1) + vec3(radius, radius, radius));
+        center(time_end) - vec3(radius, radius, radius),
+        center(time_end) + vec3(radius, radius, radius));
     output_box = surrounding_box(box0, box1);
     return true;
 }

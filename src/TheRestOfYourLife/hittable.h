@@ -47,7 +47,8 @@ class hittable {
         virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
             const = 0;
 
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const = 0;
+        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const = 0;
 
         virtual double pdf_value(const vec3& o, const vec3& v) const {
             return 0.0;
@@ -73,8 +74,10 @@ class flip_face : public hittable {
             return true;
         }
 
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
-            return ptr->bounding_box(t0, t1, output_box);
+        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override {
+
+            return ptr->bounding_box(time_start, time_end, output_box);
         }
 
     public:
@@ -90,7 +93,8 @@ class translate : public hittable {
         virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
             const override;
 
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override;
 
     public:
         shared_ptr<hittable> ptr;
@@ -110,8 +114,8 @@ bool translate::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& 
 }
 
 
-bool translate::bounding_box(double t0, double t1, aabb& output_box) const {
-    if (!ptr->bounding_box(t0, t1, output_box))
+bool translate::bounding_box(double time_start, double time_end, aabb& output_box) const {
+    if (!ptr->bounding_box(time_start, time_end, output_box))
         return false;
 
     output_box = aabb(
@@ -129,7 +133,9 @@ class rotate_y : public hittable {
         virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
             const override;
 
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
+        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override {
+
             output_box = bbox;
             return hasbox;
         }
