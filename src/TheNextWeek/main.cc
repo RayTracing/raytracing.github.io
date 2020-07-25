@@ -281,11 +281,17 @@ int main() {
 
     hittable_list world;
 
+    // Camera
+
     point3 lookfrom;
     point3 lookat;
+    vec3 vup(0,1,0);
     auto vfov = 40.0;
     auto aperture = 0.0;
+    auto dist_to_focus = 10.0;
     color background(0,0,0);
+
+    // Scene
 
     switch (0) {
         case 1:
@@ -361,10 +367,6 @@ int main() {
             break;
     }
 
-    // Camera
-
-    const vec3 vup(0,1,0);
-    const auto dist_to_focus = 10.0;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
     const auto time_start = 0.0;
     const auto time_end = 1.0;
