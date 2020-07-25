@@ -99,11 +99,12 @@ For this we will first need to have a ray store the time it exists at:
 
 Updating the Camera to Simulate Motion Blur
 --------------------------------------------
-Now we need to modify the camera to generate rays at a random time between `time1` and `time2`.
-Should the camera keep track of `time1` and `time2` or should that be up to the user of camera when
-a ray is created? When in doubt, I like to make constructors complicated if it makes calls simple,
-so I will make the camera keep track, but that’s a personal preference. Not many changes are needed
-to camera because for now it is not allowed to move; it just sends out rays over a time period.
+Now we need to modify the camera to generate rays at a random time between the start time and the
+end time. Should the camera keep track of the time interval, or should that be up to the user of
+camera when a ray is created? When in doubt, I like to make constructors complicated if it makes
+calls simple, so I will make the camera keep track, but that’s a personal preference. Not many
+changes are needed to camera because for now it is not allowed to move; it just sends out rays over
+a time period.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
@@ -174,8 +175,8 @@ to camera because for now it is not allowed to move; it just sends out rays over
 Adding Moving Spheres
 ----------------------
 We also need a moving object. I’ll create a sphere class that has its center move linearly from
-`center0` at `time0` to `center1` at `time1`. Outside that time interval it continues on, so those
-times need not match up with the camera aperture open and close.
+`center0` at `time_start` to `center1` at `time_end`. Outside that time interval it continues on, so
+those times need not match up with the camera aperture open and close.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef MOVING_SPHERE_H
@@ -696,7 +697,7 @@ We now need to add a function to compute the bounding boxes of all the hittables
 a hierarchy of boxes over all the primitives, and the individual primitives--like spheres--will live
 at the leaves. That function returns a bool because not all primitives have bounding boxes (_e.g._,
 infinite planes). In addition, moving objects will have a bounding box that encloses the object for
-the entire time interval [`time1`,`time2`].
+the entire time interval [`time_start`,`time_end`].
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "aabb.h"
