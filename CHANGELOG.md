@@ -5,6 +5,7 @@ Change Log -- Ray Tracing in One Weekend
 
 ### _In One Weekend_
   - Fix: replace old anti-alias result image with before-and-after image (#679)
+  - Delete: remove unnecessary `cstdlib` include, as it's not needed until we use `rand()` (#687)
 
 
 ----------------------------------------------------------------------------------------------------
