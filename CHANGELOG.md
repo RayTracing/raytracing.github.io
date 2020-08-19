@@ -6,6 +6,7 @@ Change Log -- Ray Tracing in One Weekend
 ### _In One Weekend_
   - Delete: remove premature `cstdlib` include; not needed until we use `rand()` (#687)
   - Fix: replace old anti-alias result image with before-and-after image (#679)
+  - Fix: Listing 29: Added missing `rtweekend.h` include (#691)
   - Fix: undefined `vup` variable in camera definition (#686)
 
 ### _The Next Week_
