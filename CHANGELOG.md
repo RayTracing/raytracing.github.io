@@ -5,6 +5,7 @@ Change Log -- Ray Tracing in One Weekend
 
 ### _In One Weekend_
   - Fix: replace old anti-alias result image with before-and-after image (#679)
+  - Fix: Listing 29: Added missing `rtweekend.h` include (#691)
 
 
 ----------------------------------------------------------------------------------------------------
