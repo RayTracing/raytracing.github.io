@@ -4,8 +4,13 @@ Change Log -- Ray Tracing in One Weekend
 # v3.2.1 (in progress)
 
 ### _In One Weekend_
+  - Delete: remove premature `cstdlib` include; not needed until we use `rand()` (#687)
   - Fix: replace old anti-alias result image with before-and-after image (#679)
   - Fix: Listing 29: Added missing `rtweekend.h` include (#691)
+  - Fix: undefined `vup` variable in camera definition (#686)
+
+### _The Next Week_
+  - Delete: remove unused u,v,w variables in initial `perlin::noise()` function (#684)
 
 
 ----------------------------------------------------------------------------------------------------
@@ -221,7 +226,7 @@ adopting, but may warrant comparison with any current projects.
 
 ### Common
   - Fix: Display rendered images as pixelated instead of smoothed (#179)
-  - Deleted: delete old README files specific to each book (#410)
+  - Delete: delete old README files specific to each book (#410)
 
 ### _In One Weekend_
   - Fix: Remove duplicated text and reword on the camera up vector (#420)
@@ -317,7 +322,7 @@ patch-level (fix) changes and some minor-level (addition) changes.
 ### _The Rest of Your Life_
   - Change: Improved naming of auxilliary programs in _The Rest of Your Life_ source
   - Fix: Delete unused variable `p` in main() (#317)
-  - Deleted: Several unused source files from `src/TheRestOfYourLife`
+  - Delete: Several unused source files from `src/TheRestOfYourLife`
 
 
 ----------------------------------------------------------------------------------------------------
