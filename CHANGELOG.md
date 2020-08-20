@@ -8,6 +8,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: replace old anti-alias result image with before-and-after image (#679)
   - Fix: Listing 29: Added missing `rtweekend.h` include (#691)
   - Fix: undefined `vup` variable in camera definition (#686)
+  - Fix: Listing 51: Add missing `hittable.h`, `rtweekend.h` includes (#693)
 
 ### _The Next Week_
   - Delete: remove unused u,v,w variables in initial `perlin::noise()` function (#684)
