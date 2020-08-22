@@ -12,7 +12,8 @@ Change Log -- Ray Tracing in One Weekend
 
 ### _The Next Week_
   - Delete: remove unused u,v,w variables in initial `perlin::noise()` function (#684)
-  - Fix: Listing 15 and `bvh.h`: Add missing `hittable_list.h` include (#690)
+  - Fix: Listing 15: In `bvh.h`, add missing `hittable_list.h` include (#690)
+  - Fix: Listing 33, 34, 38: Change implicit casts to explicit ones (#692)
 
 
 ----------------------------------------------------------------------------------------------------
