@@ -878,6 +878,7 @@ a class:
 
     #include "rtweekend.h"
     #include "hittable.h"
+    #include "hittable_list.h"
 
 
     class bvh_node : public hittable {
@@ -1445,6 +1446,8 @@ code to make it all happen:
     #ifndef PERLIN_H
     #define PERLIN_H
 
+    #include "rtweekend.h"
+
     class perlin {
         public:
             perlin() {
@@ -1466,10 +1469,6 @@ code to make it all happen:
             }
 
             double noise(const point3& p) const {
-                auto u = p.x() - floor(p.x());
-                auto v = p.y() - floor(p.y());
-                auto w = p.z() - floor(p.z());
-
                 auto i = static_cast<int>(4*p.x()) & 255;
                 auto j = static_cast<int>(4*p.y()) & 255;
                 auto k = static_cast<int>(4*p.z()) & 255;
@@ -1613,14 +1612,14 @@ To make it smooth, we can linearly interpolate:
         public:
             ...
             double noise(point3 vec3& p) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 auto u = p.x() - floor(p.x());
                 auto v = p.y() - floor(p.y());
                 auto w = p.z() - floor(p.z());
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
 
-                int i = floor(p.x());
-                int j = floor(p.y());
-                int k = floor(p.z());
+                auto i = static_cast<int>(floor(p.x()));
+                auto j = static_cast<int>(floor(p.y()));
+                auto k = static_cast<int>(floor(p.z()));
                 double c[2][2][2];
 
                 for (int di=0; di < 2; di++)
@@ -1672,9 +1671,9 @@ a Hermite cubic to round off the interpolation:
                 w = w*w*(3-2*w);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-                int i = floor(p.x());
-                int j = floor(p.y());
-                int k = floor(p.z());
+                auto i = static_cast<int>(floor(p.x()));
+                auto j = static_cast<int>(floor(p.y()));
+                auto k = static_cast<int>(floor(p.z()));
                 ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-smoothed]: <kbd>[perlin.h]</kbd> Perlin smoothed]
@@ -1807,9 +1806,9 @@ The Perlin class `noise()` method is now:
                 auto v = p.y() - floor(p.y());
                 auto w = p.z() - floor(p.z());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                int i = floor(p.x());
-                int j = floor(p.y());
-                int k = floor(p.z());
+                auto i = static_cast<int>(floor(p.x()));
+                auto j = static_cast<int>(floor(p.y()));
+                auto k = static_cast<int>(floor(p.z()));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 c[2][2][2];
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2416,6 +2415,10 @@ The actual `xy_rect` class is thus:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef AARECT_H
     #define AARECT_H
+
+    #include "rtweekend.h"
+
+    #include "hittable.h"
 
     class xy_rect : public hittable {
         public:
@@ -3413,7 +3416,7 @@ Basic Data
   - **Title (book)**: “Ray Tracing: The Next Week”
   - **Author**: Peter Shirley
   - **Editors**: Steve Hollasch, Trevor David Black
-  - **Version/Edition**: v3.2.0-XX
+  - **Version/Edition**: v3.3.0-XX
   - **Date**: 2020-XX-XX
   - **URL (series)**: https://raytracing.github.io/
   - **URL (book)**: https://raytracing.github.io/books/RayTracingTheNextWeek.html
