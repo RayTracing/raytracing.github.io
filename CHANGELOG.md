@@ -12,6 +12,7 @@ Change Log -- Ray Tracing in One Weekend
 
 ### _The Next Week_
   - Delete: remove unused u,v,w variables in initial `perlin::noise()` function (#684)
+  - Fix: Listing 70: Add missing `bvh.h` (#694)
 
 
 ----------------------------------------------------------------------------------------------------
