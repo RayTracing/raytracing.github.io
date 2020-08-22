@@ -13,6 +13,7 @@ Change Log -- Ray Tracing in One Weekend
 ### _The Next Week_
   - Delete: remove unused u,v,w variables in initial `perlin::noise()` function (#684)
   - Fix: Listing 70: Add missing `bvh.h` (#694)
+  - Fix: Listing 70 and `main.cc`: Change a fuzz value of a metal sphere to 1.0 which is the maximum value (#694)
 
 
 ----------------------------------------------------------------------------------------------------
