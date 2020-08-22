@@ -12,7 +12,7 @@ Change Log -- Ray Tracing in One Weekend
 
 ### _The Next Week_
   - Delete: remove unused u,v,w variables in initial `perlin::noise()` function (#684)
-
+  - Fix: Listing 33, 34, 38: Change implicit casts to explicit ones (#692)
 
 ----------------------------------------------------------------------------------------------------
 # v3.2.0 (2020-07-18)
