@@ -14,6 +14,7 @@
 #include "rtweekend.h"
 
 #include "hittable.h"
+#include "hittable_list.h"
 
 #include <algorithm>
 
