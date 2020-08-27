@@ -3247,6 +3247,10 @@ subsurface material is). The biggest limitation left in the renderer is no shado
 why we get caustics and subsurface for free. It’s a double-edged design decision.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+    #include "bvh.h"
+    ...
+
     hittable_list final_scene() {
         hittable_list boxes1;
         auto ground = make_shared<lambertian>(color(0.48, 0.83, 0.53));
@@ -3280,7 +3284,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 
         objects.add(make_shared<sphere>(point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
         objects.add(make_shared<sphere>(
-            point3(0, 150, 145), 50, make_shared<metal>(color(0.8, 0.8, 0.9), 10.0)
+            point3(0, 150, 145), 50, make_shared<metal>(color(0.8, 0.8, 0.9), 1.0)
         ));
 
         auto boundary = make_shared<sphere>(point3(360,150,145), 70, make_shared<dielectric>(1.5));
