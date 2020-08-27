@@ -14,6 +14,7 @@ Change Log -- Ray Tracing in One Weekend
   - Delete: remove unused u,v,w variables in initial `perlin::noise()` function (#684)
   - Fix: Listing 15: In `bvh.h`, add missing `hittable_list.h` include (#690)
   - Fix: Listing 33, 34, 38: Change implicit casts to explicit ones (#692)
+  - Fix: Listing 40: Change `perlin.h` in the caption to `texture.h` (#698)
   - Fix: Listing 70: Add missing `bvh.h` (#694)
   - Fix: Listing 70 and `main.cc`: Change a fuzz value of a metal sphere to 1.0 which is the maximum value (#694)
 
