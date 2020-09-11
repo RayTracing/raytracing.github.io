@@ -6,18 +6,21 @@ Change Log -- Ray Tracing in One Weekend
 ### _In One Weekend_
   - Delete: remove premature `cstdlib` include; not needed until we use `rand()` (#687)
   - Fix: replace old anti-alias result image with before-and-after image (#679)
-  - Fix: Listing 29: Added missing `rtweekend.h` include (#691)
   - Fix: undefined `vup` variable in camera definition (#686)
+  - Fix: Listing 29: Added missing `rtweekend.h` include (#691)
+  - Fix: Listing 33, 39: Add  consistent function signature for `trilinear_interp` (#722)
   - Fix: Listing 51: Add missing `hittable.h`, `rtweekend.h` includes (#693)
-  - Fix: Listings 33, 39: Add  consistent function signature for `trilinear_interp` (#722)
+  - Fix: Listing 59: ["Full glass material"] Diverged from source
 
 ### _The Next Week_
   - Delete: remove unused u,v,w variables in initial `perlin::noise()` function (#684)
+  - Fix: Listing 5: Neglected to add ray time for metal and dielectric materials (#133)
   - Fix: Listing 15: In `bvh.h`, add missing `hittable_list.h` include (#690)
   - Fix: Listing 33, 34, 38: Change implicit casts to explicit ones (#692)
   - Fix: Listing 40: Change `perlin.h` in the caption to `texture.h` (#698)
   - Fix: Listing 70: Add missing `bvh.h` (#694)
-  - Fix: Listing 70 and `main.cc`: Change a fuzz value of a metal sphere to 1.0 which is the maximum value (#694)
+  - Fix: Listing 70 and `main.cc`: Change a fuzz value of a metal sphere to 1.0 which is the maximum
+    value (#694)
 
 
 ----------------------------------------------------------------------------------------------------
