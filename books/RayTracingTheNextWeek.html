@@ -271,13 +271,12 @@ just needs to become a function `center(time)`:
 Tracking the Time of Ray Intersection
 --------------------------------------
 <div class='together'>
-Be sure that in the materials you have the scattered rays be at the time of the incident ray.
+Now that rays have a time property, we need to update the `material::scatter()` methods to account
+for the time of intersection:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
-        public:
-            lambertian(const color& a) : albedo(a) {}
-
+        ...
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const override {
@@ -288,11 +287,51 @@ Be sure that in the materials you have the scattered rays be at the time of the 
                 attenuation = albedo;
                 return true;
             }
+            ...
+    };
 
-            color albedo;
+    class metal : public material {
+        ...
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+            ) const override {
+                vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                attenuation = albedo;
+                return (dot(scattered.direction(), rec.normal) > 0);
+            }
+            ...
+    };
+
+    class dielectric : public material {
+        ...
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+            ) const override {
+
+                ...
+                if (cannot_refract || random_double() < schlick(cos_theta, refraction_ratio)) {
+                    vec3 reflected = reflect(unit_direction, rec.normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                    scattered = ray(rec.p, reflected, r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                    return true;
+                }
+
+                vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                scattered = ray(rec.p, refracted, r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                return true;
+            }
+            ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [lambertian-animate]: <kbd>[material.h]</kbd> Lambertian matrial for moving objects]
+    [Listing [material-time]: <kbd>[material.h]</kbd>
+        Handle ray time in the material::scatter() methods
+    ]
 </div>
 
 
