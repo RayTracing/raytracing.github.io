@@ -4,7 +4,8 @@ Change Log -- Ray Tracing in One Weekend
 # v3.2.1 (in progress)
 
 ### Common
-  - Change: Update local Markdeep library (for offline reading) to v1.11 (#712)
+  - Fix: Update local Markdeep library (for offline reading) to v1.11. The prior version had
+    incorrect content (#712)
 
 ### _In One Weekend_
   - Delete: remove premature `cstdlib` include; not needed until we use `rand()` (#687)
