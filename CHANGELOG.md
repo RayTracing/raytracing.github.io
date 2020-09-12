@@ -12,12 +12,18 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Listings 33, 39: Add  consistent function signature for `trilinear_interp` (#722)
 
 ### _The Next Week_
+  - Change: `bvh_node` no longer reorders the source vector of scene objects; uses local copy
+    instead (#701)
   - Delete: remove unused u,v,w variables in initial `perlin::noise()` function (#684)
   - Fix: Listing 15: In `bvh.h`, add missing `hittable_list.h` include (#690)
   - Fix: Listing 33, 34, 38: Change implicit casts to explicit ones (#692)
   - Fix: Listing 40: Change `perlin.h` in the caption to `texture.h` (#698)
   - Fix: Listing 70: Add missing `bvh.h` (#694)
   - Fix: Listing 70 and `main.cc`: Change a fuzz value of a metal sphere to 1.0 which is the maximum value (#694)
+
+### _The Next Week_
+  - Change: `bvh_node` no longer reorders the source vector of scene objects; uses local copy
+    instead (#701)
 
 
 ----------------------------------------------------------------------------------------------------
@@ -59,8 +65,6 @@ significant change and improvement. We're hoping that changes to books one and t
 but that's never worked out for us before. Ah, dreams.
 
 ### Common
-  - Bug: Found a bug in book 3 source `isotropic::scatter()` method. Commented out, using default
-    (as it was previously). (#669)
   - Delete: vestigial `vec3::write_color()` method (now in color.h)
   - Change: All images and figures renamed to follow more logical convention, using the following
     pattern: `{fig,img}-<book>.<sequence>-<title>.<filetype>` (#495)
@@ -76,6 +80,8 @@ but that's never worked out for us before. Ah, dreams.
     because it already caught an existing bug in _The Rest of Your Life_ source. This change
     includes commenting out the book 3 `isotropic::scatter()` method, which was accidentally ignored
     anyway. (#639, #669)
+  - Fix: Found a bug in book 3 source `isotropic::scatter()` method. Commented out, using default
+    (as it was previously). (#669)
   - New: each book gets a section of recommended citation examples (#500)
 
 ### _In One Weekend_
