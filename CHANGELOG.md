@@ -10,6 +10,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Undefined `vup` variable in camera definition (#686)
   - Fix: Listing 51: Add missing `hittable.h`, `rtweekend.h` includes (#693)
   - Fix: Fix error in citation section (#721)
+  - Fix: Listings 33, 39: Add  consistent function signature for `trilinear_interp` (#722)
 
 ### _The Next Week_
   - Delete: Remove unused u,v,w variables in initial `perlin::noise()` function (#684)
