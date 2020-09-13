@@ -4,20 +4,26 @@ Change Log -- Ray Tracing in One Weekend
 # v3.2.1 (in progress)
 
 ### _In One Weekend_
-  - Delete: remove premature `cstdlib` include; not needed until we use `rand()` (#687)
-  - Fix: replace old anti-alias result image with before-and-after image (#679)
+  - Delete: Remove premature `cstdlib` include; not needed until we use `rand()` (#687)
+  - Fix: Replace old anti-alias result image with before-and-after image (#679)
   - Fix: Listing 29: Added missing `rtweekend.h` include (#691)
-  - Fix: undefined `vup` variable in camera definition (#686)
+  - Fix: Undefined `vup` variable in camera definition (#686)
   - Fix: Listing 51: Add missing `hittable.h`, `rtweekend.h` includes (#693)
+  - Fix: Fix error in citation section (#721)
   - Fix: Listings 33, 39: Add  consistent function signature for `trilinear_interp` (#722)
 
 ### _The Next Week_
-  - Delete: remove unused u,v,w variables in initial `perlin::noise()` function (#684)
+  - Delete: Remove unused u,v,w variables in initial `perlin::noise()` function (#684)
   - Fix: Listing 15: In `bvh.h`, add missing `hittable_list.h` include (#690)
   - Fix: Listing 33, 34, 38: Change implicit casts to explicit ones (#692)
   - Fix: Listing 40: Change `perlin.h` in the caption to `texture.h` (#698)
   - Fix: Listing 70: Add missing `bvh.h` (#694)
-  - Fix: Listing 70 and `main.cc`: Change a fuzz value of a metal sphere to 1.0 which is the maximum value (#694)
+  - Fix: Listing 70 and `main.cc`: Change a fuzz value of a metal sphere to 1.0 which is the maximum
+    value (#694)
+  - Fix: Fix error in citation section (#721)
+
+### _The Rest of Your Life_
+  - Fix: Fix errors in citation section (#721)
 
 
 ----------------------------------------------------------------------------------------------------
