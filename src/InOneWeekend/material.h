@@ -71,33 +71,35 @@ class metal : public material {
 
 class dielectric : public material {
     public:
-        dielectric(double ri) : ref_idx(ri) {}
+        dielectric(double _refraction_ratio) : refraction_ratio(_refraction_ratio) {}
 
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
         ) const override {
             attenuation = color(1.0, 1.0, 1.0);
-            double etai_over_etat = rec.front_face ? (1.0 / ref_idx) : ref_idx;
+            double refract_ratio = rec.front_face ? (1/refraction_ratio) : refraction_ratio;
 
             vec3 unit_direction = unit_vector(r_in.direction());
             double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
             double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
 
-            if (  (etai_over_etat * sin_theta > 1.0)
-               || (random_double() < schlick(cos_theta, etai_over_etat))
-               ) {
+            bool cannot_refract = refract_ratio * sin_theta > 1.0;
+
+            // If the ray cannot refract, or if it probabilistically reflects because of its
+            // grazing angle, then return the reflected path.
+            if (cannot_refract || random_double() < schlick(cos_theta, refract_ratio)) {
                 vec3 reflected = reflect(unit_direction, rec.normal);
                 scattered = ray(rec.p, reflected);
                 return true;
             }
 
-            vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
+            vec3 refracted = refract(unit_direction, rec.normal, refract_ratio);
             scattered = ray(rec.p, refracted);
             return true;
         }
 
     public:
-        double ref_idx;
+        double refraction_ratio; // Ratio of the two materials' indices of refraction
 };
 
 
