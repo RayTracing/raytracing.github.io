@@ -23,12 +23,12 @@ class bvh_node : public hittable  {
     public:
         bvh_node();
 
-        bvh_node(hittable_list& list, double time0, double time1)
+        bvh_node(const hittable_list& list, double time0, double time1)
             : bvh_node(list.objects, 0, list.objects.size(), time0, time1)
         {}
 
         bvh_node(
-            std::vector<shared_ptr<hittable>>& objects,
+            const std::vector<shared_ptr<hittable>>& src_objects,
             size_t start, size_t end, double time0, double time1);
 
         virtual bool hit(
@@ -68,9 +68,11 @@ bool box_z_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) 
 
 
 bvh_node::bvh_node(
-    std::vector<shared_ptr<hittable>>& objects,
+    const std::vector<shared_ptr<hittable>>& src_objects,
     size_t start, size_t end, double time0, double time1
 ) {
+    auto objects = src_objects; // Create a modifiable array of the source scene objects
+
     int axis = random_int(0,2);
     auto comparator = (axis == 0) ? box_x_compare
                     : (axis == 1) ? box_y_compare
