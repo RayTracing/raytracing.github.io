@@ -312,9 +312,7 @@ for the time of intersection:
             ) const override {
 
                 ...
-                if (  (etai_over_etat * sin_theta > 1.0)
-                   || (random_double() < schlick(cos_theta, etai_over_etat))
-                   ) {
+                if (cannot_refract || random_double() < schlick(cos_theta, refraction_ratio)) {
                     vec3 reflected = reflect(unit_direction, rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                     scattered = ray(rec.p, reflected, r_in.time());
