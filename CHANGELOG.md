@@ -22,6 +22,9 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Listing 70 and `main.cc`: Change a fuzz value of a metal sphere to 1.0 which is the maximum
     value (#694)
 
+### _The Rest of Your Life_
+  - Add: Listing 36: Add missing updates to dielectric class for updating specular in scatter record
+
 
 ----------------------------------------------------------------------------------------------------
 # v3.2.0 (2020-07-18)
