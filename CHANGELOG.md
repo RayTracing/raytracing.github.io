@@ -4,6 +4,7 @@ Change Log -- Ray Tracing in One Weekend
 # v3.2.1 (in progress)
 
 ### Common
+  - Change: Refactored dielectric class for clarity
   - Fix: Update local Markdeep library (for offline reading) to v1.11. The prior version had
     incorrect content (#712)
 
@@ -13,6 +14,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Listing 29: Added missing `rtweekend.h` include (#691)
   - Fix: Undefined `vup` variable in camera definition (#686)
   - Fix: Listing 51: Add missing `hittable.h`, `rtweekend.h` includes (#693)
+  - Fix: Listing 59: ["Full glass material"] Diverged from source
   - Fix: Fix error in citation section (#721)
   - Fix: Listings 33, 39: Add  consistent function signature for `trilinear_interp` (#722)
 
@@ -20,6 +22,7 @@ Change Log -- Ray Tracing in One Weekend
   - Change: `bvh_node` no longer reorders the source vector of scene objects; uses local copy
     instead (#701)
   - Delete: Remove unused u,v,w variables in initial `perlin::noise()` function (#684)
+  - Fix: Listing  5: Neglected to add ray time for metal and dielectric materials (#133)
   - Fix: Listing 15: In `bvh.h`, add missing `hittable_list.h` include (#690)
   - Fix: Listing 33, 34, 38: Change implicit casts to explicit ones (#692)
   - Fix: Listing 40: Change `perlin.h` in the caption to `texture.h` (#698)
@@ -30,10 +33,7 @@ Change Log -- Ray Tracing in One Weekend
 
 ### _The Rest of Your Life_
   - Fix: Fix errors in citation section (#721)
-
-### _The Next Week_
-  - Change: `bvh_node` no longer reorders the source vector of scene objects; uses local copy
-    instead (#701)
+  - Add: Listing 36: Add missing updates to dielectric class for updating specular in scatter record
 
 
 ----------------------------------------------------------------------------------------------------

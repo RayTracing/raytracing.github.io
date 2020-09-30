@@ -2123,7 +2123,7 @@ Handling Specular
 <div class='together'>
 We have not yet dealt with specular surfaces, nor instances that mess with the surface normal. But
 this design is clean overall, and those are all fixable. For now, I will just fix `specular`. Metal
-is easy to fix.
+and dielectric materials are easy to fix.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class metal : public material {
@@ -2146,8 +2146,41 @@ is easy to fix.
             color albedo;
             double fuzz;
     };
+
+    ...
+
+    class dielectric : public material {
+        public:
+            ...
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, scatter_record& srec
+            ) const override {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                srec.is_specular = true;
+                srec.pdf_ptr = nullptr;
+                srec.attenuation = color(1.0, 1.0, 1.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
+
+                ...
+                if (cannot_refract || random_double() < schlick(cos_theta, refraction_ratio)) {
+                    vec3 reflected = reflect(unit_direction, rec.normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                    srec.specular_ray = ray(rec.p, reflected, r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                    return true;
+                }
+
+                vec3 refracted = refract(unit_direction, rec.normal, refraction_ratio);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                srec.specular_ray = ray(rec.p, refracted, r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                return true;
+            }
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [metal-scatter]: <kbd>[material.h]</kbd> The metal class scatter method]
+    [Listing [material-scatter]: <kbd>[material.h]</kbd> The metal and dielectric scatter methods]
 </div>
 
 Note that if fuzziness is high, this surface isn’t ideally specular, but the implicit sampling works
