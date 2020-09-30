@@ -3,14 +3,19 @@ Change Log -- Ray Tracing in One Weekend
 
 # v3.2.1 (in progress)
 
+### Common
+  - Fix: Update local Markdeep library (for offline reading) to v1.11. The prior version had
+    incorrect content (#712)
+
 ### _In One Weekend_
-  - Delete: remove premature `cstdlib` include; not needed until we use `rand()` (#687)
-  - Fix: replace old anti-alias result image with before-and-after image (#679)
-  - Fix: undefined `vup` variable in camera definition (#686)
+  - Delete: Remove premature `cstdlib` include; not needed until we use `rand()` (#687)
+  - Fix: Replace old anti-alias result image with before-and-after image (#679)
+  - Fix: Undefined `vup` variable in camera definition (#686)
   - Fix: Listing 29: Added missing `rtweekend.h` include (#691)
   - Fix: Listing 33, 39: Add  consistent function signature for `trilinear_interp` (#722)
   - Fix: Listing 51: Add missing `hittable.h`, `rtweekend.h` includes (#693)
   - Fix: Listing 59: ["Full glass material"] Diverged from source
+  - Fix: Fix error in citation section (#721)
 
 ### _The Next Week_
   - Delete: remove unused u,v,w variables in initial `perlin::noise()` function (#684)
@@ -21,8 +26,10 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Listing 70: Add missing `bvh.h` (#694)
   - Fix: Listing 70 and `main.cc`: Change a fuzz value of a metal sphere to 1.0 which is the maximum
     value (#694)
+  - Fix: Fix error in citation section (#721)
 
 ### _The Rest of Your Life_
+  - Fix: Fix errors in citation section (#721)
   - Add: Listing 36: Add missing updates to dielectric class for updating specular in scatter record
 
 
