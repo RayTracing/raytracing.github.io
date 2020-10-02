@@ -7,6 +7,7 @@ Change Log -- Ray Tracing in One Weekend
   - Change: Refactored dielectric class for clarity
   - Fix: Update local Markdeep library (for offline reading) to v1.11. The prior version had
     incorrect content (#712)
+  - Fix: Image texture destructor should call `STBI_FREE` instead of delete (#734)
 
 ### _In One Weekend_
   - Delete: Remove premature `cstdlib` include; not needed until we use `rand()` (#687)
