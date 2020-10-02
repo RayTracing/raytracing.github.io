@@ -34,6 +34,7 @@ Change Log -- Ray Tracing in One Weekend
 
 ### _The Rest of Your Life_
   - Fix: Fix errors in citation section (#721)
+  - Fix: Area equation in section 3.3 Constructing a PDF and nearby text (#735)
   - Add: Listing 36: Add missing updates to dielectric class for updating specular in scatter record
 
 
