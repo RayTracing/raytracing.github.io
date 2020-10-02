@@ -21,10 +21,11 @@ versions, use the print function in your browser.
 
 Project Status
 ---------------
-We released [v3.2.0][] on 2020 July 18. Lots of changes; you can jump to the release for more
-information. This release focused on books 1 and 2, with new rendered images throughout.
+We released a new set of small patches with [v3.2.1][] (2020-10-02). We're currently working on
+v3.2.2 and v3.3.0.
 
-Our current focus is on v3.3.0, which will focus on book 3, _Ray Tracing: The Rest of Your Life_.
+If you have a change you'd like to contribute, [please see our contribution
+guidelines][CONTRIBUTING].
 
 
 Directory Structure
@@ -55,9 +56,10 @@ directory.
 Source Code
 -----------
 ### Intent
-This repository is not meant to act as its own tutorial. The source presented here is provided so
-you can compare your work when progressing through the book. We strongly recommend reading and
-following along with the book to understand the source.
+This repository is not meant to act as its own tutorial. The source is provided so you can compare
+your work when progressing through the book. We strongly recommend reading and following along with
+the book to understand the source. Ideally, you'll be developing your own implmentation as you go,
+in order to deeply understand how a raytracer works.
 
 ### Downloading The Source Code
 The [GitHub home][] for this project contains all source and documentation associated with the _Ray
@@ -71,13 +73,14 @@ represent ideal (or optimized) C++ code.
 
 ### Implementations in Other Languages
 The _Ray Tracing in One Weekend_ series has a long history of implementations in other programming
-languages (see [_Implementations in Other Languages_][implementations]), and across all three
-primary operating systems. Feel free to add your own implementation to the list!
+languages (see [_Implementations in Other Languages_][implementations]), and across different
+operating systems. Feel free to add your own implementation to the list!
 
 ### Branches
-The `master` branch contains the latest released assets. All ongoing development, with all of the
-latest changes, can be found in the `dev-patch`, `dev-minor`, and `dev-major` branches. We try to
-keep CHANGELOG.md up to date, so you can easily browse what's new in each development branch.
+The `master` branch contains the latest released (and live) assets. All ongoing development, with
+all of the latest changes, can be found in the `dev-patch`, `dev-minor`, and `dev-major` branches.
+We try to keep CHANGELOG.md up to date, so you can easily browse what's new in each development
+branch.
 
 
 Building and Running
@@ -152,7 +155,7 @@ review the [CONTRIBUTING][] document for the most effective way to proceed.
 [GitHub home]:     https://github.com/RayTracing/raytracing.github.io/
 [ImageMagick]:     https://imagemagick.org/
 [implementations]: https://github.com/RayTracing/raytracing.github.io/wiki/Implementations-in-Other-Languages
-[v3.2.0]:          https://github.com/RayTracing/raytracing.github.io/releases/tag/v3.2.0
+[v3.2.1]:          https://github.com/RayTracing/raytracing.github.io/releases/tag/v3.2.1
 [web1]:            https://raytracing.github.io/books/RayTracingInOneWeekend.html
 [web2]:            https://raytracing.github.io/books/RayTracingTheNextWeek.html
 [web3]:            https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html
