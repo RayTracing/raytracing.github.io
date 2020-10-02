@@ -17,13 +17,6 @@
 struct hit_record;
 
 
-double schlick(double cosine, double ref_idx) {
-    auto r0 = (1-ref_idx) / (1+ref_idx);
-    r0 = r0*r0;
-    return r0 + (1-r0)*pow((1 - cosine),5);
-}
-
-
 class material {
     public:
         virtual bool scatter(
@@ -70,6 +63,14 @@ class metal : public material {
 
 
 class dielectric : public material {
+    private:
+        static double reflectance(double cosine, double ref_idx) {
+            // Use Schlick's approximation for reflectance.
+            auto r0 = (1-ref_idx) / (1+ref_idx);
+            r0 = r0*r0;
+            return r0 + (1-r0)*pow((1 - cosine),5);
+        }
+
     public:
         dielectric(double index_of_refraction) : ir(index_of_refraction) {}
 
@@ -85,16 +86,11 @@ class dielectric : public material {
 
             bool cannot_refract = refraction_ratio * sin_theta > 1.0;
 
-            // If the ray cannot refract, or if it probabilistically reflects because of its
-            // grazing angle, then return the reflected path.
-            if (cannot_refract || random_double() < schlick(cos_theta, refraction_ratio)) {
-                vec3 reflected = reflect(unit_direction, rec.normal);
-                scattered = ray(rec.p, reflected);
-                return true;
-            }
+            if (cannot_refract || reflectance(cos_theta, refraction_ratio) > random_double())
+                scattered = ray(rec.p, reflect(unit_direction, rec.normal));
+            else
+                scattered = ray(rec.p, refract(unit_direction, rec.normal, refraction_ratio));
 
-            vec3 refracted = refract(unit_direction, rec.normal, refraction_ratio);
-            scattered = ray(rec.p, refracted);
             return true;
         }
 
