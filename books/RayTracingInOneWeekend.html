@@ -7,7 +7,7 @@
                                          [Peter Shirley][]
                       edited by [Steve Hollasch][] and [Trevor David Black][]
                                                 <br>
-                                     Version 3.2.0, 2020-07-18
+                                     Version 3.2.1, 2020-10-03
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -1017,7 +1017,8 @@ calculation for us.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [hittable-time-side]: <kbd>[hittable.h]</kbd> The hittable class with time and side]
+    [Listing [front-face-tracking]: <kbd>[hittable.h]</kbd>
+        Adding front-face tracking to hit_record]
 
 <div class='together'>
 And then we add the surface side determination to the class:
@@ -1183,7 +1184,6 @@ file.
     #define RTWEEKEND_H
 
     #include <cmath>
-    #include <cstdlib>
     #include <limits>
     #include <memory>
 
@@ -1505,7 +1505,8 @@ Main is also changed:
 
 Zooming into the image that is produced, we can see the difference in edge pixels.
 
-  ![Image 6: Before and after antialiasng](../images/img-1.06-antialias.png class=pixel)
+  ![Image 6: Before and after antialiasing
+  ](../images/img-1.06-antialias-before-after.png class=pixel)
 
 
 
@@ -2394,21 +2395,23 @@ And the dielectric material that always refracts is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class dielectric : public material {
         public:
-            dielectric(double ri) : ref_idx(ri) {}
+            dielectric(double index_of_refraction) : ir(index_of_refraction) {}
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const override {
                 attenuation = color(1.0, 1.0, 1.0);
-                double etai_over_etat = rec.front_face ? (1.0 / ref_idx) : ref_idx;
+                double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
 
                 vec3 unit_direction = unit_vector(r_in.direction());
-                vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
+                vec3 refracted = refract(unit_direction, rec.normal, refraction_ratio);
+
                 scattered = ray(rec.p, refracted);
                 return true;
             }
 
-            double ref_idx;
+        public:
+            double ir; // Index of Refraction
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [dielectric]: <kbd>[material.h]</kbd> Dielectric material class that always refracts]
@@ -2457,7 +2460,7 @@ the equality between the two sides of the equation is broken, and a solution can
 solution does not exist, the glass cannot refract, and therefore must reflect the ray:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    if (etai_over_etat * sin_theta > 1.0) {
+    if (refraction_ratio * sin_theta > 1.0) {
         // Must Reflect
         ...
     } else {
@@ -2486,7 +2489,7 @@ and
     double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
     double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
 
-    if (etai_over_etat * sin_theta > 1.0) {
+    if (refraction_ratio * sin_theta > 1.0) {
         // Must Reflect
         ...
     } else {
@@ -2504,34 +2507,34 @@ And the dielectric material that always refracts (when possible) is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class dielectric : public material {
         public:
-            dielectric(double ri) : ref_idx(ri) {}
+            dielectric(double index_of_refraction) : ir(index_of_refraction) {}
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const override {
                 attenuation = color(1.0, 1.0, 1.0);
-                double etai_over_etat = rec.front_face ? (1.0 / ref_idx) : ref_idx;
+                double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
 
                 vec3 unit_direction = unit_vector(r_in.direction());
-
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
                 double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
-                if (etai_over_etat * sin_theta > 1.0 ) {
-                    vec3 reflected = reflect(unit_direction, rec.normal);
-                    scattered = ray(rec.p, reflected);
-                    return true;
-                }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-                vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
-                scattered = ray(rec.p, refracted);
+                bool cannot_refract = refraction_ratio * sin_theta > 1.0;
+                vec3 direction;
+
+                if (cannot_refract) {
+                    direction = reflect(unit_direction, rec.normal);
+                else
+                    direction = refract(unit_direction, rec.normal, refraction_ratio);
+
+                scattered = ray(rec.p, direction);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return true;
             }
 
         public:
-            double ref_idx;
+            double ir; // Index of Refraction
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [dielectric]: <kbd>[material.h]</kbd> Dielectric material class with reflection]
@@ -2562,55 +2565,50 @@ Schlick Approximation
 <div class='together'>
 Now real glass has reflectivity that varies with angle -- look at a window at a steep angle and it
 becomes a mirror. There is a big ugly equation for that, but almost everybody uses a cheap and
-surprisingly accurate polynomial approximation by Christophe Schlick:
+surprisingly accurate polynomial approximation by Christophe Schlick. This yields our full glass
+material:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    double schlick(double cosine, double ref_idx) {
-        auto r0 = (1-ref_idx) / (1+ref_idx);
-        r0 = r0*r0;
-        return r0 + (1-r0)*pow((1 - cosine),5);
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [schlick]: <kbd>[material.h]</kbd> Schlick approximation]
-</div>
-
-<div class='together'>
-This yields our full glass material:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class dielectric : public material {
         public:
-            dielectric(double ri) : ref_idx(ri) {}
+            dielectric(double index_of_refraction) : ir(index_of_refraction) {}
 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const override {
                 attenuation = color(1.0, 1.0, 1.0);
-                double etai_over_etat = rec.front_face ? (1.0 / ref_idx) : ref_idx;
+                double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
 
                 vec3 unit_direction = unit_vector(r_in.direction());
                 double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
                 double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
-                if (etai_over_etat * sin_theta > 1.0 ) {
-                    vec3 reflected = reflect(unit_direction, rec.normal);
-                    scattered = ray(rec.p, reflected);
-                    return true;
-                }
+
+                bool cannot_refract = refraction_ratio * sin_theta > 1.0;
+                vec3 direction;
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                double reflect_prob = schlick(cos_theta, etai_over_etat);
-                if (random_double() < reflect_prob)
-                {
-                    vec3 reflected = reflect(unit_direction, rec.normal);
-                    scattered = ray(rec.p, reflected);
-                    return true;
-                }
+                if (cannot_refract || reflectance(cos_theta, refraction_ratio) > random_double())
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                vec3 refracted = refract(unit_direction, rec.normal, etai_over_etat);
-                scattered = ray(rec.p, refracted);
+                    direction = reflect(unit_direction, rec.normal);
+                else
+                    direction = refract(unit_direction, rec.normal, refraction_ratio);
+
+                scattered = ray(rec.p, direction);
                 return true;
             }
 
         public:
-            double ref_idx;
+            double ir; // Index of Refraction
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
+        private:
+            static double reflectance(double cosine, double ref_idx) {
+                // Use Schlick's approximation for reflectance.
+                auto r0 = (1-ref_idx) / (1+ref_idx);
+                r0 = r0*r0;
+                return r0 + (1-r0)*pow((1 - cosine),5);
+            }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [glass]: <kbd>[material.h]</kbd> Full glass material]
@@ -2847,7 +2845,7 @@ to get:
 And we can change field of view:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    camera cam(point3(-2,2,1), point3(0,0,-1), vup, 20, aspect_ratio);
+    camera cam(point3(-2,2,1), point3(0,0,-1), vec3(0,1,0), 20, aspect_ratio);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [change-field-view]: <kbd>[main.cc]</kbd> Change field of view]
 
@@ -3172,8 +3170,8 @@ Basic Data
   - **Title (book)**: “Ray Tracing in One Weekend”
   - **Author**: Peter Shirley
   - **Editors**: Steve Hollasch, Trevor David Black
-  - **Version/Edition**: v3.2.0
-  - **Date**: 2020-07-18
+  - **Version/Edition**: v3.2.1
+  - **Date**: 2020-10-03
   - **URL (series)**: https://raytracing.github.io/
   - **URL (book)**: https://raytracing.github.io/books/RayTracingInOneWeekend.html
 
@@ -3200,8 +3198,8 @@ Snippets
        title = {Ray Tracing in One Weekend},
        author = {Peter Shirley},
        year = {2020},
-       month = {July},
-       note = {\small \texttt{https://raytracing.github.io/books/RayTracingInOneWeekend.html},
+       month = {October},
+       note = {\small \texttt{https://raytracing.github.io/books/RayTracingInOneWeekend.html}},
        url = {https://raytracing.github.io/books/RayTracingInOneWeekend.html}
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3216,7 +3214,7 @@ Snippets
        title = {Ray Tracing in One Weekend},
        author = {Peter Shirley},
        year = {2020},
-       month = {July},
+       month = {October},
        url = {https://raytracing.github.io/books/RayTracingInOneWeekend.html}
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
