@@ -1,7 +1,7 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
-# v3.2.1 (in progress)
+# v3.2.1 (2020-10-03)
 
 ### Common
   - Change: Refactored dielectric class for clarity
