@@ -89,22 +89,27 @@ class dielectric : public material {
             double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
 
             bool cannot_refract = refraction_ratio * sin_theta > 1.0;
+            vec3 direction;
 
-            // If the ray cannot refract, or if it probabilistically reflects because of its
-            // grazing angle, then return the reflected path.
-            if (cannot_refract || random_double() < schlick(cos_theta, refraction_ratio)) {
-                vec3 reflected = reflect(unit_direction, rec.normal);
-                scattered = ray(rec.p, reflected, r_in.time());
-                return true;
-            }
+            if (cannot_refract || reflectance(cos_theta, refraction_ratio) > random_double())
+                direction = reflect(unit_direction, rec.normal);
+            else
+                direction = refract(unit_direction, rec.normal, refraction_ratio);
 
-            vec3 refracted = refract(unit_direction, rec.normal, refraction_ratio);
-            scattered = ray(rec.p, refracted, r_in.time());
+            scattered = ray(rec.p, direction, r_in.time());
             return true;
         }
 
     public:
         double ir; // Index of Refraction
+
+    private:
+        static double reflectance(double cosine, double ref_idx) {
+            // Use Schlick's approximation for reflectance.
+            auto r0 = (1-ref_idx) / (1+ref_idx);
+            r0 = r0*r0;
+            return r0 + (1-r0)*pow((1 - cosine),5);
+        }
 };
 
 
