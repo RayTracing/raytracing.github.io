@@ -7,8 +7,7 @@
                                          [Peter Shirley][]
                       edited by [Steve Hollasch][] and [Trevor David Black][]
                                                 <br>
-                                     Version 3.3.0-alpha, 2020-XX-XX
-                                    (search for XX for release)
+                                     Version 3.3.0-alpha, XXXX-XX-XX
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -328,7 +327,7 @@ Since $p(r)$ is proportional to $r$, _i.e._, $p = C' \cdot r$ for some other con
 
   $$
   area(C'r, 0, 2) = \int_{0}^{2} C' r dr
-                  = \frac{C'r^2}{2} \biggr|_{r=2}^{r=0}
+                  = \frac{C'r^2}{2} \biggr|_{r=0}^{r=2}
                   = \frac{C' \cdot 2^2}{2} - \frac{C' \cdot 0^2}{2}
                   = 2C'
   $$
@@ -342,7 +341,7 @@ Don’t worry this doesn’t go on forever!
 <div class='together'>
 Given a random number from `d = random_double()` that is uniform and between 0 and 1, we should be
 able to find some function $f(d)$ that gives us what we want. Suppose $e = f(d) = d^2$. This is no
-longer a uniform PDF. The PDF of $e$ will be bigger near 0 than it is near 1 (squaring a number
+longer a uniform PDF. The PDF of $e$ will be bigger near 1 than it is near 0 (squaring a number
 between 0 and 1 makes it smaller). To convert this general observation to a function, we need the
 cumulative probability distribution function $P(x)$:
 
@@ -2131,7 +2130,7 @@ Handling Specular
 <div class='together'>
 We have not yet dealt with specular surfaces, nor instances that mess with the surface normal. But
 this design is clean overall, and those are all fixable. For now, I will just fix `specular`. Metal
-is easy to fix.
+and dielectric materials are easy to fix.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class metal : public material {
@@ -2154,8 +2153,31 @@ is easy to fix.
             color albedo;
             double fuzz;
     };
+
+    ...
+
+    class dielectric : public material {
+        public:
+            ...
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, scatter_record& srec
+            ) const override {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                srec.is_specular = true;
+                srec.pdf_ptr = nullptr;
+                srec.attenuation = color(1.0, 1.0, 1.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
+                ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                srec.specular_ray = ray(rec.p, direction, r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                return true;
+            }
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [metal-scatter]: <kbd>[material.h]</kbd> The metal class scatter method]
+    [Listing [material-scatter]: <kbd>[material.h]</kbd> The metal and dielectric scatter methods]
 </div>
 
 Note that if fuzziness is high, this surface isn’t ideally specular, but the implicit sampling works
@@ -2582,7 +2604,7 @@ Basic Data
   - **Author**: Peter Shirley
   - **Editors**: Steve Hollasch, Trevor David Black
   - **Version/Edition**: v3.3.0-XX
-  - **Date**: 2020-XX-XX
+  - **Date**: XXXX-XX-XX
   - **URL (series)**: https://raytracing.github.io/
   - **URL (book)**: https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html
 
@@ -2603,14 +2625,14 @@ Snippets
 
   ### LaTeX and BibTex
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    ~\cite{Shirley2020RTW2}
+    ~\cite{Shirley2020RTW3}
 
-    @misc{Shirley2020RTW2,
+    @misc{Shirley2020RTW3,
        title = {Ray Tracing: The Rest of Your Life},
        author = {Peter Shirley},
-       year = {2020},
-       month = {XX},
-       note = {\small \texttt{https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html},
+       year = {XXXX},
+       month = {XXXXXXXXX},
+       note = {\small \texttt{https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html}},
        url = {https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html}
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2619,13 +2641,13 @@ Snippets
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     \usepackage{biblatex}
 
-    ~\cite{Shirley2020RTW2}
+    ~\cite{Shirley2020RTW3}
 
-    @online{Shirley2020RTW2,
+    @online{Shirley2020RTW3,
        title = {Ray Tracing: The Rest of Your Life},
        author = {Peter Shirley},
-       year = {2020},
-       month = {XX},
+       year = {XXXX},
+       month = {XXXXXXXX},
        url = {https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html}
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -7,8 +7,7 @@
                                          [Peter Shirley][]
                       edited by [Steve Hollasch][] and [Trevor David Black][]
                                                 <br>
-                                     Version 3.3.0-alpha, 2020-XX-XX
-                                    (search for XX for release)
+                                     Version 3.3.0-alpha, XXXX-XX-XX
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -275,13 +274,12 @@ just needs to become a function `center(time)`:
 Tracking the Time of Ray Intersection
 --------------------------------------
 <div class='together'>
-Be sure that in the materials you have the scattered rays be at the time of the incident ray.
+Now that rays have a time property, we need to update the `material::scatter()` methods to account
+for the time of intersection:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
-        public:
-            lambertian(const color& a) : albedo(a) {}
-
+        ...
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const override {
@@ -292,11 +290,39 @@ Be sure that in the materials you have the scattered rays be at the time of the 
                 attenuation = albedo;
                 return true;
             }
+            ...
+    };
 
-            color albedo;
+    class metal : public material {
+        ...
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+            ) const override {
+                vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                attenuation = albedo;
+                return (dot(scattered.direction(), rec.normal) > 0);
+            }
+            ...
+    };
+
+    class dielectric : public material {
+        ...
+            virtual bool scatter(
+                ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                scattered = ray(rec.p, direction, r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                return true;
+            }
+            ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [lambertian-animate]: <kbd>[material.h]</kbd> Lambertian matrial for moving objects]
+    [Listing [material-time]: <kbd>[material.h]</kbd>
+        Handle ray time in the material::scatter() methods
+    ]
 </div>
 
 
@@ -877,6 +903,7 @@ a class:
     #define BVH_H
 
     #include "rtweekend.h"
+
     #include "hittable.h"
     #include "hittable_list.h"
 
@@ -885,6 +912,7 @@ a class:
         public:
             bvh_node();
 
+<<<<<<< HEAD
             bvh_node(hittable_list& list, double start_time, double end_time)
                 : bvh_node(list.objects, 0, list.objects.size(), start_time, end_time)
             {}
@@ -892,6 +920,15 @@ a class:
             bvh_node(
                 std::vector<shared_ptr<hittable>>& objects,
                 size_t start, size_t end, double start_time, double end_time);
+=======
+            bvh_node(const hittable_list& list, double time0, double time1)
+                : bvh_node(list.objects, 0, list.objects.size(), time0, time1)
+            {}
+
+            bvh_node(
+                const std::vector<shared_ptr<hittable>>& src_objects,
+                size_t start, size_t end, double time0, double time1);
+>>>>>>> master
 
             virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
                 const override;
@@ -968,6 +1005,8 @@ This yields:
         std::vector<shared_ptr<hittable>>& objects,
         size_t start, size_t end, double time_start, double time_end
     ) {
+        auto objects = src_objects; // Create a modifiable array of the source scene objects
+
         int axis = random_int(0,2);
         auto comparator = (axis == 0) ? box_x_compare
                         : (axis == 1) ? box_y_compare
@@ -1593,21 +1632,6 @@ To make it smooth, we can linearly interpolate:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    inline double trilinear_interp(double c[2][2][2], double u, double v, double w) {
-        auto accum = 0.0;
-        for (int i=0; i < 2; i++)
-            for (int j=0; j < 2; j++)
-                for (int k=0; k < 2; k++)
-                    accum += (i*u + (1-i)*(1-u))*
-                             (j*v + (1-j)*(1-v))*
-                             (k*w + (1-k)*(1-w))*c[i][j][k];
-
-        return accum;
-    }
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
     class perlin {
         public:
             ...
@@ -1635,6 +1659,21 @@ To make it smooth, we can linearly interpolate:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
             ...
+        private:
+            ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            static double trilinear_interp(double c[2][2][2], double u, double v, double w) {
+                auto accum = 0.0;
+                for (int i=0; i < 2; i++)
+                    for (int j=0; j < 2; j++)
+                        for (int k=0; k < 2; k++)
+                            accum += (i*u + (1-i)*(1-u))*
+                                    (j*v + (1-j)*(1-v))*
+                                    (k*w + (1-k)*(1-w))*c[i][j][k];
+
+                return accum;
+            }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-trilinear]: <kbd>[perlin.h]</kbd> Perlin with trilienear interpolation]
@@ -1843,12 +1882,13 @@ And the interpolation becomes a bit more complicated:
         ...
         private:
             ...
-            inline double perlin_interp(vec3 c[2][2][2], double u, double v, double w) const {
+            static double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 auto uu = u*u*(3-2*u);
                 auto vv = v*v*(3-2*v);
                 auto ww = w*w*(3-2*w);
                 auto accum = 0.0;
-
+                
                 for (int i=0; i < 2; i++)
                     for (int j=0; j < 2; j++)
                         for (int k=0; k < 2; k++) {
@@ -1858,10 +1898,11 @@ And the interpolation becomes a bit more complicated:
                                    * (k*ww + (1-k)*(1-ww))
                                    * dot(c[i][j][k], weight_v);
                         }
-
+                
                 return accum;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
-        ...
+            ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-interp]: <kbd>[perlin.h]</kbd> Perlin interpolation function so far]
@@ -1889,7 +1930,7 @@ perlin output back to between 0 and 1.
             double scale;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin-smoothed-2]: <kbd>[perlin.h]</kbd> Perlin smoothed, higher frequency]
+    [Listing [perlin-smoothed-2]: <kbd>[texture.h]</kbd> Perlin smoothed, higher frequency]
 </div>
 
 <div class='together'>
@@ -3302,6 +3343,10 @@ subsurface material is). The biggest limitation left in the renderer is no shado
 why we get caustics and subsurface for free. It’s a double-edged design decision.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+    #include "bvh.h"
+    ...
+
     hittable_list final_scene() {
         hittable_list boxes1;
         auto ground = make_shared<lambertian>(color(0.48, 0.83, 0.53));
@@ -3335,7 +3380,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 
         objects.add(make_shared<sphere>(point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
         objects.add(make_shared<sphere>(
-            point3(0, 150, 145), 50, make_shared<metal>(color(0.8, 0.8, 0.9), 10.0)
+            point3(0, 150, 145), 50, make_shared<metal>(color(0.8, 0.8, 0.9), 1.0)
         ));
 
         auto boundary = make_shared<sphere>(point3(360,150,145), 70, make_shared<dielectric>(1.5));
@@ -3417,7 +3462,7 @@ Basic Data
   - **Author**: Peter Shirley
   - **Editors**: Steve Hollasch, Trevor David Black
   - **Version/Edition**: v3.3.0-XX
-  - **Date**: 2020-XX-XX
+  - **Date**: XXXX-XX-XX
   - **URL (series)**: https://raytracing.github.io/
   - **URL (book)**: https://raytracing.github.io/books/RayTracingTheNextWeek.html
 
@@ -3443,9 +3488,9 @@ Snippets
     @misc{Shirley2020RTW2,
        title = {Ray Tracing: The Next Week},
        author = {Peter Shirley},
-       year = {2020},
-       month = {XX},
-       note = {\small \texttt{https://raytracing.github.io/books/RayTracingTheNextWeek.html},
+       year = {XXXX},
+       month = {XXXXXXXXX},
+       note = {\small \texttt{https://raytracing.github.io/books/RayTracingTheNextWeek.html}},
        url = {https://raytracing.github.io/books/RayTracingTheNextWeek.html}
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3459,8 +3504,8 @@ Snippets
     @online{Shirley2020RTW2,
        title = {Ray Tracing: The Next Week},
        author = {Peter Shirley},
-       year = {2020},
-       month = {XX},
+       year = {XXXX},
+       month = {XXXXXXXX},
        url = {https://raytracing.github.io/books/RayTracingTheNextWeek.html}
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
