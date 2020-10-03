@@ -1,6 +1,18 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
+# v3.2.2 (in progress)
+
+### Common
+
+### In One Weekend
+
+### The Next Week
+
+### The Rest of Your Life
+
+
+----------------------------------------------------------------------------------------------------
 # v3.2.1 (2020-10-03)
 
 ### Common
@@ -9,7 +21,7 @@ Change Log -- Ray Tracing in One Weekend
     incorrect content (#712)
   - Fix: Image texture destructor should call `STBI_FREE` instead of delete (#734)
 
-### _In One Weekend_
+### In One Weekend
   - Delete: Remove premature `cstdlib` include; not needed until we use `rand()` (#687)
   - Fix: Replace old anti-alias result image with before-and-after image (#679)
   - Fix: Listing 29: Added missing `rtweekend.h` include (#691)
@@ -19,7 +31,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Fix error in citation section (#721)
   - Fix: Listings 33, 39: Add  consistent function signature for `trilinear_interp` (#722)
 
-### _The Next Week_
+### The Next Week
   - Change: `bvh_node` no longer reorders the source vector of scene objects; uses local copy
     instead (#701)
   - Delete: Remove unused u,v,w variables in initial `perlin::noise()` function (#684)
@@ -32,7 +44,7 @@ Change Log -- Ray Tracing in One Weekend
     value (#694)
   - Fix: Fix error in citation section (#721)
 
-### _The Rest of Your Life_
+### The Rest of Your Life
   - Fix: Fix errors in citation section (#721)
   - Fix: Area equation in section 3.3 Constructing a PDF and nearby text (#735)
   - Add: Listing 36: Add missing updates to dielectric class for updating specular in scatter record
@@ -96,7 +108,7 @@ but that's never worked out for us before. Ah, dreams.
     (as it was previously). (#669)
   - New: each book gets a section of recommended citation examples (#500)
 
-### _In One Weekend_
+### In One Weekend
   - Change: Updated all rendered images except for 1.13, 1.14 (#179, #547, #548, #549, #550, #551,
     #552, #553, #554, #555, #556, #557, #560, #561, #562, #563, #564, #565, #566)
   - Change: Standard working render width changed to 400 pixels
@@ -120,7 +132,7 @@ but that's never worked out for us before. Ah, dreams.
   - Fix: Rewrote refracted ray perpendicular and parallel components for correctness (#526)
   - New: Listing 50: Show the updated material definitions
 
-### _The Next Week_
+### The Next Week
   - Delete: Deleted the section covering the old `flip_face` class, renumbered images as this
     eliminated the rendering with missing Cornell box faces (#270, #482, #661)
   - Delete: scenes 7 & 9 from the original (`cornell_balls` and `cornell_final`), as these were not
@@ -134,7 +146,7 @@ but that's never worked out for us before. Ah, dreams.
   - Fix: Listing 7: Show reverted viewing parameters from book 1 final scene
   - Fix: Typo in listing caption for filename `moving-sphere.h`
 
-### _The Rest of Your Life_
+### The Rest of Your Life
   - Change: use `vup` for camera, as in other two books
   - Fix: world and camera setup in `main()`, and include full body in book listing (#646)
   - New: `flip_face` moved to book 3, where it's needed for the light source (#661)
@@ -143,11 +155,11 @@ but that's never worked out for us before. Ah, dreams.
 ----------------------------------------------------------------------------------------------------
 # v3.1.2 (2020-06-03)
 
-### _In One Weekend_
+### In One Weekend
   - Fix: Correct typo: "Intance Translation" -> "Instance Translation"
   - Fix: Corrected geometry type when computing distance between two points, final scene (#609)
 
-### _The Rest of Your Life_
+### The Rest of Your Life
   - Fix: Missing closing parenthesis in listing 10 (#603)
   - Fix: Tiny improvements to the lambertian::scatter() development (#604)
   - Fix: Correct geometry type and unit vector method in `ray_color()`, listing 20 (#606)
@@ -165,7 +177,7 @@ but that's never worked out for us before. Ah, dreams.
   - Change: Camera code improvements to make it more robust when any particular value changes. Also,
     the code develops in a smoother series of iterations as the book progresses. (#536)
 
-### _In One Weekend_
+### In One Weekend
   - Fix: Camera initialization with explicit up vector (#537)
   - Fix: Changed some text around the camera model and the camera defocus blur model (#536)
   - Change: The C++ `<random>` version of `random_double()` no longer depends on `<functional>`
@@ -173,7 +185,7 @@ but that's never worked out for us before. Ah, dreams.
   - Change: Refactored `random_scene()`. More named intermediate values, sync'ed with source.
     (#489)
 
-### _The Next Week_
+### The Next Week
   - Fix: Added clarification about updating lambertian variables from `color` to `solid_color`.
   - Fix: Corrected for-loop indices (they differed from the version in book 1) in `random_scene()`.
   - Fix: Introduce "Texture Coordinates for Spheres" in Chapter 4 to support (u,v) coordinates in
@@ -206,7 +218,7 @@ adopting, but may warrant comparison with any current projects.
   - Change: Math notation to bold uppercase points, bold lowercase no-barb vectors (#412)
   - Change: Books use Markdeep's image class=pixel for rendered image fidelity (#498)
 
-### _In One Weekend_
+### In One Weekend
   - Fix: Improve image size and aspect ratio calculation to make size changes easier
   - Fix: Added `t` parameter back into `hit_record` at correct place
   - Fix: image basic vectors off by one
@@ -220,7 +232,7 @@ adopting, but may warrant comparison with any current projects.
   - Change: Default image sizes changed from 200x100 to 384x216
   - Change: First image size changed to 256x256
 
-### _The Next Week_
+### The Next Week
   - Change: Large rewrite of the `image_texture` class. Now handles image loading too. (#434)
 
 
@@ -231,16 +243,16 @@ adopting, but may warrant comparison with any current projects.
   - Fix: code styling for source code both inline and in fenced blocks (#430)
   - Change: Every book source now includes from a single common acknowledgments document
 
-### _In One Weekend_
+### In One Weekend
   - Fix: Correct typo: "consine" to "cosine"
 
-### _The Next Week_
+### The Next Week
   - Fix: `shared_ptr` dereference and simplify code in `hittable_list::bounding_box()` (#435)
   - Fix: Erroneous en-dash in code block. Replace `–>` with `->` (#439)
   - Fix: Introduce `u`,`v` surface coordinates to `hit_record` (#441)
   - Fix: Add highlight to new `hittable::bounding_box()` method (#442)
 
-### _The Rest of Your Life_
+### The Rest of Your Life
   - Fix: unitialized variable in first version of `integrate_x_sq.cc`
   - Fix: remove unreferenced variables in several sample programs
   - Fix: correct program computation of the integral of x^2 (#438)
@@ -253,7 +265,7 @@ adopting, but may warrant comparison with any current projects.
   - Fix: Display rendered images as pixelated instead of smoothed (#179)
   - Delete: delete old README files specific to each book (#410)
 
-### _In One Weekend_
+### In One Weekend
   - Fix: Remove duplicated text and reword on the camera up vector (#420)
 
 
@@ -326,7 +338,7 @@ patch-level (fix) changes and some minor-level (addition) changes.
   - New: Local copy of `markdeep.min.js` for offline reading
   - Fix: Fixed various minor problems in the text
 
-### _In One Weekend_
+### In One Weekend
   - Change: Reworked Lambertian reflection text (#155)
   - Change: Revised the figure for computing a random reflection vector (#142)
   - New: Clarified text around the ideal Lambertian distribution (#155)
@@ -335,7 +347,7 @@ patch-level (fix) changes and some minor-level (addition) changes.
   - New: Image for dealing with front and back faces (#326)
   - Fix: Update `ray_color()` code blocks to match current source (#391)
 
-### _The Next Week_
+### The Next Week
   - Change: Added proper handling of front vs back face intersection (#270)
   - New: "The Next Week" main program added swtich statement for different scenes
   - New: "The Next Week" main program now defines all image/camera parameters for each scene
@@ -344,7 +356,7 @@ patch-level (fix) changes and some minor-level (addition) changes.
   - Fix: Fix OCR error in `texture::value()` function (#399)
   - Fix: Remove premature declaration of `moving_sphere::bounding_box()` (#405)
 
-### _The Rest of Your Life_
+### The Rest of Your Life
   - Change: Improved naming of auxilliary programs in _The Rest of Your Life_ source
   - Fix: Delete unused variable `p` in main() (#317)
   - Delete: Several unused source files from `src/TheRestOfYourLife`
@@ -375,7 +387,7 @@ typesetting and source-code cleanup.
   - Fix: Replaced `drand48()` with portable `random_double` number generation
   - Delete: Deprecated existing _InOneWeekend_, _TheNextWeek_, _TheRestOfYourLife_ repos
 
-### _In One Weekend_
+### In One Weekend
   - Change: README files updated for top level, source, and books
   - Change: Text, Chapter 0 Overview has become Chapter 1, all subsequent chapters incremented
   - Change: Text, Syntax highlighting of source modifications
@@ -401,7 +413,7 @@ typesetting and source-code cleanup.
   - Fix: Code, Removed extraneous `;` from `vec3::&operator[]` signature
   - Delete: Code, `vec3 p = r.point_at_parameter(2.0);` in main.cc
 
-### _The Next Week_
+### The Next Week
   - Change: Text, Chapter 0 Overview has become Chapter 1, all subsequent chapters incremented
   - Change: Text, Syntax highlighting of source modifications
   - Change: Text, Chapter 2, Consistent use of spaces in code blocks
@@ -427,7 +439,7 @@ typesetting and source-code cleanup.
   - Fix: Code and Text, Chapter 3, Replaced `fmax` and `fmin` with `ffmax` and `ffmin`
   - Fix: Code, Add missing headers to `constant_medium.h` to fix g++ compiler error
 
-### _The Rest of Your Life_
+### The Rest of Your Life
   - Change: Text, Chapter 0 Overview has become Chapter 1, all subsequent chapters incremented
   - Change: Text, Syntax highlighting of source modifications
   - Change: Text, Chapter 2, Reorder include files in code blocks to match src conventions
