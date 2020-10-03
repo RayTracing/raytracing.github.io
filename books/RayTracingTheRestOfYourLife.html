@@ -2161,19 +2161,9 @@ and dielectric materials are easy to fix.
                 srec.attenuation = color(1.0, 1.0, 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
-
                 ...
-                if (cannot_refract || random_double() < schlick(cos_theta, refraction_ratio)) {
-                    vec3 reflected = reflect(unit_direction, rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                    srec.specular_ray = ray(rec.p, reflected, r_in.time());
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                    return true;
-                }
-
-                vec3 refracted = refract(unit_direction, rec.normal, refraction_ratio);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                srec.specular_ray = ray(rec.p, refracted, r_in.time());
+                srec.specular_ray = ray(rec.p, direction, r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return true;
             }
