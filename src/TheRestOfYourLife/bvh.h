@@ -34,7 +34,7 @@ class bvh_node : public hittable  {
         virtual bool hit(
             const ray& r, double t_min, double t_max, hit_record& rec) const override;
 
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+        virtual bool bounding_box(double time0, double time1, aabb& output_box) const override;
 
     public:
         shared_ptr<hittable> left;
@@ -120,7 +120,7 @@ bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
 }
 
 
-bool bvh_node::bounding_box(double t0, double t1, aabb& output_box) const {
+bool bvh_node::bounding_box(double time0, double time1, aabb& output_box) const {
     output_box = box;
     return true;
 }

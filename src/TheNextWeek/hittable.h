@@ -37,7 +37,7 @@ struct hit_record {
 class hittable {
     public:
         virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const = 0;
+        virtual bool bounding_box(double time0, double time1, aabb& output_box) const = 0;
 };
 
 class translate : public hittable {
@@ -48,7 +48,7 @@ class translate : public hittable {
         virtual bool hit(
             const ray& r, double t_min, double t_max, hit_record& rec) const override;
 
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+        virtual bool bounding_box(double time0, double time1, aabb& output_box) const override;
 
     public:
         shared_ptr<hittable> ptr;
@@ -68,8 +68,8 @@ bool translate::hit(const ray& r, double t_min, double t_max, hit_record& rec) c
 }
 
 
-bool translate::bounding_box(double t0, double t1, aabb& output_box) const {
-    if (!ptr->bounding_box(t0, t1, output_box))
+bool translate::bounding_box(double time0, double time1, aabb& output_box) const {
+    if (!ptr->bounding_box(time0, time1, output_box))
         return false;
 
     output_box = aabb(
@@ -87,7 +87,7 @@ class rotate_y : public hittable {
         virtual bool hit(
             const ray& r, double t_min, double t_max, hit_record& rec) const override;
 
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
+        virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
             output_box = bbox;
             return hasbox;
         }

@@ -24,7 +24,7 @@ class sphere : public hittable {
             : center(cen), radius(r), mat_ptr(m) {};
 
         virtual bool hit(
-            const ray& r, double tmin, double tmax, hit_record& rec) const override;
+            const ray& r, double t_min, double t_max, hit_record& rec) const override;
 
     public:
         point3 center;

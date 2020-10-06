@@ -24,9 +24,9 @@ class sphere : public hittable  {
             : center(cen), radius(r), mat_ptr(m) {};
 
         virtual bool hit(
-            const ray& r, double tmin, double tmax, hit_record& rec) const override;
+            const ray& r, double t_min, double t_max, hit_record& rec) const override;
 
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+        virtual bool bounding_box(double time0, double time1, aabb& output_box) const override;
         virtual double pdf_value(const point3& o, const vec3& v) const override;
         virtual vec3 random(const point3& o) const override;
 
@@ -56,7 +56,7 @@ vec3 sphere::random(const point3& o) const {
 }
 
 
-bool sphere::bounding_box(double t0, double t1, aabb& output_box) const {
+bool sphere::bounding_box(double time0, double time1, aabb& output_box) const {
     output_box = aabb(
         center - vec3(radius, radius, radius),
         center + vec3(radius, radius, radius));

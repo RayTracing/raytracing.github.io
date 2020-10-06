@@ -26,8 +26,8 @@ class camera {
             double aspect_ratio,
             double aperture,
             double focus_dist,
-            double t0 = 0,
-            double t1 = 0
+            double _time0 = 0,
+            double _time1 = 0
         ) {
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
@@ -44,8 +44,8 @@ class camera {
             lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
 
             lens_radius = aperture / 2;
-            time0 = t0;
-            time1 = t1;
+            time0 = _time0;
+            time1 = _time1;
         }
 
         ray get_ray(double s, double t) const {

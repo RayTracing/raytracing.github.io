@@ -4,7 +4,8 @@ Change Log -- Ray Tracing in One Weekend
 # v3.2.2 (in progress)
 
 ### Common
-  - Fix: Addded `fmin` to book text for `cos_theta` of `refract`
+  - Fix: Added `fmin` to book text for `cos_theta` of `refract`
+  - Fix: Standardized notation for large parts of the code
 
 ### In One Weekend
 

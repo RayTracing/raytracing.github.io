@@ -116,10 +116,10 @@ int main() {
     auto dist_to_focus = 10.0;
     auto aperture = 0.0;
     auto vfov = 40.0;
-    auto t0 = 0.0;
-    auto t1 = 1.0;
+    auto time0 = 0.0;
+    auto time1 = 1.0;
 
-    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, t0, t1);
+    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, time0, time1);
     
     // Render
 
