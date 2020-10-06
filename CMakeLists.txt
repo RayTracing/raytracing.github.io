@@ -19,6 +19,7 @@ set ( COMMON_ALL
   src/common/rtweekend.h
   src/common/camera.h
   src/common/ray.h
+  src/common/scene_description.h
   src/common/vec3.h
 )
 
