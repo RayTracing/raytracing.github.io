@@ -27,9 +27,9 @@ class hittable_list : public hittable  {
         void add(shared_ptr<hittable> object) { objects.push_back(object); }
 
         virtual bool hit(
-            const ray& r, double tmin, double tmax, hit_record& rec) const override;
+            const ray& r, double t_min, double t_max, hit_record& rec) const override;
 
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+        virtual bool bounding_box(double time0, double time1, aabb& output_box) const override;
         virtual double pdf_value(const vec3 &o, const vec3 &v) const override;
         virtual vec3 random(const vec3 &o) const override;
 
@@ -55,11 +55,11 @@ bool hittable_list::hit(const ray& r, double t_min, double t_max, hit_record& re
 }
 
 
-bool hittable_list::bounding_box(double t0, double t1, aabb& output_box) const {
+bool hittable_list::bounding_box(double time0, double time1, aabb& output_box) const {
     if (objects.empty()) return false;
 
     aabb temp_box;
-    bool first_true = objects[0]->bounding_box(t0, t1, temp_box);
+    bool first_true = objects[0]->bounding_box(time0, time1, temp_box);
 
     if (!first_true)
         return false;
@@ -67,7 +67,7 @@ bool hittable_list::bounding_box(double t0, double t1, aabb& output_box) const {
     output_box = temp_box;
 
     for (const auto& object : objects) {
-        if (!object->bounding_box(t0, t1, temp_box))
+        if (!object->bounding_box(time0, time1, temp_box))
             return false;
         output_box = surrounding_box(output_box, temp_box);
     }

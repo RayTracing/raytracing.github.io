@@ -815,10 +815,10 @@ model.
         auto dist_to_focus = 10.0;
         auto aperture = 0.0;
         auto vfov = 40.0;
-        auto t0 = 0.0;
-        auto t1 = 1.0;
+        auto time0 = 0.0;
+        auto time1 = 1.0;
 
-        camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, t0, t1);
+        camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, time0, time1);
 
         // Render
 
@@ -1510,8 +1510,8 @@ We also need to flip the light so its normals point in the $-y$ direction:
                 return true;
             }
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
-                return ptr->bounding_box(t0, t1, output_box);
+            virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+                return ptr->bounding_box(time0, time1, output_box);
             }
 
         public:
@@ -1741,7 +1741,7 @@ instrumentation to all `hittable` subclasses, we’ll add two dummy functions to
     class hittable {
         public:
             virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const = 0;
+            virtual bool bounding_box(double time0, double time1, aabb& output_box) const = 0;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             virtual double pdf_value(const point3& o, const vec3& v) const {
@@ -2265,10 +2265,10 @@ We also need to change the block to metal.
         auto dist_to_focus = 10.0;
         auto aperture = 0.0;
         auto vfov = 40.0;
-        auto t0 = 0.0;
-        auto t1 = 1.0;
+        auto time0 = 0.0;
+        auto time1 = 1.0;
 
-        cam = camera(lookfrom, lookat, vup, vfov, aspect, aperture, dist_to_focus, t0, t1);
+        cam = camera(lookfrom, lookat, vup, vfov, aspect, aperture, dist_to_focus, time0, time1);
 
         return world;
     }

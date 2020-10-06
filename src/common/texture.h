@@ -46,8 +46,8 @@ class checker_texture : public texture {
     public:
         checker_texture() {}
 
-        checker_texture(shared_ptr<texture> t0, shared_ptr<texture> t1)
-            : even(t0), odd(t1) {}
+        checker_texture(shared_ptr<texture> _even, shared_ptr<texture> _odd)
+            : even(_even), odd(_odd) {}
 
         checker_texture(color c1, color c2)
             : even(make_shared<solid_color>(c1)) , odd(make_shared<solid_color>(c2)) {}
