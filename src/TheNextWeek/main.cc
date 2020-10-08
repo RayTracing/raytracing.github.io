@@ -52,10 +52,7 @@ struct scene_description {
     int           image_width;
     double        aspect_ratio;
     int           sample_count;
-    double        aperture;
-    double        vfov;
-    point3        look_from;
-    point3        look_at;
+    camera        cam;
     hittable_list world;
 };
 
@@ -66,10 +63,10 @@ scene_description random_scene() {
     scene.image_width  = 400;
     scene.aspect_ratio = 16.0 / 9.0;
     scene.sample_count = 100;
-    scene.aperture     = 0.1;
-    scene.vfov         = 20.0;
-    scene.look_from    = point3(13,2,3);
-    scene.look_at      = point3(0,0,0);
+    scene.cam.aperture = 0.1;
+    scene.cam.vfov     = 20.0;
+    scene.cam.lookfrom = point3(13,2,3);
+    scene.cam.lookat   = point3(0,0,0);
 
     hittable_list world;
 
@@ -128,10 +125,10 @@ scene_description two_spheres() {
     scene.image_width  = 400;
     scene.aspect_ratio = 16.0 / 9.0;
     scene.sample_count = 100;
-    scene.aperture     = 0.0;
-    scene.vfov         = 20.0;
-    scene.look_from    = point3(13,2,3);
-    scene.look_at      = point3(0,0,0);
+    scene.cam.aperture = 0.0;
+    scene.cam.vfov     = 20.0;
+    scene.cam.lookfrom = point3(13,2,3);
+    scene.cam.lookat   = point3(0,0,0);
 
     hittable_list& world = scene.world;
 
@@ -150,10 +147,10 @@ scene_description two_perlin_spheres() {
     scene.image_width  = 400;
     scene.aspect_ratio = 16.0 / 9.0;
     scene.sample_count = 100;
-    scene.aperture     = 0.0;
-    scene.vfov         = 20.0;
-    scene.look_from    = point3(13,2,3);
-    scene.look_at      = point3(0,0,0);
+    scene.cam.aperture = 0.0;
+    scene.cam.vfov     = 20.0;
+    scene.cam.lookfrom = point3(13,2,3);
+    scene.cam.lookat   = point3(0,0,0);
 
     hittable_list& world = scene.world;
 
@@ -171,10 +168,10 @@ scene_description earth() {
     scene.image_width  = 400;
     scene.aspect_ratio = 16.0 / 9.0;
     scene.sample_count = 100;
-    scene.aperture     = 0.0;
-    scene.vfov         = 20.0;
-    scene.look_from    = point3(0,0,12);
-    scene.look_at      = point3(0,0,0);
+    scene.cam.aperture = 0.0;
+    scene.cam.vfov     = 20.0;
+    scene.cam.lookfrom = point3(0,0,12);
+    scene.cam.lookat   = point3(0,0,0);
 
     auto earth_texture = make_shared<image_texture>("earthmap.jpg");
     auto earth_surface = make_shared<lambertian>(earth_texture);
@@ -192,10 +189,10 @@ scene_description simple_light() {
     scene.image_width  = 400;
     scene.aspect_ratio = 16.0 / 9.0;
     scene.sample_count = 100;
-    scene.aperture     = 0.0;
-    scene.vfov         = 20.0;
-    scene.look_from    = point3(26,3,6);
-    scene.look_at      = point3(0,2,0);
+    scene.cam.aperture = 0.0;
+    scene.cam.vfov     = 20.0;
+    scene.cam.lookfrom = point3(26,3,6);
+    scene.cam.lookat   = point3(0,2,0);
 
     hittable_list& world = scene.world;
 
@@ -217,10 +214,10 @@ scene_description cornell_box() {
     scene.image_width  = 600;
     scene.aspect_ratio = 1.0;
     scene.sample_count = 200;
-    scene.aperture     = 0.0;
-    scene.vfov         = 40.0;
-    scene.look_from    = point3(278, 278, -800);
-    scene.look_at      = point3(278, 278, 0);
+    scene.cam.aperture = 0.0;
+    scene.cam.vfov     = 40.0;
+    scene.cam.lookfrom = point3(278, 278, -800);
+    scene.cam.lookat   = point3(278, 278, 0);
 
     hittable_list& world = scene.world;
 
@@ -256,10 +253,10 @@ scene_description cornell_smoke() {
     scene.image_width  = 600;
     scene.aspect_ratio = 1.0;
     scene.sample_count = 200;
-    scene.aperture     = 0.0;
-    scene.vfov         = 40.0;
-    scene.look_from    = point3(278, 278, -800);
-    scene.look_at      = point3(278, 278, 0);
+    scene.cam.aperture = 0.0;
+    scene.cam.vfov     = 40.0;
+    scene.cam.lookfrom = point3(278, 278, -800);
+    scene.cam.lookat   = point3(278, 278, 0);
 
     hittable_list& world = scene.world;
 
@@ -296,10 +293,10 @@ scene_description final_scene() {
     scene.image_width  = 800;
     scene.aspect_ratio = 1.0;
     scene.sample_count = 10000;
-    scene.aperture     = 0.0;
-    scene.vfov         = 40.0;
-    scene.look_from    = point3(478, 278, -600);
-    scene.look_at      = point3(278, 278, 0);
+    scene.cam.aperture = 0.0;
+    scene.cam.vfov     = 40.0;
+    scene.cam.lookfrom = point3(478, 278, -600);
+    scene.cam.lookat   = point3(278, 278, 0);
 
     hittable_list boxes1;
     auto ground = make_shared<lambertian>(color(0.48, 0.83, 0.53));
@@ -379,6 +376,10 @@ int main() {
     // World
 
     scene_description scene;
+    scene.cam.vup = vec3(0,1,0);
+    scene.cam.focus_dist = 10.0;
+    scene.cam.time0 = 0;
+    scene.cam.time1 = 1;
 
     switch (0) {
         case 1:  scene = random_scene();       break;
@@ -394,14 +395,9 @@ int main() {
 
     // Camera
 
-    const vec3 vup(0,1,0);
-    const auto dist_to_focus = 10.0;
+    scene.cam.initialize();
     const int image_width  = scene.image_width;
     const int image_height = static_cast<int>(image_width / scene.aspect_ratio);
-
-    camera cam(
-        scene.look_from, scene.look_at, vup, scene.vfov, scene.aspect_ratio, scene.aperture,
-        dist_to_focus, 0.0, 1.0);
 
     // Render
 
@@ -416,7 +412,7 @@ int main() {
             for (int s = 0; s < scene.sample_count; ++s) {
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
-                ray r = cam.get_ray(u, v);
+                ray r = scene.cam.get_ray(u, v);
                 pixel_color += ray_color(r, scene.background, scene.world, max_depth);
             }
             write_color(std::cout, pixel_color, scene.sample_count);

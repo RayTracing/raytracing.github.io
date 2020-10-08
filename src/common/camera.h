@@ -19,16 +19,30 @@ class camera {
         camera() : camera(point3(0,0,-1), point3(0,0,0), vec3(0,1,0), 40, 1, 0, 10) {}
 
         camera(
-            point3 lookfrom,
-            point3 lookat,
-            vec3   vup,
-            double vfov, // vertical field-of-view in degrees
-            double aspect_ratio,
-            double aperture,
-            double focus_dist,
-            double t0 = 0,
-            double t1 = 0
-        ) {
+            point3 _lookfrom,
+            point3 _lookat,
+            vec3   _vup,
+            double _vfov, // vertical field-of-view in degrees
+            double _aspect_ratio,
+            double _aperture,
+            double _focus_dist,
+            double _time0 = 0,
+            double _time1 = 0
+        )
+          : lookfrom(_lookfrom),
+            lookat(_lookat),
+            vup(_vup),
+            vfov(_vfov),
+            aspect_ratio(_aspect_ratio),
+            aperture(_aperture),
+            focus_dist(_focus_dist),
+            time0(_time0),
+            time1(_time1)
+        {
+            initialize();
+        }
+
+        void initialize() {
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
             auto viewport_height = 2.0 * h;
@@ -44,8 +58,6 @@ class camera {
             lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
 
             lens_radius = aperture / 2;
-            time0 = t0;
-            time1 = t1;
         }
 
         ray get_ray(double s, double t) const {
@@ -58,6 +70,16 @@ class camera {
             );
         }
 
+    public:
+        point3 lookfrom;
+        point3 lookat;
+        vec3   vup;
+        double vfov;
+        double aspect_ratio;
+        double aperture;
+        double focus_dist;
+        double time0, time1;  // shutter open/close times
+
     private:
         point3 origin;
         point3 lower_left_corner;
@@ -65,7 +87,6 @@ class camera {
         vec3 vertical;
         vec3 u, v, w;
         double lens_radius;
-        double time0, time1;  // shutter open/close times
 };
 
 #endif
