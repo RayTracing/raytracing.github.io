@@ -42,7 +42,7 @@ bool sphere::bounding_box(double time0, double time1, aabb& output_box) const {
 }
 
 
-void get_sphere_uv(const point3& p, double& u, double& v) {
+static void get_sphere_uv(const point3& p, double& u, double& v) {
     // p: a given point on the sphere of radius one, centered at the origin.
     // u: returned value [0,1] around the Y axis.
     // v: returned value [0,1] along the Y axis.
@@ -74,7 +74,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
             rec.p = r.at(rec.t);
             vec3 outward_normal = (rec.p - center) / radius;
             rec.set_face_normal(r, outward_normal);
-            get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
+            get_sphere_uv(outward_normal, rec.u, rec.v);
             rec.mat_ptr = mat_ptr;
             return true;
         }
@@ -85,7 +85,7 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
             rec.p = r.at(rec.t);
             vec3 outward_normal = (rec.p - center) / radius;
             rec.set_face_normal(r, outward_normal);
-            get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
+            get_sphere_uv(outward_normal, rec.u, rec.v);
             rec.mat_ptr = mat_ptr;
             return true;
         }
