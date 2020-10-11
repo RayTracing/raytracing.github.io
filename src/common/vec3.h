@@ -119,13 +119,6 @@ inline vec3 unit_vector(vec3 v) {
     return v / v.length();
 }
 
-inline vec3 random_unit_vector() {
-    auto a = random_double(0, 2*pi);
-    auto z = random_double(-1, 1);
-    auto r = sqrt(1 - z*z);
-    return vec3(r*cos(a), r*sin(a), z);
-}
-
 inline vec3 random_in_unit_disk() {
     while (true) {
         auto p = vec3(random_double(-1,1), random_double(-1,1), 0);
@@ -140,6 +133,10 @@ inline vec3 random_in_unit_sphere() {
         if (p.length_squared() >= 1) continue;
         return p;
     }
+}
+
+inline vec3 random_unit_vector() {
+    return unit_vector(random_in_unit_sphere());
 }
 
 inline vec3 random_in_hemisphere(const vec3& normal) {
