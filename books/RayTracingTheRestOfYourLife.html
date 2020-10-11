@@ -757,8 +757,9 @@ model.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
-    color ray_color(...)
+    color ray_color(...) {
         ...
+    }
 
     hittable_list cornell_box() {
         hittable_list objects;
@@ -798,10 +799,6 @@ model.
         const int max_depth = 50;
 
         // World
-
-        auto lights = make_shared<hittable_list>();
-        lights->add(make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>()));
-        lights->add(make_shared<sphere>(point3(190, 90, 190), 90, shared_ptr<material>()));
 
         auto world = cornell_box();
 
@@ -1690,8 +1687,7 @@ change variable `pdf` to some other variable name to avoid a name conflict with 
 
         return emitted
              + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                      * ray_color(scattered, background, world, depth-1)
-                      / pdf_val;
+                      * ray_color(scattered, background, world, depth-1) / pdf_val;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-cos-pdf]: <kbd>[main.cc]</kbd> The ray_color function, using cosine pdf]
@@ -1821,8 +1817,7 @@ And then change `ray_color()`:
 
         return emitted
              + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                      * ray_color(scattered, background, world, depth-1)
-                      / pdf_val;
+                      * ray_color(scattered, background, world, depth-1) / pdf_val;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-hittable-pdf]: <kbd>[main.cc]</kbd> ray_color function with hittable PDF]
@@ -1872,15 +1867,8 @@ class is straightforward:
 <div class='together'>
 And plugging it into `ray_color()`:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    color ray_color(
-        const ray& r,
-        const color& background,
-        const hittable& world,
-        shared_ptr<hittable> lights,
-        int depth
-    ) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    color ray_color(const ray& r, const color& background, const hittable& world, int depth) {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1912,8 +1900,7 @@ And plugging it into `ray_color()`:
 
         return emitted
              + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                      * ray_color(scattered, background, world, lights, depth-1)
-                      / pdf_val;
+                      * ray_color(scattered, background, world, depth-1) / pdf_val;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-mixture]: <kbd>[main.cc]</kbd> The ray_color function, using mixture PDF]
@@ -1972,7 +1959,7 @@ book.
 
 
 
-Cleaning Up PDF Management.
+Cleaning Up PDF Management
 ====================================================================================================
 
 <div class='together'>
@@ -2077,7 +2064,7 @@ The Lambertian material becomes simpler:
 <div class='together'>
 And `ray_color()` changes are small:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     color ray_color(
         const ray& r,
         const color& background,
@@ -2085,6 +2072,7 @@ And `ray_color()` changes are small:
         shared_ptr<hittable> lights,
         int depth
     ) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -2109,10 +2097,31 @@ And `ray_color()` changes are small:
 
         return emitted
             + srec.attenuation * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                               * ray_color(scattered, background, world, lights, depth-1)
-                               / pdf_val;
+                               * ray_color(scattered, background, world, lights, depth-1) / pdf_val;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
+
+    ...
+
+    int main() {
+        ...
+        // World
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto lights = make_shared<hittable_list>();
+        lights->add(make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>()));
+        lights->add(make_shared<sphere>(point3(190, 90, 190), 90, shared_ptr<material>()));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        auto world = cornell_box();
+
+        color background(0,0,0);
+
+        for (int j ...) {
+            for (int i ...) {
+                ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                pixel_color += ray_color(r, background, world, lights, max_depth);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-scatter]: <kbd>[main.cc]</kbd> Ray color with scatter]
 </div>
@@ -2218,8 +2227,7 @@ just like it did before.
 
         return emitted + srec.attenuation
                        * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                       * ray_color(scattered, background, world, lights, depth-1)
-                       / pdf_val;
+                       * ray_color(scattered, background, world, lights, depth-1) / pdf_val;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-implicit]: <kbd>[main.cc]</kbd>
@@ -2253,6 +2261,7 @@ We also need to change the block to metal. We'll also swap out the short block f
         box1 = make_shared<rotate_y>(box1, 15);
         box1 = make_shared<translate>(box1, vec3(265,0,295));
         objects.add(box1);
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto glass = make_shared<dielectric>(1.5);
@@ -2499,6 +2508,7 @@ function to replace any NaN components with zero:
         auto r = pixel_color.x();
         auto g = pixel_color.y();
         auto b = pixel_color.z();
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // Replace NaN components with zero. See explanation in Ray Tracing: The Rest of Your Life.
