@@ -4,6 +4,7 @@ Change Log -- Ray Tracing in One Weekend
 # v3.2.2 (in progress)
 
 ### Common
+  - Change: refactor `sphere::hit()` method to reuse common blocks of code.
   - Fix: Added `fmin` to book text for `cos_theta` of `refract`
   - Fix: Standardized naming for ray-t and time parameters (#746)
 

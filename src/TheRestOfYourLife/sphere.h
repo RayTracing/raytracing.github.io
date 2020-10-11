@@ -86,34 +86,25 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
     auto c = oc.length_squared() - radius*radius;
 
     auto discriminant = half_b*half_b - a*c;
+    if (discriminant < 0) return false;
+    auto sqrtd = sqrt(discriminant);
 
-    if (discriminant > 0) {
-        auto root = sqrt(discriminant);
-
-        auto temp = (-half_b - root) / a;
-        if (temp < t_max && temp > t_min) {
-            rec.t = temp;
-            rec.p = r.at(rec.t);
-            vec3 outward_normal = (rec.p - center) / radius;
-            rec.set_face_normal(r, outward_normal);
-            get_sphere_uv(outward_normal, rec.u, rec.v);
-            rec.mat_ptr = mat_ptr;
-            return true;
-        }
-
-        temp = (-half_b + root) / a;
-        if (temp < t_max && temp > t_min) {
-            rec.t = temp;
-            rec.p = r.at(rec.t);
-            vec3 outward_normal = (rec.p - center) / radius;
-            rec.set_face_normal(r, outward_normal);
-            get_sphere_uv(outward_normal, rec.u, rec.v);
-            rec.mat_ptr = mat_ptr;
-            return true;
-        }
+    // Find the nearest root that lies in the acceptable range.
+    auto root = (-half_b - sqrtd) / a;
+    if (root < t_min || t_max < root) {
+        root = (-half_b + sqrtd) / a;
+        if (root < t_min || t_max < root)
+            return false;
     }
 
-    return false;
+    rec.t = root;
+    rec.p = r.at(rec.t);
+    vec3 outward_normal = (rec.p - center) / radius;
+    rec.set_face_normal(r, outward_normal);
+    get_sphere_uv(outward_normal, rec.u, rec.v);
+    rec.mat_ptr = mat_ptr;
+
+    return true;
 }
 
 
