@@ -10,8 +10,10 @@ Change Log -- Ray Tracing in One Weekend
 ### In One Weekend
 
 ### The Next Week
+  - Add: Improve explanation of `get_sphere_uv()` function (#533)
 
 ### The Rest of Your Life
+  - Add: Improve explanation of `get_sphere_uv()` function (#533)
 
 
 ----------------------------------------------------------------------------------------------------
