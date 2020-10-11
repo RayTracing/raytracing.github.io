@@ -12,6 +12,8 @@ Change Log -- Ray Tracing in One Weekend
 ### The Next Week
 
 ### The Rest of Your Life
+  - Fix: Missing `override` keyword for `xz_rect::pdf_value()` and `xz_rect::random()` methods
+    (#748)
 
 
 ----------------------------------------------------------------------------------------------------
