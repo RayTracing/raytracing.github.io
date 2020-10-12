@@ -17,9 +17,10 @@
 #include "onb.h"
 
 
-class sphere : public hittable  {
+class sphere : public hittable {
     public:
         sphere() {}
+
         sphere(point3 cen, double r, shared_ptr<material> m)
             : center(cen), radius(r), mat_ptr(m) {};
 
