@@ -17,6 +17,7 @@ Change Log -- Ray Tracing in One Weekend
     (#748)
   - Fix: Synchronize book and source for `cornell_box()` function.
   - Fix: Introduction of light code was introduced out of sequence (#738, #740)
+  - Fix: `ray_color()` was creating a new light for every ray bounce (#759)
 
 
 ----------------------------------------------------------------------------------------------------
