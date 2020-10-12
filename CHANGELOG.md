@@ -12,6 +12,8 @@ Change Log -- Ray Tracing in One Weekend
 ### The Next Week
 
 ### The Rest of Your Life
+  - Fix: Synchronize book and source for `cornell_box()` function.
+  - Fix: Introduction of light code was introduced out of sequence (#738, #740)
 
 
 ----------------------------------------------------------------------------------------------------
