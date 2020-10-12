@@ -1738,16 +1738,18 @@ at shallow angles spreads over a larger area, and thus has a lower contribution 
 
 However, we are interested in a Lambertian distribution, which has a distribution of $\cos (\phi)$.
 True Lambertian has the probability higher for ray scattering close to the normal, but the
-distribution is more uniform. This is achieved by picking points on the surface of the unit sphere,
-offset along the surface normal. Picking points on the sphere can be achieved by picking points in
-the unit ball, and then normalizing those.
+distribution is more uniform. This is achieved by picking random points on the surface of the unit
+sphere, offset along the surface normal. Picking random points on the unit sphere can be achieved by
+picking random points _in_ the unit sphere, and then normalizing those.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline vec3 random_in_unit_sphere() {
+        ...
+    }
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     vec3 random_unit_vector() {
-        auto a = random_double(0, 2*pi);
-        auto z = random_double(-1, 1);
-        auto r = sqrt(1 - z*z);
-        return vec3(r*cos(a), r*sin(a), z);
+        return unit_vector(random_in_unit_sphere());
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-unit-vector]: <kbd>[vec3.h]</kbd> The random_unit_vector() function]

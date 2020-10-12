@@ -5,8 +5,9 @@ Change Log -- Ray Tracing in One Weekend
 
 ### Common
   - Change: refactor `sphere::hit()` method to reuse common blocks of code.
-  - Fix: Added `fmin` to book text for `cos_theta` of `refract`
+  - Fix: Added `fmin` to book text for `cos_theta` of `refract` (#732)
   - Fix: Standardized naming for ray-t and time parameters (#746)
+  - Fix: `random_unit_vector()` was incorrect (#697)
 
 ### In One Weekend
 
@@ -15,6 +16,10 @@ Change Log -- Ray Tracing in One Weekend
 
 ### The Rest of Your Life
   - Add: Improve explanation of `get_sphere_uv()` function (#533)
+  - Fix: Missing `override` keyword for `xz_rect::pdf_value()` and `xz_rect::random()` methods
+    (#748)
+  - Fix: Synchronize book and source for `cornell_box()` function.
+  - Fix: Introduction of light code was introduced out of sequence (#738, #740)
 
 
 ----------------------------------------------------------------------------------------------------
