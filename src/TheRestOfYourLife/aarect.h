@@ -55,7 +55,7 @@ class xz_rect : public hittable {
             return true;
         }
 
-        virtual double pdf_value(const point3& origin, const vec3& v) const {
+        virtual double pdf_value(const point3& origin, const vec3& v) const override {
             hit_record rec;
             if (!this->hit(ray(origin, v), 0.001, infinity, rec))
                 return 0;
@@ -67,7 +67,7 @@ class xz_rect : public hittable {
             return distance_squared / (cosine * area);
         }
 
-        virtual vec3 random(const point3& origin) const {
+        virtual vec3 random(const point3& origin) const override {
             auto random_point = point3(random_double(x0,x1), k, random_double(z0,z1));
             return random_point - origin;
         }
