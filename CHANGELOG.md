@@ -8,7 +8,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Standardized naming for ray-t and time parameters (#746)
   - Fix: `random_unit_vector()` was incorrect (#697)
   - Fix: Synchronize text and copies of `hittable.h`
-  - Fix: Synchronize copies of `hittable_list.h`
+  - Fix: Synchronize copies of `hittable_list.h`, `material.h`
 
 ### In One Weekend
 
