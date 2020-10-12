@@ -544,33 +544,12 @@ Suppose we have this integral over all directions:
 
   $$ \int cos^2(\theta) $$
 
-<div class='together'>
 By MC integration, we should just be able to sample $\cos^2(\theta) / p(\text{direction})$, but what
-is direction in that context? We could make it based on polar coordinates, so $p$ would be in terms
-of $(\theta, \phi)$. However you do it, remember that a PDF has to integrate to 1 and represent the
-relative probability of that direction being sampled. We have a method from the last books to take
-uniform random samples in or on a unit sphere:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 random_unit_vector() {
-        auto a = random_double(0, 2*pi);
-        auto z = random_double(-1, 1);
-        auto r = sqrt(1 - z*z);
-        return vec3(r*cos(a), r*sin(a), z);
-    }
-
-    ...
-
-    vec3 random_in_unit_sphere() {
-        while (true) {
-            auto p = vec3::random(-1,1);
-            if (p.length_squared() >= 1) continue;
-            return p;
-        }
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-unit-vector]: <kbd>[vec3.h]</kbd> Random vector of unit length]
-</div>
+is _direction_ in that context? We could make it based on polar coordinates, so $p$ would be in
+terms of $(\theta, \phi)$. However you do it, remember that a PDF has to integrate to 1 and
+represent the relative probability of that direction being sampled. Recall that we have vec3
+functions to take uniform random samples in (`random_in_unit_sphere()`) or on
+(`random_unit_vector()`) a unit sphere.
 
 <div class='together'>
 Now what is the PDF of these uniform points? As a density on the unit sphere, it is $1/\text{area}$
