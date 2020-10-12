@@ -18,6 +18,7 @@
 
 class material;
 
+
 struct hit_record {
     point3 p;
     vec3 normal;
@@ -135,8 +136,8 @@ rotate_y::rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
 
 
 bool rotate_y::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
-    point3 origin = r.origin();
-    vec3 direction = r.direction();
+    auto origin = r.origin();
+    auto direction = r.direction();
 
     origin[0] = cos_theta*r.origin()[0] - sin_theta*r.origin()[2];
     origin[2] = sin_theta*r.origin()[0] + cos_theta*r.origin()[2];
@@ -149,8 +150,8 @@ bool rotate_y::hit(const ray& r, double t_min, double t_max, hit_record& rec) co
     if (!ptr->hit(rotated_r, t_min, t_max, rec))
         return false;
 
-    point3 p = rec.p;
-    vec3 normal = rec.normal;
+    auto p = rec.p;
+    auto normal = rec.normal;
 
     p[0] =  cos_theta*rec.p[0] + sin_theta*rec.p[2];
     p[2] = -sin_theta*rec.p[0] + cos_theta*rec.p[2];
