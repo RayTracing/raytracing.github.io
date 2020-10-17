@@ -12,9 +12,11 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Synchronize copies of `hittable_list.h`, `material.h`, `sphere.h`
 
 ### In One Weekend
+  - Fix: Catch cases where `lambertian::scatter()` yields degenerate scatter rays (#619)
 
 ### The Next Week
   - Add: Improved explanation of `get_sphere_uv()` function (#533)
+  - Fix: Catch cases where `lambertian::scatter()` yields degenerate scatter rays (#619)
 
 ### The Rest of Your Life
   - Fix: Missing `override` keyword for `xz_rect::pdf_value()` and `xz_rect::random()` methods

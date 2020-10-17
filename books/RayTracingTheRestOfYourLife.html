@@ -858,15 +858,23 @@ And _Lambertian_ material becomes:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
         public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
             lambertian(shared_ptr<texture> a) : albedo(a) {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
+            virtual bool scatter(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            ) const override {
+                auto scatter_direction = rec.normal + random_unit_vector();
+
+                // Catch degenerate scatter direction
+                if (scatter_direction.near_zero())
+                    scatter_direction = rec.normal;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool scatter(
-                const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
-            ) const override {
-                auto direction = rec.normal + random_unit_vector();
                 scattered = ray(rec.p, unit_vector(direction), r_in.time());
                 alb = albedo->value(rec.u, rec.v, rec.p);
                 pdf = dot(rec.normal, scattered.direction()) / pi;
