@@ -8,11 +8,15 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Added `fmin` to book text for `cos_theta` of `refract` (#732)
   - Fix: Standardized naming for ray-t and time parameters (#746)
   - Fix: `random_unit_vector()` was incorrect (#697)
+  - Fix: Synchronize text and copies of `hittable.h`
+  - Fix: Synchronize copies of `hittable_list.h`, `material.h`, `sphere.h`
 
 ### In One Weekend
+  - Fix: Catch cases where `lambertian::scatter()` yields degenerate scatter rays (#619)
 
 ### The Next Week
   - Add: Improved explanation of `get_sphere_uv()` function (#533)
+  - Fix: Catch cases where `lambertian::scatter()` yields degenerate scatter rays (#619)
 
 ### The Rest of Your Life
   - Fix: Missing `override` keyword for `xz_rect::pdf_value()` and `xz_rect::random()` methods
@@ -20,6 +24,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Synchronize book and source for `cornell_box()` function.
   - Fix: Introduction of light code was introduced out of sequence (#738, #740)
   - Add: Improved explanation of `get_sphere_uv()` function (#533)
+  - Fix: `ray_color()` was creating a new light for every ray bounce (#759)
 
 
 ----------------------------------------------------------------------------------------------------

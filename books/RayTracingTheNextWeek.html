@@ -269,7 +269,13 @@ for the time of intersection:
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const override {
-                vec3 scatter_direction = rec.normal + random_unit_vector();
+                auto scatter_direction = rec.normal + random_unit_vector();
+
+                // Catch degenerate scatter direction
+                if (scatter_direction.near_zero())
+                    scatter_direction = rec.normal;
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 scattered = ray(rec.p, scatter_direction, r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1230,7 +1236,12 @@ Now we can make textured materials by replacing the `const color& a` with a text
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const override {
-                vec3 scatter_direction = rec.normal + random_unit_vector();
+                auto scatter_direction = rec.normal + random_unit_vector();
+
+                // Catch degenerate scatter direction
+                if (scatter_direction.near_zero())
+                    scatter_direction = rec.normal;
+
                 scattered = ray(rec.p, scatter_direction, r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 attenuation = albedo->value(rec.u, rec.v, rec.p);
@@ -1377,10 +1388,7 @@ The following changes set up our main function:
 
     camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-    // Render
-
-    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-two-checker-view]: <kbd>[main.cc]</kbd> Second scene]
 </div>
@@ -1834,7 +1842,7 @@ And the interpolation becomes a bit more complicated:
                 auto vv = v*v*(3-2*v);
                 auto ww = w*w*(3-2*w);
                 auto accum = 0.0;
-                
+
                 for (int i=0; i < 2; i++)
                     for (int j=0; j < 2; j++)
                         for (int k=0; k < 2; k++) {
@@ -1844,7 +1852,7 @@ And the interpolation becomes a bit more complicated:
                                    * (k*ww + (1-k)*(1-ww))
                                    * dot(c[i][j][k], weight_v);
                         }
-                
+
                 return accum;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }

@@ -858,15 +858,23 @@ And _Lambertian_ material becomes:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
         public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
             lambertian(shared_ptr<texture> a) : albedo(a) {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
+            virtual bool scatter(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            ) const override {
+                auto scatter_direction = rec.normal + random_unit_vector();
+
+                // Catch degenerate scatter direction
+                if (scatter_direction.near_zero())
+                    scatter_direction = rec.normal;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool scatter(
-                const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
-            ) const override {
-                auto direction = rec.normal + random_unit_vector();
                 scattered = ray(rec.p, unit_vector(direction), r_in.time());
                 alb = albedo->value(rec.u, rec.v, rec.p);
                 pdf = dot(rec.normal, scattered.direction()) / pi;
@@ -1764,17 +1772,13 @@ And we change `xz_rect` to implement those functions:
 <div class='together'>
 And then change `ray_color()`:
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    color ray_color(
+        const ray& r, const color& background, const hittable& world,
+        shared_ptr<hittable>& lights, int depth
+    ) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    color ray_color(const ray& r, const color& background, const hittable& world, int depth) {
-        hit_record rec;
-
-        // If we've exceeded the ray bounce limit, no more light is gathered.
-        if (depth <= 0)
-            return color(0,0,0);
-
-        // If the ray hits nothing, return the background color.
-        if (!world.hit(r, 0.001, infinity, rec))
-            return background;
+        ...
 
         ray scattered;
         color attenuation;
@@ -1786,18 +1790,39 @@ And then change `ray_color()`:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        shared_ptr<hittable> light_shape =
-            make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>());
-        hittable_pdf p(light_shape, rec.p);
+        hittable_pdf light_pdf(lights, rec.p);
+        scattered = ray(rec.p, light_pdf.generate(), r.time());
+        pdf_val = light_pdf.value(scattered.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        scattered = ray(rec.p, p.generate(), r.time());
-        pdf_val = p.value(scattered.direction());
 
         return emitted
              + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                      * ray_color(scattered, background, world, depth-1) / pdf_val;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                      * ray_color(scattered, background, world, lights, depth-1) / pdf_val;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
+
+    ...
+    int main() {
+        ...
+        // World
+
+        auto world = cornell_box();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        shared_ptr<hittable> lights =
+            make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        ...
+        for (int j = image_height-1; j >= 0; --j) {
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (int i = 0; i < image_width; ++i) {
+                ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                pixel_color += ray_color(r, background, world, lights, max_depth);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-hittable-pdf]: <kbd>[main.cc]</kbd> ray_color function with hittable PDF]
 </div>
@@ -1847,16 +1872,11 @@ class is straightforward:
 And plugging it into `ray_color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    color ray_color(const ray& r, const color& background, const hittable& world, int depth) {
-        hit_record rec;
-
-        // If we've exceeded the ray bounce limit, no more light is gathered.
-        if (depth <= 0)
-            return color(0,0,0);
-
-        // If the ray hits nothing, return the background color.
-        if (!world.hit(r, 0.001, infinity, rec))
-            return background;
+    color ray_color(
+        const ray& r, const color& background, const hittable& world,
+        shared_ptr<hittable>& lights, int depth
+    ) {
+        ...
 
         ray scattered;
         color attenuation;
@@ -1866,20 +1886,16 @@ And plugging it into `ray_color()`:
         if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
             return emitted;
 
-        shared_ptr<hittable> light_shape =
-            make_shared<xz_rect>(213, 343, 227, 332, 554, make_shared<material>());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        auto p0 = make_shared<hittable_pdf>(light_shape, rec.p);
+        auto p0 = make_shared<hittable_pdf>(lights, rec.p);
         auto p1 = make_shared<cosine_pdf>(rec.normal);
-        mixture_pdf p(p0, p1);
+        mixture_pdf mixed_pdf(p0, p1);
+
+        scattered = ray(rec.p, mixed_pdf.generate(), r.time());
+        pdf_val = mixed_pdf.value(scattered.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        scattered = ray(rec.p, p.generate(), r.time());
-        pdf_val = p.value(scattered.direction());
-
-        return emitted
-             + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                      * ray_color(scattered, background, world, depth-1) / pdf_val;
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-mixture]: <kbd>[main.cc]</kbd> The ray_color function, using mixture PDF]
@@ -2043,15 +2059,16 @@ The Lambertian material becomes simpler:
 <div class='together'>
 And `ray_color()` changes are small:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     color ray_color(
         const ray& r,
         const color& background,
         const hittable& world,
-        shared_ptr<hittable> lights,
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        shared_ptr<hittable>& lights,
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         int depth
     ) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -2086,22 +2103,13 @@ And `ray_color()` changes are small:
         ...
         // World
 
+        auto world = cornell_box();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto lights = make_shared<hittable_list>();
         lights->add(make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>()));
         lights->add(make_shared<sphere>(point3(190, 90, 190), 90, shared_ptr<material>()));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        auto world = cornell_box();
-
-        color background(0,0,0);
-
-        for (int j = image_height-1; j >= 0; --j) {
-            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-            for (int i = 0; i < image_width; ++i) {
-                ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                pixel_color += ray_color(r, background, world, lights, max_depth);
+        ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-scatter]: <kbd>[main.cc]</kbd> Ray color with scatter]
 </div>
@@ -2173,23 +2181,16 @@ just like it did before.
         const ray& r,
         const color& background,
         const hittable& world,
-        shared_ptr<hittable> lights,
+        shared_ptr<hittable>& lights,
         int depth
     ) {
-        hit_record rec;
-
-        // If we've exceeded the ray bounce limit, no more light is gathered.
-        if (depth <= 0)
-            return color(0,0,0);
-
-        // If the ray hits nothing, return the background color.
-        if (!world.hit(r, 0.001, infinity, rec))
-            return background;
+        ...
 
         scatter_record srec;
         color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
         if (!rec.mat_ptr->scatter(r, rec, srec))
             return emitted;
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (srec.is_specular) {
@@ -2198,16 +2199,7 @@ just like it did before.
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        shared_ptr<pdf> light_ptr = make_shared<hittable_pdf>(lights, rec.p);
-        mixture_pdf p(light_ptr, srec.pdf_ptr);
-
-        ray scattered = ray(rec.p, p.generate(), r.time());
-        auto pdf_val = p.value(scattered.direction());
-        delete srec.pdf_ptr;
-
-        return emitted + srec.attenuation
-                       * rec.mat_ptr->scattering_pdf(r, rec, scattered)
-                       * ray_color(scattered, background, world, lights, depth-1) / pdf_val;
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-implicit]: <kbd>[main.cc]</kbd>
@@ -2383,21 +2375,17 @@ With the utility function:
 We can first try just sampling the sphere rather than the light:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    shared_ptr<hittable> light_shape = make_shared<xz_rect>(213, 343, 227, 332, 554, 0);
-    shared_ptr<hittable> glass_sphere = make_shared<sphere>(point3(190, 90, 190), 90, 0);
+    int main() {
+        ...
+        // World
 
-    ...
-
-    for (int j = image_height-1; j >= 0; --j) {
-        std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-        for (int i = 0; i < image_width; ++i) {
-            color pixel_color(0, 0, 0);
-            for (int s=0; s < ns; ++s) {
-                auto u = (i + random_double()) / image_width;
-                auto v = (j + random_double()) / image_height;
-                ray r = cam->get_ray(u, v);
-                pixel_color += ray_color(r, background, world, glass_sphere, max_depth);
-            }
+        auto world = cornell_box();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        shared_ptr<hittable> lights =
+        //  make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>());
+            make_shared<sphere>(point3(190, 90, 190), 90, shared_ptr<material>());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sampling-sphere]: <kbd>[main.cc]</kbd> Sampling just the sphere]
 </div>
