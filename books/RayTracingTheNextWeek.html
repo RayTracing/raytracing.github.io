@@ -280,7 +280,13 @@ for the time of intersection:
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const override {
-                vec3 scatter_direction = rec.normal + random_unit_vector();
+                auto scatter_direction = rec.normal + random_unit_vector();
+
+                // Catch degenerate scatter direction
+                if (scatter_direction.near_zero())
+                    scatter_direction = rec.normal;
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 scattered = ray(rec.p, scatter_direction, r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1252,7 +1258,12 @@ Now we can make textured materials by replacing the `const color& a` with a text
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const override {
-                vec3 scatter_direction = rec.normal + random_unit_vector();
+                auto scatter_direction = rec.normal + random_unit_vector();
+
+                // Catch degenerate scatter direction
+                if (scatter_direction.near_zero())
+                    scatter_direction = rec.normal;
+
                 scattered = ray(rec.p, scatter_direction, r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 attenuation = albedo->value(rec.u, rec.v, rec.p);

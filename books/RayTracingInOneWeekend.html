@@ -2065,7 +2065,7 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const override {
-                vec3 scatter_direction = rec.normal + random_unit_vector();
+                auto scatter_direction = rec.normal + random_unit_vector();
                 scattered = ray(rec.p, scatter_direction);
                 attenuation = albedo;
                 return true;
@@ -2080,6 +2080,57 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
 
 Note we could just as well only scatter with some probability $p$ and have attenuation be
 $albedo/p$. Your choice.
+
+If you read the code above carefully, you'll notice a small chance of mischief. If the random unit
+vector we generate is exactly opposite the normal vector, the two will sum to zero, which will
+result in a zero scatter direction vector. This leads to bad scenarios later on (infinities and
+NaNs), so we need to intercept the condition before we pass it on.
+
+<div class='together'>
+In service of this, we'll create a new vector method -- `vec3::near_zero()` -- that returns true if
+the vector is very close to zero in all dimensions.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class vec3 {
+        ...
+        bool near_zero() const {
+            // Return true if the vector is close to zero in all dimensions.
+            const auto s = 1e-8;
+            return (fabs(e[0]) < s) && (fabs(e[1]) < s) && (fabs(e[2]) < s);
+        }
+        ...
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [vec3-near-zero]: <kbd>[vec3.h]</kbd> The vec3::near_zero() method]
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class lambertian : public material {
+        public:
+            lambertian(const color& a) : albedo(a) {}
+
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+            ) const override {
+                auto scatter_direction = rec.normal + random_unit_vector();
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                // Catch degenerate scatter direction
+                if (scatter_direction.near_zero())
+                    scatter_direction = rec.normal;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+                scattered = ray(rec.p, scatter_direction);
+                attenuation = albedo;
+                return true;
+            }
+
+        public:
+            color albedo;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [lambertian-catch-zero]: <kbd>[material.h]</kbd> Lambertian scatter, bullet-proof]
+</div>
 
 
 Mirrored Light Reflection
