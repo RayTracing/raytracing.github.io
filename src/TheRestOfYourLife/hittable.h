@@ -129,14 +129,13 @@ class rotate_y : public hittable {
 
         virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
             output_box = bbox;
-            return hasbox;
+            return ptr->bounding_box(time0, time1, output_box);
         }
 
     public:
         shared_ptr<hittable> ptr;
         double sin_theta;
         double cos_theta;
-        bool hasbox;
         aabb bbox;
 };
 
@@ -145,7 +144,6 @@ rotate_y::rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
     auto radians = degrees_to_radians(angle);
     sin_theta = sin(radians);
     cos_theta = cos(radians);
-    hasbox = ptr->bounding_box(0, 1, bbox);
 
     point3 min( infinity,  infinity,  infinity);
     point3 max(-infinity, -infinity, -infinity);

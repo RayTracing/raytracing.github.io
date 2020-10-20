@@ -46,10 +46,6 @@ class bvh_node : public hittable  {
 inline bool box_compare(const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis) {
     aabb box_a;
     aabb box_b;
-
-    if (!a->bounding_box(0,0, box_a) || !b->bounding_box(0,0, box_b))
-        std::cerr << "No bounding box in bvh_node constructor.\n";
-
     return box_a.min().e[axis] < box_b.min().e[axis];
 }
 
@@ -72,6 +68,13 @@ bvh_node::bvh_node(
     size_t start, size_t end, double time0, double time1
 ) {
     auto objects = src_objects; // Create a modifiable array of the source scene objects
+
+    aabb box_check;
+    for (size_t i = start; i < end; i++) {
+        if (!objects[i]->bounding_box(time0,time1,box_check)) {
+            std::cerr << "No bounding box in " << i << " bvh_node constructor.\n";
+        }
+    }
 
     int axis = random_int(0,2);
     auto comparator = (axis == 0) ? box_x_compare
