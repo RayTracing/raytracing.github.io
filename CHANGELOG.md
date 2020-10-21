@@ -9,6 +9,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: `random_unit_vector()` was incorrect (#697)
   - Fix: Synchronize text and copies of `hittable.h`
   - Fix: Synchronize copies of `hittable_list.h`, `material.h`, `sphere.h`
+  - Fix: Removed the magic numbers from `bounding_box` calls in `bvh.h` and `hittable.h`
 
 ### In One Weekend
   - Fix: Catch cases where `lambertian::scatter()` yields degenerate scatter rays (#619)
