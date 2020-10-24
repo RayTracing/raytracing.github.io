@@ -11,6 +11,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Synchronize copies of `hittable_list.h`, `material.h`, `sphere.h`
 
 ### In One Weekend
+  - Change: Wrote brief explanation waving away negative t values in initial normal sphere
   - Fix: Catch cases where `lambertian::scatter()` yields degenerate scatter rays (#619)
 
 ### The Next Week
