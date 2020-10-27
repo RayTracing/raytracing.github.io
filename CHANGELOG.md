@@ -9,6 +9,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: `random_unit_vector()` was incorrect (#697)
   - Fix: Synchronize text and copies of `hittable.h`
   - Fix: Synchronize copies of `hittable_list.h`, `material.h`, `sphere.h`
+  - Change: refactor `sphere::hit()` method to reuse common blocks of code.
 
 ### In One Weekend
   - Change: Wrote brief explanation waving away negative t values in initial normal sphere

@@ -222,9 +222,7 @@ The `moving_sphere::hit()` function is almost identical to the `sphere::hit()` f
 just needs to become a function `center(time)`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool moving_sphere::hit(
-        const ray& r, double t_min, double t_max, hit_record& rec) const {
-
+    bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         vec3 oc = r.origin() - center(r.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -233,35 +231,26 @@ just needs to become a function `center(time)`:
         auto c = oc.length_squared() - radius*radius;
 
         auto discriminant = half_b*half_b - a*c;
+        if (discriminant < 0) return false;
+        auto sqrtd = sqrt(discriminant);
 
-        if (discriminant > 0) {
-            auto root = sqrt(discriminant);
-
-            auto temp = (-half_b - root) / a;
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                auto outward_normal = (rec.p - center(r.time())) / radius;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                rec.set_face_normal(r, outward_normal);
-                rec.mat_ptr = mat_ptr;
-                return true;
-            }
-
-            temp = (-half_b + root) / a;
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                auto outward_normal = (rec.p - center(r.time())) / radius;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                rec.set_face_normal(r, outward_normal);
-                rec.mat_ptr = mat_ptr;
-                return true;
-            }
+        // Find the nearest root that lies in the acceptable range.
+        auto root = (-half_b - sqrtd) / a;
+        if (root < t_min || t_max < root) {
+            root = (-half_b + sqrtd) / a;
+            if (root < t_min || t_max < root)
+                return false;
         }
-        return false;
+
+        rec.t = root;
+        rec.p = r.at(rec.t);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto outward_normal = (rec.p - center(r.time())) / radius;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        rec.set_face_normal(r, outward_normal);
+        rec.mat_ptr = mat_ptr;
+
+        return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [moving-sphere-hit]: <kbd>[moving_sphere.h]</kbd> Moving sphere hit function]
@@ -1202,38 +1191,20 @@ things on the unit sphere centered at the origin:
 Update the `sphere::hit()` function to use this function to update the hit record UV coordinates.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
     bool sphere::hit(...) {
         ...
-        if (discriminant > 0) {
-            ...
-            temp = (-half_b - root) / a;
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-                vec3 outward_normal = (rec.p - center) / radius;
-                rec.set_face_normal(r, outward_normal);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                rec.mat_ptr = mat_ptr;
-                return true;
-            }
 
-            temp = (-half_b + root) / a;
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-                vec3 outward_normal = (rec.p - center) / radius;
-                rec.set_face_normal(r, outward_normal);
+        rec.t = root;
+        rec.p = r.at(rec.t);
+        vec3 outward_normal = (rec.p - center) / radius;
+        rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
+        get_sphere_uv(outward_normal, rec.u, rec.v);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                rec.mat_ptr = mat_ptr;
-                return true;
-            }
-            ...
+        rec.mat_ptr = mat_ptr;
 
+        return true;
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [get-sphere-uv-call]: <kbd>[sphere.h]</kbd> Sphere UV coordinates from hit]
 </div>
