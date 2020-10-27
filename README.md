@@ -21,8 +21,10 @@ versions, use the print function in your browser.
 
 Project Status
 ---------------
-We released a new set of small patches with [v3.2.1][] (2020-10-02). We're currently working on
-v3.2.2 and v3.3.0.
+Hot on the heels of [v3.2.1][] we've released [v3.2.2][] a mere three weeks later. After this, we're
+going to hunker down for a while, working on our next major release, v4.0.0. We'll be tackling some
+refactorings to simplify the code further, tackle some larger outstanding issues, and focus on more
+development of book 3.
 
 If you have a change you'd like to contribute, [please see our contribution
 guidelines][CONTRIBUTING].
