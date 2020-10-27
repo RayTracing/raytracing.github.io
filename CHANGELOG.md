@@ -13,9 +13,10 @@ Change Log -- Ray Tracing in One Weekend
   - Change: Improved the explanation and calculation of sphere UV coordinates (#533)
 
 ### In One Weekend
-  - Change: Wrote brief explanation waving away negative t values in initial normal sphere
   - Fix: Catch cases where `lambertian::scatter()` yields degenerate scatter rays (#619)
   - Fix: Syntax error in listing 58 (Dielectric material class with reflection) (#768)
+  - Fix: Correct wording for ray traversal text (#766)
+  - Change: Wrote brief explanation waving away negative t values in initial normal sphere
 
 ### The Next Week
   - Fix: Catch cases where `lambertian::scatter()` yields degenerate scatter rays (#619)
