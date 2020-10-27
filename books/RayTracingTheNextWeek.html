@@ -1137,52 +1137,81 @@ We will also need to compute $(u,v)$ texture coordinates for hittables.
 Texture Coordinates for Spheres
 --------------------------------
 <div class='together'>
-For spheres, this is usually based on some form of longitude and latitude, _i.e._, spherical
-coordinates. So if we have a $(\theta,\phi)$ in spherical coordinates, we just need to scale
-$\theta$ and $\phi$ to fractions. If $\theta$ is the angle down from the pole, and $\phi$ is the
-angle around the axis through the poles, the normalization to $[0,1]$ would be:
+For spheres, texture coordinates are usually based on some form of longitude and latitude, _i.e._,
+spherical coordinates. So we compute $(\theta,\phi)$ in spherical coordinates, where $\theta$ is the
+angle up from the bottom pole (that is, up from -Y), and $\phi$ is the angle around the Y-axis (from
+-X to +Z to +X to -Z back to -X).
+
+We want to map $\theta$ and $\phi$ to texture coordinates $u$ and $v$ each in $[0,1]$, where
+$(u=0,v=0)$ maps to the bottom-left corner of the texture. Thus the normalization from
+$(\theta,\phi)$ to $(u,v)$ would be:
 
   $$ u = \frac{\phi}{2\pi} $$
   $$ v = \frac{\theta}{\pi} $$
 </div>
 
 <div class='together'>
-To compute $\theta$ and $\phi$, for a given hitpoint, the formula for spherical coordinates of a
-unit radius sphere on the origin is:
+To compute $\theta$ and $\phi$ for a given point on the unit sphere centered at the origin, we start
+with the equations for the corresponding Cartesian coordinates:
 
-  $$ x = \cos(\phi) \cos(\theta) $$
-  $$ y = \sin(\phi) \cos(\theta) $$
-  $$ z = \sin(\theta) $$
+  $$ \begin{align*}
+      y &= -\cos(\theta)            \\
+      x &= -\cos(\phi) \sin(\theta) \\
+      z &= \quad\sin(\phi) \sin(\theta)
+     \end{align*}
+  $$
 </div>
 
 <div class='together'>
-We need to invert that. Because of the lovely `<cmath>` function `atan2()` which takes any number
-proportional to sine and cosine and returns the angle, we can pass in $x$ and $y$ (the
-$\cos(\theta)$ cancel):
+We need to invert these equations to solve for $\theta$ and $\phi$. Because of the lovely `<cmath>`
+function `atan2()`, which takes any pair of numbers proportional to sine and cosine and returns the
+angle, we can pass in $x$ and $z$ (the $\sin(\theta)$ cancel) to solve for $\phi$:
 
-  $$ \phi = \text{atan2}(y, x) $$
+  $$ \phi = \text{atan2}(z, -x) $$
 </div>
 
 <div class='together'>
-The $atan2$ returns values in the range $-\pi$ to $\pi$, so we need to take a little care there.
-The $\theta$ is more straightforward:
+`atan2()` returns values in the range $-\pi$ to $\pi$, but they go from 0 to $\pi$, then flip to
+$-\pi$ and proceed back to zero. While this is mathematically correct, we want $u$ to range from $0$
+to $1$, not from $0$ to $1/2$ and then from $-1/2$ to $0$. Fortunately,
 
-  $$ \theta = \text{asin}(z) $$
+  $$ \text{atan2}(a,b) = \text{atan2}(-a,-b) + \pi, $$
 
-which returns numbers in the range $-\pi/2$ to $\pi/2$.
+and the second formulation yields values from $0$ continuously to $2\pi$. Thus, we can compute
+$\phi$ as
+
+  $$ \phi = \text{atan2}(-z, x) + \pi $$
+</div>
+
+<div>
+The derivation for $\theta$ is more straightforward:
+
+  $$ \theta = \text{acos}(-y) $$
 </div>
 
 <div class='together'>
-So for a sphere, the $(u,v)$ coord computation is accomplished by a utility function that expects
-things on the unit sphere centered at the origin:
+So for a sphere, the $(u,v)$ coord computation is accomplished by a utility function that takes
+points on the unit sphere centered at the origin, and computes $u$ and $v$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void get_sphere_uv(const vec3& p, double& u, double& v) {
-        auto phi = atan2(p.z(), p.x());
-        auto theta = asin(p.y());
-        u = 1-(phi + pi) / (2*pi);
-        v = (theta + pi/2) / pi;
-    }
+    class sphere : public hittable {
+        ...
+        private:
+            static void get_sphere_uv(const point3& p, double& u, double& v) {
+                // p: a given point on the sphere of radius one, centered at the origin.
+                // u: returned value [0,1] of angle around the Y axis from X=-1.
+                // v: returned value [0,1] of angle from Y=-1 to Y=+1.
+                //     <1 0 0> yields <0.50 0.50>       <-1  0  0> yields <0.00 0.50>
+                //     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
+                //     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
+
+                auto theta = acos(-p.y());
+                auto phi = atan2(-p.z(), p.x()) + pi;
+
+                u = phi / (2*pi);
+                v = theta / pi;
+            }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [get-sphere-uv]: <kbd>[sphere.h]</kbd> get_sphere_uv function]
 </div>
