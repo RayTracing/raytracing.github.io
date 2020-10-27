@@ -22,9 +22,9 @@ versions, use the print function in your browser.
 Project Status
 ---------------
 Hot on the heels of [v3.2.1][] we've released [v3.2.2][] a mere three weeks later. After this, we're
-going to hunker down for a while, working on our next major release, v4.0.0. We'll be tackling some
-refactorings to simplify the code further, tackle some larger outstanding issues, and focus on more
-development of book 3.
+going to hunker down for a while, working on our next major release: v4.0.0. We'll be tackling some
+larger refactorings to further simplify the code, tackle some large outstanding issues, and focus on
+more development of book 3: _Ray Tracing: The Rest of Your Life_.
 
 If you have a change you'd like to contribute, [please see our contribution
 guidelines][CONTRIBUTING].
@@ -158,6 +158,7 @@ review the [CONTRIBUTING][] document for the most effective way to proceed.
 [ImageMagick]:     https://imagemagick.org/
 [implementations]: https://github.com/RayTracing/raytracing.github.io/wiki/Implementations-in-Other-Languages
 [v3.2.1]:          https://github.com/RayTracing/raytracing.github.io/releases/tag/v3.2.1
+[v3.2.2]:          https://github.com/RayTracing/raytracing.github.io/releases/tag/v3.2.2
 [web1]:            https://raytracing.github.io/books/RayTracingInOneWeekend.html
 [web2]:            https://raytracing.github.io/books/RayTracingTheNextWeek.html
 [web3]:            https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html
