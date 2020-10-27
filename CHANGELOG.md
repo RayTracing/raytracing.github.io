@@ -1,7 +1,7 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
-# v3.2.2 (in progress)
+# v3.2.2 (2020-10-31)
 
 ### Common
   - Fix: Added `fmin` to book text for `cos_theta` of `refract` (#732)

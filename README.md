@@ -21,10 +21,10 @@ versions, use the print function in your browser.
 
 Project Status
 ---------------
-Hot on the heels of [v3.2.1][] we've released [v3.2.2][] a mere three weeks later. After this, we're
-going to hunker down for a while, working on our next major release: v4.0.0. We'll be tackling some
-larger refactorings to further simplify the code, tackle some large outstanding issues, and focus on
-more development of book 3: _Ray Tracing: The Rest of Your Life_.
+Hot on the heels of [v3.2.1][], we have a special Halloween release, [v3.2.2][], less than four
+weeks later. After this, we're going to hunker down for a while, working on our next major release:
+v4.0.0. We'll be tackling some larger refactorings to further simplify the code, tackle some large
+outstanding issues, and focus on more development of book 3: _Ray Tracing: The Rest of Your Life_.
 
 If you have a change you'd like to contribute, [please see our contribution
 guidelines][CONTRIBUTING].
