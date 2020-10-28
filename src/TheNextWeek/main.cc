@@ -68,7 +68,7 @@ hittable_list random_scene() {
                     sphere_material = make_shared<lambertian>(albedo);
                     auto center2 = center + vec3(0, random_double(0,.5), 0);
                     world.add(make_shared<moving_sphere>(
-                        center, center2, 0.0, 1.0, 0.2, sphere_material));
+                        center, center2, 0.2, sphere_material, 0.0, 1.0));
                 } else if (choose_mat < 0.95) {
                     // metal
                     auto albedo = color::random(0.5, 1);
@@ -150,7 +150,7 @@ hittable_list cornell_box() {
     auto red   = make_shared<lambertian>(color(.65, .05, .05));
     auto white = make_shared<lambertian>(color(.73, .73, .73));
     auto green = make_shared<lambertian>(color(.12, .45, .15));
-    auto light = make_shared<diffuse_light>(color(15,15,15));
+    auto light = make_shared<diffuse_light>(color(15, 15, 15));
 
     objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
     objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
@@ -232,7 +232,7 @@ hittable_list final_scene() {
     auto center1 = point3(400, 400, 200);
     auto center2 = center1 + vec3(30,0,0);
     auto moving_sphere_material = make_shared<lambertian>(color(0.7, 0.3, 0.1));
-    objects.add(make_shared<moving_sphere>(center1, center2, 0, 1, 50, moving_sphere_material));
+    objects.add(make_shared<moving_sphere>(center1, center2, 50, moving_sphere_material, 0, 1));
 
     objects.add(make_shared<sphere>(point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
     objects.add(make_shared<sphere>(
@@ -281,11 +281,17 @@ int main() {
 
     hittable_list world;
 
+    // Camera
+
     point3 lookfrom;
     point3 lookat;
+    vec3 vup(0,1,0);
     auto vfov = 40.0;
     auto aperture = 0.0;
+    auto dist_to_focus = 10.0;
     color background(0,0,0);
+
+    // Scene
 
     switch (0) {
         case 1:
@@ -361,13 +367,13 @@ int main() {
             break;
     }
 
-    // Camera
-
-    const vec3 vup(0,1,0);
-    const auto dist_to_focus = 10.0;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
+    const auto time_start = 0.0;
+    const auto time_end = 1.0;
 
-    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+    camera cam(
+        lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus,
+        time_start, time_end);
 
     // Render
 

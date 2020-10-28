@@ -12,8 +12,6 @@
 //==============================================================================================
 
 #include "rtweekend.h"
-#include "ray.h"
-
 
 class material;
 
@@ -34,7 +32,8 @@ struct hit_record {
 
 class hittable {
     public:
-        virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+        virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+            const = 0;
 };
 
 

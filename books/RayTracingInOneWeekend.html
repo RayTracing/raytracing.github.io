@@ -7,7 +7,7 @@
                                          [Peter Shirley][]
                       edited by [Steve Hollasch][] and [Trevor David Black][]
                                                 <br>
-                                     Version 3.2.1, 2020-10-03
+                                     Version 3.2.2, 2020-10-31
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -490,7 +490,7 @@ which we'll present later.
 
 I’ll put the “eye” (or camera center if you think of a camera) at $(0,0,0)$. I will have the y-axis
 go up, and the x-axis to the right. In order to respect the convention of a right handed coordinate
-system, into the screen is the negative z-axis. I will traverse the screen from the lower left hand
+system, into the screen is the negative z-axis. I will traverse the screen from the upper left hand
 corner, and use two offset vectors along the screen sides to move the ray endpoint across the
 screen. Note that I do not make the ray direction a unit length vector because I think not doing
 that makes for simpler and slightly faster code.
@@ -725,9 +725,10 @@ throw that into the code now, and shade it. We don’t have any lights or anythi
 visualize the normals with a color map. A common trick used for visualizing normals (because it’s
 easy and somewhat intuitive to assume $\mathbf{n}$ is a unit length vector -- so each
 component is between -1 and 1) is to map each component to the interval from 0 to 1, and then map
-x/y/z to r/g/b. For the normal, we need the hit point, not just whether we hit or not. Let’s assume
-the closest hit point (smallest $t$). These changes in the code let us compute and visualize
-$\mathbf{n}$:
+x/y/z to r/g/b. For the normal, we need the hit point, not just whether we hit or not. We only have
+one sphere in the scene, and it's directly in front of the camera, so we won't worry about negative
+values of $t$ yet. We'll just assume the closest hit point (smallest $t$). These changes in the code
+let us compute and visualize $\mathbf{n}$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     double hit_sphere(const point3& center, double radius, const ray& r) {
@@ -865,7 +866,8 @@ the abstract class:
 
     class hittable {
         public:
-            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const = 0;
     };
 
     #endif
@@ -886,46 +888,40 @@ And here’s the sphere:
     class sphere : public hittable {
         public:
             sphere() {}
-            sphere(point3 cen, double r) : center(cen), radius(r) {};
+            sphere(point3 ctr, double r) : center(ctr), radius(r) {};
 
-            virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
         public:
             point3 center;
             double radius;
     };
 
-    bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    bool sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
         vec3 oc = r.origin() - center;
         auto a = r.direction().length_squared();
         auto half_b = dot(oc, r.direction());
         auto c = oc.length_squared() - radius*radius;
+
         auto discriminant = half_b*half_b - a*c;
+        if (discriminant < 0) return false;
+        auto sqrtd = sqrt(discriminant);
 
-        if (discriminant > 0) {
-            auto root = sqrt(discriminant);
-
-            auto temp = (-half_b - root) / a;
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-                rec.normal = (rec.p - center) / radius;
-                return true;
-            }
-
-            temp = (-half_b + root) / a;
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-                rec.normal = (rec.p - center) / radius;
-                return true;
-            }
+        // Find the nearest root that lies in the acceptable range.
+        auto root = (-half_b - sqrtd) / a;
+        if (root < ray_tmin || ray_tmax < root) {
+            root = (-half_b + sqrtd) / a;
+            if (root < ray_tmin || ray_tmax < root)
+                return false;
         }
 
-        return false;
-    }
+        rec.t = root;
+        rec.p = r.at(rec.t);
+        rec.normal = (rec.p - center) / radius;
 
+        return true;
+    }
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1024,37 +1020,17 @@ calculation for us.
 And then we add the surface side determination to the class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
-        vec3 oc = r.origin() - center;
-        auto a = r.direction().length_squared();
-        auto half_b = dot(oc, r.direction());
-        auto c = oc.length_squared() - radius*radius;
-        auto discriminant = half_b*half_b - a*c;
+    bool sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+        ...
 
-        if (discriminant > 0) {
-            auto root = sqrt(discriminant);
-            auto temp = (-half_b - root) / a;
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
+        rec.t = root;
+        rec.p = r.at(rec.t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                vec3 outward_normal = (rec.p - center) / radius;
-                rec.set_face_normal(r, outward_normal);
+        vec3 outward_normal = (rec.p - center) / radius;
+        rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                return true;
-            }
-            temp = (-half_b + root) / a;
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                vec3 outward_normal = (rec.p - center) / radius;
-                rec.set_face_normal(r, outward_normal);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                return true;
-            }
-        }
-        return false;
+
+        return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-final]: <kbd>[sphere.h]</kbd> The sphere class with normal determination]
@@ -1088,20 +1064,20 @@ that stores a list of `hittable`s:
             void clear() { objects.clear(); }
             void add(shared_ptr<hittable> object) { objects.push_back(object); }
 
-            virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
         public:
             std::vector<shared_ptr<hittable>> objects;
     };
 
-    bool hittable_list::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    bool hittable_list::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
         hit_record temp_rec;
         bool hit_anything = false;
-        auto closest_so_far = t_max;
+        auto closest_so_far = ray_tmax;
 
         for (const auto& object : objects) {
-            if (object->hit(r, t_min, closest_so_far, temp_rec)) {
+            if (object->hit(r, ray_tmin, closest_so_far, temp_rec)) {
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
                 rec = temp_rec;
@@ -1764,16 +1740,18 @@ at shallow angles spreads over a larger area, and thus has a lower contribution 
 
 However, we are interested in a Lambertian distribution, which has a distribution of $\cos (\phi)$.
 True Lambertian has the probability higher for ray scattering close to the normal, but the
-distribution is more uniform. This is achieved by picking points on the surface of the unit sphere,
-offset along the surface normal. Picking points on the sphere can be achieved by picking points in
-the unit ball, and then normalizing those.
+distribution is more uniform. This is achieved by picking random points on the surface of the unit
+sphere, offset along the surface normal. Picking random points on the unit sphere can be achieved by
+picking random points _in_ the unit sphere, and then normalizing those.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline vec3 random_in_unit_sphere() {
+        ...
+    }
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     vec3 random_unit_vector() {
-        auto a = random_double(0, 2*pi);
-        auto z = random_double(-1, 1);
-        auto r = sqrt(1 - z*z);
-        return vec3(r*cos(a), r*sin(a), z);
+        return unit_vector(random_in_unit_sphere());
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-unit-vector]: <kbd>[vec3.h]</kbd> The random_unit_vector() function]
@@ -1956,7 +1934,6 @@ that the pointer is to a class, which the “class material” in the hittable c
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "rtweekend.h"
-    #include "ray.h"
 
     class material;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1995,12 +1972,12 @@ within `hit_record`. See the highlighted lines below:
         public:
             sphere() {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            sphere(point3 cen, double r, shared_ptr<material> m)
-                : center(cen), radius(r), mat_ptr(m) {};
+            sphere(point3 ctr, double r, shared_ptr<material> m)
+                : center(ctr), radius(r), mat_ptr(m) {};
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
         public:
             point3 center;
@@ -2010,39 +1987,18 @@ within `hit_record`. See the highlighted lines below:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
 
-    bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
-        vec3 oc = r.origin() - center;
-        auto a = r.direction().length_squared();
-        auto half_b = dot(oc, r.direction());
-        auto c = oc.length_squared() - radius*radius;
-        auto discriminant = half_b*half_b - a*c;
+    bool sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+        ...
 
-        if (discriminant > 0) {
-            auto root = sqrt(discriminant);
-            auto temp = (-half_b - root) / a;
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-                vec3 outward_normal = (rec.p - center) / radius;
-                rec.set_face_normal(r, outward_normal);
+        rec.t = root;
+        rec.p = r.at(rec.t);
+        vec3 outward_normal = (rec.p - center) / radius;
+        rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                rec.mat_ptr = mat_ptr;
+        rec.mat_ptr = mat_ptr;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                return true;
-            }
-            temp = (-half_b + root) / a;
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-                vec3 outward_normal = (rec.p - center) / radius;
-                rec.set_face_normal(r, outward_normal);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                rec.mat_ptr = mat_ptr;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                return true;
-            }
-        }
-        return false;
+
+        return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-material]: <kbd>[sphere.h]</kbd> Ray-sphere intersection with added material information]
@@ -2064,7 +2020,7 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const override {
-                vec3 scatter_direction = rec.normal + random_unit_vector();
+                auto scatter_direction = rec.normal + random_unit_vector();
                 scattered = ray(rec.p, scatter_direction);
                 attenuation = albedo;
                 return true;
@@ -2079,6 +2035,57 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
 
 Note we could just as well only scatter with some probability $p$ and have attenuation be
 $albedo/p$. Your choice.
+
+If you read the code above carefully, you'll notice a small chance of mischief. If the random unit
+vector we generate is exactly opposite the normal vector, the two will sum to zero, which will
+result in a zero scatter direction vector. This leads to bad scenarios later on (infinities and
+NaNs), so we need to intercept the condition before we pass it on.
+
+<div class='together'>
+In service of this, we'll create a new vector method -- `vec3::near_zero()` -- that returns true if
+the vector is very close to zero in all dimensions.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class vec3 {
+        ...
+        bool near_zero() const {
+            // Return true if the vector is close to zero in all dimensions.
+            const auto s = 1e-8;
+            return (fabs(e[0]) < s) && (fabs(e[1]) < s) && (fabs(e[2]) < s);
+        }
+        ...
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [vec3-near-zero]: <kbd>[vec3.h]</kbd> The vec3::near_zero() method]
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class lambertian : public material {
+        public:
+            lambertian(const color& a) : albedo(a) {}
+
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+            ) const override {
+                auto scatter_direction = rec.normal + random_unit_vector();
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                // Catch degenerate scatter direction
+                if (scatter_direction.near_zero())
+                    scatter_direction = rec.normal;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+                scattered = ray(rec.p, scatter_direction);
+                attenuation = albedo;
+                return true;
+            }
+
+        public:
+            color albedo;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [lambertian-catch-zero]: <kbd>[material.h]</kbd> Lambertian scatter, bullet-proof]
+</div>
 
 
 Mirrored Light Reflection
@@ -2380,7 +2387,7 @@ When we combine them back together, we can write a function to calculate $\mathb
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat) {
-        auto cos_theta = dot(-uv, n);
+        auto cos_theta = fmin(dot(-uv, n), 1.0);
         vec3 r_out_perp =  etai_over_etat * (uv + cos_theta*n);
         vec3 r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
         return r_out_perp + r_out_parallel;
@@ -2523,7 +2530,7 @@ And the dielectric material that always refracts (when possible) is:
                 bool cannot_refract = refraction_ratio * sin_theta > 1.0;
                 vec3 direction;
 
-                if (cannot_refract) {
+                if (cannot_refract)
                     direction = reflect(unit_direction, rec.normal);
                 else
                     direction = refract(unit_direction, rec.normal, refraction_ratio);
@@ -3170,8 +3177,8 @@ Basic Data
   - **Title (book)**: “Ray Tracing in One Weekend”
   - **Author**: Peter Shirley
   - **Editors**: Steve Hollasch, Trevor David Black
-  - **Version/Edition**: v3.2.1
-  - **Date**: 2020-10-03
+  - **Version/Edition**: v3.2.2
+  - **Date**: 2020-10-31
   - **URL (series)**: https://raytracing.github.io/
   - **URL (book)**: https://raytracing.github.io/books/RayTracingInOneWeekend.html
 
@@ -3197,8 +3204,8 @@ Snippets
     @misc{Shirley2020RTW1,
        title = {Ray Tracing in One Weekend},
        author = {Peter Shirley},
-       year = {2020},
-       month = {October},
+       year = {XXXX},
+       month = {XXXXXXXXX},
        note = {\small \texttt{https://raytracing.github.io/books/RayTracingInOneWeekend.html}},
        url = {https://raytracing.github.io/books/RayTracingInOneWeekend.html}
     }
@@ -3214,7 +3221,7 @@ Snippets
        title = {Ray Tracing in One Weekend},
        author = {Peter Shirley},
        year = {2020},
-       month = {October},
+       month = {October}
        url = {https://raytracing.github.io/books/RayTracingInOneWeekend.html}
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

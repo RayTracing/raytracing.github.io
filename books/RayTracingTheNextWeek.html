@@ -7,7 +7,7 @@
                                          [Peter Shirley][]
                       edited by [Steve Hollasch][] and [Trevor David Black][]
                                                 <br>
-                                     Version 3.2.1, 2020-10-03
+                                     Version 3.2.2, 2020-10-31
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -98,11 +98,12 @@ For this we will first need to have a ray store the time it exists at:
 
 Updating the Camera to Simulate Motion Blur
 --------------------------------------------
-Now we need to modify the camera to generate rays at a random time between `time1` and `time2`.
-Should the camera keep track of `time1` and `time2` or should that be up to the user of camera when
-a ray is created? When in doubt, I like to make constructors complicated if it makes calls simple,
-so I will make the camera keep track, but that’s a personal preference. Not many changes are needed
-to camera because for now it is not allowed to move; it just sends out rays over a time period.
+Now we need to modify the camera to generate rays at a random time between the start time and the
+end time. Should the camera keep track of the time interval, or should that be up to the user of
+camera when a ray is created? When in doubt, I like to make constructors complicated if it makes
+calls simple, so I will make the camera keep track, but that’s a personal preference. Not many
+changes are needed to camera because for now it is not allowed to move; it just sends out rays over
+a time period.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
@@ -116,8 +117,8 @@ to camera because for now it is not allowed to move; it just sends out rays over
                 double aperture,
                 double focus_dist,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                double t0 = 0,
-                double t1 = 0
+                double time_start = 0,
+                double time_end = 0
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ) {
                 auto theta = degrees_to_radians(vfov);
@@ -136,8 +137,8 @@ to camera because for now it is not allowed to move; it just sends out rays over
 
                 lens_radius = aperture / 2;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                time0 = t0;
-                time1 = t1;
+                time0 = time_start;
+                time1 = time_end;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
@@ -173,8 +174,8 @@ to camera because for now it is not allowed to move; it just sends out rays over
 Adding Moving Spheres
 ----------------------
 We also need a moving object. I’ll create a sphere class that has its center move linearly from
-`center0` at `time0` to `center1` at `time1`. Outside that time interval it continues on, so those
-times need not match up with the camera aperture open and close.
+`center0` at `time_start` to `center1` at `time_end`. Outside that time interval it continues on, so
+those times need not match up with the camera aperture open and close.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef MOVING_SPHERE_H
@@ -189,12 +190,15 @@ times need not match up with the camera aperture open and close.
         public:
             moving_sphere() {}
             moving_sphere(
-                point3 cen0, point3 cen1, double t0, double t1, double r, shared_ptr<material> m)
-                : center0(cen0), center1(cen1), time0(t0), time1(t1), radius(r), mat_ptr(m)
+                point3 ctr0, point3 ctr1, double r, shared_ptr<material> m,
+                double time_start, double time_end)
+                :
+                center0(ctr0), center1(ctr1), radius(r), mat_ptr(m),
+                time0(time_start), time1(time_end)
             {};
 
-            virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
             point3 center(double time) const;
 
@@ -222,8 +226,7 @@ The `moving_sphere::hit()` function is almost identical to the `sphere::hit()` f
 just needs to become a function `center(time)`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool moving_sphere::hit(
-        const ray& r, double t_min, double t_max, hit_record& rec) const {
+    bool moving_sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         vec3 oc = r.origin() - center(r.time());
@@ -233,35 +236,26 @@ just needs to become a function `center(time)`:
         auto c = oc.length_squared() - radius*radius;
 
         auto discriminant = half_b*half_b - a*c;
+        if (discriminant < 0) return false;
+        auto sqrtd = sqrt(discriminant);
 
-        if (discriminant > 0) {
-            auto root = sqrt(discriminant);
-
-            auto temp = (-half_b - root) / a;
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                auto outward_normal = (rec.p - center(r.time())) / radius;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                rec.set_face_normal(r, outward_normal);
-                rec.mat_ptr = mat_ptr;
-                return true;
-            }
-
-            temp = (-half_b + root) / a;
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                auto outward_normal = (rec.p - center(r.time())) / radius;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                rec.set_face_normal(r, outward_normal);
-                rec.mat_ptr = mat_ptr;
-                return true;
-            }
+        // Find the nearest root that lies in the acceptable range.
+        auto root = (-half_b - sqrtd) / a;
+        if (root < ray_tmin || ray_tmax < root) {
+            root = (-half_b + sqrtd) / a;
+            if (root < ray_tmin || ray_tmax < root)
+                return false;
         }
-        return false;
+
+        rec.t = root;
+        rec.p = r.at(rec.t);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto outward_normal = (rec.p - center(r.time())) / radius;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        rec.set_face_normal(r, outward_normal);
+        rec.mat_ptr = mat_ptr;
+
+        return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [moving-sphere-hit]: <kbd>[moving_sphere.h]</kbd> Moving sphere hit function]
@@ -280,7 +274,13 @@ for the time of intersection:
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const override {
-                vec3 scatter_direction = rec.normal + random_unit_vector();
+                auto scatter_direction = rec.normal + random_unit_vector();
+
+                // Catch degenerate scatter direction
+                if (scatter_direction.near_zero())
+                    scatter_direction = rec.normal;
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 scattered = ray(rec.p, scatter_direction, r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -359,7 +359,7 @@ closing at time 1.) Each sphere moves from its center $\mathbf{C}$ at time $t=0$
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                         auto center2 = center + vec3(0, random_double(0,.5), 0);
                         world.add(make_shared<moving_sphere>(
-                            center, center2, 0.0, 1.0, 0.2, sphere_material));
+                            center, center2, 0.2, sphere_material, 0.0, 1.0));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                     } else if (choose_mat < 0.95) {
                         // metal
@@ -415,13 +415,18 @@ And with these viewing parameters:
         point3 lookfrom(13,2,3);
         point3 lookat(0,0,0);
         vec3 vup(0,1,0);
-        auto dist_to_focus = 10.0;
         auto aperture = 0.1;
+        auto dist_to_focus = 10.0;
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        int image_height = static_cast<int>(image_width / aspect_ratio);
+        const int image_height = static_cast<int>(image_width / aspect_ratio);
+        const auto time_start = 0.0;
+        const auto time_end = 1.0;
 
-
-        camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+        camera cam(
+            lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus,
+            time_start, time_end);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-spheres-moving-camera]: <kbd>[main.cc]</kbd> Viewing parameters]
 
@@ -652,27 +657,27 @@ passing in the interval $[t_{min}$, $t_{max}]$, we get:
     class aabb {
         public:
             aabb() {}
-            aabb(const point3& a, const point3& b) { _min = a; _max = b;}
+            aabb(const point3& a, const point3& b) { minimum = a; maximum = b;}
 
-            point3 min() const {return _min; }
-            point3 max() const {return _max; }
+            point3 min() const {return minimum; }
+            point3 max() const {return maximum; }
 
-            bool hit(const ray& r, double tmin, double tmax) const {
+            bool hit(const ray& r, double ray_tmin, double ray_tmax) const {
                 for (int a = 0; a < 3; a++) {
-                    auto t0 = fmin((_min[a] - r.origin()[a]) / r.direction()[a],
-                                   (_max[a] - r.origin()[a]) / r.direction()[a]);
-                    auto t1 = fmax((_min[a] - r.origin()[a]) / r.direction()[a],
-                                   (_max[a] - r.origin()[a]) / r.direction()[a]);
-                    tmin = fmax(t0, tmin);
-                    tmax = fmin(t1, tmax);
-                    if (tmax <= tmin)
+                    auto t0 = fmin((minimum[a] - r.origin()[a]) / r.direction()[a],
+                                   (maximum[a] - r.origin()[a]) / r.direction()[a]);
+                    auto t1 = fmax((minimum[a] - r.origin()[a]) / r.direction()[a],
+                                   (maximum[a] - r.origin()[a]) / r.direction()[a]);
+                    ray_tmin = fmax(t0, ray_tmin);
+                    ray_tmax = fmin(t1, ray_tmax);
+                    if (ray_tmax <= ray_tmin)
                         return false;
                 }
                 return true;
             }
 
-            point3 _min;
-            point3 _max;
+            point3 minimum;
+            point3 maximum;
     };
 
     #endif
@@ -689,16 +694,16 @@ the following version of the code. It works extremely well on many compilers, an
 as my go-to method:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline bool aabb::hit(const ray& r, double tmin, double tmax) const {
+    inline bool aabb::hit(const ray& r, double ray_tmin, double ray_tmax) const {
         for (int a = 0; a < 3; a++) {
             auto invD = 1.0f / r.direction()[a];
             auto t0 = (min()[a] - r.origin()[a]) * invD;
             auto t1 = (max()[a] - r.origin()[a]) * invD;
             if (invD < 0.0f)
                 std::swap(t0, t1);
-            tmin = t0 > tmin ? t0 : tmin;
-            tmax = t1 < tmax ? t1 : tmax;
-            if (tmax <= tmin)
+            ray_tmin = t0 > ray_tmin ? t0 : ray_tmin;
+            ray_tmax = t1 < ray_tmax ? t1 : ray_tmax;
+            if (ray_tmax <= ray_tmin)
                 return false;
         }
         return true;
@@ -715,7 +720,7 @@ We now need to add a function to compute the bounding boxes of all the hittables
 a hierarchy of boxes over all the primitives, and the individual primitives--like spheres--will live
 at the leaves. That function returns a bool because not all primitives have bounding boxes (_e.g._,
 infinite planes). In addition, moving objects will have a bounding box that encloses the object for
-the entire time interval [`time1`,`time2`].
+the entire time interval [`time0`,`time1`].
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "aabb.h"
@@ -725,9 +730,13 @@ the entire time interval [`time1`,`time2`].
     class hittable {
         public:
             ...
-            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const = 0;
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const = 0;
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const = 0;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ...
     };
@@ -742,19 +751,20 @@ For a sphere, that `bounding_box` function is easy:
     class sphere : public hittable {
         public:
             ...
-            virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ...
     };
 
     ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    bool sphere::bounding_box(double t0, double t1, aabb& output_box) const {
+    bool sphere::bounding_box(double time_start, double time_end, aabb& output_box) const {
         output_box = aabb(
             center - vec3(radius, radius, radius),
             center + vec3(radius, radius, radius));
@@ -778,12 +788,13 @@ and compute the box of those two boxes:
     class moving_sphere : public hittable {
         public:
             ...
-            virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ...
     };
@@ -791,13 +802,13 @@ and compute the box of those two boxes:
     ...
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    bool moving_sphere::bounding_box(double t0, double t1, aabb& output_box) const {
+    bool moving_sphere::bounding_box(double time_start, double time_end, aabb& output_box) const {
         aabb box0(
-            center(t0) - vec3(radius, radius, radius),
-            center(t0) + vec3(radius, radius, radius));
+            center(time_start) - vec3(radius, radius, radius),
+            center(time_start) + vec3(radius, radius, radius));
         aabb box1(
-            center(t1) - vec3(radius, radius, radius),
-            center(t1) + vec3(radius, radius, radius));
+            center(time_end) - vec3(radius, radius, radius),
+            center(time_end) + vec3(radius, radius, radius));
         output_box = surrounding_box(box0, box1);
         return true;
     }
@@ -822,12 +833,13 @@ the fly because it is only usually called at BVH construction.
     class hittable_list : public hittable {
         public:
             ...
-            virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     };
@@ -835,14 +847,14 @@ the fly because it is only usually called at BVH construction.
     ...
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    bool hittable_list::bounding_box(double t0, double t1, aabb& output_box) const {
+    bool hittable_list::bounding_box(double time_start, double time_end, aabb& output_box) const {
         if (objects.empty()) return false;
 
         aabb temp_box;
         bool first_box = true;
 
         for (const auto& object : objects) {
-            if (!object->bounding_box(t0, t1, temp_box)) return false;
+            if (!object->bounding_box(time_start, time_end, temp_box)) return false;
             output_box = first_box ? temp_box : surrounding_box(output_box, temp_box);
             first_box = false;
         }
@@ -897,18 +909,19 @@ a class:
         public:
             bvh_node();
 
-            bvh_node(const hittable_list& list, double time0, double time1)
-                : bvh_node(list.objects, 0, list.objects.size(), time0, time1)
+            bvh_node(const hittable_list& list, double time_start, double time_end)
+                : bvh_node(list.objects, 0, list.objects.size(), time_start, time_end)
             {}
 
             bvh_node(
                 const std::vector<shared_ptr<hittable>>& src_objects,
-                size_t start, size_t end, double time0, double time1);
+                size_t start, size_t end, double time_start, double time_end);
 
             virtual bool hit(
-                const ray& r, double tmin, double tmax, hit_record& rec) const override;
+                const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override;
 
         public:
             shared_ptr<hittable> left;
@@ -916,7 +929,7 @@ a class:
             aabb box;
     };
 
-    bool bvh_node::bounding_box(double t0, double t1, aabb& output_box) const {
+    bool bvh_node::bounding_box(double time_start, double time_end, aabb& output_box) const {
         output_box = box;
         return true;
     }
@@ -934,12 +947,12 @@ The `hit` function is pretty straightforward: check whether the box for the node
 check the children and sort out any details:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
-        if (!box.hit(r, t_min, t_max))
+    bool bvh_node::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+        if (!box.hit(r, ray_tmin, ray_tmax))
             return false;
 
-        bool hit_left = left->hit(r, t_min, t_max, rec);
-        bool hit_right = right->hit(r, t_min, hit_left ? rec.t : t_max, rec);
+        bool hit_left = left->hit(r, ray_tmin, ray_tmax, rec);
+        bool hit_right = right->hit(r, ray_tmin, hit_left ? rec.t : ray_tmax, rec);
 
         return hit_left || hit_right;
     }
@@ -977,7 +990,7 @@ This yields:
 
     bvh_node::bvh_node(
         std::vector<shared_ptr<hittable>>& objects,
-        size_t start, size_t end, double time0, double time1
+        size_t start, size_t end, double time_start, double time_end
     ) {
         auto objects = src_objects; // Create a modifiable array of the source scene objects
 
@@ -1002,14 +1015,14 @@ This yields:
             std::sort(objects.begin() + start, objects.begin() + end, comparator);
 
             auto mid = start + object_span/2;
-            left = make_shared<bvh_node>(objects, start, mid, time0, time1);
-            right = make_shared<bvh_node>(objects, mid, end, time0, time1);
+            left = make_shared<bvh_node>(objects, start, mid, time_start, time_end);
+            right = make_shared<bvh_node>(objects, mid, end, time_start, time_end);
         }
 
         aabb box_left, box_right;
 
-        if (  !left->bounding_box (time0, time1, box_left)
-           || !right->bounding_box(time0, time1, box_right)
+        if (  !left->bounding_box (time_start, time_end, box_left)
+           || !right->bounding_box(time_start, time_end, box_right)
         )
             std::cerr << "No bounding box in bvh_node constructor.\n";
 
@@ -1140,52 +1153,81 @@ We will also need to compute $(u,v)$ texture coordinates for hittables.
 Texture Coordinates for Spheres
 --------------------------------
 <div class='together'>
-For spheres, this is usually based on some form of longitude and latitude, _i.e._, spherical
-coordinates. So if we have a $(\theta,\phi)$ in spherical coordinates, we just need to scale
-$\theta$ and $\phi$ to fractions. If $\theta$ is the angle down from the pole, and $\phi$ is the
-angle around the axis through the poles, the normalization to $[0,1]$ would be:
+For spheres, texture coordinates are usually based on some form of longitude and latitude, _i.e._,
+spherical coordinates. So we compute $(\theta,\phi)$ in spherical coordinates, where $\theta$ is the
+angle up from the bottom pole (that is, up from -Y), and $\phi$ is the angle around the Y-axis (from
+-X to +Z to +X to -Z back to -X).
+
+We want to map $\theta$ and $\phi$ to texture coordinates $u$ and $v$ each in $[0,1]$, where
+$(u=0,v=0)$ maps to the bottom-left corner of the texture. Thus the normalization from
+$(\theta,\phi)$ to $(u,v)$ would be:
 
   $$ u = \frac{\phi}{2\pi} $$
   $$ v = \frac{\theta}{\pi} $$
 </div>
 
 <div class='together'>
-To compute $\theta$ and $\phi$, for a given hitpoint, the formula for spherical coordinates of a
-unit radius sphere on the origin is:
+To compute $\theta$ and $\phi$ for a given point on the unit sphere centered at the origin, we start
+with the equations for the corresponding Cartesian coordinates:
 
-  $$ x = \cos(\phi) \cos(\theta) $$
-  $$ y = \sin(\phi) \cos(\theta) $$
-  $$ z = \sin(\theta) $$
+  $$ \begin{align*}
+      y &= -\cos(\theta)            \\
+      x &= -\cos(\phi) \sin(\theta) \\
+      z &= \quad\sin(\phi) \sin(\theta)
+     \end{align*}
+  $$
 </div>
 
 <div class='together'>
-We need to invert that. Because of the lovely `<cmath>` function `atan2()` which takes any number
-proportional to sine and cosine and returns the angle, we can pass in $x$ and $y$ (the
-$\cos(\theta)$ cancel):
+We need to invert these equations to solve for $\theta$ and $\phi$. Because of the lovely `<cmath>`
+function `atan2()`, which takes any pair of numbers proportional to sine and cosine and returns the
+angle, we can pass in $x$ and $z$ (the $\sin(\theta)$ cancel) to solve for $\phi$:
 
-  $$ \phi = \text{atan2}(y, x) $$
+  $$ \phi = \text{atan2}(z, -x) $$
 </div>
 
 <div class='together'>
-The $atan2$ returns values in the range $-\pi$ to $\pi$, so we need to take a little care there.
-The $\theta$ is more straightforward:
+`atan2()` returns values in the range $-\pi$ to $\pi$, but they go from 0 to $\pi$, then flip to
+$-\pi$ and proceed back to zero. While this is mathematically correct, we want $u$ to range from $0$
+to $1$, not from $0$ to $1/2$ and then from $-1/2$ to $0$. Fortunately,
 
-  $$ \theta = \text{asin}(z) $$
+  $$ \text{atan2}(a,b) = \text{atan2}(-a,-b) + \pi, $$
 
-which returns numbers in the range $-\pi/2$ to $\pi/2$.
+and the second formulation yields values from $0$ continuously to $2\pi$. Thus, we can compute
+$\phi$ as
+
+  $$ \phi = \text{atan2}(-z, x) + \pi $$
+</div>
+
+<div>
+The derivation for $\theta$ is more straightforward:
+
+  $$ \theta = \text{acos}(-y) $$
 </div>
 
 <div class='together'>
-So for a sphere, the $(u,v)$ coord computation is accomplished by a utility function that expects
-things on the unit sphere centered at the origin:
+So for a sphere, the $(u,v)$ coord computation is accomplished by a utility function that takes
+points on the unit sphere centered at the origin, and computes $u$ and $v$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void get_sphere_uv(const vec3& p, double& u, double& v) {
-        auto phi = atan2(p.z(), p.x());
-        auto theta = asin(p.y());
-        u = 1-(phi + pi) / (2*pi);
-        v = (theta + pi/2) / pi;
-    }
+    class sphere : public hittable {
+        ...
+        private:
+            static void get_sphere_uv(const point3& p, double& u, double& v) {
+                // p: a given point on the sphere of radius one, centered at the origin.
+                // u: returned value [0,1] of angle around the Y axis from X=-1.
+                // v: returned value [0,1] of angle from Y=-1 to Y=+1.
+                //     <1 0 0> yields <0.50 0.50>       <-1  0  0> yields <0.00 0.50>
+                //     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
+                //     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
+
+                auto theta = acos(-p.y());
+                auto phi = atan2(-p.z(), p.x()) + pi;
+
+                u = phi / (2*pi);
+                v = theta / pi;
+            }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [get-sphere-uv]: <kbd>[sphere.h]</kbd> get_sphere_uv function]
 </div>
@@ -1194,38 +1236,20 @@ things on the unit sphere centered at the origin:
 Update the `sphere::hit()` function to use this function to update the hit record UV coordinates.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
     bool sphere::hit(...) {
         ...
-        if (discriminant > 0) {
-            ...
-            temp = (-half_b - root) / a;
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-                vec3 outward_normal = (rec.p - center) / radius;
-                rec.set_face_normal(r, outward_normal);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                rec.mat_ptr = mat_ptr;
-                return true;
-            }
 
-            temp = (-half_b + root) / a;
-            if (temp < t_max && temp > t_min) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-                vec3 outward_normal = (rec.p - center) / radius;
-                rec.set_face_normal(r, outward_normal);
+        rec.t = root;
+        rec.p = r.at(rec.t);
+        vec3 outward_normal = (rec.p - center) / radius;
+        rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
+        get_sphere_uv(outward_normal, rec.u, rec.v);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                rec.mat_ptr = mat_ptr;
-                return true;
-            }
-            ...
+        rec.mat_ptr = mat_ptr;
 
+        return true;
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [get-sphere-uv-call]: <kbd>[sphere.h]</kbd> Sphere UV coordinates from hit]
 </div>
@@ -1250,7 +1274,12 @@ Now we can make textured materials by replacing the `const color& a` with a text
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const override {
-                vec3 scatter_direction = rec.normal + random_unit_vector();
+                auto scatter_direction = rec.normal + random_unit_vector();
+
+                // Catch degenerate scatter direction
+                if (scatter_direction.near_zero())
+                    scatter_direction = rec.normal;
+
                 scattered = ray(rec.p, scatter_direction, r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 attenuation = albedo->value(rec.u, rec.v, rec.p);
@@ -1280,8 +1309,8 @@ forms a 3D checker pattern.
         public:
             checker_texture() {}
 
-            checker_texture(shared_ptr<texture> t0, shared_ptr<texture> t1)
-                : even(t0), odd(t1) {}
+            checker_texture(shared_ptr<texture> texture_even, shared_ptr<texture> texture_odd)
+                : even(texture_even), odd(texture_odd) {}
 
             checker_texture(color c1, color c2)
                 : even(make_shared<solid_color>(c1)) , odd(make_shared<solid_color>(c2)) {}
@@ -1366,10 +1395,16 @@ The following changes set up our main function:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     hittable_list world;
 
+    // Camera
+
     point3 lookfrom;
     point3 lookat;
+    vec3 vup(0,1,0);
     auto vfov = 40.0;
     auto aperture = 0.0;
+    auto dist_to_focus = 10.0;
+
+    // Scene
 
     switch (0) {
         case 1:
@@ -1389,18 +1424,15 @@ The following changes set up our main function:
             break;
     }
 
-    // Camera
+    const int image_height = static_cast<int>(image_width / aspect_ratio);
+    const auto time_start = 0.0;
+    const auto time_end = 1.0;
 
-    vec3 vup(0,1,0);
-    auto dist_to_focus = 10.0;
-    int image_height = static_cast<int>(image_width / aspect_ratio);
-
-    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+    camera cam(
+        lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus,
+        time_start, time_end);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-    // Render
-
-    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-two-checker-view]: <kbd>[main.cc]</kbd> Second scene]
 </div>
@@ -1560,6 +1592,8 @@ With a similar scene setup to before:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
         ...
+        // Scene
+
         switch (0) {
             ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
@@ -1854,7 +1888,7 @@ And the interpolation becomes a bit more complicated:
                 auto vv = v*v*(3-2*v);
                 auto ww = w*w*(3-2*w);
                 auto accum = 0.0;
-                
+
                 for (int i=0; i < 2; i++)
                     for (int j=0; j < 2; j++)
                         for (int k=0; k < 2; k++) {
@@ -1864,7 +1898,7 @@ And the interpolation becomes a bit more complicated:
                                    * (k*ww + (1-k)*(1-ww))
                                    * dot(c[i][j][k], weight_v);
                         }
-                
+
                 return accum;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
@@ -2164,6 +2198,8 @@ To test this, throw it into main:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
         ...
+        // Scene
+
         switch (0) {
             ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
@@ -2299,9 +2335,12 @@ the new `emitted` value.
         point3 lookat;
         auto vfov = 40.0;
         auto aperture = 0.0;
+        auto dist_to_focus = 10.0;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         color background(0,0,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        // Scene
 
         switch (0) {
             case 1:
@@ -2430,12 +2469,14 @@ The actual `xy_rect` class is thus:
                 shared_ptr<material> mat)
                 : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
 
-            virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override {
                 // The bounding box must have non-zero width in each dimension, so pad the Z
                 // dimension a small amount.
-                output_box = aabb(point3(x0,y0, k-0.0001), point3(x1, y1, k+0.0001));
+                output_box = aabb(point3(x0, y0, k-0.0001), point3(x1, y1, k+0.0001));
                 return true;
             }
 
@@ -2453,13 +2494,13 @@ The actual `xy_rect` class is thus:
 And the hit function is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool xy_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
+    bool xy_rect::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
         auto t = (k-r.origin().z()) / r.direction().z();
-        if (t < t0 || t > t1)
+        if (t < ray_tmin || t > ray_tmax)
             return false;
         auto x = r.origin().x() + t*r.direction().x();
         auto y = r.origin().y() + t*r.direction().y();
-        if (x < x0 || x > x1 || y < y0 || y > y1)
+        if (x < x0 || x1 < x || y < y0 || y1 < y)
             return false;
         rec.u = (x-x0)/(x1-x0);
         rec.v = (y-y0)/(y1-y0);
@@ -2517,6 +2558,8 @@ And then create a new scene, making careful attention to set the background colo
     ...
     int main() {
         ...
+        // Scene
+
         switch (0) {
             ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2569,12 +2612,14 @@ This is xz and yz:
                 shared_ptr<material> mat)
                 : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
-            virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override {
                 // The bounding box must have non-zero width in each dimension, so pad the Y
                 // dimension a small amount.
-                output_box = aabb(point3(x0,k-0.0001,z0), point3(x1, k+0.0001, z1));
+                output_box = aabb(point3(x0, k-0.0001, z0), point3(x1, k+0.0001, z1));
                 return true;
             }
 
@@ -2591,9 +2636,11 @@ This is xz and yz:
                 shared_ptr<material> mat)
                 : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
-            virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override {
                 // The bounding box must have non-zero width in each dimension, so pad the X
                 // dimension a small amount.
                 output_box = aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
@@ -2612,13 +2659,13 @@ This is xz and yz:
 With unsurprising hit functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool xz_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
+    bool xz_rect::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
         auto t = (k-r.origin().y()) / r.direction().y();
-        if (t < t0 || t > t1)
+        if (t < ray_tmin || t > ray_tmax)
             return false;
         auto x = r.origin().x() + t*r.direction().x();
         auto z = r.origin().z() + t*r.direction().z();
-        if (x < x0 || x > x1 || z < z0 || z > z1)
+        if (x < x0 || x1 < x || z < z0 || z1 < z)
             return false;
         rec.u = (x-x0)/(x1-x0);
         rec.v = (z-z0)/(z1-z0);
@@ -2630,13 +2677,13 @@ With unsurprising hit functions:
         return true;
     }
 
-    bool yz_rect::hit(const ray& r, double t0, double t1, hit_record& rec) const {
+    bool yz_rect::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
         auto t = (k-r.origin().x()) / r.direction().x();
-        if (t < t0 || t > t1)
+        if (t < ray_tmin || t > ray_tmax)
             return false;
         auto y = r.origin().y() + t*r.direction().y();
         auto z = r.origin().z() + t*r.direction().z();
-        if (y < y0 || y > y1 || z < z0 || z > z1)
+        if (y < y0 || y1 < y || z < z0 || z1 < z)
             return false;
         rec.u = (y-y0)/(y1-y0);
         rec.v = (z-z0)/(z1-z0);
@@ -2687,6 +2734,8 @@ Add the view and scene info:
 
     int main() {
         ...
+        // Scene
+
         switch (0) {
             ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
@@ -2746,9 +2795,11 @@ make an axis-aligned block primitive that holds 6 rectangles:
             box() {}
             box(const point3& p0, const point3& p1, shared_ptr<material> ptr);
 
-            virtual bool hit(const ray& r, double t0, double t1, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override {
                 output_box = aabb(box_min, box_max);
                 return true;
             }
@@ -2773,8 +2824,8 @@ make an axis-aligned block primitive that holds 6 rectangles:
         sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
     }
 
-    bool box::hit(const ray& r, double t0, double t1, hit_record& rec) const {
-        return sides.hit(r, t0, t1, rec);
+    bool box::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+        return sides.hit(r, ray_tmin, ray_tmax, rec);
     }
 
     #endif
@@ -2827,19 +2878,20 @@ move any underlying hittable is a _translate_ instance.
             translate(shared_ptr<hittable> p, const vec3& displacement)
                 : ptr(p), offset(displacement) {}
 
-            virtual bool hit(
-                const ray& r, double t_min, double t_max, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+                const override;
 
         public:
             shared_ptr<hittable> ptr;
             vec3 offset;
     };
 
-    bool translate::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    bool translate::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
         ray moved_r(r.origin() - offset, r.direction(), r.time());
-        if (!ptr->hit(moved_r, t_min, t_max, rec))
+        if (!ptr->hit(moved_r, ray_tmin, ray_tmax, rec))
             return false;
 
         rec.p += offset;
@@ -2848,8 +2900,8 @@ move any underlying hittable is a _translate_ instance.
         return true;
     }
 
-    bool translate::bounding_box(double t0, double t1, aabb& output_box) const {
-        if (!ptr->bounding_box(t0, t1, output_box))
+    bool translate::bounding_box(double time_start, double time_end, aabb& output_box) const {
+        if (!ptr->bounding_box(time_start, time_end, output_box))
             return false;
 
         output_box = aabb(
@@ -2914,10 +2966,11 @@ For a y-rotation class we have:
         public:
             rotate_y(shared_ptr<hittable> p, double angle);
 
-            virtual bool hit(
-                const ray& r, double t_min, double t_max, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override {
                 output_box = bbox;
                 return hasbox;
             }
@@ -2976,7 +3029,7 @@ With constructor:
 And the hit function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool rotate_y::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    bool rotate_y::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
         auto origin = r.origin();
         auto direction = r.direction();
 
@@ -2988,7 +3041,7 @@ And the hit function:
 
         ray rotated_r(origin, direction, r.time());
 
-        if (!ptr->hit(rotated_r, t_min, t_max, rec))
+        if (!ptr->hit(rotated_r, ray_tmin, ray_tmax, rec))
             return false;
 
         auto p = rec.p;
@@ -3093,11 +3146,12 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
                   phase_function(make_shared<isotropic>(c))
                 {}
 
-            virtual bool hit(
-                const ray& r, double t_min, double t_max, hit_record& rec) const override;
+            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+                const override;
 
-            virtual bool bounding_box(double t0, double t1, aabb& output_box) const override {
-                return boundary->bounding_box(t0, t1, output_box);
+            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override {
+                return boundary->bounding_box(time_start, time_end, output_box);
             }
 
         public:
@@ -3139,7 +3193,9 @@ The scattering function of isotropic picks a uniform random direction:
 And the hit function is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool constant_medium::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    bool constant_medium::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+        const {
+
         // Print occasional samples when debugging. To enable, set enableDebug true.
         const bool enableDebug = false;
         const bool debugging = enableDebug && random_double() < 0.00001;
@@ -3152,10 +3208,10 @@ And the hit function is:
         if (!boundary->hit(r, rec1.t+0.0001, infinity, rec2))
             return false;
 
-        if (debugging) std::cerr << "\nt0=" << rec1.t << ", t1=" << rec2.t << '\n';
+        if (debugging) std::cerr << "\nray_tmin=" << rec1.t << ", ray_tmax=" << rec2.t << '\n';
 
-        if (rec1.t < t_min) rec1.t = t_min;
-        if (rec2.t > t_max) rec2.t = t_max;
+        if (rec1.t < ray_tmin) rec1.t = ray_tmin;
+        if (rec2.t > ray_tmax) rec2.t = ray_tmax;
 
         if (rec1.t >= rec2.t)
             return false;
@@ -3243,6 +3299,8 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
 
     int main() {
         ...
+        // Scene
+
         switch (0) {
             ...
             default:
@@ -3312,7 +3370,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         auto center1 = point3(400, 400, 200);
         auto center2 = center1 + vec3(30,0,0);
         auto moving_sphere_material = make_shared<lambertian>(color(0.7, 0.3, 0.1));
-        objects.add(make_shared<moving_sphere>(center1, center2, 0, 1, 50, moving_sphere_material));
+        objects.add(make_shared<moving_sphere>(center1, center2, 50, moving_sphere_material, 0, 1));
 
         objects.add(make_shared<sphere>(point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
         objects.add(make_shared<sphere>(
@@ -3349,6 +3407,8 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 
     int main() {
         ...
+        // Scene
+
         switch (0) {
             ...
             default:
@@ -3395,8 +3455,8 @@ Basic Data
   - **Title (book)**: “Ray Tracing: The Next Week”
   - **Author**: Peter Shirley
   - **Editors**: Steve Hollasch, Trevor David Black
-  - **Version/Edition**: v3.2.1
-  - **Date**: 2020-10-03
+  - **Version/Edition**: v3.2.2
+  - **Date**: 2020-10-31
   - **URL (series)**: https://raytracing.github.io/
   - **URL (book)**: https://raytracing.github.io/books/RayTracingTheNextWeek.html
 
@@ -3423,7 +3483,7 @@ Snippets
        title = {Ray Tracing: The Next Week},
        author = {Peter Shirley},
        year = {2020},
-       month = {October},
+       month = {October}
        note = {\small \texttt{https://raytracing.github.io/books/RayTracingTheNextWeek.html}},
        url = {https://raytracing.github.io/books/RayTracingTheNextWeek.html}
     }
@@ -3439,7 +3499,7 @@ Snippets
        title = {Ray Tracing: The Next Week},
        author = {Peter Shirley},
        year = {2020},
-       month = {October},
+       month = {October}
        url = {https://raytracing.github.io/books/RayTracingTheNextWeek.html}
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

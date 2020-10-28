@@ -31,10 +31,10 @@ class bvh_node : public hittable  {
             const std::vector<shared_ptr<hittable>>& src_objects,
             size_t start, size_t end, double time0, double time1);
 
-        virtual bool hit(
-            const ray& r, double t_min, double t_max, hit_record& rec) const override;
+        virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
+            const override;
 
-        virtual bool bounding_box(double t0, double t1, aabb& output_box) const override;
+        virtual bool bounding_box(double time0, double time1, aabb& output_box) const override;
 
     public:
         shared_ptr<hittable> left;
@@ -109,18 +109,18 @@ bvh_node::bvh_node(
 }
 
 
-bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
-    if (!box.hit(r, t_min, t_max))
+bool bvh_node::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+    if (!box.hit(r, ray_tmin, ray_tmax))
         return false;
 
-    bool hit_left = left->hit(r, t_min, t_max, rec);
-    bool hit_right = right->hit(r, t_min, hit_left ? rec.t : t_max, rec);
+    bool hit_left = left->hit(r, ray_tmin, ray_tmax, rec);
+    bool hit_right = right->hit(r, ray_tmin, hit_left ? rec.t : ray_tmax, rec);
 
     return hit_left || hit_right;
 }
 
 
-bool bvh_node::bounding_box(double t0, double t1, aabb& output_box) const {
+bool bvh_node::bounding_box(double time0, double time1, aabb& output_box) const {
     output_box = box;
     return true;
 }
