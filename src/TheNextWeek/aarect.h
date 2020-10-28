@@ -28,8 +28,8 @@ class xy_rect : public hittable {
             const override;
 
         virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override {
-
+            const override
+        {
             // The bounding box must have non-zero width in each dimension, so pad the Z
             // dimension a small amount.
             output_box = aabb(point3(x0, y0, k-0.0001), point3(x1, y1, k+0.0001));
@@ -40,6 +40,7 @@ class xy_rect : public hittable {
         shared_ptr<material> mp;
         double x0, x1, y0, y1, k;
 };
+
 
 class xz_rect : public hittable {
     public:
@@ -53,8 +54,8 @@ class xz_rect : public hittable {
             const override;
 
         virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override {
-
+            const override
+        {
             // The bounding box must have non-zero width in each dimension, so pad the Y
             // dimension a small amount.
             output_box = aabb(point3(x0, k-0.0001, z0), point3(x1, k+0.0001, z1));
@@ -65,6 +66,7 @@ class xz_rect : public hittable {
         shared_ptr<material> mp;
         double x0, x1, z0, z1, k;
 };
+
 
 class yz_rect : public hittable {
     public:
@@ -78,8 +80,8 @@ class yz_rect : public hittable {
             const override;
 
         virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override {
-
+            const override
+        {
             // The bounding box must have non-zero width in each dimension, so pad the X
             // dimension a small amount.
             output_box = aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
@@ -91,9 +93,10 @@ class yz_rect : public hittable {
         double y0, y1, z0, z1, k;
 };
 
+
 bool xy_rect::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
     auto t = (k-r.origin().z()) / r.direction().z();
-    if (t < ray_tmin || ray_tmax < t)
+    if (t < ray_tmin || t > ray_tmax)
         return false;
 
     auto x = r.origin().x() + t*r.direction().x();
@@ -111,6 +114,7 @@ bool xy_rect::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& re
 
     return true;
 }
+
 
 bool xz_rect::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
     auto t = (k-r.origin().y()) / r.direction().y();
@@ -133,9 +137,10 @@ bool xz_rect::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& re
     return true;
 }
 
+
 bool yz_rect::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
     auto t = (k-r.origin().x()) / r.direction().x();
-    if (t < ray_tmin || ray_tmax < t)
+    if (t < ray_tmin || t > ray_tmax)
         return false;
 
     auto y = r.origin().y() + t*r.direction().y();

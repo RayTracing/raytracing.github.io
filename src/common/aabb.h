@@ -17,17 +17,17 @@
 class aabb {
     public:
         aabb() {}
-        aabb(const point3& a, const point3& b) { _min = a; _max = b; }
+        aabb(const point3& a, const point3& b) { minimum = a; maximum = b; }
 
-        point3 min() const {return _min; }
-        point3 max() const {return _max; }
+        point3 min() const {return minimum; }
+        point3 max() const {return maximum; }
 
         bool hit(const ray& r, double ray_tmin, double ray_tmax) const {
             for (int a = 0; a < 3; a++) {
-                auto t0 = fmin((_min[a] - r.origin()[a]) / r.direction()[a],
-                               (_max[a] - r.origin()[a]) / r.direction()[a]);
-                auto t1 = fmax((_min[a] - r.origin()[a]) / r.direction()[a],
-                               (_max[a] - r.origin()[a]) / r.direction()[a]);
+                auto t0 = fmin((minimum[a] - r.origin()[a]) / r.direction()[a],
+                               (maximum[a] - r.origin()[a]) / r.direction()[a]);
+                auto t1 = fmax((minimum[a] - r.origin()[a]) / r.direction()[a],
+                               (maximum[a] - r.origin()[a]) / r.direction()[a]);
                 ray_tmin = fmax(t0, ray_tmin);
                 ray_tmax = fmin(t1, ray_tmax);
                 if (ray_tmax <= ray_tmin)
@@ -37,16 +37,16 @@ class aabb {
         }
 
         double area() const {
-            auto a = _max.x() - _min.x();
-            auto b = _max.y() - _min.y();
-            auto c = _max.z() - _min.z();
+            auto a = maximum.x() - minimum.x();
+            auto b = maximum.y() - minimum.y();
+            auto c = maximum.z() - minimum.z();
             return 2*(a*b + b*c + c*a);
         }
 
         int longest_axis() const {
-            auto a = _max.x() - _min.x();
-            auto b = _max.y() - _min.y();
-            auto c = _max.z() - _min.z();
+            auto a = maximum.x() - minimum.x();
+            auto b = maximum.y() - minimum.y();
+            auto c = maximum.z() - minimum.z();
             if (a > b && a > c)
                 return 0;
             else if (b > c)
@@ -56,8 +56,8 @@ class aabb {
         }
 
     public:
-        point3 _min;
-        point3 _max;
+        point3 minimum;
+        point3 maximum;
 };
 
 aabb surrounding_box(aabb box0, aabb box1) {

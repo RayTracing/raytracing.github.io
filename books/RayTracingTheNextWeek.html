@@ -7,7 +7,7 @@
                                          [Peter Shirley][]
                       edited by [Steve Hollasch][] and [Trevor David Black][]
                                                 <br>
-                                     Version 3.3.0-alpha, XXXX-XX-XX
+                                     Version 3.2.2, 2020-10-31
                                                 <br>
                       Copyright 2018-2020 Peter Shirley. All rights reserved.
 
@@ -195,7 +195,7 @@ those times need not match up with the camera aperture open and close.
                 :
                 center0(ctr0), center1(ctr1), radius(r), mat_ptr(m),
                 time0(time_start), time1(time_end)
-                {};
+            {};
 
             virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
                 const override;
@@ -236,35 +236,26 @@ just needs to become a function `center(time)`:
         auto c = oc.length_squared() - radius*radius;
 
         auto discriminant = half_b*half_b - a*c;
+        if (discriminant < 0) return false;
+        auto sqrtd = sqrt(discriminant);
 
-        if (discriminant > 0) {
-            auto root = sqrt(discriminant);
-
-            auto temp = (-half_b - root) / a;
-            if (ray_tmin < temp && temp < ray_tmax) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                auto outward_normal = (rec.p - center(r.time())) / radius;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                rec.set_face_normal(r, outward_normal);
-                rec.mat_ptr = mat_ptr;
-                return true;
-            }
-
-            temp = (-half_b + root) / a;
-            if (ray_tmin < temp && temp < ray_tmax) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                auto outward_normal = (rec.p - center(r.time())) / radius;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                rec.set_face_normal(r, outward_normal);
-                rec.mat_ptr = mat_ptr;
-                return true;
-            }
+        // Find the nearest root that lies in the acceptable range.
+        auto root = (-half_b - sqrtd) / a;
+        if (root < ray_tmin || ray_tmax < root) {
+            root = (-half_b + sqrtd) / a;
+            if (root < ray_tmin || ray_tmax < root)
+                return false;
         }
-        return false;
+
+        rec.t = root;
+        rec.p = r.at(rec.t);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto outward_normal = (rec.p - center(r.time())) / radius;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        rec.set_face_normal(r, outward_normal);
+        rec.mat_ptr = mat_ptr;
+
+        return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [moving-sphere-hit]: <kbd>[moving_sphere.h]</kbd> Moving sphere hit function]
@@ -283,7 +274,13 @@ for the time of intersection:
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const override {
-                vec3 scatter_direction = rec.normal + random_unit_vector();
+                auto scatter_direction = rec.normal + random_unit_vector();
+
+                // Catch degenerate scatter direction
+                if (scatter_direction.near_zero())
+                    scatter_direction = rec.normal;
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 scattered = ray(rec.p, scatter_direction, r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -660,17 +657,17 @@ passing in the interval $[t_{min}$, $t_{max}]$, we get:
     class aabb {
         public:
             aabb() {}
-            aabb(const point3& a, const point3& b) { _min = a; _max = b;}
+            aabb(const point3& a, const point3& b) { minimum = a; maximum = b;}
 
-            point3 min() const {return _min; }
-            point3 max() const {return _max; }
+            point3 min() const {return minimum; }
+            point3 max() const {return maximum; }
 
             bool hit(const ray& r, double ray_tmin, double ray_tmax) const {
                 for (int a = 0; a < 3; a++) {
-                    auto t0 = fmin((_min[a] - r.origin()[a]) / r.direction()[a],
-                                   (_max[a] - r.origin()[a]) / r.direction()[a]);
-                    auto t1 = fmax((_min[a] - r.origin()[a]) / r.direction()[a],
-                                   (_max[a] - r.origin()[a]) / r.direction()[a]);
+                    auto t0 = fmin((minimum[a] - r.origin()[a]) / r.direction()[a],
+                                   (maximum[a] - r.origin()[a]) / r.direction()[a]);
+                    auto t1 = fmax((minimum[a] - r.origin()[a]) / r.direction()[a],
+                                   (maximum[a] - r.origin()[a]) / r.direction()[a]);
                     ray_tmin = fmax(t0, ray_tmin);
                     ray_tmax = fmin(t1, ray_tmax);
                     if (ray_tmax <= ray_tmin)
@@ -679,8 +676,8 @@ passing in the interval $[t_{min}$, $t_{max}]$, we get:
                 return true;
             }
 
-            point3 _min;
-            point3 _max;
+            point3 minimum;
+            point3 maximum;
     };
 
     #endif
@@ -723,7 +720,7 @@ We now need to add a function to compute the bounding boxes of all the hittables
 a hierarchy of boxes over all the primitives, and the individual primitives--like spheres--will live
 at the leaves. That function returns a bool because not all primitives have bounding boxes (_e.g._,
 infinite planes). In addition, moving objects will have a bounding box that encloses the object for
-the entire time interval [`time_start`,`time_end`].
+the entire time interval [`time0`,`time1`].
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "aabb.h"
@@ -912,26 +909,16 @@ a class:
         public:
             bvh_node();
 
-<<<<<<< HEAD
-            bvh_node(hittable_list& list, double start_time, double end_time)
-                : bvh_node(list.objects, 0, list.objects.size(), start_time, end_time)
-            {}
-
-            bvh_node(
-                std::vector<shared_ptr<hittable>>& objects,
-                size_t start, size_t end, double start_time, double end_time);
-=======
-            bvh_node(const hittable_list& list, double time0, double time1)
-                : bvh_node(list.objects, 0, list.objects.size(), time0, time1)
+            bvh_node(const hittable_list& list, double time_start, double time_end)
+                : bvh_node(list.objects, 0, list.objects.size(), time_start, time_end)
             {}
 
             bvh_node(
                 const std::vector<shared_ptr<hittable>>& src_objects,
-                size_t start, size_t end, double time0, double time1);
->>>>>>> master
+                size_t start, size_t end, double time_start, double time_end);
 
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const override;
+            virtual bool hit(
+                const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
                 const override;
@@ -1166,52 +1153,81 @@ We will also need to compute $(u,v)$ texture coordinates for hittables.
 Texture Coordinates for Spheres
 --------------------------------
 <div class='together'>
-For spheres, this is usually based on some form of longitude and latitude, _i.e._, spherical
-coordinates. So if we have a $(\theta,\phi)$ in spherical coordinates, we just need to scale
-$\theta$ and $\phi$ to fractions. If $\theta$ is the angle down from the pole, and $\phi$ is the
-angle around the axis through the poles, the normalization to $[0,1]$ would be:
+For spheres, texture coordinates are usually based on some form of longitude and latitude, _i.e._,
+spherical coordinates. So we compute $(\theta,\phi)$ in spherical coordinates, where $\theta$ is the
+angle up from the bottom pole (that is, up from -Y), and $\phi$ is the angle around the Y-axis (from
+-X to +Z to +X to -Z back to -X).
+
+We want to map $\theta$ and $\phi$ to texture coordinates $u$ and $v$ each in $[0,1]$, where
+$(u=0,v=0)$ maps to the bottom-left corner of the texture. Thus the normalization from
+$(\theta,\phi)$ to $(u,v)$ would be:
 
   $$ u = \frac{\phi}{2\pi} $$
   $$ v = \frac{\theta}{\pi} $$
 </div>
 
 <div class='together'>
-To compute $\theta$ and $\phi$, for a given hitpoint, the formula for spherical coordinates of a
-unit radius sphere on the origin is:
+To compute $\theta$ and $\phi$ for a given point on the unit sphere centered at the origin, we start
+with the equations for the corresponding Cartesian coordinates:
 
-  $$ x = \cos(\phi) \cos(\theta) $$
-  $$ y = \sin(\phi) \cos(\theta) $$
-  $$ z = \sin(\theta) $$
+  $$ \begin{align*}
+      y &= -\cos(\theta)            \\
+      x &= -\cos(\phi) \sin(\theta) \\
+      z &= \quad\sin(\phi) \sin(\theta)
+     \end{align*}
+  $$
 </div>
 
 <div class='together'>
-We need to invert that. Because of the lovely `<cmath>` function `atan2()` which takes any number
-proportional to sine and cosine and returns the angle, we can pass in $x$ and $y$ (the
-$\cos(\theta)$ cancel):
+We need to invert these equations to solve for $\theta$ and $\phi$. Because of the lovely `<cmath>`
+function `atan2()`, which takes any pair of numbers proportional to sine and cosine and returns the
+angle, we can pass in $x$ and $z$ (the $\sin(\theta)$ cancel) to solve for $\phi$:
 
-  $$ \phi = \text{atan2}(y, x) $$
+  $$ \phi = \text{atan2}(z, -x) $$
 </div>
 
 <div class='together'>
-The $atan2$ returns values in the range $-\pi$ to $\pi$, so we need to take a little care there.
-The $\theta$ is more straightforward:
+`atan2()` returns values in the range $-\pi$ to $\pi$, but they go from 0 to $\pi$, then flip to
+$-\pi$ and proceed back to zero. While this is mathematically correct, we want $u$ to range from $0$
+to $1$, not from $0$ to $1/2$ and then from $-1/2$ to $0$. Fortunately,
 
-  $$ \theta = \text{asin}(z) $$
+  $$ \text{atan2}(a,b) = \text{atan2}(-a,-b) + \pi, $$
 
-which returns numbers in the range $-\pi/2$ to $\pi/2$.
+and the second formulation yields values from $0$ continuously to $2\pi$. Thus, we can compute
+$\phi$ as
+
+  $$ \phi = \text{atan2}(-z, x) + \pi $$
+</div>
+
+<div>
+The derivation for $\theta$ is more straightforward:
+
+  $$ \theta = \text{acos}(-y) $$
 </div>
 
 <div class='together'>
-So for a sphere, the $(u,v)$ coord computation is accomplished by a utility function that expects
-things on the unit sphere centered at the origin:
+So for a sphere, the $(u,v)$ coord computation is accomplished by a utility function that takes
+points on the unit sphere centered at the origin, and computes $u$ and $v$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void get_sphere_uv(const vec3& p, double& u, double& v) {
-        auto phi = atan2(p.z(), p.x());
-        auto theta = asin(p.y());
-        u = 1-(phi + pi) / (2*pi);
-        v = (theta + pi/2) / pi;
-    }
+    class sphere : public hittable {
+        ...
+        private:
+            static void get_sphere_uv(const point3& p, double& u, double& v) {
+                // p: a given point on the sphere of radius one, centered at the origin.
+                // u: returned value [0,1] of angle around the Y axis from X=-1.
+                // v: returned value [0,1] of angle from Y=-1 to Y=+1.
+                //     <1 0 0> yields <0.50 0.50>       <-1  0  0> yields <0.00 0.50>
+                //     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
+                //     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
+
+                auto theta = acos(-p.y());
+                auto phi = atan2(-p.z(), p.x()) + pi;
+
+                u = phi / (2*pi);
+                v = theta / pi;
+            }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [get-sphere-uv]: <kbd>[sphere.h]</kbd> get_sphere_uv function]
 </div>
@@ -1220,38 +1236,20 @@ things on the unit sphere centered at the origin:
 Update the `sphere::hit()` function to use this function to update the hit record UV coordinates.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
     bool sphere::hit(...) {
         ...
-        if (discriminant > 0) {
-            ...
-            temp = (-half_b - root) / a;
-            if (ray_tmin < temp && temp < ray_tmax) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-                vec3 outward_normal = (rec.p - center) / radius;
-                rec.set_face_normal(r, outward_normal);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                rec.mat_ptr = mat_ptr;
-                return true;
-            }
 
-            temp = (-half_b + root) / a;
-            if (ray_tmin < temp && temp < ray_tmax) {
-                rec.t = temp;
-                rec.p = r.at(rec.t);
-                vec3 outward_normal = (rec.p - center) / radius;
-                rec.set_face_normal(r, outward_normal);
+        rec.t = root;
+        rec.p = r.at(rec.t);
+        vec3 outward_normal = (rec.p - center) / radius;
+        rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                get_sphere_uv((rec.p-center)/radius, rec.u, rec.v);
+        get_sphere_uv(outward_normal, rec.u, rec.v);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                rec.mat_ptr = mat_ptr;
-                return true;
-            }
-            ...
+        rec.mat_ptr = mat_ptr;
 
+        return true;
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [get-sphere-uv-call]: <kbd>[sphere.h]</kbd> Sphere UV coordinates from hit]
 </div>
@@ -1276,7 +1274,12 @@ Now we can make textured materials by replacing the `const color& a` with a text
             virtual bool scatter(
                 const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
             ) const override {
-                vec3 scatter_direction = rec.normal + random_unit_vector();
+                auto scatter_direction = rec.normal + random_unit_vector();
+
+                // Catch degenerate scatter direction
+                if (scatter_direction.near_zero())
+                    scatter_direction = rec.normal;
+
                 scattered = ray(rec.p, scatter_direction, r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 attenuation = albedo->value(rec.u, rec.v, rec.p);
@@ -1429,10 +1432,7 @@ The following changes set up our main function:
         lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus,
         time_start, time_end);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-    // Render
-
-    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-two-checker-view]: <kbd>[main.cc]</kbd> Second scene]
 </div>
@@ -1888,7 +1888,7 @@ And the interpolation becomes a bit more complicated:
                 auto vv = v*v*(3-2*v);
                 auto ww = w*w*(3-2*w);
                 auto accum = 0.0;
-                
+
                 for (int i=0; i < 2; i++)
                     for (int j=0; j < 2; j++)
                         for (int k=0; k < 2; k++) {
@@ -1898,7 +1898,7 @@ And the interpolation becomes a bit more complicated:
                                    * (k*ww + (1-k)*(1-ww))
                                    * dot(c[i][j][k], weight_v);
                         }
-                
+
                 return accum;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
@@ -2473,8 +2473,7 @@ The actual `xy_rect` class is thus:
                 const override;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-                const override {
-
+            const override {
                 // The bounding box must have non-zero width in each dimension, so pad the Z
                 // dimension a small amount.
                 output_box = aabb(point3(x0, y0, k-0.0001), point3(x1, y1, k+0.0001));
@@ -2497,7 +2496,7 @@ And the hit function is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool xy_rect::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
         auto t = (k-r.origin().z()) / r.direction().z();
-        if (t < ray_tmin || ray_tmax < t)
+        if (t < ray_tmin || t > ray_tmax)
             return false;
         auto x = r.origin().x() + t*r.direction().x();
         auto y = r.origin().y() + t*r.direction().y();
@@ -2617,8 +2616,7 @@ This is xz and yz:
                 const override;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-                const override {
-
+            const override {
                 // The bounding box must have non-zero width in each dimension, so pad the Y
                 // dimension a small amount.
                 output_box = aabb(point3(x0, k-0.0001, z0), point3(x1, k+0.0001, z1));
@@ -2642,8 +2640,7 @@ This is xz and yz:
                 const override;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-                const override {
-
+            const override {
                 // The bounding box must have non-zero width in each dimension, so pad the X
                 // dimension a small amount.
                 output_box = aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
@@ -2664,7 +2661,7 @@ With unsurprising hit functions:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     bool xz_rect::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
         auto t = (k-r.origin().y()) / r.direction().y();
-        if (t < ray_tmin || ray_tmax < t)
+        if (t < ray_tmin || t > ray_tmax)
             return false;
         auto x = r.origin().x() + t*r.direction().x();
         auto z = r.origin().z() + t*r.direction().z();
@@ -2682,7 +2679,7 @@ With unsurprising hit functions:
 
     bool yz_rect::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
         auto t = (k-r.origin().x()) / r.direction().x();
-        if (t < ray_tmin || ray_tmax < t)
+        if (t < ray_tmin || t > ray_tmax)
             return false;
         auto y = r.origin().y() + t*r.direction().y();
         auto z = r.origin().z() + t*r.direction().z();
@@ -2802,8 +2799,7 @@ make an axis-aligned block primitive that holds 6 rectangles:
                 const override;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-                const override {
-
+            const override {
                 output_box = aabb(box_min, box_max);
                 return true;
             }
@@ -2974,8 +2970,7 @@ For a y-rotation class we have:
                 const override;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-                const override {
-
+            const override {
                 output_box = bbox;
                 return hasbox;
             }
@@ -3155,8 +3150,7 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
                 const override;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-                const override {
-
+            const override {
                 return boundary->bounding_box(time_start, time_end, output_box);
             }
 
@@ -3214,7 +3208,7 @@ And the hit function is:
         if (!boundary->hit(r, rec1.t+0.0001, infinity, rec2))
             return false;
 
-        if (debugging) std::cerr << "\nt0=" << rec1.t << ", t1=" << rec2.t << '\n';
+        if (debugging) std::cerr << "\nray_tmin=" << rec1.t << ", ray_tmax=" << rec2.t << '\n';
 
         if (rec1.t < ray_tmin) rec1.t = ray_tmin;
         if (rec2.t > ray_tmax) rec2.t = ray_tmax;
@@ -3461,8 +3455,8 @@ Basic Data
   - **Title (book)**: “Ray Tracing: The Next Week”
   - **Author**: Peter Shirley
   - **Editors**: Steve Hollasch, Trevor David Black
-  - **Version/Edition**: v3.3.0-XX
-  - **Date**: XXXX-XX-XX
+  - **Version/Edition**: v3.2.2
+  - **Date**: 2020-10-31
   - **URL (series)**: https://raytracing.github.io/
   - **URL (book)**: https://raytracing.github.io/books/RayTracingTheNextWeek.html
 
@@ -3488,8 +3482,8 @@ Snippets
     @misc{Shirley2020RTW2,
        title = {Ray Tracing: The Next Week},
        author = {Peter Shirley},
-       year = {XXXX},
-       month = {XXXXXXXXX},
+       year = {2020},
+       month = {October}
        note = {\small \texttt{https://raytracing.github.io/books/RayTracingTheNextWeek.html}},
        url = {https://raytracing.github.io/books/RayTracingTheNextWeek.html}
     }
@@ -3504,8 +3498,8 @@ Snippets
     @online{Shirley2020RTW2,
        title = {Ray Tracing: The Next Week},
        author = {Peter Shirley},
-       year = {XXXX},
-       month = {XXXXXXXX},
+       year = {2020},
+       month = {October}
        url = {https://raytracing.github.io/books/RayTracingTheNextWeek.html}
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

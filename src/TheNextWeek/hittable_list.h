@@ -15,6 +15,7 @@
 
 #include "hittable.h"
 
+#include <memory>
 #include <vector>
 
 

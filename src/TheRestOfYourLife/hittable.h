@@ -18,13 +18,6 @@
 
 class material;
 
-void get_sphere_uv(const point3& p, double& u, double& v) {
-    auto phi = atan2(p.z(), p.x());
-    auto theta = asin(p.y());
-    u = 1-(phi + pi) / (2*pi);
-    v = (theta + pi/2) / pi;
-}
-
 
 struct hit_record {
     point3 p;
@@ -75,8 +68,8 @@ class flip_face : public hittable {
         }
 
         virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override {
-
+            const override
+        {
             return ptr->bounding_box(time_start, time_end, output_box);
         }
 
@@ -134,8 +127,8 @@ class rotate_y : public hittable {
             const override;
 
         virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override {
-
+            const override
+        {
             output_box = bbox;
             return hasbox;
         }

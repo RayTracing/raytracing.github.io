@@ -1,27 +1,32 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
-# v3.3.0 (in progress)
+# v3.2.2 (2020-10-31)
 
 ### Common
+  - Fix: Added `fmin` to book text for `cos_theta` of `refract` (#732)
+  - Fix: Standardized naming for ray-t and time parameters (#746)
+  - Fix: `random_unit_vector()` was incorrect (#697)
+  - Fix: Synchronize text and copies of `hittable.h`
+  - Fix: Synchronize copies of `hittable_list.h`, `material.h`, `sphere.h`
+  - Change: refactor `sphere::hit()` method to reuse common blocks of code.
+  - Change: Improved the explanation and calculation of sphere UV coordinates (#533)
 
 ### In One Weekend
+  - Fix: Catch cases where `lambertian::scatter()` yields degenerate scatter rays (#619)
+  - Fix: Syntax error in listing 58 (Dielectric material class with reflection) (#768)
+  - Fix: Correct wording for ray traversal text (#766)
+  - Change: Wrote brief explanation waving away negative t values in initial normal sphere
 
 ### The Next Week
+  - Fix: Catch cases where `lambertian::scatter()` yields degenerate scatter rays (#619)
 
 ### The Rest of Your Life
-
-
-----------------------------------------------------------------------------------------------------
-# v3.2.2 (in progress)
-
-### Common
-
-### In One Weekend
-
-### The Next Week
-
-### The Rest of Your Life
+  - Fix: Missing `override` keyword for `xz_rect::pdf_value()` and `xz_rect::random()` methods
+    (#748)
+  - Fix: Synchronize book and source for `cornell_box()` function.
+  - Fix: Introduction of light code was introduced out of sequence (#738, #740)
+  - Fix: `ray_color()` was creating a new light for every ray bounce (#759)
 
 
 ----------------------------------------------------------------------------------------------------

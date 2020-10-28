@@ -63,7 +63,7 @@ bool constant_medium::hit(const ray& r, double ray_tmin, double ray_tmax, hit_re
     if (!boundary->hit(r, rec1.t+0.0001, infinity, rec2))
         return false;
 
-    if (debugging) std::cerr << "\nt0=" << rec1.t << ", t1=" << rec2.t << '\n';
+    if (debugging) std::cerr << "\nt_min=" << rec1.t << ", t_max=" << rec2.t << '\n';
 
     if (rec1.t < ray_tmin) rec1.t = ray_tmin;
     if (rec2.t > ray_tmax) rec2.t = ray_tmax;

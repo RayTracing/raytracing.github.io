@@ -67,32 +67,24 @@ bool moving_sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_reco
     auto c = oc.length_squared() - radius*radius;
 
     auto discriminant = half_b*half_b - a*c;
+    if (discriminant < 0) return false;
+    auto sqrtd = sqrt(discriminant);
 
-    if (discriminant > 0) {
-        auto root = sqrt(discriminant);
-
-        auto temp = (-half_b - root)/a;
-        if (ray_tmin < temp && temp < ray_tmax) {
-            rec.t = temp;
-            rec.p = r.at(rec.t);
-            vec3 outward_normal = (rec.p - center(r.time())) / radius;
-            rec.set_face_normal(r, outward_normal);
-            rec.mat_ptr = mat_ptr;
-            return true;
-        }
-
-        temp = (-half_b + root)/a;
-        if (ray_tmin < temp && temp < ray_tmax) {
-            rec.t = temp;
-            rec.p = r.at(rec.t);
-            vec3 outward_normal = (rec.p - center(r.time())) / radius;
-            rec.set_face_normal(r, outward_normal);
-            rec.mat_ptr = mat_ptr;
-            return true;
-        }
+    // Find the nearest root that lies in the acceptable range.
+    auto root = (-half_b - sqrtd) / a;
+    if (root < ray_tmin || ray_tmax < root) {
+        root = (-half_b + sqrtd) / a;
+        if (root < ray_tmin || ray_tmax < root)
+            return false;
     }
 
-    return false;
+    rec.t = root;
+    rec.p = r.at(rec.t);
+    vec3 outward_normal = (rec.p - center(r.time())) / radius;
+    rec.set_face_normal(r, outward_normal);
+    rec.mat_ptr = mat_ptr;
+
+    return true;
 }
 
 #endif
