@@ -45,12 +45,13 @@ point3 moving_sphere::center(double time) const{
 
 
 bool moving_sphere::bounding_box(double t0, double t1, aabb& output_box) const {
+    const double r = std::abs(radius);
     aabb box0(
-        center(t0) - vec3(radius, radius, radius),
-        center(t0) + vec3(radius, radius, radius));
+        center(t0) - vec3(r, r, r),
+        center(t0) + vec3(r, r, r));
     aabb box1(
-        center(t1) - vec3(radius, radius, radius),
-        center(t1) + vec3(radius, radius, radius));
+        center(t1) - vec3(r, r, r),
+        center(t1) + vec3(r, r, r));
     output_box = surrounding_box(box0, box1);
     return true;
 }

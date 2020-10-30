@@ -57,9 +57,10 @@ vec3 sphere::random(const point3& o) const {
 
 
 bool sphere::bounding_box(double t0, double t1, aabb& output_box) const {
+    const double r = std::abs(radius);
     output_box = aabb(
-        center - vec3(radius, radius, radius),
-        center + vec3(radius, radius, radius));
+        center - vec3(r, r, r),
+        center + vec3(r, r, r));
     return true;
 }
 

@@ -35,9 +35,10 @@ class sphere : public hittable  {
 
 
 bool sphere::bounding_box(double t0, double t1, aabb& output_box) const {
+    const double r = std::abs(radius);
     output_box = aabb(
-        center - vec3(radius, radius, radius),
-        center + vec3(radius, radius, radius));
+        center - vec3(r, r, r),
+        center + vec3(r, r, r));
     return true;
 }
 
