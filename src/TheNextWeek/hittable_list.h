@@ -19,7 +19,7 @@
 #include <vector>
 
 
-class hittable_list : public hittable  {
+class hittable_list : public hittable {
     public:
         hittable_list() {}
         hittable_list(shared_ptr<hittable> object) { add(object); }
