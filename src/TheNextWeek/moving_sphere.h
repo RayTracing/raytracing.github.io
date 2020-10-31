@@ -27,8 +27,7 @@ class moving_sphere : public hittable {
             time0(time_start), time1(time_end)
         {};
 
-        virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-            const override;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
         virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
             const override;
@@ -60,7 +59,7 @@ bool moving_sphere::bounding_box(double time_start, double time_end, aabb& outpu
 }
 
 
-bool moving_sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+bool moving_sphere::hit(const ray& r, interval ray_t, hit_record& rec) const {
     vec3 oc = r.origin() - center(r.time());
     auto a = r.direction().length_squared();
     auto half_b = dot(oc, r.direction());
@@ -72,9 +71,9 @@ bool moving_sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_reco
 
     // Find the nearest root that lies in the acceptable range.
     auto root = (-half_b - sqrtd) / a;
-    if (root < ray_tmin || ray_tmax < root) {
+    if (!ray_t.contains(root)) {
         root = (-half_b + sqrtd) / a;
-        if (root < ray_tmin || ray_tmax < root)
+        if (!ray_t.contains(root))
             return false;
     }
 

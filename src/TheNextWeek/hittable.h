@@ -37,8 +37,7 @@ struct hit_record {
 
 class hittable {
     public:
-        virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-            const = 0;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
 
         virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
             const = 0;
@@ -49,8 +48,7 @@ class translate : public hittable {
         translate(shared_ptr<hittable> p, const vec3& displacement)
             : ptr(p), offset(displacement) {}
 
-        virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-            const override;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
         virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
             const override;
@@ -61,9 +59,9 @@ class translate : public hittable {
 };
 
 
-bool translate::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+bool translate::hit(const ray& r, interval ray_t, hit_record& rec) const {
     ray moved_r(r.origin() - offset, r.direction(), r.time());
-    if (!ptr->hit(moved_r, ray_tmin, ray_tmax, rec))
+    if (!ptr->hit(moved_r, ray_t, rec))
         return false;
 
     rec.p += offset;
@@ -89,8 +87,7 @@ class rotate_y : public hittable {
     public:
         rotate_y(shared_ptr<hittable> p, double angle);
 
-        virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-            const override;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
         virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
             const override
@@ -141,7 +138,7 @@ rotate_y::rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
 }
 
 
-bool rotate_y::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+bool rotate_y::hit(const ray& r, interval ray_t, hit_record& rec) const {
     auto origin = r.origin();
     auto direction = r.direction();
 
@@ -153,7 +150,7 @@ bool rotate_y::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& r
 
     ray rotated_r(origin, direction, r.time());
 
-    if (!ptr->hit(rotated_r, ray_tmin, ray_tmax, rec))
+    if (!ptr->hit(rotated_r, ray_t, rec))
         return false;
 
     auto p = rec.p;

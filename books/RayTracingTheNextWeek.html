@@ -197,8 +197,7 @@ those times need not match up with the camera aperture open and close.
                 time0(time_start), time1(time_end)
             {};
 
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const override;
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
             point3 center(double time) const;
 
@@ -226,7 +225,7 @@ The `moving_sphere::hit()` function is almost identical to the `sphere::hit()` f
 just needs to become a function `center(time)`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool moving_sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+    bool moving_sphere::hit(const ray& r, interval ray_t, hit_record& rec) const {
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         vec3 oc = r.origin() - center(r.time());
@@ -241,9 +240,9 @@ just needs to become a function `center(time)`:
 
         // Find the nearest root that lies in the acceptable range.
         auto root = (-half_b - sqrtd) / a;
-        if (root < ray_tmin || ray_tmax < root) {
+        if (!ray_t.contains(root)) {
             root = (-half_b + sqrtd) / a;
-            if (root < ray_tmin || ray_tmax < root)
+            if (!ray_t.contains(root))
                 return false;
         }
 
@@ -662,14 +661,14 @@ passing in the interval $[t_{min}$, $t_{max}]$, we get:
             point3 min() const {return minimum; }
             point3 max() const {return maximum; }
 
-            bool hit(const ray& r, double ray_tmin, double ray_tmax) const {
+            bool hit(const ray& r, interval ray_t) const {
                 for (int a = 0; a < 3; a++) {
                     auto t0 = fmin((minimum[a] - r.origin()[a]) / r.direction()[a],
                                    (maximum[a] - r.origin()[a]) / r.direction()[a]);
                     auto t1 = fmax((minimum[a] - r.origin()[a]) / r.direction()[a],
                                    (maximum[a] - r.origin()[a]) / r.direction()[a]);
-                    ray_tmin = fmax(t0, ray_tmin);
-                    ray_tmax = fmin(t1, ray_tmax);
+                    auto ray_tmin = fmax(t0, ray_t.min);
+                    auto ray_tmax = fmin(t1, ray_t.max);
                     if (ray_tmax <= ray_tmin)
                         return false;
                 }
@@ -694,15 +693,15 @@ the following version of the code. It works extremely well on many compilers, an
 as my go-to method:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline bool aabb::hit(const ray& r, double ray_tmin, double ray_tmax) const {
+    inline bool aabb::hit(const ray& r, interval ray_t) const {
         for (int a = 0; a < 3; a++) {
             auto invD = 1.0f / r.direction()[a];
             auto t0 = (min()[a] - r.origin()[a]) * invD;
             auto t1 = (max()[a] - r.origin()[a]) * invD;
             if (invD < 0.0f)
                 std::swap(t0, t1);
-            ray_tmin = t0 > ray_tmin ? t0 : ray_tmin;
-            ray_tmax = t1 < ray_tmax ? t1 : ray_tmax;
+            auto ray_tmin = t0 > ray_t.min ? t0 : ray_t.min;
+            auto ray_tmax = t1 < ray_t.max ? t1 : ray_t.max;
             if (ray_tmax <= ray_tmin)
                 return false;
         }
@@ -730,8 +729,7 @@ the entire time interval [`time0`,`time1`].
     class hittable {
         public:
             ...
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const = 0;
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -751,8 +749,7 @@ For a sphere, that `bounding_box` function is easy:
     class sphere : public hittable {
         public:
             ...
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const override;
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -788,8 +785,7 @@ and compute the box of those two boxes:
     class moving_sphere : public hittable {
         public:
             ...
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const override;
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -833,8 +829,7 @@ the fly because it is only usually called at BVH construction.
     class hittable_list : public hittable {
         public:
             ...
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const override;
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -917,8 +912,7 @@ a class:
                 const std::vector<shared_ptr<hittable>>& src_objects,
                 size_t start, size_t end, double time_start, double time_end);
 
-            virtual bool hit(
-                const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override;
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
                 const override;
@@ -947,12 +941,12 @@ The `hit` function is pretty straightforward: check whether the box for the node
 check the children and sort out any details:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool bvh_node::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
-        if (!box.hit(r, ray_tmin, ray_tmax))
+    bool bvh_node::hit(const ray& r, interval ray_t, hit_record& rec) const {
+        if (!box.hit(r, ray_t))
             return false;
 
-        bool hit_left = left->hit(r, ray_tmin, ray_tmax, rec);
-        bool hit_right = right->hit(r, ray_tmin, hit_left ? rec.t : ray_tmax, rec);
+        bool hit_left = left->hit(r, ray_t, rec);
+        bool hit_right = right->hit(r, interval(ray_t.min, hit_left ? rec.t : ray_t.max), rec);
 
         return hit_left || hit_right;
     }
@@ -2313,7 +2307,7 @@ the new `emitted` value.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // If the ray hits nothing, return the background color.
-        if (!world.hit(r, 0.001, infinity, rec))
+        if (!world.hit(r, interval(0.001, infinity), rec))
             return background;
 
         ray scattered;
@@ -2469,8 +2463,7 @@ The actual `xy_rect` class is thus:
                 shared_ptr<material> mat)
                 : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
 
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const override;
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
             const override {
@@ -2494,9 +2487,9 @@ The actual `xy_rect` class is thus:
 And the hit function is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool xy_rect::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+    bool xy_rect::hit(const ray& r, interval ray_t, hit_record& rec) const {
         auto t = (k-r.origin().z()) / r.direction().z();
-        if (t < ray_tmin || t > ray_tmax)
+        if (!ray_t.contains(t))
             return false;
         auto x = r.origin().x() + t*r.direction().x();
         auto y = r.origin().y() + t*r.direction().y();
@@ -2612,8 +2605,7 @@ This is xz and yz:
                 shared_ptr<material> mat)
                 : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const override;
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
             const override {
@@ -2636,8 +2628,7 @@ This is xz and yz:
                 shared_ptr<material> mat)
                 : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const override;
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
             const override {
@@ -2659,9 +2650,9 @@ This is xz and yz:
 With unsurprising hit functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool xz_rect::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+    bool xz_rect::hit(const ray& r, interval ray_t, hit_record& rec) const {
         auto t = (k-r.origin().y()) / r.direction().y();
-        if (t < ray_tmin || t > ray_tmax)
+        if (!ray_t.contains(t))
             return false;
         auto x = r.origin().x() + t*r.direction().x();
         auto z = r.origin().z() + t*r.direction().z();
@@ -2677,9 +2668,9 @@ With unsurprising hit functions:
         return true;
     }
 
-    bool yz_rect::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+    bool yz_rect::hit(const ray& r, interval ray_t, hit_record& rec) const {
         auto t = (k-r.origin().x()) / r.direction().x();
-        if (t < ray_tmin || t > ray_tmax)
+        if (!ray_t.contains(t))
             return false;
         auto y = r.origin().y() + t*r.direction().y();
         auto z = r.origin().z() + t*r.direction().z();
@@ -2795,8 +2786,7 @@ make an axis-aligned block primitive that holds 6 rectangles:
             box() {}
             box(const point3& p0, const point3& p1, shared_ptr<material> ptr);
 
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const override;
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
             const override {
@@ -2824,8 +2814,8 @@ make an axis-aligned block primitive that holds 6 rectangles:
         sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
     }
 
-    bool box::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
-        return sides.hit(r, ray_tmin, ray_tmax, rec);
+    bool box::hit(const ray& r, interval ray_t, hit_record& rec) const {
+        return sides.hit(r, ray_t, rec);
     }
 
     #endif
@@ -2878,8 +2868,7 @@ move any underlying hittable is a _translate_ instance.
             translate(shared_ptr<hittable> p, const vec3& displacement)
                 : ptr(p), offset(displacement) {}
 
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const override;
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
                 const override;
@@ -2889,9 +2878,9 @@ move any underlying hittable is a _translate_ instance.
             vec3 offset;
     };
 
-    bool translate::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+    bool translate::hit(const ray& r, interval ray_t, hit_record& rec) const {
         ray moved_r(r.origin() - offset, r.direction(), r.time());
-        if (!ptr->hit(moved_r, ray_tmin, ray_tmax, rec))
+        if (!ptr->hit(moved_r, ray_t, rec))
             return false;
 
         rec.p += offset;
@@ -2966,8 +2955,7 @@ For a y-rotation class we have:
         public:
             rotate_y(shared_ptr<hittable> p, double angle);
 
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const override;
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
             const override {
@@ -3029,7 +3017,7 @@ With constructor:
 And the hit function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool rotate_y::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+    bool rotate_y::hit(const ray& r, interval ray_t, hit_record& rec) const {
         auto origin = r.origin();
         auto direction = r.direction();
 
@@ -3041,7 +3029,7 @@ And the hit function:
 
         ray rotated_r(origin, direction, r.time());
 
-        if (!ptr->hit(rotated_r, ray_tmin, ray_tmax, rec))
+        if (!ptr->hit(rotated_r, ray_t, rec))
             return false;
 
         auto p = rec.p;
@@ -3146,8 +3134,7 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
                   phase_function(make_shared<isotropic>(c))
                 {}
 
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const override;
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
             const override {
@@ -3193,25 +3180,23 @@ The scattering function of isotropic picks a uniform random direction:
 And the hit function is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool constant_medium::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-        const {
-
+    bool constant_medium::hit(const ray& r, interval ray_t, hit_record& rec) const {
         // Print occasional samples when debugging. To enable, set enableDebug true.
         const bool enableDebug = false;
         const bool debugging = enableDebug && random_double() < 0.00001;
 
         hit_record rec1, rec2;
 
-        if (!boundary->hit(r, -infinity, infinity, rec1))
+        if (!boundary->hit(r, universe, rec1))
             return false;
 
-        if (!boundary->hit(r, rec1.t+0.0001, infinity, rec2))
+        if (!boundary->hit(r, interval(rec1.t+0.0001, infinity), rec2))
             return false;
 
         if (debugging) std::cerr << "\nray_tmin=" << rec1.t << ", ray_tmax=" << rec2.t << '\n';
 
-        if (rec1.t < ray_tmin) rec1.t = ray_tmin;
-        if (rec2.t > ray_tmax) rec2.t = ray_tmax;
+        if (rec1.t < ray_t.min) rec1.t = ray_t.min;
+        if (rec2.t > ray_t.max) rec2.t = ray_t.max;
 
         if (rec1.t >= rec2.t)
             return false;

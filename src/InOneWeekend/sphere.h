@@ -22,8 +22,7 @@ class sphere : public hittable {
         sphere(point3 ctr, double r, shared_ptr<material> m)
             : center(ctr), radius(r), mat_ptr(m) {};
 
-        virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-            const override;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
     public:
         point3 center;
@@ -32,7 +31,7 @@ class sphere : public hittable {
 };
 
 
-bool sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+bool sphere::hit(const ray& r, interval ray_t, hit_record& rec) const {
     vec3 oc = r.origin() - center;
     auto a = r.direction().length_squared();
     auto half_b = dot(oc, r.direction());
@@ -44,9 +43,9 @@ bool sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec
 
     // Find the nearest root that lies in the acceptable range.
     auto root = (-half_b - sqrtd) / a;
-    if (root < ray_tmin || ray_tmax < root) {
+    if (!ray_t.contains(root)) {
         root = (-half_b + sqrtd) / a;
-        if (root < ray_tmin || ray_tmax < root)
+        if (!ray_t.contains(root))
             return false;
     }
 

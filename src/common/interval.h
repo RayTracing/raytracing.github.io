@@ -1,8 +1,6 @@
-#ifndef HITTABLE_H
-#define HITTABLE_H
+#ifndef INTERVAL_H
+#define INTERVAL_H
 //==============================================================================================
-// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
-//
 // To the extent possible under law, the author(s) have dedicated all copyright and related and
 // neighboring rights to this software to the public domain worldwide. This software is
 // distributed without any warranty.
@@ -11,29 +9,20 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
-#include "rtweekend.h"
+class interval {
+  public:
+    double min, max;
 
-class material;
+    interval(double _min, double _max) : min(_min), max(_max) {}
+    interval() : min(+infinity), max(-infinity) {} // Default interval is empty
 
-
-struct hit_record {
-    point3 p;
-    vec3 normal;
-    shared_ptr<material> mat_ptr;
-    double t;
-    bool front_face;
-
-    inline void set_face_normal(const ray& r, const vec3& outward_normal) {
-        front_face = dot(r.direction(), outward_normal) < 0;
-        normal = front_face ? outward_normal :-outward_normal;
+    bool contains(double x) const {
+        return min <= x && x <= max;
     }
 };
 
-
-class hittable {
-    public:
-        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
-};
+const static interval empty   (+infinity, -infinity);
+const static interval universe(-infinity, +infinity);
 
 
 #endif

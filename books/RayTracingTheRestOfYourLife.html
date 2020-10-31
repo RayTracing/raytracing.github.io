@@ -913,7 +913,7 @@ And the `ray_color` function gets a minor modification:
             return color(0,0,0);
 
         // If the ray hits nothing, return the background color.
-        if (!world.hit(r, 0.001, infinity, rec))
+        if (!world.hit(r, interval(0.001, infinity), rec))
             return background;
 
         ray scattered;
@@ -1409,7 +1409,7 @@ that math and get the concept, we can add it (see the highlighted region):
             return color(0,0,0);
 
         // If the ray hits nothing, return the background color.
-        if (!world.hit(r, 0.001, infinity, rec))
+        if (!world.hit(r, interval(0.001, infinity), rec))
             return background;
 
         ray scattered;
@@ -1486,10 +1486,8 @@ We also need to flip the light so its normals point in the $-y$ direction:
         public:
             flip_face(shared_ptr<hittable> p) : ptr(p) {}
 
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const override {
-
-                if (!ptr->hit(r, ray_tmin, ray_tmax, rec))
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+                if (!ptr->hit(r, ray_t, rec))
                     return false;
 
                 rec.front_face = !rec.front_face;
@@ -1659,7 +1657,7 @@ change variable `pdf` to some other variable name to avoid a name conflict with 
             return color(0,0,0);
 
         // If the ray hits nothing, return the background color.
-        if (!world.hit(r, 0.001, infinity, rec))
+        if (!world.hit(r, interval(0.001, infinity), rec))
             return background;
 
         ray scattered;
@@ -1727,8 +1725,7 @@ instrumentation to all `hittable` subclasses, we’ll add two dummy functions to
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable {
         public:
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const = 0;
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
 
             virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
                 const = 0;
@@ -1758,7 +1755,7 @@ And we change `xz_rect` to implement those functions:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             virtual double pdf_value(const point3& origin, const vec3& v) const override {
                 hit_record rec;
-                if (!this->hit(ray(origin, v), 0.001, infinity, rec))
+                if (!this->hit(ray(origin, v), interval(0.001, infinity), rec))
                     return 0;
 
                 auto area = (x1-x0)*(z1-z0);
@@ -2083,7 +2080,7 @@ And `ray_color()` changes are small:
             return color(0,0,0);
 
         // If the ray hits nothing, return the background color.
-        if (!world.hit(r, 0.001, infinity, rec))
+        if (!world.hit(r, interval(0.001, infinity), rec))
             return background;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2339,7 +2336,7 @@ The sphere class needs the two PDF-related functions:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     double sphere::pdf_value(const point3& o, const vec3& v) const {
         hit_record rec;
-        if (!this->hit(ray(o, v), 0.001, infinity, rec))
+        if (!this->hit(ray(o, v), interval(0.001, infinity), rec))
             return 0;
 
         auto cos_theta_max = sqrt(1 - radius*radius/(center-o).length_squared());
