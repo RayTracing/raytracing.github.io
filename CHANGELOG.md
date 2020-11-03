@@ -8,6 +8,7 @@ Change Log -- Ray Tracing in One Weekend
   - Change: `hittable:hit()` methods use new interval class for ray t parameter
 
 ### In One Weekend
+  - Added: More commentary about the choice between `double` and `float` (#752)
 
 ### The Next Week
 
