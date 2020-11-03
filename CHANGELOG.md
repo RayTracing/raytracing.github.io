@@ -4,6 +4,8 @@ Change Log -- Ray Tracing in One Weekend
 # v4.0.0 (pending, targeted for 2020-12-25)
 
 ### Common
+  - Change: Introduce new `interval` class used throughout codebase (#777)
+  - Change: `hittable:hit()` methods use new interval class for ray t parameter
 
 ### In One Weekend
 

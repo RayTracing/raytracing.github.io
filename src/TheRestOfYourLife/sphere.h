@@ -23,8 +23,7 @@ class sphere : public hittable {
         sphere(point3 ctr, double r, shared_ptr<material> m)
             : center(ctr), radius(r), mat_ptr(m) {};
 
-        virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-            const override;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
         virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
             const override;
@@ -57,7 +56,7 @@ class sphere : public hittable {
 
 double sphere::pdf_value(const point3& o, const vec3& v) const {
     hit_record rec;
-    if (!this->hit(ray(o, v), 0.001, infinity, rec))
+    if (!this->hit(ray(o, v), interval(0.001, infinity), rec))
         return 0;
 
     auto cos_theta_max = sqrt(1 - radius*radius/(center-o).length_squared());
@@ -84,7 +83,7 @@ bool sphere::bounding_box(double time_start, double time_end, aabb& output_box) 
 }
 
 
-bool sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+bool sphere::hit(const ray& r, interval ray_t, hit_record& rec) const {
     vec3 oc = r.origin() - center;
     auto a = r.direction().length_squared();
     auto half_b = dot(oc, r.direction());
@@ -96,9 +95,9 @@ bool sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec
 
     // Find the nearest root that lies in the acceptable range.
     auto root = (-half_b - sqrtd) / a;
-    if (root < ray_tmin || ray_tmax < root) {
+    if (!ray_t.contains(root)) {
         root = (-half_b + sqrtd) / a;
-        if (root < ray_tmin || ray_tmax < root)
+        if (!ray_t.contains(root))
             return false;
     }
 

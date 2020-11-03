@@ -22,15 +22,15 @@ class aabb {
         point3 min() const {return minimum; }
         point3 max() const {return maximum; }
 
-        bool hit(const ray& r, double ray_tmin, double ray_tmax) const {
+        bool hit(const ray& r, interval ray_t) const {
             for (int a = 0; a < 3; a++) {
                 auto t0 = fmin((minimum[a] - r.origin()[a]) / r.direction()[a],
                                (maximum[a] - r.origin()[a]) / r.direction()[a]);
                 auto t1 = fmax((minimum[a] - r.origin()[a]) / r.direction()[a],
                                (maximum[a] - r.origin()[a]) / r.direction()[a]);
-                ray_tmin = fmax(t0, ray_tmin);
-                ray_tmax = fmin(t1, ray_tmax);
-                if (ray_tmax <= ray_tmin)
+                ray_t.min = fmax(t0, ray_t.min);
+                ray_t.max = fmin(t1, ray_t.max);
+                if (ray_t.max <= ray_t.min)
                     return false;
             }
             return true;

@@ -1278,6 +1278,128 @@ surface normal. This is often a great way to look at your model for flaws and ch
 
 </div>
 
+An Interval Class
+------------------
+Before we continue, we'll implement an interval class to manage real-valued intervals with a minimum
+and a maximum. We'll end up using this class quite often as we proceed.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef INTERVAL_H
+    #define INTERVAL_H
+
+    class interval {
+      public:
+        double min, max;
+
+        interval(double _min, double _max) : min(_min), max(_max) {}
+        interval() : min(+infinity), max(-infinity) {} // Default interval is empty
+
+        bool contains(double x) const {
+            return min <= x && x <= max;
+        }
+    };
+
+    const static interval empty   (+infinity, -infinity);
+    const static interval universe(-infinity, +infinity);
+
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [interval-initial]: <kbd>[interval.h]</kbd> Introducing the new interval class]
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class hittable {
+        public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hittable-with-interval]: <kbd>[hittable.h]</kbd> hittable::hit() using interval]
+
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class hittable_list : public hittable {
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+    };
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    bool hittable_list::hit(const ray& r, interval ray_t, hit_record& rec) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        hit_record temp_rec;
+        bool hit_anything = false;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto closest_so_far = ray_t.max;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        for (const auto& object : objects) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            if (object->hit(r, interval(ray_t.min, closest_so_far), temp_rec)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                hit_anything = true;
+                closest_so_far = temp_rec.t;
+                rec = temp_rec;
+            }
+        }
+
+        return hit_anything;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hittable-list-with-interval]: <kbd>[hittable.h]</kbd>
+    hittable_list::hit() using interval]
+
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class sphere : public hittable {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+    };
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    bool sphere::hit(const ray& r, interval ray_t, hit_record& rec) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+
+        // Find the nearest root that lies in the acceptable range.
+        auto root = (-half_b - sqrtd) / a;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        if (!ray_t.contains(root)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            root = (-half_b + sqrtd) / a;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            if (!ray_t.contains(root))
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                return false;
+        }
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [sphere-with-interval]: <kbd>[sphere.h]</kbd> sphere using interval]
+
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+    color ray_color(const ray& r, const hittable& world) {
+        hit_record rec;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        if (world.hit(r, interval(0, infinity), rec)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            return 0.5 * (rec.normal + color(1,1,1));
+        }
+    ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-with-interval]: <kbd>[main.cc]</kbd> The new main using interval]
 
 
 Antialiasing
@@ -1570,7 +1692,7 @@ Then update the `ray_color()` function to use the new random direction generator
     color ray_color(const ray& r, const hittable& world) {
         hit_record rec;
 
-        if (world.hit(r, 0, infinity, rec)) {
+        if (world.hit(r, interval(0, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             point3 target = rec.p + rec.normal + random_in_unit_sphere();
             return 0.5 * ray_color(ray(rec.p, target - rec.p), world);
@@ -1606,7 +1728,7 @@ depth, returning no light contribution at the maximum depth:
             return color(0,0,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        if (world.hit(r, 0, infinity, rec)) {
+        if (world.hit(r, interval(0, infinity), rec)) {
             point3 target = rec.p + rec.normal + random_in_unit_sphere();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
@@ -1721,7 +1843,7 @@ off of not at exactly $t=0$, but instead at $t=-0.0000001$ or $t=0.00000001$ or 
 point approximation the sphere intersector gives us. So we need to ignore hits very near zero:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    if (world.hit(r, 0.001, infinity, rec)) {
+    if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [reflect-tolerance]: <kbd>[main.cc]</kbd> Calculating reflected ray origins with tolerance]
 
@@ -1772,7 +1894,7 @@ function.
         if (depth <= 0)
             return color(0,0,0);
 
-        if (world.hit(r, 0.001, infinity, rec)) {
+        if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             point3 target = rec.p + rec.normal + random_unit_vector();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1854,7 +1976,7 @@ Plugging the new formula into the `ray_color()` function:
         if (depth <= 0)
             return color(0,0,0);
 
-        if (world.hit(r, 0.001, infinity, rec)) {
+        if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             point3 target = rec.p + random_in_hemisphere(rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1976,8 +2098,7 @@ within `hit_record`. See the highlighted lines below:
                 : center(ctr), radius(r), mat_ptr(m) {};
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            virtual bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec)
-                const override;
+            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
         public:
             point3 center;
@@ -1987,7 +2108,7 @@ within `hit_record`. See the highlighted lines below:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
 
-    bool sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+    bool sphere::hit(const ray& r, interval ray_t, hit_record& rec) const {
         ...
 
         rec.t = root;
@@ -2146,7 +2267,7 @@ We need to modify the `ray_color()` function to use this:
         if (depth <= 0)
             return color(0,0,0);
 
-        if (world.hit(r, 0.001, infinity, rec)) {
+        if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             ray scattered;
             color attenuation;
