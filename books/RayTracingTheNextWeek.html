@@ -66,29 +66,29 @@ For this we will first need to have a ray store the time it exists at:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class ray {
-        public:
-            ray() {}
+      public:
+        ray() {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            ray(const point3& origin, const vec3& direction, double time = 0.0)
-                : orig(origin), dir(direction), tm(time)
-            {}
+        ray(const point3& origin, const vec3& direction, double time = 0.0)
+          : orig(origin), dir(direction), tm(time)
+        {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            point3 origin() const  { return orig; }
-            vec3 direction() const { return dir; }
+        point3 origin() const  { return orig; }
+        vec3 direction() const { return dir; }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            double time() const    { return tm; }
+        double time() const    { return tm; }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            point3 at(double t) const {
-                return orig + t*dir;
-            }
+        point3 at(double t) const {
+            return orig + t*dir;
+        }
 
-        public:
-            point3 orig;
-            vec3 dir;
+      public:
+        point3 orig;
+        vec3 dir;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            double tm;
+        double tm;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -107,63 +107,63 @@ a time period.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
-        public:
-            camera(
-                point3 lookfrom,
-                point3 lookat,
-                vec3   vup,
-                double vfov, // vertical field-of-view in degrees
-                double aspect_ratio,
-                double aperture,
-                double focus_dist,
+      public:
+        camera(
+            point3 lookfrom,
+            point3 lookat,
+            vec3   vup,
+            double vfov, // vertical field-of-view in degrees
+            double aspect_ratio,
+            double aperture,
+            double focus_dist,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                double time_start = 0,
-                double time_end = 0
+            double time_start = 0,
+            double time_end = 0
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            ) {
-                auto theta = degrees_to_radians(vfov);
-                auto h = tan(theta/2);
-                auto viewport_height = 2.0 * h;
-                auto viewport_width = aspect_ratio * viewport_height;
+        ) {
+            auto theta = degrees_to_radians(vfov);
+            auto h = tan(theta/2);
+            auto viewport_height = 2.0 * h;
+            auto viewport_width = aspect_ratio * viewport_height;
 
-                w = unit_vector(lookfrom - lookat);
-                u = unit_vector(cross(vup, w));
-                v = cross(w, u);
+            w = unit_vector(lookfrom - lookat);
+            u = unit_vector(cross(vup, w));
+            v = cross(w, u);
 
-                origin = lookfrom;
-                horizontal = focus_dist * viewport_width * u;
-                vertical = focus_dist * viewport_height * v;
-                lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
+            origin = lookfrom;
+            horizontal = focus_dist * viewport_width * u;
+            vertical = focus_dist * viewport_height * v;
+            lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
 
-                lens_radius = aperture / 2;
+            lens_radius = aperture / 2;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                time0 = time_start;
-                time1 = time_end;
+            time0 = time_start;
+            time1 = time_end;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            }
+        }
 
-            ray get_ray(double s, double t) const {
-                vec3 rd = lens_radius * random_in_unit_disk();
-                vec3 offset = u * rd.x() + v * rd.y();
+        ray get_ray(double s, double t) const {
+            vec3 rd = lens_radius * random_in_unit_disk();
+            vec3 offset = u * rd.x() + v * rd.y();
 
-                return ray(
-                    origin + offset,
+            return ray(
+                origin + offset,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                    lower_left_corner + s*horizontal + t*vertical - origin - offset,
-                    random_double(time0, time1)
+                lower_left_corner + s*horizontal + t*vertical - origin - offset,
+                random_double(time0, time1)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                );
-            }
+            );
+        }
 
-        private:
-            point3 origin;
-            point3 lower_left_corner;
-            vec3 horizontal;
-            vec3 vertical;
-            vec3 u, v, w;
-            double lens_radius;
+      private:
+        point3 origin;
+        point3 lower_left_corner;
+        vec3 horizontal;
+        vec3 vertical;
+        vec3 u, v, w;
+        double lens_radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            double time0, time1;  // shutter open/close times
+        double time0, time1;  // shutter open/close times
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
 
@@ -187,25 +187,25 @@ those times need not match up with the camera aperture open and close.
 
 
     class moving_sphere : public hittable {
-        public:
-            moving_sphere() {}
-            moving_sphere(
-                point3 ctr0, point3 ctr1, double r, shared_ptr<material> m,
-                double time_start, double time_end)
-                :
-                center0(ctr0), center1(ctr1), radius(r), mat_ptr(m),
-                time0(time_start), time1(time_end)
-            {};
+      public:
+        moving_sphere() {}
+        moving_sphere(
+            point3 ctr0, point3 ctr1, double r, shared_ptr<material> m,
+            double time_start, double time_end)
+            :
+            center0(ctr0), center1(ctr1), radius(r), mat_ptr(m),
+            time0(time_start), time1(time_end)
+        {};
 
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-            point3 center(double time) const;
+        point3 center(double time) const;
 
-        public:
-            point3 center0, center1;
-            double time0, time1;
-            double radius;
-            shared_ptr<material> mat_ptr;
+      public:
+        point3 center0, center1;
+        double time0, time1;
+        double radius;
+        shared_ptr<material> mat_ptr;
     };
 
     point3 moving_sphere::center(double time) const {
@@ -270,50 +270,50 @@ for the time of intersection:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
         ...
-            virtual bool scatter(
-                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const override {
-                auto scatter_direction = rec.normal + random_unit_vector();
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+        ) const override {
+            auto scatter_direction = rec.normal + random_unit_vector();
 
-                // Catch degenerate scatter direction
-                if (scatter_direction.near_zero())
-                    scatter_direction = rec.normal;
+            // Catch degenerate scatter direction
+            if (scatter_direction.near_zero())
+                scatter_direction = rec.normal;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                scattered = ray(rec.p, scatter_direction, r_in.time());
+            scattered = ray(rec.p, scatter_direction, r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                attenuation = albedo;
-                return true;
-            }
-            ...
+            attenuation = albedo;
+            return true;
+        }
+        ...
     };
 
     class metal : public material {
         ...
-            virtual bool scatter(
-                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const override {
-                vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+        ) const override {
+            vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
+            scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                attenuation = albedo;
-                return (dot(scattered.direction(), rec.normal) > 0);
-            }
-            ...
+            attenuation = albedo;
+            return (dot(scattered.direction(), rec.normal) > 0);
+        }
+        ...
     };
 
     class dielectric : public material {
         ...
-            virtual bool scatter(
-                ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                scattered = ray(rec.p, direction, r_in.time());
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                return true;
-            }
+        virtual bool scatter(
             ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            scattered = ray(rec.p, direction, r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            return true;
+        }
+        ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [material-time]: <kbd>[material.h]</kbd>
@@ -654,29 +654,29 @@ passing in the interval $[t_{min}$, $t_{max}]$, we get:
     #include "rtweekend.h"
 
     class aabb {
-        public:
-            aabb() {}
-            aabb(const point3& a, const point3& b) { minimum = a; maximum = b;}
+      public:
+        aabb() {}
+        aabb(const point3& a, const point3& b) { minimum = a; maximum = b;}
 
-            point3 min() const {return minimum; }
-            point3 max() const {return maximum; }
+        point3 min() const {return minimum; }
+        point3 max() const {return maximum; }
 
-            bool hit(const ray& r, interval ray_t) const {
-                for (int a = 0; a < 3; a++) {
-                    auto t0 = fmin((minimum[a] - r.origin()[a]) / r.direction()[a],
-                                   (maximum[a] - r.origin()[a]) / r.direction()[a]);
-                    auto t1 = fmax((minimum[a] - r.origin()[a]) / r.direction()[a],
-                                   (maximum[a] - r.origin()[a]) / r.direction()[a]);
-                    auto ray_tmin = fmax(t0, ray_t.min);
-                    auto ray_tmax = fmin(t1, ray_t.max);
-                    if (ray_tmax <= ray_tmin)
-                        return false;
-                }
-                return true;
+        bool hit(const ray& r, interval ray_t) const {
+            for (int a = 0; a < 3; a++) {
+                auto t0 = fmin((minimum[a] - r.origin()[a]) / r.direction()[a],
+                               (maximum[a] - r.origin()[a]) / r.direction()[a]);
+                auto t1 = fmax((minimum[a] - r.origin()[a]) / r.direction()[a],
+                               (maximum[a] - r.origin()[a]) / r.direction()[a]);
+                auto ray_tmin = fmax(t0, ray_t.min);
+                auto ray_tmax = fmin(t1, ray_t.max);
+                if (ray_tmax <= ray_tmin)
+                    return false;
             }
+            return true;
+        }
 
-            point3 minimum;
-            point3 maximum;
+        point3 minimum;
+        point3 maximum;
     };
 
     #endif
@@ -727,16 +727,16 @@ the entire time interval [`time0`,`time1`].
     ...
 
     class hittable {
-        public:
-            ...
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
+      public:
+        ...
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-                const = 0;
+        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const = 0;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            ...
+        ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hittable-bbox]: <kbd>[hittable.h]</kbd> Hittable class with bounding-box]
@@ -747,16 +747,16 @@ For a sphere, that `bounding_box` function is easy:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
-        public:
-            ...
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+      public:
+        ...
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-                const override;
+        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            ...
+        ...
     };
 
     ...
@@ -783,16 +783,16 @@ and compute the box of those two boxes:
     ...
 
     class moving_sphere : public hittable {
-        public:
-            ...
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+      public:
+        ...
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-                const override;
+        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            ...
+        ...
     };
 
     ...
@@ -827,14 +827,14 @@ the fly because it is only usually called at BVH construction.
     ...
 
     class hittable_list : public hittable {
-        public:
-            ...
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+      public:
+        ...
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-                const override;
+        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     };
@@ -901,26 +901,26 @@ a class:
 
 
     class bvh_node : public hittable {
-        public:
-            bvh_node();
+      public:
+        bvh_node();
 
-            bvh_node(const hittable_list& list, double time_start, double time_end)
-                : bvh_node(list.objects, 0, list.objects.size(), time_start, time_end)
-            {}
+        bvh_node(const hittable_list& list, double time_start, double time_end)
+          : bvh_node(list.objects, 0, list.objects.size(), time_start, time_end)
+        {}
 
-            bvh_node(
-                const std::vector<shared_ptr<hittable>>& src_objects,
-                size_t start, size_t end, double time_start, double time_end);
+        bvh_node(
+            const std::vector<shared_ptr<hittable>>& src_objects,
+            size_t start, size_t end, double time_start, double time_end);
 
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-                const override;
+        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override;
 
-        public:
-            shared_ptr<hittable> left;
-            shared_ptr<hittable> right;
-            aabb box;
+      public:
+        shared_ptr<hittable> left;
+        shared_ptr<hittable> right;
+        aabb box;
     };
 
     bool bvh_node::bounding_box(double time_start, double time_end, aabb& output_box) const {
@@ -1099,24 +1099,23 @@ The First Texture Class: Constant Texture
     #include "rtweekend.h"
 
     class texture {
-        public:
-            virtual color value(double u, double v, const point3& p) const = 0;
+      public:
+        virtual color value(double u, double v, const point3& p) const = 0;
     };
 
     class solid_color : public texture {
-        public:
-            solid_color() {}
-            solid_color(color c) : color_value(c) {}
+      public:
+        solid_color() {}
+        solid_color(color c) : color_value(c) {}
 
-            solid_color(double red, double green, double blue)
-              : solid_color(color(red,green,blue)) {}
+        solid_color(double red, double green, double blue) : solid_color(color(red,green,blue)) {}
 
-            virtual color value(double u, double v, const vec3& p) const override {
-                return color_value;
-            }
+        virtual color value(double u, double v, const vec3& p) const override {
+            return color_value;
+        }
 
-        private:
-            color color_value;
+      private:
+        color color_value;
     };
 
     #endif
@@ -1205,22 +1204,22 @@ points on the unit sphere centered at the origin, and computes $u$ and $v$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
-        ...
-        private:
-            static void get_sphere_uv(const point3& p, double& u, double& v) {
-                // p: a given point on the sphere of radius one, centered at the origin.
-                // u: returned value [0,1] of angle around the Y axis from X=-1.
-                // v: returned value [0,1] of angle from Y=-1 to Y=+1.
-                //     <1 0 0> yields <0.50 0.50>       <-1  0  0> yields <0.00 0.50>
-                //     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
-                //     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
+      ...
+      private:
+        static void get_sphere_uv(const point3& p, double& u, double& v) {
+            // p: a given point on the sphere of radius one, centered at the origin.
+            // u: returned value [0,1] of angle around the Y axis from X=-1.
+            // v: returned value [0,1] of angle from Y=-1 to Y=+1.
+            //     <1 0 0> yields <0.50 0.50>       <-1  0  0> yields <0.00 0.50>
+            //     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
+            //     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
 
-                auto theta = acos(-p.y());
-                auto phi = atan2(-p.z(), p.x()) + pi;
+            auto theta = acos(-p.y());
+            auto phi = atan2(-p.z(), p.x()) + pi;
 
-                u = phi / (2*pi);
-                v = theta / pi;
-            }
+            u = phi / (2*pi);
+            v = theta / pi;
+        }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [get-sphere-uv]: <kbd>[sphere.h]</kbd> get_sphere_uv function]
@@ -1259,31 +1258,31 @@ Now we can make textured materials by replacing the `const color& a` with a text
 
     ...
     class lambertian : public material {
-        public:
+      public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
-            lambertian(shared_ptr<texture> a) : albedo(a) {}
+        lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
+        lambertian(shared_ptr<texture> a) : albedo(a) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            virtual bool scatter(
-                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const override {
-                auto scatter_direction = rec.normal + random_unit_vector();
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+        ) const override {
+            auto scatter_direction = rec.normal + random_unit_vector();
 
-                // Catch degenerate scatter direction
-                if (scatter_direction.near_zero())
-                    scatter_direction = rec.normal;
+            // Catch degenerate scatter direction
+            if (scatter_direction.near_zero())
+                scatter_direction = rec.normal;
 
-                scattered = ray(rec.p, scatter_direction, r_in.time());
+            scattered = ray(rec.p, scatter_direction, r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                attenuation = albedo->value(rec.u, rec.v, rec.p);
+            attenuation = albedo->value(rec.u, rec.v, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                return true;
-            }
+            return true;
+        }
 
-        public:
+      public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            shared_ptr<texture> albedo;
+        shared_ptr<texture> albedo;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1300,26 +1299,26 @@ forms a 3D checker pattern.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class checker_texture : public texture {
-        public:
-            checker_texture() {}
+      public:
+        checker_texture() {}
 
-            checker_texture(shared_ptr<texture> texture_even, shared_ptr<texture> texture_odd)
-                : even(texture_even), odd(texture_odd) {}
+        checker_texture(shared_ptr<texture> texture_even, shared_ptr<texture> texture_odd)
+          : even(texture_even), odd(texture_odd) {}
 
-            checker_texture(color c1, color c2)
-                : even(make_shared<solid_color>(c1)) , odd(make_shared<solid_color>(c2)) {}
+        checker_texture(color c1, color c2)
+          : even(make_shared<solid_color>(c1)) , odd(make_shared<solid_color>(c2)) {}
 
-            virtual color value(double u, double v, const point3& p) const override {
-                auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
-                if (sines < 0)
-                    return odd->value(u, v, p);
-                else
-                    return even->value(u, v, p);
-            }
+        virtual color value(double u, double v, const point3& p) const override {
+            auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
+            if (sines < 0)
+                return odd->value(u, v, p);
+            else
+                return even->value(u, v, p);
+        }
 
-        public:
-            shared_ptr<texture> odd;
-            shared_ptr<texture> even;
+      public:
+        shared_ptr<texture> odd;
+        shared_ptr<texture> even;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [checker-texture]: <kbd>[texture.h]</kbd> Checkered texture]
@@ -1482,59 +1481,59 @@ code to make it all happen:
     #include "rtweekend.h"
 
     class perlin {
-        public:
-            perlin() {
-                ranfloat = new double[point_count];
-                for (int i = 0; i < point_count; ++i) {
-                    ranfloat[i] = random_double();
-                }
-
-                perm_x = perlin_generate_perm();
-                perm_y = perlin_generate_perm();
-                perm_z = perlin_generate_perm();
+      public:
+        perlin() {
+            ranfloat = new double[point_count];
+            for (int i = 0; i < point_count; ++i) {
+                ranfloat[i] = random_double();
             }
 
-            ~perlin() {
-                delete[] ranfloat;
-                delete[] perm_x;
-                delete[] perm_y;
-                delete[] perm_z;
+            perm_x = perlin_generate_perm();
+            perm_y = perlin_generate_perm();
+            perm_z = perlin_generate_perm();
+        }
+
+        ~perlin() {
+            delete[] ranfloat;
+            delete[] perm_x;
+            delete[] perm_y;
+            delete[] perm_z;
+        }
+
+        double noise(const point3& p) const {
+            auto i = static_cast<int>(4*p.x()) & 255;
+            auto j = static_cast<int>(4*p.y()) & 255;
+            auto k = static_cast<int>(4*p.z()) & 255;
+
+            return ranfloat[perm_x[i] ^ perm_y[j] ^ perm_z[k]];
+        }
+
+      private:
+        static const int point_count = 256;
+        double* ranfloat;
+        int* perm_x;
+        int* perm_y;
+        int* perm_z;
+
+        static int* perlin_generate_perm() {
+            auto p = new int[point_count];
+
+            for (int i = 0; i < perlin::point_count; i++)
+                p[i] = i;
+
+            permute(p, point_count);
+
+            return p;
+        }
+
+        static void permute(int* p, int n) {
+            for (int i = n-1; i > 0; i--) {
+                int target = random_int(0, i);
+                int tmp = p[i];
+                p[i] = p[target];
+                p[target] = tmp;
             }
-
-            double noise(const point3& p) const {
-                auto i = static_cast<int>(4*p.x()) & 255;
-                auto j = static_cast<int>(4*p.y()) & 255;
-                auto k = static_cast<int>(4*p.z()) & 255;
-
-                return ranfloat[perm_x[i] ^ perm_y[j] ^ perm_z[k]];
-            }
-
-        private:
-            static const int point_count = 256;
-            double* ranfloat;
-            int* perm_x;
-            int* perm_y;
-            int* perm_z;
-
-            static int* perlin_generate_perm() {
-                auto p = new int[point_count];
-
-                for (int i = 0; i < perlin::point_count; i++)
-                    p[i] = i;
-
-                permute(p, point_count);
-
-                return p;
-            }
-
-            static void permute(int* p, int n) {
-                for (int i = n-1; i > 0; i--) {
-                    int target = random_int(0, i);
-                    int tmp = p[i];
-                    p[i] = p[target];
-                    p[target] = tmp;
-                }
-            }
+        }
     };
 
     #endif
@@ -1549,15 +1548,15 @@ Now if we create an actual texture that takes these floats between 0 and 1 and c
     #include "perlin.h"
 
     class noise_texture : public texture {
-        public:
-            noise_texture() {}
+      public:
+        noise_texture() {}
 
-            virtual color value(double u, double v, const point3& p) const override {
-                return color(1,1,1) * noise.noise(p);
-            }
+        virtual color value(double u, double v, const point3& p) const override {
+            return color(1,1,1) * noise.noise(p);
+        }
 
-        public:
-            perlin noise;
+      public:
+        perlin noise;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [noise-texture]: <kbd>[texture.h]</kbd> Noise texture]
@@ -1627,48 +1626,48 @@ To make it smooth, we can linearly interpolate:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     class perlin {
-        public:
-            ...
-            double noise(point3 vec3& p) const {
+      public:
+        ...
+        double noise(point3 vec3& p) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                auto u = p.x() - floor(p.x());
-                auto v = p.y() - floor(p.y());
-                auto w = p.z() - floor(p.z());
+            auto u = p.x() - floor(p.x());
+            auto v = p.y() - floor(p.y());
+            auto w = p.z() - floor(p.z());
 
-                auto i = static_cast<int>(floor(p.x()));
-                auto j = static_cast<int>(floor(p.y()));
-                auto k = static_cast<int>(floor(p.z()));
-                double c[2][2][2];
+            auto i = static_cast<int>(floor(p.x()));
+            auto j = static_cast<int>(floor(p.y()));
+            auto k = static_cast<int>(floor(p.z()));
+            double c[2][2][2];
 
-                for (int di=0; di < 2; di++)
-                    for (int dj=0; dj < 2; dj++)
-                        for (int dk=0; dk < 2; dk++)
-                            c[di][dj][dk] = ranfloat[
-                                perm_x[(i+di) & 255] ^
-                                perm_y[(j+dj) & 255] ^
-                                perm_z[(k+dk) & 255]
-                            ];
+            for (int di=0; di < 2; di++)
+                for (int dj=0; dj < 2; dj++)
+                    for (int dk=0; dk < 2; dk++)
+                        c[di][dj][dk] = ranfloat[
+                            perm_x[(i+di) & 255] ^
+                            perm_y[(j+dj) & 255] ^
+                            perm_z[(k+dk) & 255]
+                        ];
 
-                return trilinear_interp(c, u, v, w);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            }
-            ...
-        private:
-            ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            static double trilinear_interp(double c[2][2][2], double u, double v, double w) {
-                auto accum = 0.0;
-                for (int i=0; i < 2; i++)
-                    for (int j=0; j < 2; j++)
-                        for (int k=0; k < 2; k++)
-                            accum += (i*u + (1-i)*(1-u))*
-                                    (j*v + (1-j)*(1-v))*
-                                    (k*w + (1-k)*(1-w))*c[i][j][k];
-
-                return accum;
-            }
+            return trilinear_interp(c, u, v, w);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
+        ...
+      private:
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        static double trilinear_interp(double c[2][2][2], double u, double v, double w) {
+            auto accum = 0.0;
+            for (int i=0; i < 2; i++)
+                for (int j=0; j < 2; j++)
+                    for (int k=0; k < 2; k++)
+                        accum += (i*u + (1-i)*(1-u))*
+                                (j*v + (1-j)*(1-v))*
+                                (k*w + (1-k)*(1-w))*c[i][j][k];
+
+            return accum;
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-trilinear]: <kbd>[perlin.h]</kbd> Perlin with trilienear interpolation]
 </div>
@@ -1691,23 +1690,23 @@ a Hermite cubic to round off the interpolation:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin (
-        public:
-            ...
-            double noise(const point3& p) const {
-                auto u = p.x() - floor(p.x());
-                auto v = p.y() - floor(p.y());
-                auto w = p.z() - floor(p.z());
+      public:
+        ...
+        double noise(const point3& p) const {
+            auto u = p.x() - floor(p.x());
+            auto v = p.y() - floor(p.y());
+            auto w = p.z() - floor(p.z());
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                u = u*u*(3-2*u);
-                v = v*v*(3-2*v);
-                w = w*w*(3-2*w);
+            u = u*u*(3-2*u);
+            v = v*v*(3-2*v);
+            w = w*w*(3-2*w);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-                auto i = static_cast<int>(floor(p.x()));
-                auto j = static_cast<int>(floor(p.y()));
-                auto k = static_cast<int>(floor(p.z()));
-                ...
+            auto i = static_cast<int>(floor(p.x()));
+            auto j = static_cast<int>(floor(p.y()));
+            auto k = static_cast<int>(floor(p.z()));
+            ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-smoothed]: <kbd>[perlin.h]</kbd> Perlin smoothed]
 </div>
@@ -1728,22 +1727,22 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class noise_texture : public texture {
-        public:
-            noise_texture() {}
+      public:
+        noise_texture() {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            noise_texture(double sc) : scale(sc) {}
+        noise_texture(double sc) : scale(sc) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            virtual color value(double u, double v, const point3& p) const override {
+        virtual color value(double u, double v, const point3& p) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                return color(1,1,1) * noise.noise(scale * p);
+            return color(1,1,1) * noise.noise(scale * p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            }
+        }
 
-        public:
-            perlin noise;
+      public:
+        perlin noise;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            double scale;
+        double scale;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1787,40 +1786,41 @@ reasonable set of irregular directions, and I won't bother to make them exactly 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin {
-        public:
-            perlin() {
+      public:
+        perlin() {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                ranvec = new vec3[point_count];
+            ranvec = new vec3[point_count];
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                for (int i = 0; i < point_count; ++i) {
+            for (int i = 0; i < point_count; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                    ranvec[i] = unit_vector(vec3::random(-1,1));
+                ranvec[i] = unit_vector(vec3::random(-1,1));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                }
-
-                perm_x = perlin_generate_perm();
-                perm_y = perlin_generate_perm();
-                perm_z = perlin_generate_perm();
             }
 
-            ~perlin() {
+            perm_x = perlin_generate_perm();
+            perm_y = perlin_generate_perm();
+            perm_z = perlin_generate_perm();
+        }
+
+        ~perlin() {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                delete[] ranvec;
+            delete[] ranvec;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                delete[] perm_x;
-                delete[] perm_y;
-                delete[] perm_z;
-            }
+            delete[] perm_x;
+            delete[] perm_y;
+            delete[] perm_z;
+        }
         ...
-        private:
-            static const int point_count = 256;
+
+      private:
+        static const int point_count = 256;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            vec3* ranvec;
+        vec3* ranvec;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            int* perm_x;
-            int* perm_y;
-            int* perm_z;
-            ...
+        int* perm_x;
+        int* perm_y;
+        int* perm_z;
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-randunit]: <kbd>[perlin.h]</kbd> Perlin with random unit translations]
@@ -1831,39 +1831,39 @@ The Perlin class `noise()` method is now:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin {
-        public:
-            ...
-            double noise(const point3& p) const {
+      public:
+        ...
+        double noise(const point3& p) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                auto u = p.x() - floor(p.x());
-                auto v = p.y() - floor(p.y());
-                auto w = p.z() - floor(p.z());
+            auto u = p.x() - floor(p.x());
+            auto v = p.y() - floor(p.y());
+            auto w = p.z() - floor(p.z());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                auto i = static_cast<int>(floor(p.x()));
-                auto j = static_cast<int>(floor(p.y()));
-                auto k = static_cast<int>(floor(p.z()));
+            auto i = static_cast<int>(floor(p.x()));
+            auto j = static_cast<int>(floor(p.y()));
+            auto k = static_cast<int>(floor(p.z()));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                vec3 c[2][2][2];
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-                for (int di=0; di < 2; di++)
-                    for (int dj=0; dj < 2; dj++)
-                        for (int dk=0; dk < 2; dk++)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                            c[di][dj][dk] = ranvec[
-                                perm_x[(i+di) & 255] ^
-                                perm_y[(j+dj) & 255] ^
-                                perm_z[(k+dk) & 255]
-                            ];
+            vec3 c[2][2][2];
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
+            for (int di=0; di < 2; di++)
+                for (int dj=0; dj < 2; dj++)
+                    for (int dk=0; dk < 2; dk++)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                        c[di][dj][dk] = ranvec[
+                            perm_x[(i+di) & 255] ^
+                            perm_y[(j+dj) & 255] ^
+                            perm_z[(k+dk) & 255]
+                        ];
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                return perlin_interp(c, u, v, w);
+            return perlin_interp(c, u, v, w);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            }
-            ...
         }
+        ...
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-2]: <kbd>[perlin.h]</kbd> Perlin class with new noise() method]
 </div>
@@ -1873,30 +1873,30 @@ And the interpolation becomes a bit more complicated:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin {
+      ...
+      private:
         ...
-        private:
-            ...
-            static double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
+        static double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                auto uu = u*u*(3-2*u);
-                auto vv = v*v*(3-2*v);
-                auto ww = w*w*(3-2*w);
-                auto accum = 0.0;
+            auto uu = u*u*(3-2*u);
+            auto vv = v*v*(3-2*v);
+            auto ww = w*w*(3-2*w);
+            auto accum = 0.0;
 
-                for (int i=0; i < 2; i++)
-                    for (int j=0; j < 2; j++)
-                        for (int k=0; k < 2; k++) {
-                            vec3 weight_v(u-i, v-j, w-k);
-                            accum += (i*uu + (1-i)*(1-uu))
-                                   * (j*vv + (1-j)*(1-vv))
-                                   * (k*ww + (1-k)*(1-ww))
-                                   * dot(c[i][j][k], weight_v);
-                        }
+            for (int i=0; i < 2; i++)
+                for (int j=0; j < 2; j++)
+                    for (int k=0; k < 2; k++) {
+                        vec3 weight_v(u-i, v-j, w-k);
+                        accum += (i*uu + (1-i)*(1-uu))
+                               * (j*vv + (1-j)*(1-vv))
+                               * (k*ww + (1-k)*(1-ww))
+                               * dot(c[i][j][k], weight_v);
+                    }
 
-                return accum;
+            return accum;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            }
-            ...
+        }
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-interp]: <kbd>[perlin.h]</kbd> Perlin interpolation function so far]
@@ -1909,19 +1909,19 @@ perlin output back to between 0 and 1.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class noise_texture : public texture {
-        public:
-            noise_texture() {}
-            noise_texture(double sc) : scale(sc) {}
+      public:
+        noise_texture() {}
+        noise_texture(double sc) : scale(sc) {}
 
-            virtual color value(double u, double v, const point3& p) const override {
+        virtual color value(double u, double v, const point3& p) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                return color(1,1,1) * 0.5 * (1.0 + noise.noise(scale * p));
+            return color(1,1,1) * 0.5 * (1.0 + noise.noise(scale * p));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            }
+        }
 
-        public:
-            perlin noise;
-            double scale;
+      public:
+        perlin noise;
+        double scale;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-smoothed-2]: <kbd>[texture.h]</kbd> Perlin smoothed, higher frequency]
@@ -1944,23 +1944,23 @@ turbulence, and is a sum of repeated calls to noise:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class perlin {
+      ...
+      public:
         ...
-        public:
-            ...
-            double turb(const point3& p, int depth=7) const {
-                auto accum = 0.0;
-                auto temp_p = p;
-                auto weight = 1.0;
+        double turb(const point3& p, int depth=7) const {
+            auto accum = 0.0;
+            auto temp_p = p;
+            auto weight = 1.0;
 
-                for (int i = 0; i < depth; i++) {
-                    accum += weight*noise(temp_p);
-                    weight *= 0.5;
-                    temp_p *= 2;
-                }
-
-                return fabs(accum);
+            for (int i = 0; i < depth; i++) {
+                accum += weight*noise(temp_p);
+                weight *= 0.5;
+                temp_p *= 2;
             }
-            ...
+
+            return fabs(accum);
+        }
+        ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-turb]: <kbd>[perlin.h]</kbd> Turbulence function]
 </div>
@@ -1970,19 +1970,19 @@ Here `fabs()` is the absolute value function defined in `<cmath>`.
 <div class='together'>
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class noise_texture : public texture {
-        public:
-            noise_texture() {}
-            noise_texture(double sc) : scale(sc) {}
+      public:
+        noise_texture() {}
+        noise_texture(double sc) : scale(sc) {}
 
-            virtual color value(double u, double v, const point3& p) const override {
+        virtual color value(double u, double v, const point3& p) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                return color(1,1,1) * noise.turb(scale * p);
+            return color(1,1,1) * noise.turb(scale * p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            }
+        }
 
-        public:
-            perlin noise;
-            double scale;
+      public:
+        perlin noise;
+        double scale;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [noise-tex-2]: <kbd>[texture.h]</kbd> Noise texture with turbulence]
@@ -2007,19 +2007,19 @@ effect is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class noise_texture : public texture {
-        public:
-            noise_texture() {}
-            noise_texture(double sc) : scale(sc) {}
+      public:
+        noise_texture() {}
+        noise_texture(double sc) : scale(sc) {}
 
-            virtual color value(double u, double v, const point3& p) const override {
+        virtual color value(double u, double v, const point3& p) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                return color(1,1,1) * 0.5 * (1 + sin(scale*p.z() + 10*noise.turb(p)));
+            return color(1,1,1) * 0.5 * (1 + sin(scale*p.z() + 10*noise.turb(p)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            }
+        }
 
-        public:
-            perlin noise;
-            double scale;
+      public:
+        perlin noise;
+        double scale;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [noise-tex-3]: <kbd>[texture.h]</kbd> Noise texture with marbled texture]
@@ -2071,56 +2071,55 @@ the resulting image data.
     ...
 
     class image_texture : public texture {
-        public:
-            const static int bytes_per_pixel = 3;
+      public:
+        const static int bytes_per_pixel = 3;
 
-            image_texture()
-              : data(nullptr), width(0), height(0), bytes_per_scanline(0) {}
+        image_texture() : data(nullptr), width(0), height(0), bytes_per_scanline(0) {}
 
-            image_texture(const char* filename) {
-                auto components_per_pixel = bytes_per_pixel;
+        image_texture(const char* filename) {
+            auto components_per_pixel = bytes_per_pixel;
 
-                data = stbi_load(
-                    filename, &width, &height, &components_per_pixel, components_per_pixel);
+            data = stbi_load(
+                filename, &width, &height, &components_per_pixel, components_per_pixel);
 
-                if (!data) {
-                    std::cerr << "ERROR: Could not load texture image file '" << filename << "'.\n";
-                    width = height = 0;
-                }
-
-                bytes_per_scanline = bytes_per_pixel * width;
+            if (!data) {
+                std::cerr << "ERROR: Could not load texture image file '" << filename << "'.\n";
+                width = height = 0;
             }
 
-            ~image_texture() {
-                delete data;
-            }
+            bytes_per_scanline = bytes_per_pixel * width;
+        }
 
-            virtual color value(double u, double v, const vec3& p) const override {
-                // If we have no texture data, then return solid cyan as a debugging aid.
-                if (data == nullptr)
-                    return color(0,1,1);
+        ~image_texture() {
+            delete data;
+        }
 
-                // Clamp input texture coordinates to [0,1] x [1,0]
-                u = clamp(u, 0.0, 1.0);
-                v = 1.0 - clamp(v, 0.0, 1.0);  // Flip V to image coordinates
+        virtual color value(double u, double v, const vec3& p) const override {
+            // If we have no texture data, then return solid cyan as a debugging aid.
+            if (data == nullptr)
+                return color(0,1,1);
 
-                auto i = static_cast<int>(u * width);
-                auto j = static_cast<int>(v * height);
+            // Clamp input texture coordinates to [0,1] x [1,0]
+            u = clamp(u, 0.0, 1.0);
+            v = 1.0 - clamp(v, 0.0, 1.0);  // Flip V to image coordinates
 
-                // Clamp integer mapping, since actual coordinates should be less than 1.0
-                if (i >= width)  i = width-1;
-                if (j >= height) j = height-1;
+            auto i = static_cast<int>(u * width);
+            auto j = static_cast<int>(v * height);
 
-                const auto color_scale = 1.0 / 255.0;
-                auto pixel = data + j*bytes_per_scanline + i*bytes_per_pixel;
+            // Clamp integer mapping, since actual coordinates should be less than 1.0
+            if (i >= width)  i = width-1;
+            if (j >= height) j = height-1;
 
-                return color(color_scale*pixel[0], color_scale*pixel[1], color_scale*pixel[2]);
-            }
+            const auto color_scale = 1.0 / 255.0;
+            auto pixel = data + j*bytes_per_scanline + i*bytes_per_pixel;
 
-        private:
-            unsigned char *data;
-            int width, height;
-            int bytes_per_scanline;
+            return color(color_scale*pixel[0], color_scale*pixel[1], color_scale*pixel[2]);
+        }
+
+      private:
+        unsigned char *data;
+        int width, height;
+        int bytes_per_scanline;
     };
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2243,22 +2242,22 @@ the ray what color it is and performs no reflection. It’s very simple:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class diffuse_light : public material {
-        public:
-            diffuse_light(shared_ptr<texture> a) : emit(a) {}
-            diffuse_light(color c) : emit(make_shared<solid_color>(c)) {}
+      public:
+        diffuse_light(shared_ptr<texture> a) : emit(a) {}
+        diffuse_light(color c) : emit(make_shared<solid_color>(c)) {}
 
-            virtual bool scatter(
-                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const override {
-                return false;
-            }
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+        ) const override {
+            return false;
+        }
 
-            virtual color emitted(double u, double v, const point3& p) const override {
-                return emit->value(u, v, p);
-            }
+        virtual color emitted(double u, double v, const point3& p) const override {
+            return emit->value(u, v, p);
+        }
 
-        public:
-            shared_ptr<texture> emit;
+      public:
+        shared_ptr<texture> emit;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [diffuse-light]: <kbd>[material.h]</kbd> A diffuse light class]
@@ -2270,16 +2269,16 @@ class return black:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material {
-        public:
+      public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual color emitted(double u, double v, const point3& p) const {
-                return color(0,0,0);
-            }
+        virtual color emitted(double u, double v, const point3& p) const {
+            return color(0,0,0);
+        }
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            virtual bool scatter(
-                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const = 0;
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+        ) const = 0;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [matl-emit]: <kbd>[material.h]</kbd> New emitted function in class material]
@@ -2456,26 +2455,26 @@ The actual `xy_rect` class is thus:
     #include "hittable.h"
 
     class xy_rect : public hittable {
-        public:
-            xy_rect() {}
+      public:
+        xy_rect() {}
 
-            xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, 
-                shared_ptr<material> mat)
-                : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
+        xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, 
+            shared_ptr<material> mat)
+            : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
 
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override {
-                // The bounding box must have non-zero width in each dimension, so pad the Z
-                // dimension a small amount.
-                output_box = aabb(point3(x0, y0, k-0.0001), point3(x1, y1, k+0.0001));
-                return true;
-            }
+        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+        const override {
+            // The bounding box must have non-zero width in each dimension, so pad the Z
+            // dimension a small amount.
+            output_box = aabb(point3(x0, y0, k-0.0001), point3(x1, y1, k+0.0001));
+            return true;
+        }
 
-        public:
-            shared_ptr<material> mp;
-            double x0, x1, y0, y1, k;
+      public:
+        shared_ptr<material> mp;
+        double x0, x1, y0, y1, k;
     };
 
     #endif
@@ -2598,49 +2597,49 @@ This is xz and yz:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class xz_rect : public hittable {
-        public:
-            xz_rect() {}
+      public:
+        xz_rect() {}
 
-            xz_rect(double _x0, double _x1, double _z0, double _z1, double _k,
-                shared_ptr<material> mat)
-                : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+        xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<material> mat)
+          : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override {
-                // The bounding box must have non-zero width in each dimension, so pad the Y
-                // dimension a small amount.
-                output_box = aabb(point3(x0, k-0.0001, z0), point3(x1, k+0.0001, z1));
-                return true;
-            }
+        virtual bool bounding_box(
+            double time_start, double time_end, aabb& output_box
+        ) const override {
+            // The bounding box must have non-zero width in each dimension, so pad the Y
+            // dimension a small amount.
+            output_box = aabb(point3(x0, k-0.0001, z0), point3(x1, k+0.0001, z1));
+            return true;
+        }
 
-        public:
-            shared_ptr<material> mp;
-            double x0, x1, z0, z1, k;
+      public:
+        shared_ptr<material> mp;
+        double x0, x1, z0, z1, k;
     };
 
     class yz_rect : public hittable {
-        public:
-            yz_rect() {}
+      public:
+        yz_rect() {}
 
-            yz_rect(double _y0, double _y1, double _z0, double _z1, double _k,
-                shared_ptr<material> mat)
-                : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+        yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<material> mat)
+          : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override {
-                // The bounding box must have non-zero width in each dimension, so pad the X
-                // dimension a small amount.
-                output_box = aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
-                return true;
-            }
+        virtual bool bounding_box(
+            double time_start, double time_end, aabb& output_box
+        ) const override {
+            // The bounding box must have non-zero width in each dimension, so pad the X
+            // dimension a small amount.
+            output_box = aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
+            return true;
+        }
 
-        public:
-            shared_ptr<material> mp;
-            double y0, y1, z0, z1, k;
+      public:
+        shared_ptr<material> mp;
+        double y0, y1, z0, z1, k;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [xz-yz-rects]: <kbd>[aarect.h]</kbd> XZ and YZ rectangle objects]
@@ -2782,22 +2781,23 @@ make an axis-aligned block primitive that holds 6 rectangles:
     #include "hittable_list.h"
 
     class box : public hittable {
-        public:
-            box() {}
-            box(const point3& p0, const point3& p1, shared_ptr<material> ptr);
+      public:
+        box() {}
+        box(const point3& p0, const point3& p1, shared_ptr<material> ptr);
 
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override {
-                output_box = aabb(box_min, box_max);
-                return true;
-            }
+        virtual bool bounding_box(
+            double time_start, double time_end, aabb& output_box
+        ) const override {
+            output_box = aabb(box_min, box_max);
+            return true;
+        }
 
-        public:
-            point3 box_min;
-            point3 box_max;
-            hittable_list sides;
+      public:
+        point3 box_min;
+        point3 box_max;
+        hittable_list sides;
     };
 
     box::box(const point3& p0, const point3& p1, shared_ptr<material> ptr) {
@@ -2864,18 +2864,18 @@ move any underlying hittable is a _translate_ instance.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class translate : public hittable {
-        public:
-            translate(shared_ptr<hittable> p, const vec3& displacement)
-                : ptr(p), offset(displacement) {}
+      public:
+        translate(shared_ptr<hittable> p, const vec3& displacement)
+          : ptr(p), offset(displacement) {}
 
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-                const override;
+        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const override;
 
-        public:
-            shared_ptr<hittable> ptr;
-            vec3 offset;
+      public:
+        shared_ptr<hittable> ptr;
+        vec3 offset;
     };
 
     bool translate::hit(const ray& r, interval ray_t, hit_record& rec) const {
@@ -2952,23 +2952,24 @@ For a y-rotation class we have:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class rotate_y : public hittable {
-        public:
-            rotate_y(shared_ptr<hittable> p, double angle);
+      public:
+        rotate_y(shared_ptr<hittable> p, double angle);
 
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override {
-                output_box = bbox;
-                return hasbox;
-            }
+        virtual bool bounding_box(
+            double time_start, double time_end, aabb& output_box
+        ) const override {
+            output_box = bbox;
+            return hasbox;
+        }
 
-        public:
-            shared_ptr<hittable> ptr;
-            double sin_theta;
-            double cos_theta;
-            bool hasbox;
-            aabb bbox;
+      public:
+        shared_ptr<hittable> ptr;
+        double sin_theta;
+        double cos_theta;
+        bool hasbox;
+        aabb bbox;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [rot-y]: <kbd>[hittable.h]</kbd> Hittable rotate-Y class]
@@ -3121,30 +3122,27 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
     #include "texture.h"
 
     class constant_medium : public hittable {
-        public:
-            constant_medium(shared_ptr<hittable> b, double d, shared_ptr<texture> a)
-                : boundary(b),
-                  neg_inv_density(-1/d),
-                  phase_function(make_shared<isotropic>(a))
-                {}
+      public:
+        constant_medium(shared_ptr<hittable> b, double d, shared_ptr<texture> a)
+          : boundary(b), neg_inv_density(-1/d), phase_function(make_shared<isotropic>(a))
+        {}
 
-            constant_medium(shared_ptr<hittable> b, double d, color c)
-                : boundary(b),
-                  neg_inv_density(-1/d),
-                  phase_function(make_shared<isotropic>(c))
-                {}
+        constant_medium(shared_ptr<hittable> b, double d, color c)
+          : boundary(b), neg_inv_density(-1/d), phase_function(make_shared<isotropic>(c))
+        {}
 
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override {
-                return boundary->bounding_box(time_start, time_end, output_box);
-            }
+        virtual bool bounding_box(
+            double time_start, double time_end, aabb& output_box
+        ) const override {
+            return boundary->bounding_box(time_start, time_end, output_box);
+        }
 
-        public:
-            shared_ptr<hittable> boundary;
-            shared_ptr<material> phase_function;
-            double neg_inv_density;
+      public:
+        shared_ptr<hittable> boundary;
+        shared_ptr<material> phase_function;
+        double neg_inv_density;
     };
 
     #endif
@@ -3157,20 +3155,20 @@ The scattering function of isotropic picks a uniform random direction:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class isotropic : public material {
-        public:
-            isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
-            isotropic(shared_ptr<texture> a) : albedo(a) {}
+      public:
+        isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
+        isotropic(shared_ptr<texture> a) : albedo(a) {}
 
-            virtual bool scatter(
-                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-            ) const override {
-                scattered = ray(rec.p, random_in_unit_sphere(), r_in.time());
-                attenuation = albedo->value(rec.u, rec.v, rec.p);
-                return true;
-            }
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+        ) const override {
+            scattered = ray(rec.p, random_in_unit_sphere(), r_in.time());
+            attenuation = albedo->value(rec.u, rec.v, rec.p);
+            return true;
+        }
 
-        public:
-            shared_ptr<texture> albedo;
+      public:
+        shared_ptr<texture> albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [isotropic-class]: <kbd>[material.h]</kbd> The isotropic class]

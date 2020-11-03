@@ -17,28 +17,26 @@
 
 
 class moving_sphere : public hittable {
-    public:
-        moving_sphere() {}
-        moving_sphere(
-            point3 ctr0, point3 ctr1, double r, shared_ptr<material> m,
-            double time_start, double time_end)
-            :
-            center0(ctr0), center1(ctr1), radius(r), mat_ptr(m),
-            time0(time_start), time1(time_end)
-        {};
+  public:
+    moving_sphere() {}
+    moving_sphere(
+        point3 ctr0, point3 ctr1, double r, shared_ptr<material> m,
+        double time_start, double time_end)
+      : center0(ctr0), center1(ctr1), radius(r), mat_ptr(m), time0(time_start), time1(time_end)
+    {};
 
-        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override;
+    virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+        const override;
 
-        point3 center(double time) const;
+    point3 center(double time) const;
 
-    public:
-        point3 center0, center1;
-        double time0, time1;
-        double radius;
-        shared_ptr<material> mat_ptr;
+  public:
+    point3 center0, center1;
+    double time0, time1;
+    double radius;
+    shared_ptr<material> mat_ptr;
 };
 
 
@@ -85,5 +83,6 @@ bool moving_sphere::hit(const ray& r, interval ray_t, hit_record& rec) const {
 
     return true;
 }
+
 
 #endif
