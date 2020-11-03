@@ -14,7 +14,7 @@
 #include "rtweekend.h"
 
 
-struct hit_record;
+class hit_record;
 
 
 class material {

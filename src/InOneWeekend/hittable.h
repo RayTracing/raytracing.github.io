@@ -16,7 +16,8 @@
 class material;
 
 
-struct hit_record {
+class hit_record {
+  public:
     point3 p;
     vec3 normal;
     shared_ptr<material> mat_ptr;

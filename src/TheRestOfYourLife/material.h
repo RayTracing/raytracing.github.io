@@ -17,7 +17,8 @@
 #include "texture.h"
 
 
-struct scatter_record {
+class scatter_record {
+  public:
     ray specular_ray;
     bool is_specular;
     color attenuation;
