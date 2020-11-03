@@ -42,7 +42,7 @@ inline vec3 random_to_sphere(double radius, double distance_squared) {
 }
 
 
-class pdf  {
+class pdf {
     public:
         virtual ~pdf() {}
 

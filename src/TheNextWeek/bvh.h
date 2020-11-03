@@ -19,7 +19,7 @@
 #include <algorithm>
 
 
-class bvh_node : public hittable  {
+class bvh_node : public hittable {
     public:
         bvh_node();
 

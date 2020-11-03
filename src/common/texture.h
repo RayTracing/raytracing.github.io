@@ -19,7 +19,7 @@
 #include <iostream>
 
 
-class texture  {
+class texture {
     public:
         virtual color value(double u, double v, const vec3& p) const = 0;
 };
