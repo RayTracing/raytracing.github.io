@@ -6,6 +6,7 @@ Change Log -- Ray Tracing in One Weekend
 ### Common
   - Change: Introduce new `interval` class used throughout codebase (#777)
   - Change: `hittable:hit()` methods use new interval class for ray t parameter
+  - Change: `interval::clamp()` replaces standalone `clamp` utility function
 
 ### In One Weekend
 

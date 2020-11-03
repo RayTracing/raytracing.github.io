@@ -1512,16 +1512,19 @@ To handle the multi-sampled color computation, we'll update the `write_color()` 
 than adding in a fractional contribution each time we accumulate more light to the color, just add
 the full color each iteration, and then perform a single divide at the end (by the number of
 samples) when writing out the color. In addition, we'll add a handy utility function to the
-`rtweekend.h` utility header: `clamp(x,min,max)`, which clamps the value `x` to the range [min,max]:
+`interval` class: `clamp(x)`, which clamps the value `x` to the interval:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline double clamp(double x, double min, double max) {
-        if (x < min) return min;
-        if (x > max) return max;
-        return x;
+    class interval {
+        ...
+        double clamp(double x) const {
+            if (x < min) return min;
+            if (x > max) return max;
+            return x;
+        }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [clamp]: <kbd>[rtweekend.h]</kbd> The clamp() utility function]
+    [Listing [clamp]: <kbd>[interval.h]</kbd> The interval::clamp() utility function]
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
@@ -1536,9 +1539,10 @@ samples) when writing out the color. In addition, we'll add a handy utility func
         b *= scale;
 
         // Write the translated [0,255] value of each color component.
-        out << static_cast<int>(256 * clamp(r, 0.0, 0.999)) << ' '
-            << static_cast<int>(256 * clamp(g, 0.0, 0.999)) << ' '
-            << static_cast<int>(256 * clamp(b, 0.0, 0.999)) << '\n';
+        const auto intensity_range = interval(0.000, 0.999);
+        out << static_cast<int>(256 * intensity_range.clamp(r)) << ' '
+            << static_cast<int>(256 * intensity_range.clamp(g)) << ' '
+            << static_cast<int>(256 * intensity_range.clamp(b)) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-clamped]: <kbd>[color.h]</kbd> The multi-sample write_color() function]
@@ -1817,9 +1821,10 @@ square-root:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         // Write the translated [0,255] value of each color component.
-        out << static_cast<int>(256 * clamp(r, 0.0, 0.999)) << ' '
-            << static_cast<int>(256 * clamp(g, 0.0, 0.999)) << ' '
-            << static_cast<int>(256 * clamp(b, 0.0, 0.999)) << '\n';
+        const auto intensity_range = interval(0.000, 0.999);
+        out << static_cast<int>(256 * intensity_range.clamp(r)) << ' '
+            << static_cast<int>(256 * intensity_range.clamp(g)) << ' '
+            << static_cast<int>(256 * intensity_range.clamp(b)) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-gamma]: <kbd>[color.h]</kbd> write_color(), with gamma correction]
