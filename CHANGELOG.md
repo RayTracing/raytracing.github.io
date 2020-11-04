@@ -5,6 +5,7 @@ Change Log -- Ray Tracing in One Weekend
 
 ### Common
   - Change: Introduce new `interval` class used throughout codebase (#777)
+  - Change: Use `class` instead of `struct` throughout for simpler C++ (#781)
   - Change: `hittable:hit()` methods use new interval class for ray-t parameter
   - Change: Class public/private access labels get two-space indents (#782)
 

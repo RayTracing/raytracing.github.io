@@ -860,7 +860,8 @@ the abstract class:
 
     #include "ray.h"
 
-    struct hit_record {
+    class hit_record {
+      public:
         point3 p;
         vec3 normal;
         double t;
@@ -996,11 +997,12 @@ more material types than we have geometry types, so we'll go for less work and p
 at geometry time. This is simply a matter of preference, and you'll see both implementations in the
 literature.
 
-We add the `front_face` bool to the `hit_record` struct. We'll also add a function to solve this
+We add the `front_face` bool to the `hit_record` class. We'll also add a function to solve this
 calculation for us.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    struct hit_record {
+    class hit_record {
+      public:
         point3 p;
         vec3 normal;
         double t;
@@ -2030,7 +2032,7 @@ This suggests the abstract class:
 
     #include "rtweekend.h"
 
-    struct hit_record;
+    class hit_record;
 
     class material {
       public:
@@ -2060,7 +2062,8 @@ that the pointer is to a class, which the “class material” in the hittable c
     class material;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-    struct hit_record {
+    class hit_record {
+      public:
         point3 p;
         vec3 normal;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2079,7 +2082,7 @@ that the pointer is to a class, which the “class material” in the hittable c
 </div>
 
 What we have set up here is that material will tell us how rays interact with the surface.
-`hit_record` is just a way to stuff a bunch of arguments into a struct so we can send them as a
+`hit_record` is just a way to stuff a bunch of arguments into a class so we can send them as a
 group. When a ray hits a surface (a particular sphere for example), the material pointer in the
 `hit_record` will be set to point at the material pointer the sphere was given when it was set up in
 `main()` when we start. When the `ray_color()` routine gets the `hit_record` it can call member
