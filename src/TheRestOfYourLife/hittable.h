@@ -37,58 +37,57 @@ class hit_record {
 
 
 class hittable {
-    public:
-        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
+  public:
+    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
 
-        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const = 0;
+    virtual bool bounding_box(double time_start, double time_end, aabb& output_box) const = 0;
 
-        virtual double pdf_value(const vec3& o, const vec3& v) const {
-            return 0.0;
-        }
+    virtual double pdf_value(const vec3& o, const vec3& v) const {
+        return 0.0;
+    }
 
-        virtual vec3 random(const vec3& o) const {
-            return vec3(1,0,0);
-        }
+    virtual vec3 random(const vec3& o) const {
+        return vec3(1,0,0);
+    }
 };
 
 
 class flip_face : public hittable {
-    public:
-        flip_face(shared_ptr<hittable> p) : ptr(p) {}
+  public:
+    flip_face(shared_ptr<hittable> p) : ptr(p) {}
 
-        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-            if (!ptr->hit(r, ray_t, rec))
-                return false;
+    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+        if (!ptr->hit(r, ray_t, rec))
+            return false;
 
-            rec.front_face = !rec.front_face;
-            return true;
-        }
+        rec.front_face = !rec.front_face;
+        return true;
+    }
 
-        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override
-        {
-            return ptr->bounding_box(time_start, time_end, output_box);
-        }
+    virtual bool bounding_box(
+        double time_start, double time_end, aabb& output_box
+    ) const override {
+        return ptr->bounding_box(time_start, time_end, output_box);
+    }
 
-    public:
-        shared_ptr<hittable> ptr;
+  public:
+    shared_ptr<hittable> ptr;
 };
 
 
 class translate : public hittable {
-    public:
-        translate(shared_ptr<hittable> p, const vec3& displacement)
-            : ptr(p), offset(displacement) {}
+  public:
+    translate(shared_ptr<hittable> p, const vec3& displacement)
+        : ptr(p), offset(displacement) {}
 
-        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override;
+    virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+        const override;
 
-    public:
-        shared_ptr<hittable> ptr;
-        vec3 offset;
+  public:
+    shared_ptr<hittable> ptr;
+    vec3 offset;
 };
 
 
@@ -117,24 +116,24 @@ bool translate::bounding_box(double time_start, double time_end, aabb& output_bo
 
 
 class rotate_y : public hittable {
-    public:
-        rotate_y(shared_ptr<hittable> p, double angle);
+  public:
+    rotate_y(shared_ptr<hittable> p, double angle);
 
-        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override
-        {
-            output_box = bbox;
-            return hasbox;
-        }
+    virtual bool bounding_box(
+        double time_start, double time_end, aabb& output_box
+    ) const override {
+        output_box = bbox;
+        return hasbox;
+    }
 
-    public:
-        shared_ptr<hittable> ptr;
-        double sin_theta;
-        double cos_theta;
-        bool hasbox;
-        aabb bbox;
+  public:
+    shared_ptr<hittable> ptr;
+    double sin_theta;
+    double cos_theta;
+    bool hasbox;
+    aabb bbox;
 };
 
 

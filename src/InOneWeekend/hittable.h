@@ -32,8 +32,8 @@ class hit_record {
 
 
 class hittable {
-    public:
-        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
+  public:
+    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
 };
 
 
