@@ -21,6 +21,7 @@ inline double pdf(double x) {
     return  3*x*x/8;
 }
 
+
 int main() {
     int inside_circle = 0;
     int inside_circle_stratified = 0;

@@ -17,17 +17,17 @@
 
 
 class sphere : public hittable {
-    public:
-        sphere() {}
-        sphere(point3 ctr, double r, shared_ptr<material> m)
-            : center(ctr), radius(r), mat_ptr(m) {};
+  public:
+    sphere() {}
+    sphere(point3 ctr, double r, shared_ptr<material> m)
+      : center(ctr), radius(r), mat_ptr(m) {};
 
-        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-    public:
-        point3 center;
-        double radius;
-        shared_ptr<material> mat_ptr;
+  public:
+    point3 center;
+    double radius;
+    shared_ptr<material> mat_ptr;
 };
 
 

@@ -5,7 +5,8 @@ Change Log -- Ray Tracing in One Weekend
 
 ### Common
   - Change: Introduce new `interval` class used throughout codebase (#777)
-  - Change: `hittable:hit()` methods use new interval class for ray t parameter
+  - Change: `hittable:hit()` methods use new interval class for ray-t parameter
+  - Change: Class public/private access labels get two-space indents (#782)
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)

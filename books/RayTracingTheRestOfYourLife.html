@@ -826,28 +826,28 @@ We modify the base-class `material` to enable this importance sampling:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material {
-        public:
+      public:
 
-            virtual bool scatter(
-                const ray& r_in, const hit_record& rec, color& albedo, ray& scattered, double& pdf
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, color& albedo, ray& scattered, double& pdf
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            ) const {
-                return false;
-            }
+        ) const {
+            return false;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual double scattering_pdf(
-                const ray& r_in, const hit_record& rec, const ray& scattered
-            ) const {
-                return 0;
-            }
+        virtual double scattering_pdf(
+            const ray& r_in, const hit_record& rec, const ray& scattered
+        ) const {
+            return 0;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            virtual color emitted(double u, double v, const point3& p) const {
-                return color(0,0,0);
-            }
+        virtual color emitted(double u, double v, const point3& p) const {
+            return color(0,0,0);
+        }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [class-material]: <kbd>[material.h]</kbd>
@@ -859,42 +859,42 @@ And _Lambertian_ material becomes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
-        public:
+      public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
-            lambertian(shared_ptr<texture> a) : albedo(a) {}
+        lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
+        lambertian(shared_ptr<texture> a) : albedo(a) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            virtual bool scatter(
+        virtual bool scatter(
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
+            const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            ) const override {
-                auto scatter_direction = rec.normal + random_unit_vector();
+        ) const override {
+            auto scatter_direction = rec.normal + random_unit_vector();
 
-                // Catch degenerate scatter direction
-                if (scatter_direction.near_zero())
-                    scatter_direction = rec.normal;
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                scattered = ray(rec.p, unit_vector(direction), r_in.time());
-                alb = albedo->value(rec.u, rec.v, rec.p);
-                pdf = dot(rec.normal, scattered.direction()) / pi;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                return true;
-            }
+            // Catch degenerate scatter direction
+            if (scatter_direction.near_zero())
+                scatter_direction = rec.normal;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            double scattering_pdf(
-                const ray& r_in, const hit_record& rec, const ray& scattered
-            ) const {
-                auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
-                return cosine < 0 ? 0 : cosine/pi;
-            }
+            scattered = ray(rec.p, unit_vector(direction), r_in.time());
+            alb = albedo->value(rec.u, rec.v, rec.p);
+            pdf = dot(rec.normal, scattered.direction()) / pi;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            return true;
+        }
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double scattering_pdf(
+            const ray& r_in, const hit_record& rec, const ray& scattered
+        ) const {
+            auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
+            return cosine < 0 ? 0 : cosine/pi;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        public:
-            shared_ptr<texture> albedo;
+      public:
+        shared_ptr<texture> albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [class-lambertian-impsample]: <kbd>[material.h]</kbd>
@@ -1281,27 +1281,27 @@ class because it won't really be more complicated than utility functions:
     #define ONB_H
 
     class onb {
-        public:
-            onb() {}
+      public:
+        onb() {}
 
-            inline vec3 operator[](int i) const { return axis[i]; }
+        inline vec3 operator[](int i) const { return axis[i]; }
 
-            vec3 u() const { return axis[0]; }
-            vec3 v() const { return axis[1]; }
-            vec3 w() const { return axis[2]; }
+        vec3 u() const { return axis[0]; }
+        vec3 v() const { return axis[1]; }
+        vec3 w() const { return axis[2]; }
 
-            vec3 local(double a, double b, double c) const {
-                return a*u() + b*v() + c*w();
-            }
+        vec3 local(double a, double b, double c) const {
+            return a*u() + b*v() + c*w();
+        }
 
-            vec3 local(const vec3& a) const {
-                return a.x()*u() + a.y()*v() + a.z()*w();
-            }
+        vec3 local(const vec3& a) const {
+            return a.x()*u() + a.y()*v() + a.z()*w();
+        }
 
-            void build_from_w(const vec3&);
+        void build_from_w(const vec3&);
 
-        public:
-            vec3 axis[3];
+      public:
+        vec3 axis[3];
     };
 
 
@@ -1483,25 +1483,28 @@ We also need to flip the light so its normals point in the $-y$ direction:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class flip_face : public hittable {
-        public:
-            flip_face(shared_ptr<hittable> p) : ptr(p) {}
+      public:
+        flip_face(shared_ptr<hittable> p) : ptr(p) {}
 
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-                if (!ptr->hit(r, ray_t, rec))
-                    return false;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            if (!ptr->hit(r, ray_t, rec))
+                return false;
 
-                rec.front_face = !rec.front_face;
-                return true;
-            }
+            if (!ptr->hit(r, ray_tmin, ray_tmax, rec))
+                return false;
 
-            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const override {
+            rec.front_face = !rec.front_face;
+            return true;
+        }
 
-                return ptr->bounding_box(time_start, time_end, output_box);
-            }
+        virtual bool bounding_box(
+            double time_start, double time_end, aabb& output_box
+        ) const override {
+            return ptr->bounding_box(time_start, time_end, output_box);
+        }
 
-        public:
-            shared_ptr<hittable> ptr;
+      public:
+        shared_ptr<hittable> ptr;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [flip-face]: <kbd>[hittable.h]</kbd> We use a hittable object to flip the light]
@@ -1591,11 +1594,11 @@ to be greedy and hope a minimal interface works, and for the PDF this implies:
     #define PDF_H
 
     class pdf {
-        public:
-            virtual ~pdf() {}
+      public:
+        virtual ~pdf() {}
 
-            virtual double value(const vec3& direction) const = 0;
-            virtual vec3 generate() const = 0;
+        virtual double value(const vec3& direction) const = 0;
+        virtual vec3 generate() const = 0;
     };
 
     #endif
@@ -1625,20 +1628,20 @@ First, let’s try a cosine density:
     }
 
     class cosine_pdf : public pdf {
-        public:
-            cosine_pdf(const vec3& w) { uvw.build_from_w(w); }
+      public:
+        cosine_pdf(const vec3& w) { uvw.build_from_w(w); }
 
-            virtual double value(const vec3& direction) const override {
-                auto cosine = dot(unit_vector(direction), uvw.w());
-                return (cosine <= 0) ? 0 : cosine/pi;
-            }
+        virtual double value(const vec3& direction) const override {
+            auto cosine = dot(unit_vector(direction), uvw.w());
+            return (cosine <= 0) ? 0 : cosine/pi;
+        }
 
-            virtual vec3 generate() const override {
-                return uvw.local(random_cosine_direction());
-            }
+        virtual vec3 generate() const override {
+            return uvw.local(random_cosine_direction());
+        }
 
-        public:
-            onb uvw;
+      public:
+        onb uvw;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [class-cos-pdf]: <kbd>[pdf.h]</kbd> The cosine_pdf class]
@@ -1699,20 +1702,20 @@ Now we can try sampling directions toward a `hittable`, like the light.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable_pdf : public pdf {
-        public:
-            hittable_pdf(shared_ptr<hittable> p, const point3& origin) : ptr(p), o(origin) {}
+      public:
+        hittable_pdf(shared_ptr<hittable> p, const point3& origin) : ptr(p), o(origin) {}
 
-            virtual double value(const vec3& direction) const override {
-                return ptr->pdf_value(o, direction);
-            }
+        virtual double value(const vec3& direction) const override {
+            return ptr->pdf_value(o, direction);
+        }
 
-            virtual vec3 generate() const override {
-                return ptr->random(o);
-            }
+        virtual vec3 generate() const override {
+            return ptr->random(o);
+        }
 
-        public:
-            point3 o;
-            shared_ptr<hittable> ptr;
+      public:
+        point3 o;
+        shared_ptr<hittable> ptr;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [class-hittable-pdf]: <kbd>[pdf.h]</kbd> The hittable_pdf class]
@@ -1724,20 +1727,20 @@ instrumentation to all `hittable` subclasses, we’ll add two dummy functions to
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable {
-        public:
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
+      public:
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
 
-            virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-                const = 0;
+        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+            const = 0;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual double pdf_value(const point3& o, const vec3& v) const {
-                return 0.0;
-            }
+        virtual double pdf_value(const point3& o, const vec3& v) const {
+            return 0.0;
+        }
 
-            virtual vec3 random(const vec3& o) const {
-                return vec3(1, 0, 0);
-            }
+        virtual vec3 random(const vec3& o) const {
+            return vec3(1, 0, 0);
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1749,26 +1752,26 @@ And we change `xz_rect` to implement those functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class xz_rect : public hittable {
-        public:
-            ...
+      public:
+        ...
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual double pdf_value(const point3& origin, const vec3& v) const override {
-                hit_record rec;
-                if (!this->hit(ray(origin, v), interval(0.001, infinity), rec))
-                    return 0;
+        virtual double pdf_value(const point3& origin, const vec3& v) const override {
+            hit_record rec;
+            if (!this->hit(ray(origin, v), interval(0.001, infinity), rec))
+                return 0;
 
-                auto area = (x1-x0)*(z1-z0);
-                auto distance_squared = rec.t * rec.t * v.length_squared();
-                auto cosine = fabs(dot(v, rec.normal) / v.length());
+            auto area = (x1-x0)*(z1-z0);
+            auto distance_squared = rec.t * rec.t * v.length_squared();
+            auto cosine = fabs(dot(v, rec.normal) / v.length());
 
-                return distance_squared / (cosine * area);
-            }
+            return distance_squared / (cosine * area);
+        }
 
-            virtual vec3 random(const point3& origin) const override {
-                auto random_point = point3(random_double(x0,x1), k, random_double(z0,z1));
-                return random_point - origin;
-            }
+        virtual vec3 random(const point3& origin) const override {
+            auto random_point = point3(random_double(x0,x1), k, random_double(z0,z1));
+            return random_point - origin;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [xz-rect-pdf]: <kbd>[aarect.h]</kbd> XZ rect with pdf]
 </div>
@@ -1848,25 +1851,25 @@ class is straightforward:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class mixture_pdf : public pdf {
-        public:
-            mixture_pdf(shared_ptr<pdf> p0, shared_ptr<pdf> p1) {
-                p[0] = p0;
-                p[1] = p1;
-            }
+      public:
+        mixture_pdf(shared_ptr<pdf> p0, shared_ptr<pdf> p1) {
+            p[0] = p0;
+            p[1] = p1;
+        }
 
-            virtual double value(const vec3& direction) const override {
-                return 0.5 * p[0]->value(direction) + 0.5 *p[1]->value(direction);
-            }
+        virtual double value(const vec3& direction) const override {
+            return 0.5 * p[0]->value(direction) + 0.5 *p[1]->value(direction);
+        }
 
-            virtual vec3 generate() const override {
-                if (random_double() < 0.5)
-                    return p[0]->generate();
-                else
-                    return p[1]->generate();
-            }
+        virtual vec3 generate() const override {
+            if (random_double() < 0.5)
+                return p[0]->generate();
+            else
+                return p[1]->generate();
+        }
 
-        public:
-            shared_ptr<pdf> p[2];
+      public:
+        shared_ptr<pdf> p[2];
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [class-mixturep-df]: <kbd>[pdf.h]</kbd> The `mixture_pdf` class]
@@ -1999,28 +2002,28 @@ We can redesign `material` and stuff all the new arguments into a `struct` like 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     class material {
-        public:
-            virtual color emitted(
+      public:
+        virtual color emitted(
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                const ray& r_in, const hit_record& rec, double u, double v, const point3& p
+            const ray& r_in, const hit_record& rec, double u, double v, const point3& p
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            ) const {
-                return color(0,0,0);
-            }
+        ) const {
+            return color(0,0,0);
+        }
 
-            virtual bool scatter(
+        virtual bool scatter(
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                const ray& r_in, const hit_record& rec, scatter_record& srec
+            const ray& r_in, const hit_record& rec, scatter_record& srec
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            ) const {
-                return false;
-            }
+        ) const {
+            return false;
+        }
 
-            virtual double scattering_pdf(
-                const ray& r_in, const hit_record& rec, const ray& scattered
-            ) const {
-                return 0;
-            }
+        virtual double scattering_pdf(
+            const ray& r_in, const hit_record& rec, const ray& scattered
+        ) const {
+            return 0;
+        }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [material-refactor]: <kbd>[material.h]</kbd> Refactoring the material class]
@@ -2031,30 +2034,30 @@ The Lambertian material becomes simpler:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
-        public:
-            lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
-            lambertian(shared_ptr<texture> a) : albedo(a) {}
+      public:
+        lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
+        lambertian(shared_ptr<texture> a) : albedo(a) {}
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool scatter(
-                const ray& r_in, const hit_record& rec, scatter_record& srec
-            ) const override {
-                srec.is_specular = false;
-                srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
-                srec.pdf_ptr = new cosine_pdf(rec.normal);
-                return true;
-            }
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, scatter_record& srec
+        ) const override {
+            srec.is_specular = false;
+            srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
+            srec.pdf_ptr = new cosine_pdf(rec.normal);
+            return true;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            double scattering_pdf(
-                const ray& r_in, const hit_record& rec, const ray& scattered
-            ) const {
-                auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
-                return cosine < 0 ? 0 : cosine/pi;
-            }
+        double scattering_pdf(
+            const ray& r_in, const hit_record& rec, const ray& scattered
+        ) const {
+            auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
+            return cosine < 0 ? 0 : cosine/pi;
+        }
 
-        public:
-            shared_ptr<texture> albedo;
+      public:
+        shared_ptr<texture> albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [lambertian-scatter]: <kbd>[material.h]</kbd> New lambertian scatter() method]
@@ -2128,47 +2131,47 @@ and dielectric materials are easy to fix.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class metal : public material {
-        public:
-            metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
+      public:
+        metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool scatter(
-                const ray& r_in, const hit_record& rec, scatter_record& srec
-            ) const override {
-                vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
-                srec.specular_ray = ray(rec.p, reflected+fuzz*random_in_unit_sphere());
-                srec.attenuation = albedo;
-                srec.is_specular = true;
-                srec.pdf_ptr = 0;
-                return true;
-            }
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, scatter_record& srec
+        ) const override {
+            vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+            srec.specular_ray = ray(rec.p, reflected+fuzz*random_in_unit_sphere());
+            srec.attenuation = albedo;
+            srec.is_specular = true;
+            srec.pdf_ptr = 0;
+            return true;
+        }
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        public:
-            color albedo;
-            double fuzz;
+      public:
+        color albedo;
+        double fuzz;
     };
 
     ...
 
     class dielectric : public material {
-        public:
-            ...
-            virtual bool scatter(
-                const ray& r_in, const hit_record& rec, scatter_record& srec
-            ) const override {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                srec.is_specular = true;
-                srec.pdf_ptr = nullptr;
-                srec.attenuation = color(1.0, 1.0, 1.0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
-                ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                srec.specular_ray = ray(rec.p, direction, r_in.time());
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                return true;
-            }
+      public:
         ...
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, scatter_record& srec
+        ) const override {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            srec.is_specular = true;
+            srec.pdf_ptr = nullptr;
+            srec.attenuation = color(1.0, 1.0, 1.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
+            ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            srec.specular_ray = ray(rec.p, direction, r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            return true;
+        }
+      ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [material-scatter]: <kbd>[material.h]</kbd> The metal and dielectric scatter methods]
