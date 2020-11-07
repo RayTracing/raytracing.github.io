@@ -20,7 +20,7 @@
 int main() {
     int inside_circle = 0;
     int inside_circle_stratified = 0;
-    int sqrt_N = 10000;
+    int sqrt_N = 1000;
 
     for (int i = 0; i < sqrt_N; i++) {
         for (int j = 0; j < sqrt_N; j++) {
