@@ -156,7 +156,7 @@ review the [CONTRIBUTING][] document for the most effective way to proceed.
 [cover3]:          images/RTRestOfYourLife-small.jpg
 [GitHub home]:     https://github.com/RayTracing/raytracing.github.io/
 [ImageMagick]:     https://imagemagick.org/
-[implementations]: https://github.com/RayTracing/raytracing.github.io/wiki/Implementations-in-Other-Languages
+[implementations]: https://github.com/RayTracing/raytracing.github.io/wiki/Implementations
 [v3.2.1]:          https://github.com/RayTracing/raytracing.github.io/releases/tag/v3.2.1
 [v3.2.2]:          https://github.com/RayTracing/raytracing.github.io/releases/tag/v3.2.2
 [web1]:            https://raytracing.github.io/books/RayTracingInOneWeekend.html
