@@ -22,15 +22,15 @@ If you are motivated, you can take the source and information contained in those
 any visual effect you want. The source provides a meaningful and robust foundation upon which to
 build out a raytracer for a small hobby project. Most of the visual effects found in commercial ray
 tracers rely on the techniques described in these first two books. However, your capacity to add
-increasingly complicated visual stuffs like subsurface scattering or nested dielectrics will be
+increasingly complicated visual effects like subsurface scattering or nested dielectrics will be
 severely limited by a missing mathematical foundation. In this volume, I assume that you are either
 a highly interested student, or are someone who is pursuing a career related to ray tracing. We will
-be diving into the math of creating a very serious ray tracer. When you are done you should be ready
-to start messing with the many serious commercial ray tracers underlying the movie and product
-design industries.
+be diving into the math of creating a very serious ray tracer. When you are done, you should be
+well equipped to use and modify the various commercial ray tracers found in many popular industries,
+such as the movie, television, product design, and architecture industries.
 
 There are many many things I do not cover in this short volume. There are many ways of writing Monte
-Carlo rendering programs, I dive into only one of them. I don’t cover shadow rays (instead deciding
+Carlo rendering programs--I dive into only one of them. I don’t cover shadow rays (instead deciding
 to make rays more likely to go toward lights), bidirectional methods, Metropolis methods, or photon
 mapping. You'll find many of these techniques in so-called "serious ray tracers", but these
 techniques are not covered here because it is more important to cover the concepts, the math, and
@@ -52,17 +52,17 @@ A Simple Monte Carlo Program
 <div class='together'>
 Let’s start with one of the simplest Monte Carlo programs. If you're not familiar with Monte Carlo
 programs, then it'll be good to pause and catch you up. There are two kinds of randomized
-algorithms: Monte Carlo algorithms and Las Vegas algorithms. Randomized algorithms can be found
-everywhere in computer graphics, so getting a decent foundation isn't a bad idea. A randomized
-algorithm is an algorithm that uses some amount of randomness in it's computation. A Las Vegas (LV)
-random algorithm always produces the correct result, whereas a Monte Carlo (MC) algorithm _may_
-produce a correct result (and frequently gets it wrong!). But for especially complicated problems
-such as ray tracing, we may not place as huge a priority on being perfectly correct as on getting an
-answer in a reasonable amount of time. LV algorithms will eventually arrive at the correct result,
-but we can't make too many guarantees on how long it will take to get there. The classic example of
-an LV algorithm is the $quicksort$ sorting algorithm. The quicksort algorithm will always complete
-with a fully sorted list, but, the time it takes to complete is random. Another good example of an
-LV algorithm is the code that we use to pick a random point in a unit sphere:
+algorithms: Monte Carlo and Las Vegas. Randomized algorithms can be found everywhere in computer
+graphics, so getting a decent foundation isn't a bad idea. A randomized algorithm uses some amount
+of randomness in its computation. A Las Vegas (LV) random algorithm always produces the correct
+result, whereas a Monte Carlo (MC) algorithm _may_ produce a correct result (and frequently gets it
+wrong!). But for especially complicated problems such as ray tracing, we may not place as huge a
+priority on being perfectly exact as on getting an answer in a reasonable amount of time. LV
+algorithms will eventually arrive at the correct result, but we can't make too many guarantees on
+how long it will take to get there. The classic example of an LV algorithm is the $quicksort$
+sorting algorithm. The quicksort algorithm will always complete with a fully sorted list, but, the
+time it takes to complete is random. Another good example of an LV algorithm is the code that we use
+to pick a random point in a unit sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline vec3 random_in_unit_sphere() {
@@ -76,9 +76,9 @@ LV algorithm is the code that we use to pick a random point in a unit sphere:
     [Listing [las-vegas-algo]: <kbd>[vec3.h]</kbd> A Las Vegas algorithm]
 
 This code will always eventually arrive at a random point in the unit sphere, but we can't say
-beforehand how long it'll take. It may take only 1 `while` loop, it may take 2, 3, 4, or even
-longer. Whereas, MC programs give a statistical estimate of an answer, and this estimate gets more
-and more accurate the longer you run it. Which means that at a certain point, we can just decide
+beforehand how long it'll take. It may take only 1 iteration, it may take 2, 3, 4, or even longer.
+Whereas, MC programs give a statistical estimate of an answer, and this estimate gets more and more
+accurate the longer you run it. Which means that at a certain point, we can just decide
 that the answer is accurate _enough_ and call it quits. This basic characteristic of simple programs
 producing noisy but ever-better answers is what MC is all about, and is especially good for
 applications like graphics where great accuracy is not needed.
@@ -91,7 +91,7 @@ Estimating Pi
 <div class='together'>
 The canonical example of a MC algorithm is estimating $\pi$, so let's do that. There are many ways to
 estimate $\pi$, with the Buffon Needle problem being a classic case study. We’ll do a variation
-inspired by that. Suppose you have a circle inscribed inside a square:
+inspired by this method. Suppose you have a circle inscribed inside a square:
 
   ![Figure [circ-square]: Estimating π with a circle inside a square
   ](../images/fig-3.01-circ-square.jpg)
@@ -128,14 +128,14 @@ centered at the origin:
                 inside_circle++;
         }
         std::cout << std::fixed << std::setprecision(12);
-        std::cout << "Estimate of Pi = " << 4 * double(inside_circle) / N << '\n';
+        std::cout << "Estimate of Pi = " << (4.0 * inside_circle) / N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estpi-1]: <kbd>[pi.cc]</kbd> Estimating π]
 </div>
 
 The answer of $\pi$ found will vary from computer to computer based on the initial random seed.
-On my computer, this gives me the answer `Estimate of Pi = 3.143760000000`
+On my computer, this gives me the answer `Estimate of Pi = 3.143760000000`.
 
 
 Showing Convergence
@@ -164,7 +164,7 @@ If we change the program to run forever and just print out a running estimate:
 
             if (runs % 100000 == 0)
                 std::cout << "Estimate of Pi = "
-                          << 4 * double(inside_circle) / runs
+                          << (4.0 * inside_circle) / runs
                           << '\n';
         }
     }
@@ -229,18 +229,29 @@ On my computer, I get:
     Regular    Estimate of Pi = 3.141184000000
     Stratified Estimate of Pi = 3.141460000000
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Where the first 12 decimal places of pi are:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    3.141592653589
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 </div>
 
 Interestingly, the stratified method is not only better, it converges with a better asymptotic rate!
 Unfortunately, this advantage decreases with the dimension of the problem (so for example, with the
-3D sphere volume version the gap would be less). This is called the *Curse of Dimensionality*. Ray
+3D sphere volume version the gap would be less). This is called the _Curse of Dimensionality_. Ray
 tracing is a very high-dimenstional algorithm, where each reflection adds two new dimensions:
 $\phi_o$ and $\theta_o$. We won't be stratifying the output reflection angle in this book, simply
 because it is a little bit too complicated to cover, but there is a lot of interesting research
-currently happening in this space. But, as an intermediary, we'll be stratifying the locations of
-the sampling positions inside of each pixel.
+currently happening in this space.
+
+<div class='together'>
+As an intermediary, we'll be stratifying the locations of the sampling positions around each pixel
+location.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
             world = cornell_box();
             aspect_ratio = 1.0;
             image_width = 600;
@@ -285,15 +296,17 @@ To after, with stratification:
 
   ![Image 2: Cornell box, stratification](../images/img-3.02-cornell-strat.png class=pixel)
 
+</div>
 
-You should, if you squint, be able to see sharper contrast in the edges of planes and at the edges
-of boxes. The effect is more pronounced at locations of higher information density, but all of our
-materials are matte, so the only locations of high information density are at edges. The effect will
-be more obvious with textures and reflective materials.
+You should, if you squint, be able to see sharper contrast at the edges of planes and at the edges
+of boxes. The effect will be more pronounced at locations that have a higher frequency of change.
+High frequency change can also be thought of as high information density. For our cornell box scene,
+all of our materials are matte, with a soft area light overhead, so the only locations of high
+information density are at the edges of objects. The effect will be more obvious with textures and
+reflective materials.
 
 If you are ever doing single-reflection or shadowing or some strictly 2D problem, you definitely
 want to stratify.
-
 
 
 One Dimensional MC Integration
