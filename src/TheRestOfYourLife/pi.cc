@@ -41,7 +41,7 @@ int main() {
     auto N = static_cast<double>(sqrt_N) * sqrt_N;
     std::cout << std::fixed << std::setprecision(12);
     std::cout << "Regular    Estimate of Pi = "
-        << 4 * double(inside_circle) / (sqrt_N*sqrt_N) << '\n';
+        << (4.0 * inside_circle) / (sqrt_N*sqrt_N) << '\n';
     std::cout << "Stratified Estimate of Pi = "
-        << 4 * double(inside_circle_stratified) / (sqrt_N*sqrt_N) << '\n';
+        << (4.0 * inside_circle_stratified) / (sqrt_N*sqrt_N) << '\n';
 }
