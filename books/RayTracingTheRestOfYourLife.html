@@ -18,15 +18,27 @@ Overview
 
 In _Ray Tracing in One Weekend_ and _Ray Tracing: the Next Week_, you built a “real” ray tracer.
 
-In this volume, I assume you will be pursuing a career related to ray tracing, and we will dive into
-the math of creating a very serious ray tracer. When you are done you should be ready to start
-messing with the many serious commercial ray tracers underlying the movie and product design
-industries. There are many many things I do not cover in this short volume; I dive into only one of
-many ways to write a Monte Carlo rendering program. I don’t do shadow rays (instead I make rays more
-likely to go toward lights), bidirectional methods, Metropolis methods, or photon mapping. What I do
-is speak in the language of the field that studies those methods. I think of this book as a deep
-exposure that can be your first of many, and it will equip you with some of the concepts, math, and
-terms you will need to study the others.
+If you are motivated, you can take the source and information contained in those books to implement
+any visual effect you want. The source provides a meaningful and robust foundation upon which to
+build out a raytracer for a small hobby project. Most of the visual effects found in commercial ray
+tracers rely on the techniques described in these first two books. However, your capacity to add
+increasingly complicated visual effects like subsurface scattering or nested dielectrics will be
+severely limited by a missing mathematical foundation. In this volume, I assume that you are either
+a highly interested student, or are someone who is pursuing a career related to ray tracing. We will
+be diving into the math of creating a very serious ray tracer. When you are done, you should be
+well equipped to use and modify the various commercial ray tracers found in many popular industries,
+such as the movie, television, product design, and architecture industries.
+
+There are many many things I do not cover in this short volume. There are many ways of writing Monte
+Carlo rendering programs--I dive into only one of them. I don’t cover shadow rays (instead deciding
+to make rays more likely to go toward lights), bidirectional methods, Metropolis methods, or photon
+mapping. You'll find many of these techniques in so-called "serious ray tracers", but these
+techniques are not covered here because it is more important to cover the concepts, the math, and
+the terms of the field. I think of this book as a deep exposure that can be your first of many, and
+it will equip you with some of the concepts, math, and terms that you'll need to study all of these
+interesting techniques, and, more, of course.
+
+I hope that you find the math as fascinating as I do.
 
 As before, https://in1weekend.blogspot.com/ will have further readings and references.
 
@@ -35,22 +47,51 @@ at the end of this book.
 
 
 
-
 A Simple Monte Carlo Program
 ====================================================================================================
+<div class='together'>
+Let’s start with one of the simplest Monte Carlo programs. If you're not familiar with Monte Carlo
+programs, then it'll be good to pause and catch you up. There are two kinds of randomized
+algorithms: Monte Carlo and Las Vegas. Randomized algorithms can be found everywhere in computer
+graphics, so getting a decent foundation isn't a bad idea. A randomized algorithm uses some amount
+of randomness in its computation. A Las Vegas (LV) random algorithm always produces the correct
+result, whereas a Monte Carlo (MC) algorithm _may_ produce a correct result (and frequently gets it
+wrong!). But for especially complicated problems such as ray tracing, we may not place as huge a
+priority on being perfectly exact as on getting an answer in a reasonable amount of time. LV
+algorithms will eventually arrive at the correct result, but we can't make too many guarantees on
+how long it will take to get there. The classic example of an LV algorithm is the $quicksort$
+sorting algorithm. The quicksort algorithm will always complete with a fully sorted list, but, the
+time it takes to complete is random. Another good example of an LV algorithm is the code that we use
+to pick a random point in a unit sphere:
 
-Let’s start with one of the simplest Monte Carlo (MC) programs. MC programs give a statistical
-estimate of an answer, and this estimate gets more and more accurate the longer you run it. This
-basic characteristic of simple programs producing noisy but ever-better answers is what MC is all
-about, and it is especially good for applications like graphics where great accuracy is not needed.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline vec3 random_in_unit_sphere() {
+        while (true) {
+            auto p = vec3::random(-1,1);
+            if (p.length_squared() >= 1) continue;
+            return p;
+        }
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [las-vegas-algo]: <kbd>[vec3.h]</kbd> A Las Vegas algorithm]
+
+This code will always eventually arrive at a random point in the unit sphere, but we can't say
+beforehand how long it'll take. It may take only 1 iteration, it may take 2, 3, 4, or even longer.
+Whereas, MC programs give a statistical estimate of an answer, and this estimate gets more and more
+accurate the longer you run it. Which means that at a certain point, we can just decide
+that the answer is accurate _enough_ and call it quits. This basic characteristic of simple programs
+producing noisy but ever-better answers is what MC is all about, and is especially good for
+applications like graphics where great accuracy is not needed.
+
+</div>
 
 
 Estimating Pi
 --------------
 <div class='together'>
-As an example, let’s estimate $\pi$. There are many ways to do this, with the Buffon Needle
-problem being a classic case study. We’ll do a variation inspired by that. Suppose you have a circle
-inscribed inside a square:
+The canonical example of a MC algorithm is estimating $\pi$, so let's do that. There are many ways to
+estimate $\pi$, with the Buffon Needle problem being a classic case study. We’ll do a variation
+inspired by this method. Suppose you have a circle inscribed inside a square:
 
   ![Figure [circ-square]: Estimating π with a circle inside a square
   ](../images/fig-3.01-circ-square.jpg)
@@ -60,7 +101,7 @@ inscribed inside a square:
 <div class='together'>
 Now, suppose you pick random points inside the square. The fraction of those random points that end
 up inside the circle should be proportional to the area of the circle. The exact fraction should in
-fact be the ratio of the circle area to the square area. Fraction:
+fact be the ratio of the circle area to the square area:
 
   $$ \frac{\pi r^2}{(2r)^2} = \frac{\pi}{4} $$
 </div>
@@ -78,7 +119,7 @@ centered at the origin:
     #include <stdlib.h>
 
     int main() {
-        int N = 1000;
+        int N = 100000;
         int inside_circle = 0;
         for (int i = 0; i < N; i++) {
             auto x = random_double(-1,1);
@@ -87,14 +128,14 @@ centered at the origin:
                 inside_circle++;
         }
         std::cout << std::fixed << std::setprecision(12);
-        std::cout << "Estimate of Pi = " << 4*double(inside_circle) / N << '\n';
+        std::cout << "Estimate of Pi = " << (4.0 * inside_circle) / N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estpi-1]: <kbd>[pi.cc]</kbd> Estimating π]
 </div>
 
 The answer of $\pi$ found will vary from computer to computer based on the initial random seed.
-On my computer, this gives me the answer `Estimate of Pi = 3.0880000000`
+On my computer, this gives me the answer `Estimate of Pi = 3.143760000000`.
 
 
 Showing Convergence
@@ -123,7 +164,7 @@ If we change the program to run forever and just print out a running estimate:
 
             if (runs % 100000 == 0)
                 std::cout << "Estimate of Pi = "
-                          << 4*double(inside_circle) / runs
+                          << (4.0 * inside_circle) / runs
                           << '\n';
         }
     }
@@ -135,9 +176,9 @@ If we change the program to run forever and just print out a running estimate:
 Stratified Samples (Jittering)
 -------------------------------
 <div class='together'>
-We get very quickly near $\pi$, and then more slowly zero in on it. This is an example of the *Law
-of Diminishing Returns*, where each sample helps less than the last. This is the worst part of MC.
-We can mitigate this diminishing return by *stratifying* the samples (often called *jittering*),
+We get very quickly near $\pi$, and then more slowly zero in on it. This is an example of the _Law
+of Diminishing Returns_, where each sample helps less than the last. This is the worst part of MC.
+We can mitigate this diminishing return by _stratifying_ the samples (often called _jittering_),
 where instead of taking random samples, we take a grid and take one sample within each:
 
   ![Figure [jitter]: Sampling areas with jittered points](../images/fig-3.02-jitter.jpg)
@@ -146,7 +187,7 @@ where instead of taking random samples, we take a grid and take one sample withi
 
 <div class='together'>
 This changes the sample generation, but we need to know how many samples we are taking in advance
-because we need to know the grid. Let’s take a hundred million and try it both ways:
+because we need to know the grid. Let’s take a million and try it both ways:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -157,7 +198,7 @@ because we need to know the grid. Let’s take a hundred million and try it both
     int main() {
         int inside_circle = 0;
         int inside_circle_stratified = 0;
-        int sqrt_N = 10000;
+        int sqrt_N = 1000;
         for (int i = 0; i < sqrt_N; i++) {
             for (int j = 0; j < sqrt_N; j++) {
                 auto x = random_double(-1,1);
@@ -175,9 +216,9 @@ because we need to know the grid. Let’s take a hundred million and try it both
         std::cout << std::fixed << std::setprecision(12);
         std::cout
             << "Regular    Estimate of Pi = "
-            << 4*double(inside_circle) / (sqrt_N*sqrt_N) << '\n'
+            << (4.0 * inside_circle) / (sqrt_N*sqrt_N) << '\n'
             << "Stratified Estimate of Pi = "
-            << 4*double(inside_circle_stratified) / (sqrt_N*sqrt_N) << '\n';
+            << (4.0 * inside_circle_stratified) / (sqrt_N*sqrt_N) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estpi-3]: <kbd>[pi.cc]</kbd> Estimating π, v3]
@@ -185,18 +226,87 @@ because we need to know the grid. Let’s take a hundred million and try it both
 On my computer, I get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Regular    Estimate of Pi = 3.14151480
-    Stratified Estimate of Pi = 3.14158948
+    Regular    Estimate of Pi = 3.141184000000
+    Stratified Estimate of Pi = 3.141460000000
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Where the first 12 decimal places of pi are:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    3.141592653589
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 </div>
 
 Interestingly, the stratified method is not only better, it converges with a better asymptotic rate!
 Unfortunately, this advantage decreases with the dimension of the problem (so for example, with the
-3D sphere volume version the gap would be less). This is called the *Curse of Dimensionality*. We
-are going to be very high dimensional (each reflection adds two dimensions), so I won't stratify in
-this book, but if you are ever doing single-reflection or shadowing or some strictly 2D problem, you
-definitely want to stratify.
+3D sphere volume version the gap would be less). This is called the _Curse of Dimensionality_. Ray
+tracing is a very high-dimensional algorithm, where each reflection adds two new dimensions:
+$\phi_o$ and $\theta_o$. We won't be stratifying the output reflection angle in this book, simply
+because it is a little bit too complicated to cover, but there is a lot of interesting research
+currently happening in this space.
 
+<div class='together'>
+As an intermediary, we'll be stratifying the locations of the sampling positions around each pixel
+location.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+            world = cornell_box();
+            aspect_ratio = 1.0;
+            image_width = 600;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            samples_per_pixel = 64;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            lookfrom = point3(278, 278, -800);
+            lookat = point3(278, 278, 0);
+            vfov = 40.0;
+    
+    ...
+
+    int sqrt_spp = int(sqrt(samples_per_pixrel));
+    for (int j = image_height-1; j >= 0; --j) {
+        std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+        for (int i = 0; i < image_width; ++i) {
+            color pixel_color(0,0,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            for (int s_j = 0; s_j < sqrt_spp; ++s_j) {
+                for (int s_i = 0; s_i < sqrt_spp; ++s_i) {
+                    auto u = (i + (s_i + random_double()) / sqrt_spp) / (image_width-1);
+                    auto v = (j + (s_j + random_double()) / sqrt_spp) / (image_height-1);
+                    ray r = cam.get_ray(u, v);
+                    pixel_color += ray_color(r, background, world, max_depth);
+                }
+            }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            write_color(std::cout, pixel_color, samples_per_pixel);
+        }
+    }
+
+    std::cerr << "\nDone.\n";
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [estpi-3]: <kbd>[main.cc]</kbd> Stratifying the samples inside of pixels]
+
+
+If we compare the results from without stratification: 
+
+  ![Image 1: Cornell box, no stratification](../images/img-3.01-cornell-no-strat.png class=pixel)
+
+To after, with stratification:
+
+  ![Image 2: Cornell box, stratification](../images/img-3.02-cornell-strat.png class=pixel)
+
+</div>
+
+You should, if you squint, be able to see sharper contrast at the edges of planes and at the edges
+of boxes. The effect will be more pronounced at locations that have a higher frequency of change.
+High frequency change can also be thought of as high information density. For our cornell box scene,
+all of our materials are matte, with a soft area light overhead, so the only locations of high
+information density are at the edges of objects. The effect will be more obvious with textures and
+reflective materials.
+
+If you are ever doing single-reflection or shadowing or some strictly 2D problem, you definitely
+want to stratify.
 
 
 One Dimensional MC Integration
@@ -811,7 +921,7 @@ model.
 <div class='together'>
 At 500×500 my code produces this image in 10min on 1 core of my Macbook:
 
-  ![Image 1: Cornell box, refactored](../images/img-3.01-cornell-refactor1.jpg class=pixel)
+  ![Image 1: Cornell box, refactored](../images/img-3.03-cornell-refactor1.jpg class=pixel)
 
 Reducing that noise is our goal. We’ll do that by constructing a PDF that sends more rays to the
 light.
