@@ -321,7 +321,7 @@ void default_scene(scene& scene_desc) {
 }
 
 
-void main() {
+int main() {
     scene scene_desc;
 
     scene_desc.background = color(0.70, 0.80, 1.00);

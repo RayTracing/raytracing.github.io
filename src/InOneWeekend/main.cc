@@ -75,7 +75,7 @@ void random_spheres(scene& scene_desc) {
 }
 
 
-void main() {
+int main() {
     scene scene_desc;
     random_spheres(scene_desc);
     scene_desc.render();

@@ -80,6 +80,7 @@ add_executable(cos_cubed         src/TheRestOfYourLife/cos_cubed.cc         ${CO
 add_executable(cos_density       src/TheRestOfYourLife/cos_density.cc       ${COMMON_ALL})
 add_executable(integrate_x_sq    src/TheRestOfYourLife/integrate_x_sq.cc    ${COMMON_ALL})
 add_executable(pi                src/TheRestOfYourLife/pi.cc                ${COMMON_ALL})
+add_executable(estimate_halfway  src/TheRestOfYourLife/estimate_halfway.cc  ${COMMON_ALL})
 add_executable(sphere_importance src/TheRestOfYourLife/sphere_importance.cc ${COMMON_ALL})
 add_executable(sphere_plot       src/TheRestOfYourLife/sphere_plot.cc       ${COMMON_ALL})
 
