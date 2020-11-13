@@ -17,7 +17,7 @@
 #include <stdlib.h>
 
 
-inline double pdf(double x) {
+double pdf(double x) {
     return  3*x*x/8;
 }
 

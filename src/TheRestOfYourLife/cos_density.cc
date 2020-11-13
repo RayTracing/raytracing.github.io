@@ -16,7 +16,7 @@
 #include <math.h>
 
 
-inline vec3 random_cosine_direction() {
+vec3 random_cosine_direction() {
     auto r1 = random_double();
     auto r2 = random_double();
     auto z = sqrt(1-r2);

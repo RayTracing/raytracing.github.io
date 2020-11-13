@@ -16,7 +16,7 @@
 #include "onb.h"
 
 
-inline vec3 random_cosine_direction() {
+vec3 random_cosine_direction() {
     auto r1 = random_double();
     auto r2 = random_double();
     auto z = sqrt(1-r2);
@@ -29,7 +29,7 @@ inline vec3 random_cosine_direction() {
 }
 
 
-inline vec3 random_to_sphere(double radius, double distance_squared) {
+vec3 random_to_sphere(double radius, double distance_squared) {
     auto r1 = random_double();
     auto r2 = random_double();
     auto z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);

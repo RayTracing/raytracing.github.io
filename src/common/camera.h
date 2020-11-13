@@ -68,4 +68,5 @@ class camera {
     double time0, time1;  // shutter open/close times
 };
 
+
 #endif

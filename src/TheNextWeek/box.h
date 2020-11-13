@@ -20,9 +20,23 @@
 class box : public hittable {
   public:
     box() {}
-    box(const point3& p0, const point3& p1, shared_ptr<material> ptr);
+    box(const point3& p0, const point3& p1, shared_ptr<material> ptr) {
+        box_min = p0;
+        box_max = p1;
 
-    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr));
+        sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr));
+
+        sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), ptr));
+        sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr));
+
+        sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr));
+        sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
+    }
+
+    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+        return sides.hit(r, ray_t, rec);
+    }
 
     virtual bool bounding_box(
         double time_start, double time_end, aabb& output_box
@@ -36,26 +50,6 @@ class box : public hittable {
     point3 box_max;
     hittable_list sides;
 };
-
-
-box::box(const point3& p0, const point3& p1, shared_ptr<material> ptr) {
-    box_min = p0;
-    box_max = p1;
-
-    sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr));
-    sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr));
-
-    sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), ptr));
-    sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr));
-
-    sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr));
-    sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
-}
-
-
-bool box::hit(const ray& r, interval ray_t, hit_record& rec) const {
-    return sides.hit(r, ray_t, rec);
-}
 
 
 #endif
