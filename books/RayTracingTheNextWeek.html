@@ -2084,31 +2084,27 @@ files even easier, we provide a helper class to manage all this -- `rtw_image`:
 
         rtw_image(const char* image_filename) {
             // Loads image data from the given file name. If the RTW_IMAGES environment variable is
-            // defined, looks only in that directory for the image file. If RTW_IMAGES is not
-            // defined, this constructor will search for the specified image file first from the
-            // current directory, then in the images/ subdirectory, then the _parent's_ images/
-            // subdirectory, and then _that_ parent, on so on, for six levels up. If the image was
-            // not loaded successfully, width() and height() will return 0.
+            // defined, looks only in that directory for the image file. If the image was not found,
+            // searches for the specified image file first from the current directory, then in the
+            // images/ subdirectory, then the _parent's_ images/ subdirectory, and then _that_
+            // parent, on so on, for six levels up. If the image was not loaded successfully,
+            // width() and height() will return 0.
 
+            auto filename = std::string(image_filename);
             const auto imagedir = getenv("RTW_IMAGES");
-            if (imagedir) {
-                // If RTW_IMAGES is defined, then only use that value to locate the image file.
-                if (load(std::string(imagedir) + "/" + image_filename)) return;
-            } else {
-                // Hunt for the image file in some likely locations.
-                auto filename = std::string(image_filename);
-                if (load(filename)) return;
-                if (load("images/" + filename)) return;
-                if (load("../images/" + filename)) return;
-                if (load("../../images/" + filename)) return;
-                if (load("../../../images/" + filename)) return;
-                if (load("../../../../images/" + filename)) return;
-                if (load("../../../../../images/" + filename)) return;
-                if (load("../../../../../../images/" + filename)) return;
-            }
+
+            // Hunt for the image file in some likely locations.
+            if (imagedir && load(std::string(imagedir) + "/" + image_filename)) return;
+            if (load(filename)) return;
+            if (load("images/" + filename)) return;
+            if (load("../images/" + filename)) return;
+            if (load("../../images/" + filename)) return;
+            if (load("../../../images/" + filename)) return;
+            if (load("../../../../images/" + filename)) return;
+            if (load("../../../../../images/" + filename)) return;
+            if (load("../../../../../../images/" + filename)) return;
 
             std::cerr << "ERROR: Could not load image file '" << image_filename << "'.\n";
-            std::cerr << "STBI: " << stbi_failure_reason() << '\n';
         }
 
         ~rtw_image() { STBI_FREE(data); }
