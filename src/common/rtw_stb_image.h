@@ -1,8 +1,8 @@
-#ifndef RTWEEKEND_STB_IMAGE_H
-#define RTWEEKEND_STB_IMAGE_H
+#ifndef RTW_STB_IMAGE_H
+#define RTW_STB_IMAGE_H
 
 
-// Disable pedantic warnings for this header from the Microsoft Visual C++ compiler.
+// Disable strict warnings for this header from the Microsoft Visual C++ compiler.
 #ifdef _MSC_VER
     #pragma warning (push, 0)
 #endif
@@ -19,7 +19,7 @@ class rtw_image {
     rtw_image() : data(nullptr) {}
 
     rtw_image(const char* image_filename) {
-        // Loads image data from the given file name. If the RTW_IMAGES environment variable is
+        // Loads image data from the specified file. If the RTW_IMAGES environment variable is
         // defined, looks only in that directory for the image file. If the image was not found,
         // searches for the specified image file first from the current directory, then in the
         // images/ subdirectory, then the _parent's_ images/ subdirectory, and then _that_
@@ -47,9 +47,8 @@ class rtw_image {
 
     bool load(const std::string filename) {
         // Loads image data from the given file name. Returns true if the load succeeded.
-        auto components_per_pixel = bytes_per_pixel; // Components per pixel
-        data = stbi_load(filename.c_str(),
-            &image_width, &image_height, &components_per_pixel, bytes_per_pixel);
+        auto n = bytes_per_pixel; // Dummy out parameter: original components per pixel
+        data = stbi_load(filename.c_str(), &image_width, &image_height, &n, bytes_per_pixel);
         bytes_per_scanline = image_width * bytes_per_pixel;
         return data != nullptr;
     }
@@ -60,11 +59,10 @@ class rtw_image {
     const unsigned char* pixel_data(int x, int y) const {
         // Return the address of the three bytes of the pixel at x,y (or magenta if no data).
         static unsigned char magenta[] = { 255, 0, 255 };
-        if (!data) return magenta;
+        if (data == nullptr) return magenta;
 
-        // Clamp pixel coordintes to [0,width-1] x [0,height-1]
-        x = (x < 0) ? 0 : (x < image_width)  ? x : (image_width  - 1);
-        y = (y < 0) ? 0 : (y < image_height) ? y : (image_height - 1);
+        x = clamp(x, 0, image_width);
+        y = clamp(y, 0, image_height);
 
         return data + y*bytes_per_scanline + x*bytes_per_pixel;
     }
@@ -74,6 +72,13 @@ class rtw_image {
     unsigned char *data;
     int image_width, image_height;
     int bytes_per_scanline;
+
+    static int clamp(int x, int low, int high) {
+        // Return the value clamped to the range [low, high).
+        if (x < low) return low;
+        if (x < high) return x;
+        return high - 1;
+    }
 };
 
 
