@@ -9,6 +9,7 @@ Change Log -- Ray Tracing in One Weekend
   - Change: `hittable:hit()` methods use new interval class for ray-t parameter
   - Change: Class public/private access labels get two-space indents (#782)
   - Change: `interval::clamp()` replaces standalone `clamp` utility function
+  - New: `rtw_image` class for easier image data loading, searches more locations (#807)
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)
