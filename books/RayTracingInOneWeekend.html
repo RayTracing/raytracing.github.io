@@ -32,10 +32,12 @@ the end, you will have a ray tracer that produces some great images. You should 
 in a weekend. If you take longer, don’t worry about it. I use C++ as the driving language, but you
 don’t need to. However, I suggest you do, because it’s fast, portable, and most production movie and
 video game renderers are written in C++. Note that I avoid most “modern features” of C++, but
-inheritance and operator overloading are too useful for ray tracers to pass on. I do not provide the
-code online, but the code is real and I show all of it except for a few straightforward operators in
-the `vec3` class. I am a big believer in typing in code to learn it, but when code is available I
-use it, so I only practice what I preach when the code is not available. So don’t ask!
+inheritance and operator overloading are too useful for ray tracers to pass on.
+
+> I do not provide the code online, but the code is real and I show all of it except for a few
+> straightforward operators in the `vec3` class. I am a big believer in typing in code to learn it,
+> but when code is available I use it, so I only practice what I preach when the code is not
+> available. So don’t ask!
 
 I have left that last part in because it is funny what a 180 I have done. Several readers ended up
 with subtle errors that were helped when we compared code. So please do type in the code, but if you
@@ -77,7 +79,7 @@ Let’s make some C++ code to output such a thing:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include <iostream>
 
-    int main() {
+    void main() {
 
         // Image
 
@@ -389,7 +391,7 @@ Now we can change our main to use this:
 
     #include <iostream>
 
-    int main() {
+    void main() {
 
         // Image
 
@@ -484,11 +486,11 @@ often, so I’ll use a non-square image. For now we'll use a 16:9 aspect ratio, 
 common.
 
 In addition to setting up the pixel dimensions for the rendered image, we also need to set up a
-virtual viewport through which to pass our scene rays. For the standard square pixel spacing, the
-viewport's aspect ratio should be the same as our rendered image. We'll just pick a viewport two
-units in height. We'll also set the distance between the projection plane and the projection point
-to be one unit. This is referred to as the “focal length”, not to be confused with “focus distance”,
-which we'll present later.
+virtual viewport through which to pass our scene rays. For the standard pixel spacing (equidistant
+in both the horizontal and vertical direction), the viewport's aspect ratio should be the same as
+our rendered image. We'll just pick a viewport two units in height. We'll also set the distance
+between the projection plane and the projection point to be one unit. This is referred to as the
+“focal length”, not to be confused with “focus distance”, which we'll present later.
 
 I’ll put the “eye” (or camera center if you think of a camera) at $(0,0,0)$. I will have the y-axis
 go up, and the x-axis to the right. In order to respect the convention of a right handed coordinate
@@ -521,7 +523,7 @@ for now because we’ll add antialiasing later):
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-    int main() {
+    void main() {
 
         // Image
 
@@ -1222,7 +1224,7 @@ And the new main:
         return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
     }
 
-    int main() {
+    void main() {
 
         // Image
 
@@ -1496,8 +1498,8 @@ before:
             lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
         }
 
-        ray get_ray(double u, double v) const {
-            return ray(origin, lower_left_corner + u*horizontal + v*vertical - origin);
+        ray get_ray(double s, double t) const {
+            return ray(origin, lower_left_corner + s*horizontal + t*vertical - origin);
         }
 
       private:
@@ -1506,6 +1508,7 @@ before:
         vec3 horizontal;
         vec3 vertical;
     };
+
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [camera-initial]: <kbd>[camera.h]</kbd> The camera class]
@@ -1559,7 +1562,7 @@ Main is also changed:
 
     ...
 
-    int main() {
+    void main() {
 
         // Image
 
@@ -1749,7 +1752,7 @@ depth, returning no light contribution at the maximum depth:
 
     ...
 
-    int main() {
+    void main() {
 
         // Image
 
@@ -2309,7 +2312,7 @@ Now let’s add some metal spheres to our scene:
 
     ...
 
-    int main() {
+    void main() {
 
         // Image
 
@@ -2420,7 +2423,7 @@ absorb those.
 We can try that out by adding fuzziness 0.3 and 1.0 to the metals:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    int main() {
+    void main() {
         ...
         // World
 
@@ -2779,6 +2782,239 @@ This gives:
 
 
 
+Creating a Scene
+====================================================================================================
+Sometimes you just have to make a scene. At this point, our `main.cc` has a standalone function to
+recursively send rays throughout the scene, and our `main()` function has the world we're rendering,
+a camera to describe the way we set up rays, plus an inline block of code to generate rays for the
+image. Things have gotten complex enough to warrant a refactoring.
+
+
+The scene Class
+----------------
+<div class='together'>
+Let's gather together all of the components of a scene into a single class that manages everything.
+Naturally, we'll name this the `scene` class.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef SCENE_H
+    #define SCENE_H
+
+    #include "rtweekend.h"
+
+    #include "camera.h"
+    #include "hittable_list.h"
+
+
+    class scene {
+      public:
+        void render() {
+            std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
+
+            for (int j = image_height-1; j >= 0; --j) {
+                std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+                for (int i = 0; i < image_width; ++i) {
+                    color pixel_color(0,0,0);
+                    for (int s = 0; s < samples_per_pixel; ++s) {
+                        auto u = (i + random_double()) / (image_width-1);
+                        auto v = (j + random_double()) / (image_height-1);
+                        ray r = cam.get_ray(u, v);
+                        pixel_color += ray_color(r, max_depth);
+                    }
+                    write_color(std::cout, pixel_color, samples_per_pixel);
+                }
+            }
+
+            std::cerr << "\nDone.\n";
+        }
+
+      public:
+        hittable_list world;
+        camera cam;
+
+        int image_width       = 100;
+        int image_height      = 100;
+        int samples_per_pixel =  10;
+        int max_depth         =  50;
+
+      private:
+        color ray_color(const ray& r, int depth) {
+            hit_record rec;
+
+            // If we've exceeded the ray bounce limit, no more light is gathered.
+            if (depth <= 0)
+                return color(0,0,0);
+
+            if (world.hit(r, interval(0.001, infinity), rec)) {
+                ray scattered;
+                color attenuation;
+                if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+                    return attenuation * ray_color(scattered, depth-1);
+                return color(0,0,0);
+            }
+
+            vec3 unit_direction = unit_vector(r.direction());
+            auto t = 0.5*(unit_direction.y() + 1.0);
+            return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        }
+    };
+
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-initial]: <kbd>[scene.h]</kbd> The new scene class]
+
+</div>
+
+</div class='together'>
+With the new scene class, we trim a lot of code from main.cc. This is what's left:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+    #include "camera.h"
+    #include "color.h"
+    #include "hittable_list.h"
+    #include "material.h"
+    #include "scene.h"
+    #include "sphere.h"
+
+    void main() {
+        scene scene_desc;
+
+        const double aspect_ratio = 16.0 / 9.0;
+
+        scene_desc.image_width = 400;
+        scene_desc.image_height = static_cast<int>(scene_desc.image_width / aspect_ratio);
+        scene_desc.samples_per_pixel = 100;
+
+        hittable_list& world = scene_desc.world;
+
+        auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
+        auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
+        auto material_left   = make_shared<dielectric>(1.5);
+        auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
+
+        world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
+        world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
+        world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
+        world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),  -0.4, material_left));
+        world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
+
+        scene_desc.render();
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-with-scene]: <kdb>[main.cc]</kbd> main.cc using the new scene class]
+
+</div>
+
+Run the new program, you should get the same result as image 16 again.
+
+
+Refactoring Camera Setup
+-------------------------
+Our camera has values that are either hard-coded, or can only be specified on construction. That
+makes things difficult with the scene class, particularly if we want to start making scene-creating
+functions that also set up the camera. To make this easier, we'll allow camera settings to be
+altered at will, and then perform the camera initialization explicitly with a call to
+`camera::initialize()`.
+
+But before we do _that_, let's revisit the image aspect ratio. When we first introduced aspect ratio
+in section [Sending Rays Into the Scene], we commented that we'd be using the standard pixel spacing
+where the distance between pixels is the same horizontally as it is vertically. There _are_
+situations where pixel spacing differs in the horizontal and vertical directions, but they're rare,
+and we needn't consider them for our purposes. It's easy enough to modify your code if you need to
+do this.
+
+Currently, we encode aspect ratio in three different locations:
+
+  1. In `main()`, as a constant used to determine the image height,
+  2. Implicitly, in the values for image width and image height, and
+  3. In the camera, to set the viewport width.
+
+Now that we have a `scene` class, we'll set the aspect ratio once and then use that to determine the
+rendered image height, and also to pass to the `camera`, for its viewport calculations. This means
+that if you want to change the render size as you develop your code, you only need to set the image
+width, and everything else will adjust accordingly.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class camera {
+      public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        void initialize(double aspect_ratio = 1.0) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            auto viewport_height = 2.0;
+            auto viewport_width = aspect_ratio * viewport_height;
+            auto focal_length = 1.0;
+
+            origin = point3(0, 0, 0);
+            horizontal = vec3(viewport_width, 0.0, 0.0);
+            vertical = vec3(0.0, viewport_height, 0.0);
+            lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
+        }
+
+        ray get_ray(double s, double t) const {
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [cam-initialize]: <kbd>[camera.h]</kbd> camera.h with explicit initialization]
+
+<div class='together'>
+The scene class now needs to initialize the camera before rendering.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class scene {
+      public:
+        void render() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            const int image_height = static_cast<int>(image_width / aspect_ratio);
+
+            cam.initialize(aspect_ratio);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
+            ...
+        }
+
+      public:
+        hittable_list world;
+        camera cam;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double aspect_ratio      = 1.0;
+        int    image_width       = 100;
+        int    samples_per_pixel =  10;
+        int    max_depth         =  50;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-aspect]: <kbd>[scene.h]</kbd> Scene management using aspect ratio]
+</div>
+
+<div class='together'>
+And a small change to our `main()` routine defines the aspect ratio in the scene:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    void main() {
+        scene scene_desc;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        scene_desc.aspect_ratio = 16.0 / 9.0;
+        scene_desc.image_width = 400;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        scene_desc.samples_per_pixel = 100;
+
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-aspect]: <kbd>[main.cc]</kbd> Updating main to use the scene aspect ratio]
+</div>
+
+
+
 Positionable Camera
 ====================================================================================================
 
@@ -2805,17 +3041,13 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
+        void initialize(double aspect_ratio = 1.0) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        camera(
-            double vfov, // vertical field-of-view in degrees
-            double aspect_ratio
-        ) {
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
             auto viewport_height = 2.0 * h;
-            auto viewport_width = aspect_ratio * viewport_height;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
+            auto viewport_width = aspect_ratio * viewport_height;
             auto focal_length = 1.0;
 
             origin = point3(0, 0, 0);
@@ -2824,9 +3056,15 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
             lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
         }
 
-        ray get_ray(double u, double v) const {
-            return ray(origin, lower_left_corner + u*horizontal + v*vertical - origin);
+        ray get_ray(double s, double t) const {
+            return ray(origin, lower_left_corner + s*horizontal + t*vertical - origin);
         }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+      public:
+        double vfov = 40;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
       private:
         point3 origin;
@@ -2839,43 +3077,40 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
 </div>
 
 <div class='together'>
-When calling it with camera `cam(90, aspect_ratio)` and these spheres:
+Now update `main()` to use a 90° field of view, looking at the point where two spheres touch.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    int main() {
-        ...
-        // World
+    void main() {
+        scene scene_desc;
+
+        scene_desc.aspect_ratio = 16.0 / 9.0;
+        scene_desc.image_width = 400;
+        scene_desc.samples_per_pixel = 100;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        scene_desc.cam.vfov = 90;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        hittable_list& world = scene_desc.world;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto R = cos(pi/4);
-        hittable_list world;
 
         auto material_left  = make_shared<lambertian>(color(0,0,1));
         auto material_right = make_shared<lambertian>(color(1,0,0));
 
         world.add(make_shared<sphere>(point3(-R, 0, -1), R, material_left));
         world.add(make_shared<sphere>(point3( R, 0, -1), R, material_right));
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        // Camera
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        camera cam(90.0, aspect_ratio);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        // Render
-
-        std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
-
-        for (int j = image_height-1; j >= 0; --j) {
-        ...
+        scene_desc.render();
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-wide-angle]: <kbd>[main.cc]</kbd> Scene with wide-angle camera]
 
-gives:
+This gives us this rendering:
 
   ![Image 17: A wide-angle view](../images/img-1.17-wide-view.png class=pixel)
 
@@ -2910,22 +3145,13 @@ camera horizontally level until you decide to experiment with crazy camera angle
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
-        camera(
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            point3 lookfrom,
-            point3 lookat,
-            vec3   vup,
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            double vfov, // vertical field-of-view in degrees
-            double aspect_ratio
-        ) {
+        void initialize(double aspect_ratio = 1.0) {
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
             auto viewport_height = 2.0 * h;
             auto viewport_width = aspect_ratio * viewport_height;
-
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+
             auto w = unit_vector(lookfrom - lookat);
             auto u = unit_vector(cross(vup, w));
             auto v = cross(w, u);
@@ -2937,19 +3163,21 @@ camera horizontally level until you decide to experiment with crazy camera angle
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         ray get_ray(double s, double t) const {
             return ray(origin, lower_left_corner + s*horizontal + t*vertical - origin);
         }
+
+      public:
+        double vfov = 40;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        point3 lookfrom = point3(0,0,-1);
+        point3 lookat   = point3(0,0,0);
+        vec3   vup      = vec3(0,1,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-      private:
-        point3 origin;
-        point3 lower_left_corner;
-        vec3 horizontal;
-        vec3 vertical;
-    };
+        ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [camera-orient]: <kbd>[camera.h]</kbd> Positionable and orientable camera]
 
@@ -2957,20 +3185,39 @@ camera horizontally level until you decide to experiment with crazy camera angle
 We'll change back to the prior scene, and use the new viewpoint:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    hittable_list world;
+    void main() {
+        scene scene_desc;
 
-    auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
-    auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
-    auto material_left   = make_shared<dielectric>(1.5);
-    auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
+        scene_desc.aspect_ratio = 16.0 / 9.0;
+        scene_desc.image_width = 400;
+        scene_desc.samples_per_pixel = 100;
 
-    world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
-    world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
-    world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
-    world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0), -0.45, material_left));
-    world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
 
-    camera cam(point3(-2,2,1), point3(0,0,-1), vec3(0,1,0), 90, aspect_ratio);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        scene_desc.cam.lookfrom = point3(-2,2,1);
+        scene_desc.cam.lookat   = point3(0,0,-1);
+        scene_desc.cam.vup      = vec3(0,1,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        scene_desc.cam.vfov     = 90;
+
+        hittable_list& world = scene_desc.world;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
+        auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
+        auto material_left   = make_shared<dielectric>(1.5);
+        auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
+
+        world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
+        world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
+        world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
+        world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),  -0.4, material_left));
+        world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        scene_desc.render();
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-free-view]: <kbd>[main.cc]</kbd> Scene with alternate viewpoint]
 
@@ -2981,7 +3228,7 @@ to get:
 And we can change field of view:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    camera cam(point3(-2,2,1), point3(0,0,-1), vec3(0,1,0), 20, aspect_ratio);
+    scene_desc.cam.vfov = 20;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [change-field-view]: <kbd>[main.cc]</kbd> Change field of view]
 
@@ -2996,8 +3243,8 @@ to get:
 Defocus Blur
 ====================================================================================================
 
-Now our final feature: defocus blur. Note, all photographers will call it “depth of field” so be
-aware of only using “defocus blur” among friends.
+Now our final feature: defocus blur. (Photographers will call it “depth of field”, so just use the
+term “defocus blur” among your raytracing friends.)
 
 The reason we defocus blur in real cameras is because they need a big hole (rather than just a
 pinhole) to gather light. This would defocus everything, but if we stick a lens in the hole, there
@@ -3062,17 +3309,7 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
-        camera(
-            point3 lookfrom,
-            point3 lookat,
-            vec3   vup,
-            double vfov, // vertical field-of-view in degrees
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            double aspect_ratio,
-            double aperture,
-            double focus_dist
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        ) {
+        void initialize(double aspect_ratio = 1.0) {
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
             auto viewport_height = 2.0 * h;
@@ -3100,7 +3337,6 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 rd = lens_radius * random_in_unit_disk();
             vec3 offset = u * rd.x() + v * rd.y();
-
             return ray(
                 origin + offset,
                 lower_left_corner + s*horizontal + t*vertical - origin - offset
@@ -3108,13 +3344,24 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
+      public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double vfov       = 40;
+        double aperture   = 0;
+        double focus_dist = 10;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        point3 lookfrom = point3(0,0,-1);
+        point3 lookat   = point3(0,0,0);
+        vec3   vup      = vec3(0,1,0);
+
       private:
         point3 origin;
         point3 lower_left_corner;
-        vec3 horizontal;
-        vec3 vertical;
+        vec3   horizontal;
+        vec3   vertical;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        vec3 u, v, w;
+        vec3   u, v, w;
         double lens_radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
@@ -3125,13 +3372,12 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
 Using a big aperture:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    point3 lookfrom(3,3,2);
-    point3 lookat(0,0,-1);
-    vec3 vup(0,1,0);
-    auto dist_to_focus = (lookfrom-lookat).length();
-    auto aperture = 2.0;
-
-    camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
+    scene_desc.cam.lookfrom   = point3(3,3,2);
+    scene_desc.cam.lookat     = point3(0,0,-1);
+    scene_desc.cam.vup        = vec3(0,1,0);
+    scene_desc.cam.vfov       = 90;
+    scene_desc.cam.aperture   = 2.0;
+    scene_desc.cam.focus_dist = (scene_desc.cam.lookfrom - scene_desc.cam.lookat).length();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-camera-dof]: <kbd>[main.cc]</kbd> Scene camera with depth-of-field]
 
@@ -3149,11 +3395,23 @@ Where Next?
 A Final Render
 ---------------
 <div class='together'>
-First let’s make the image on the cover of this book -- lots of random spheres:
+First let’s make the image on the cover of this book -- lots of random spheres. We'll create the
+scene with its own helper function:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    hittable_list random_scene() {
-        hittable_list world;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    void random_spheres(scene& scene_desc) {
+        scene_desc.aspect_ratio      = 16.0 / 9.0;
+        scene_desc.image_width       = 1200;
+        scene_desc.samples_per_pixel = 10;
+
+        scene_desc.cam.lookfrom   = vec3(13,2,3);
+        scene_desc.cam.lookat     = vec3(0,0,0);
+        scene_desc.cam.vup        = vec3(0,1,0);
+        scene_desc.cam.vfov       = 20;
+        scene_desc.cam.aperture   = 0.1;
+        scene_desc.cam.focus_dist = 10.0;
+
+        hittable_list& world = scene_desc.world;
 
         auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
         world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
@@ -3194,54 +3452,13 @@ First let’s make the image on the cover of this book -- lots of random spheres
 
         auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
         world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
-
-        return world;
     }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-    int main() {
-
-        // Image
 
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        const auto aspect_ratio = 3.0 / 2.0;
-        const int image_width = 1200;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        const int image_height = static_cast<int>(image_width / aspect_ratio);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        const int samples_per_pixel = 500;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        const int max_depth = 50;
-
-        // World
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        auto world = random_scene();
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        // Camera
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        point3 lookfrom(13,2,3);
-        point3 lookat(0,0,0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        vec3 vup(0,1,0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        auto dist_to_focus = 10.0;
-        auto aperture = 0.1;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
-
-        // Render
-
-        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
-
-        for (int j = image_height-1; j >= 0; --j) {
-            ...
+    void main() {
+        scene scene_desc;
+        random_spheres(scene_desc);
+        scene_desc.render();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-final]: <kbd>[main.cc]</kbd> Final scene]
