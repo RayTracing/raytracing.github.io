@@ -486,11 +486,11 @@ often, so I’ll use a non-square image. For now we'll use a 16:9 aspect ratio, 
 common.
 
 In addition to setting up the pixel dimensions for the rendered image, we also need to set up a
-virtual viewport through which to pass our scene rays. For the standard pixel spacing (equidistant
-in both the horizontal and vertical direction), the viewport's aspect ratio should be the same as
-our rendered image. We'll just pick a viewport two units in height. We'll also set the distance
-between the projection plane and the projection point to be one unit. This is referred to as the
-“focal length”, not to be confused with “focus distance”, which we'll present later.
+virtual viewport through which to pass our scene rays. For the standard pixel spacing (equally
+spaced in both the horizontal and vertical direction), the viewport's aspect ratio should be the
+same as our rendered image. We'll just pick a viewport two units in height. We'll also set the
+distance between the projection plane and the projection point to be one unit. This is referred to
+as the “focal length”, not to be confused with “focus distance”, which we'll present later.
 
 I’ll put the “eye” (or camera center if you think of a camera) at $(0,0,0)$. I will have the y-axis
 go up, and the x-axis to the right. In order to respect the convention of a right handed coordinate
@@ -2784,10 +2784,10 @@ This gives:
 
 Creating a Scene
 ====================================================================================================
-Sometimes you just have to make a scene. At this point, our `main.cc` has a standalone function to
-recursively send rays throughout the scene, and our `main()` function has the world we're rendering,
-a camera to describe the way we set up rays, plus an inline block of code to generate rays for the
-image. Things have gotten complex enough to warrant a refactoring.
+At this point, our `main.cc` has a standalone function to recursively send rays throughout the
+scene, and our `main()` function has the world we're rendering, a camera to describe the way we set
+up rays, plus an inline block of code to generate rays for the image. Things have gotten complex
+enough to warrant a refactoring.
 
 
 The scene Class
@@ -2908,15 +2908,16 @@ With the new scene class, we trim a lot of code from main.cc. This is what's lef
 
 </div>
 
-Run the new program, you should get the same result as image 16 again.
+Run the new program, you should get the same result as before.
 
 
 Refactoring Camera Setup
 -------------------------
-Our camera has values that are either hard-coded, or can only be specified on construction. That
-makes things difficult with the scene class, particularly if we want to start making scene-creating
-functions that also set up the camera. To make this easier, we'll allow camera settings to be
-altered at will, and then perform the camera initialization explicitly with a call to
+Our camera class is currently a pain to use because we have a bunch of values that are either
+hard-coded into the code, or that can only be defined at camera construction. That makes things
+difficult with the scene class, particularly if we want to write scene-creating functions that also
+set up the camera. To make this easier, we'll allow camera settings to be altered at will and at
+various points in the code, and then perform the camera initialization explicitly with a call to
 `camera::initialize()`.
 
 But before we do _that_, let's revisit the image aspect ratio. When we first introduced aspect ratio
@@ -2960,7 +2961,9 @@ width, and everything else will adjust accordingly.
     [Listing [cam-initialize]: <kbd>[camera.h]</kbd> camera.h with explicit initialization]
 
 <div class='together'>
-The scene class now needs to initialize the camera before rendering.
+The scene class now needs to initialize the camera before rendering. Note that any changes to camera
+settings after the call to `initialize()` will not update camera behavior until the next call to
+`initialize()`.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class scene {
@@ -3110,7 +3113,7 @@ Now update `main()` to use a 90° field of view, looking at the point where two 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-wide-angle]: <kbd>[main.cc]</kbd> Scene with wide-angle camera]
 
-This gives us this rendering:
+This gives us the rendering:
 
   ![Image 17: A wide-angle view](../images/img-1.17-wide-view.png class=pixel)
 
@@ -3243,8 +3246,8 @@ to get:
 Defocus Blur
 ====================================================================================================
 
-Now our final feature: defocus blur. (Photographers will call it “depth of field”, so just use the
-term “defocus blur” among your raytracing friends.)
+Now our final feature: _defocus blur_. Note, photographers will call it _depth of field_, so be sure
+to only use the term _defocus blur_ among your raytracing friends.
 
 The reason we defocus blur in real cameras is because they need a big hole (rather than just a
 pinhole) to gather light. This would defocus everything, but if we stick a lens in the hole, there
