@@ -53,18 +53,15 @@ class lambertian : public material {
     lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
     lambertian(shared_ptr<texture> a) : albedo(a) {}
 
-    virtual bool scatter(
-        const ray& r_in, const hit_record& rec, scatter_record& srec
-    ) const override {
+    bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
         srec.is_specular = false;
         srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
         srec.pdf_ptr = make_shared<cosine_pdf>(rec.normal);
         return true;
     }
 
-    double scattering_pdf(
-        const ray& r_in, const hit_record& rec, const ray& scattered
-    ) const override {
+    double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
+    const override {
         auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
         return cosine < 0 ? 0 : cosine/pi;
     }
@@ -78,9 +75,7 @@ class metal : public material {
   public:
     metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
 
-    virtual bool scatter(
-        const ray& r_in, const hit_record& rec, scatter_record& srec
-    ) const override {
+    bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
         vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
         srec.specular_ray =
             ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
@@ -100,9 +95,7 @@ class dielectric : public material {
   public:
     dielectric(double index_of_refraction) : ir(index_of_refraction) {}
 
-    virtual bool scatter(
-        const ray& r_in, const hit_record& rec, scatter_record& srec
-    ) const override {
+    bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
         srec.is_specular = true;
         srec.pdf_ptr = nullptr;
         srec.attenuation = color(1.0, 1.0, 1.0);
@@ -142,9 +135,8 @@ class diffuse_light : public material {
     diffuse_light(shared_ptr<texture> a) : emit(a) {}
     diffuse_light(color c) : emit(make_shared<solid_color>(c)) {}
 
-    virtual color emitted(
-        const ray& r_in, const hit_record& rec, double u, double v, const point3& p
-    ) const override {
+    color emitted(const ray& r_in, const hit_record& rec, double u, double v, const point3& p)
+    const override {
         if (!rec.front_face)
             return color(0,0,0);
         return emit->value(u, v, p);
@@ -165,9 +157,8 @@ class isotropic : public material {
     // This method doesn't match the signature in the base `material` class, so this one's
     // never actually called. Disabling this definition until we sort this out.
 
-    virtual bool scatter(
-        const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
-    ) const override {
+    bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
+    const override {
         scattered = ray(rec.p, random_in_unit_sphere(), r_in.time());
         attenuation = albedo->value(rec.u, rec.v, rec.p);
         return true;

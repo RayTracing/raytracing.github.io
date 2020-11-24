@@ -27,13 +27,12 @@ class hittable_list : public hittable {
     void clear() { objects.clear(); }
     void add(shared_ptr<hittable> object) { objects.push_back(object); }
 
-    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+    bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-    virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-        const override;
+    bool bounding_box(double time_start, double time_end, aabb& output_box) const override;
 
-    virtual double pdf_value(const vec3 &o, const vec3 &v) const override;
-    virtual vec3 random(const vec3 &o) const override;
+    double pdf_value(const vec3 &o, const vec3 &v) const override;
+    vec3 random(const vec3 &o) const override;
 
   public:
     std::vector<shared_ptr<hittable>> objects;

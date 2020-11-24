@@ -10,6 +10,7 @@ Change Log -- Ray Tracing in One Weekend
   - Change: Class public/private access labels get two-space indents (#782)
   - Change: `interval::clamp()` replaces standalone `clamp` utility function
   - New: `rtw_image` class for easier image data loading, searches more locations (#807)
+  - Fix: Remove redundant `virtual` keyword for methods with `override` (#805)
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)

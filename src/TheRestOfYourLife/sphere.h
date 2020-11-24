@@ -23,13 +23,12 @@ class sphere : public hittable {
     sphere(point3 ctr, double r, shared_ptr<material> m)
       : center(ctr), radius(r), mat_ptr(m) {};
 
-    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+    bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-    virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-        const override;
+    bool bounding_box(double time_start, double time_end, aabb& output_box) const override;
 
-    virtual double pdf_value(const point3& o, const vec3& v) const override;
-    virtual vec3 random(const point3& o) const override;
+    double pdf_value(const point3& o, const vec3& v) const override;
+    vec3 random(const point3& o) const override;
 
   public:
     point3 center;
