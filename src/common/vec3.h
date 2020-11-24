@@ -62,11 +62,11 @@ class vec3 {
         return (fabs(e[0]) < s) && (fabs(e[1]) < s) && (fabs(e[2]) < s);
     }
 
-    inline static vec3 random() {
+    static vec3 random() {
         return vec3(random_double(), random_double(), random_double());
     }
 
-    inline static vec3 random(double min, double max) {
+    static vec3 random(double min, double max) {
         return vec3(random_double(min,max), random_double(min,max), random_double(min,max));
     }
 
