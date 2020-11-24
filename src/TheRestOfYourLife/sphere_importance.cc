@@ -17,7 +17,7 @@
 #include <stdlib.h>
 
 
-inline double pdf(const vec3& p) {
+double pdf(const vec3& p) {
     return  1.0 / (4.0*pi);
 }
 

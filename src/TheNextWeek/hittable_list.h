@@ -27,10 +27,9 @@ class hittable_list : public hittable {
     void clear() { objects.clear(); }
     void add(shared_ptr<hittable> object) { objects.push_back(object); }
 
-    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+    bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-    virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-        const override;
+    bool bounding_box(double time_start, double time_end, aabb& output_box) const override;
 
   public:
     std::vector<shared_ptr<hittable>> objects;

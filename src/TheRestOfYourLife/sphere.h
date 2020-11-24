@@ -23,13 +23,12 @@ class sphere : public hittable {
     sphere(point3 ctr, double r, shared_ptr<material> m)
       : center(ctr), radius(r), mat_ptr(m) {};
 
-    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+    bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-    virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-        const override;
+    bool bounding_box(double time_start, double time_end, aabb& output_box) const override;
 
-    virtual double pdf_value(const point3& o, const vec3& v) const override;
-    virtual vec3 random(const point3& o) const override;
+    double pdf_value(const point3& o, const vec3& v) const override;
+    vec3 random(const point3& o) const override;
 
   public:
     point3 center;
@@ -50,6 +49,18 @@ class sphere : public hittable {
 
         u = phi / (2*pi);
         v = theta / pi;
+    }
+
+    static vec3 random_to_sphere(double radius, double distance_squared) {
+        auto r1 = random_double();
+        auto r2 = random_double();
+        auto z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
+
+        auto phi = 2*pi*r1;
+        auto x = cos(phi)*sqrt(1-z*z);
+        auto y = sin(phi)*sqrt(1-z*z);
+
+        return vec3(x, y, z);
     }
 };
 

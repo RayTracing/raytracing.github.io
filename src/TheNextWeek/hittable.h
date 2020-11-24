@@ -29,7 +29,7 @@ class hit_record {
     double v;
     bool front_face;
 
-    inline void set_face_normal(const ray& r, const vec3& outward_normal) {
+    void set_face_normal(const ray& r, const vec3& outward_normal) {
         front_face = dot(r.direction(), outward_normal) < 0;
         normal = front_face ? outward_normal :-outward_normal;
     }
@@ -48,10 +48,9 @@ class translate : public hittable {
     translate(shared_ptr<hittable> p, const vec3& displacement)
       : ptr(p), offset(displacement) {}
 
-    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+    bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-    virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-        const override;
+    bool bounding_box(double time_start, double time_end, aabb& output_box) const override;
 
   public:
     shared_ptr<hittable> ptr;
@@ -87,11 +86,9 @@ class rotate_y : public hittable {
   public:
     rotate_y(shared_ptr<hittable> p, double angle);
 
-    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+    bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-    virtual bool bounding_box(
-        double time_start, double time_end, aabb& output_box
-    ) const override {
+    bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
         output_box = bbox;
         return hasbox;
     }

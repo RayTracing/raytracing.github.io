@@ -599,7 +599,7 @@ down-weight. The PDF is a perfect measure of how much or little sampling is bein
 weighting function should be proportional to $1/pdf$. In fact it is exactly $1/pdf$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    inline double pdf(double x) {
+    double pdf(double x) {
         return 0.5*x;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -633,7 +633,7 @@ If we take that same code with uniform samples so the PDF = $1/2$ over the range
 the machinery to get `x = random_double(0,2)`, and the code is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    inline double pdf(double x) {
+    double pdf(double x) {
         return 0.5;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -676,7 +676,7 @@ integrating $p$ analytically), but it’s a good exercise to make sure our code 
 sample we get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    inline double pdf(double x) {
+    double pdf(double x) {
         return 3*x*x/8;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -737,7 +737,7 @@ of the sphere or $1/(4\pi)$. If the integrand is $\cos^2(\theta)$, and $\theta$ 
 the z axis:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline double pdf(const vec3& p) {
+    double pdf(const vec3& p) {
         return 1 / (4*pi);
     }
 
@@ -959,9 +959,8 @@ We modify the base-class `material` to enable this importance sampling:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        virtual double scattering_pdf(
-            const ray& r_in, const hit_record& rec, const ray& scattered
-        ) const {
+        virtual double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
+        const {
             return 0;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -986,8 +985,8 @@ And _Lambertian_ material becomes:
         lambertian(shared_ptr<texture> a) : albedo(a) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        virtual bool scatter(
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        bool scatter(
             const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ) const override {
@@ -1006,9 +1005,7 @@ And _Lambertian_ material becomes:
         }
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double scattering_pdf(
-            const ray& r_in, const hit_record& rec, const ray& scattered
-        ) const {
+        double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
             auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
             return cosine < 0 ? 0 : cosine/pi;
         }
@@ -1070,19 +1067,22 @@ Now, just for the experience, try a different sampling strategy. As in the first
 randomly from the hemisphere above the surface. This would be $p(direction) = \frac{1}{2\pi}$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    virtual bool scatter(
-        const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
-    ) const override {
+    class lambertian : public material {
+      public:
+        ...
+        bool scatter(
+            const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
+        ) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        auto direction = random_in_hemisphere(rec.normal);
+            auto direction = random_in_hemisphere(rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        scattered = ray(rec.p, unit_vector(direction), r_in.time());
-        alb = albedo->value(rec.u, rec.v, rec.p);
+            scattered = ray(rec.p, unit_vector(direction), r_in.time());
+            alb = albedo->value(rec.u, rec.v, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        pdf = 0.5 / pi;
+            pdf = 0.5 / pi;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        return true;
-    }
+            return true;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scatter-mod]: <kbd>[material.h]</kbd> Modified scatter function]
 </div>
@@ -1277,11 +1277,6 @@ We can save a little algebra on specific cases by noting
 Let’s also start generating them as random vectors:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-
-    #include <iostream>
-    #include <math.h>
-
     inline vec3 random_cosine_direction() {
         auto r1 = random_double();
         auto r2 = random_double();
@@ -1293,6 +1288,17 @@ Let’s also start generating them as random vectors:
 
         return vec3(x, y, z);
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-cosine-direction]: <kbd>vec3.h</kbd> Random cosine direction utility function
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+    #include <iostream>
+    #include <iomanip>
+    #include <math.h>
+
 
     void main() {
         int N = 1000000;
@@ -1407,7 +1413,7 @@ class because it won't really be more complicated than utility functions:
       public:
         onb() {}
 
-        inline vec3 operator[](int i) const { return axis[i]; }
+        vec3 operator[](int i) const { return axis[i]; }
 
         vec3 u() const { return axis[0]; }
         vec3 v() const { return axis[1]; }
@@ -1443,21 +1449,24 @@ class because it won't really be more complicated than utility functions:
 We can rewrite our Lambertian material using this to get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    virtual bool scatter(
-        const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
-    ) const override {
+    class lambertian : public material {
+      public:
+        ...
+        bool scatter(
+            const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
+        ) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        onb uvw;
-        uvw.build_from_w(rec.normal);
-        auto direction = uvw.local(random_cosine_direction());
+            onb uvw;
+            uvw.build_from_w(rec.normal);
+            auto direction = uvw.local(random_cosine_direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        scattered = ray(rec.p, unit_vector(direction), r_in.time());
-        alb = albedo->value(rec.u, rec.v, rec.p);
+            scattered = ray(rec.p, unit_vector(direction), r_in.time());
+            alb = albedo->value(rec.u, rec.v, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        pdf = dot(uvw.w(), scattered.direction()) / pi;
+            pdf = dot(uvw.w(), scattered.direction()) / pi;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        return true;
-    }
+            return true;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scatter-onb]: <kbd>[material.h]</kbd> Scatter function, with orthonormal basis]
 </div>
@@ -1594,9 +1603,8 @@ and there is a small space between light and ceiling. We probably want to have t
 down. We can do that by letting the emitted member function of hittable take extra information:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    virtual color emitted(const ray& r_in, const hit_record& rec, double u, double v,
-        const point3& p) const override {
-
+    color emitted(const ray& r_in, const hit_record& rec, double u, double v, const point3& p)
+    const override {
         if (rec.front_face)
             return emit->value(u, v, p);
         else
@@ -1614,7 +1622,7 @@ We also need to flip the light so its normals point in the $-y$ direction:
       public:
         flip_face(shared_ptr<hittable> p) : ptr(p) {}
 
-        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             if (!ptr->hit(r, ray_t, rec))
                 return false;
 
@@ -1625,9 +1633,7 @@ We also need to flip the light so its normals point in the $-y$ direction:
             return true;
         }
 
-        virtual bool bounding_box(
-            double time_start, double time_end, aabb& output_box
-        ) const override {
+        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
             return ptr->bounding_box(time_start, time_end, output_box);
         }
 
@@ -1736,28 +1742,16 @@ bounding box that works with all its subclasses.
 First, let’s try a cosine density:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline vec3 random_cosine_direction() {
-        auto r1 = random_double();
-        auto r2 = random_double();
-        auto z = sqrt(1-r2);
-
-        auto phi = 2*pi*r1;
-        auto x = cos(phi)*sqrt(r2);
-        auto y = sin(phi)*sqrt(r2);
-
-        return vec3(x, y, z);
-    }
-
     class cosine_pdf : public pdf {
       public:
         cosine_pdf(const vec3& w) { uvw.build_from_w(w); }
 
-        virtual double value(const vec3& direction) const override {
+        double value(const vec3& direction) const override {
             auto cosine = dot(unit_vector(direction), uvw.w());
             return (cosine <= 0) ? 0 : cosine/pi;
         }
 
-        virtual vec3 generate() const override {
+        vec3 generate() const override {
             return uvw.local(random_cosine_direction());
         }
 
@@ -1831,11 +1825,11 @@ Now we can try sampling directions toward a `hittable`, like the light.
       public:
         hittable_pdf(shared_ptr<hittable> p, const point3& origin) : ptr(p), o(origin) {}
 
-        virtual double value(const vec3& direction) const override {
+        double value(const vec3& direction) const override {
             return ptr->pdf_value(o, direction);
         }
 
-        virtual vec3 generate() const override {
+        vec3 generate() const override {
             return ptr->random(o);
         }
 
@@ -1882,7 +1876,7 @@ And we change `xz_rect` to implement those functions:
         ...
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        virtual double pdf_value(const point3& origin, const vec3& v) const override {
+        double pdf_value(const point3& origin, const vec3& v) const override {
             hit_record rec;
             if (!this->hit(ray(origin, v), interval(0.001, infinity), rec))
                 return 0;
@@ -1894,7 +1888,7 @@ And we change `xz_rect` to implement those functions:
             return distance_squared / (cosine * area);
         }
 
-        virtual vec3 random(const point3& origin) const override {
+        vec3 random(const point3& origin) const override {
             auto random_point = point3(random_double(x0,x1), k, random_double(z0,z1));
             return random_point - origin;
         }
@@ -1976,11 +1970,11 @@ class is straightforward:
             p[1] = p1;
         }
 
-        virtual double value(const vec3& direction) const override {
+        double value(const vec3& direction) const override {
             return 0.5 * p[0]->value(direction) + 0.5 *p[1]->value(direction);
         }
 
-        virtual vec3 generate() const override {
+        vec3 generate() const override {
             if (random_double() < 0.5)
                 return p[0]->generate();
             else
@@ -2142,9 +2136,8 @@ We can redesign `material` and stuff all the new arguments into a class like we 
             return false;
         }
 
-        virtual double scattering_pdf(
-            const ray& r_in, const hit_record& rec, const ray& scattered
-        ) const {
+        virtual double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
+        const {
             return 0;
         }
     };
@@ -2162,9 +2155,7 @@ The Lambertian material becomes simpler:
         lambertian(shared_ptr<texture> a) : albedo(a) {}
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        virtual bool scatter(
-            const ray& r_in, const hit_record& rec, scatter_record& srec
-        ) const override {
+        bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
             srec.is_specular = false;
             srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
             srec.pdf_ptr = new cosine_pdf(rec.normal);
@@ -2172,9 +2163,7 @@ The Lambertian material becomes simpler:
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        double scattering_pdf(
-            const ray& r_in, const hit_record& rec, const ray& scattered
-        ) const {
+        double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
             auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
             return cosine < 0 ? 0 : cosine/pi;
         }
@@ -2239,9 +2228,7 @@ and dielectric materials are easy to fix.
       public:
         metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        virtual bool scatter(
-            const ray& r_in, const hit_record& rec, scatter_record& srec
-        ) const override {
+        bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
             vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
             srec.specular_ray = ray(rec.p, reflected+fuzz*random_in_unit_sphere());
             srec.attenuation = albedo;
@@ -2261,9 +2248,7 @@ and dielectric materials are easy to fix.
     class dielectric : public material {
       public:
         ...
-        virtual bool scatter(
-            const ray& r_in, const hit_record& rec, scatter_record& srec
-        ) const override {
+        bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             srec.is_specular = true;
             srec.pdf_ptr = nullptr;
@@ -2429,6 +2414,23 @@ Updating the Sphere Code
 The sphere class needs the two PDF-related functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class sphere : public hittable {
+        ...
+      private:
+        ...
+        static vec3 random_to_sphere(double radius, double distance_squared) {
+            auto r1 = random_double();
+            auto r2 = random_double();
+            auto z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
+
+            auto phi = 2*pi*r1;
+            auto x = cos(phi)*sqrt(1-z*z);
+            auto y = sin(phi)*sqrt(1-z*z);
+
+            return vec3(x, y, z);
+        }
+    };
+
     double sphere::pdf_value(const point3& o, const vec3& v) const {
         hit_record rec;
         if (!this->hit(ray(o, v), interval(0.001, infinity), rec))
@@ -2449,25 +2451,6 @@ The sphere class needs the two PDF-related functions:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-pdf]: <kbd>[sphere.h]</kbd> Sphere with PDF]
-</div>
-
-<div class='together'>
-With the utility function:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline vec3 random_to_sphere(double radius, double distance_squared) {
-        auto r1 = random_double();
-        auto r2 = random_double();
-        auto z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
-
-        auto phi = 2*pi*r1;
-        auto x = cos(phi)*sqrt(1-z*z);
-        auto y = sin(phi)*sqrt(1-z*z);
-
-        return vec3(x, y, z);
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [rand-to-sphere]: <kbd>[pdf.h]</kbd> The random_to_sphere utility function]
 </div>
 
 <div class='together'>

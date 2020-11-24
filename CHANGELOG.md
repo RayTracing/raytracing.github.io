@@ -11,6 +11,9 @@ Change Log -- Ray Tracing in One Weekend
   - Change: `interval::clamp()` replaces standalone `clamp` utility function
   - Added: `rtw_image` class for easier image data loading, better search (#807)
   - Change: New `scene` class manages image settings, camera, geometry, and lights (#699)
+  - Change: Cleaned up multiple cases where the `inline` keyword was unnecessary, and reorganized
+    some global utility functions as either private static, or in better locations.
+  - Fix: Remove redundant `virtual` keyword for methods with `override` (#805)
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)
