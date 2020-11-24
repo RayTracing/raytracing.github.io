@@ -12,6 +12,7 @@ Change Log -- Ray Tracing in One Weekend
   - New: `rtw_image` class for easier image data loading, searches more locations (#807)
   - Change: Cleaned up multiple cases where the `inline` keyword was unnecessary, and reorganized
     some global utility functions as either private static, or in better locations.
+  - Fix: Remove redundant `virtual` keyword for methods with `override` (#805)
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)

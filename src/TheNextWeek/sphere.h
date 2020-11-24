@@ -22,10 +22,9 @@ class sphere : public hittable {
     sphere(point3 ctr, double r, shared_ptr<material> m)
       : center(ctr), radius(r), mat_ptr(m) {};
 
-    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+    bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-    virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-        const override;
+    bool bounding_box(double time_start, double time_end, aabb& output_box) const override;
 
   public:
     point3 center;

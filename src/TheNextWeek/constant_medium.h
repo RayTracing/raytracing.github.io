@@ -28,11 +28,9 @@ class constant_medium : public hittable {
       : boundary(b), neg_inv_density(-1/d), phase_function(make_shared<isotropic>(c))
     {}
 
-    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+    bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
 
-    virtual bool bounding_box(
-        double time_start, double time_end, aabb& output_box
-    ) const override {
+    bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
         return boundary->bounding_box(time_start, time_end, output_box);
     }
 
