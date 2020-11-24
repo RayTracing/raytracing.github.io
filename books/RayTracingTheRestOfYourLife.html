@@ -948,9 +948,8 @@ We modify the base-class `material` to enable this importance sampling:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        virtual double scattering_pdf(
-            const ray& r_in, const hit_record& rec, const ray& scattered
-        ) const {
+        virtual double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
+        const {
             return 0;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -995,9 +994,7 @@ And _Lambertian_ material becomes:
         }
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double scattering_pdf(
-            const ray& r_in, const hit_record& rec, const ray& scattered
-        ) const {
+        double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
             auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
             return cosine < 0 ? 0 : cosine/pi;
         }
@@ -2132,9 +2129,8 @@ We can redesign `material` and stuff all the new arguments into a class like we 
             return false;
         }
 
-        virtual double scattering_pdf(
-            const ray& r_in, const hit_record& rec, const ray& scattered
-        ) const {
+        virtual double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
+        const {
             return 0;
         }
     };
@@ -2160,9 +2156,7 @@ The Lambertian material becomes simpler:
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        double scattering_pdf(
-            const ray& r_in, const hit_record& rec, const ray& scattered
-        ) const {
+        double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
             auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
             return cosine < 0 ? 0 : cosine/pi;
         }
