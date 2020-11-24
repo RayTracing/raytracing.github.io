@@ -1,7 +1,7 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
-# v4.0.0 (pending, targeted for 2020-12-25)
+# v4.0.0 (pending, targeted for 2020-12-20)
 
 ### Common
   - Change: Introduce new `interval` class used throughout codebase (#777)
@@ -9,7 +9,11 @@ Change Log -- Ray Tracing in One Weekend
   - Change: `hittable:hit()` methods use new interval class for ray-t parameter
   - Change: Class public/private access labels get two-space indents (#782)
   - Change: `interval::clamp()` replaces standalone `clamp` utility function
-  - New: `rtw_image` class for easier image data loading, searches more locations (#807)
+  - Added: `rtw_image` class for easier image data loading, better search (#807)
+  - Change: New `scene` class manages image settings, camera, geometry, and lights (#699)
+  - Change: Cleaned up multiple cases where the `inline` keyword was unnecessary, and reorganized
+    some global utility functions as either private static, or in better locations.
+  - Fix: Remove redundant `virtual` keyword for methods with `override` (#805)
   - Change: `aabb` class constructor treats two params as extreme points in any orientation (#733)
 
 ### In One Weekend
