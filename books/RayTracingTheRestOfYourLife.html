@@ -2447,6 +2447,23 @@ Updating the Sphere Code
 The sphere class needs the two PDF-related functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class sphere : public hittable {
+        ...
+      private:
+        ...
+        static vec3 random_to_sphere(double radius, double distance_squared) {
+            auto r1 = random_double();
+            auto r2 = random_double();
+            auto z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
+
+            auto phi = 2*pi*r1;
+            auto x = cos(phi)*sqrt(1-z*z);
+            auto y = sin(phi)*sqrt(1-z*z);
+
+            return vec3(x, y, z);
+        }
+    };
+
     double sphere::pdf_value(const point3& o, const vec3& v) const {
         hit_record rec;
         if (!this->hit(ray(o, v), interval(0.001, infinity), rec))
@@ -2467,25 +2484,6 @@ The sphere class needs the two PDF-related functions:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-pdf]: <kbd>[sphere.h]</kbd> Sphere with PDF]
-</div>
-
-<div class='together'>
-With the utility function:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline vec3 random_to_sphere(double radius, double distance_squared) {
-        auto r1 = random_double();
-        auto r2 = random_double();
-        auto z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
-
-        auto phi = 2*pi*r1;
-        auto x = cos(phi)*sqrt(1-z*z);
-        auto y = sin(phi)*sqrt(1-z*z);
-
-        return vec3(x, y, z);
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [rand-to-sphere]: <kbd>[pdf.h]</kbd> The random_to_sphere utility function]
 </div>
 
 <div class='together'>
