@@ -1264,12 +1264,7 @@ We can save a little algebra on specific cases by noting
 Let’s also start generating them as random vectors:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-
-    #include <iostream>
-    #include <math.h>
-
-    vec3 random_cosine_direction() {
+    inline vec3 random_cosine_direction() {
         auto r1 = random_double();
         auto r2 = random_double();
         auto z = sqrt(1-r2);
@@ -1280,6 +1275,17 @@ Let’s also start generating them as random vectors:
 
         return vec3(x, y, z);
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-cosine-direction]: <kbd>vec3.h</kbd> Random cosine direction utility function
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+    #include <iostream>
+    #include <iomanip>
+    #include <math.h>
+
 
     int main() {
         int N = 1000000;
@@ -1725,18 +1731,6 @@ bounding box that works with all its subclasses.
 First, let’s try a cosine density:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline vec3 random_cosine_direction() {
-        auto r1 = random_double();
-        auto r2 = random_double();
-        auto z = sqrt(1-r2);
-
-        auto phi = 2*pi*r1;
-        auto x = cos(phi)*sqrt(r2);
-        auto y = sin(phi)*sqrt(r2);
-
-        return vec3(x, y, z);
-    }
-
     class cosine_pdf : public pdf {
       public:
         cosine_pdf(const vec3& w) { uvw.build_from_w(w); }
