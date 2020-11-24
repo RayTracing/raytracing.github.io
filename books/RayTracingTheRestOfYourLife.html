@@ -529,7 +529,7 @@ down-weight. The PDF is a perfect measure of how much or little sampling is bein
 weighting function should be proportional to $1/pdf$. In fact it is exactly $1/pdf$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    inline double pdf(double x) {
+    double pdf(double x) {
         return 0.5*x;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -563,7 +563,7 @@ If we take that same code with uniform samples so the PDF = $1/2$ over the range
 the machinery to get `x = random_double(0,2)`, and the code is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    inline double pdf(double x) {
+    double pdf(double x) {
         return 0.5;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -606,7 +606,7 @@ integrating $p$ analytically), but it’s a good exercise to make sure our code 
 sample we get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    inline double pdf(double x) {
+    double pdf(double x) {
         return 3*x*x/8;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -667,7 +667,7 @@ of the sphere or $1/(4\pi)$. If the integrand is $\cos^2(\theta)$, and $\theta$ 
 the z axis:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline double pdf(const vec3& p) {
+    double pdf(const vec3& p) {
         return 1 / (4*pi);
     }
 
@@ -1264,11 +1264,6 @@ We can save a little algebra on specific cases by noting
 Let’s also start generating them as random vectors:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-
-    #include <iostream>
-    #include <math.h>
-
     inline vec3 random_cosine_direction() {
         auto r1 = random_double();
         auto r2 = random_double();
@@ -1280,6 +1275,17 @@ Let’s also start generating them as random vectors:
 
         return vec3(x, y, z);
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-cosine-direction]: <kbd>vec3.h</kbd> Random cosine direction utility function
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+    #include <iostream>
+    #include <iomanip>
+    #include <math.h>
+
 
     int main() {
         int N = 1000000;
@@ -1394,7 +1400,7 @@ class because it won't really be more complicated than utility functions:
       public:
         onb() {}
 
-        inline vec3 operator[](int i) const { return axis[i]; }
+        vec3 operator[](int i) const { return axis[i]; }
 
         vec3 u() const { return axis[0]; }
         vec3 v() const { return axis[1]; }
@@ -1725,18 +1731,6 @@ bounding box that works with all its subclasses.
 First, let’s try a cosine density:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline vec3 random_cosine_direction() {
-        auto r1 = random_double();
-        auto r2 = random_double();
-        auto z = sqrt(1-r2);
-
-        auto phi = 2*pi*r1;
-        auto x = cos(phi)*sqrt(r2);
-        auto y = sin(phi)*sqrt(r2);
-
-        return vec3(x, y, z);
-    }
-
     class cosine_pdf : public pdf {
       public:
         cosine_pdf(const vec3& w) { uvw.build_from_w(w); }
@@ -2438,6 +2432,23 @@ Updating the Sphere Code
 The sphere class needs the two PDF-related functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class sphere : public hittable {
+        ...
+      private:
+        ...
+        static vec3 random_to_sphere(double radius, double distance_squared) {
+            auto r1 = random_double();
+            auto r2 = random_double();
+            auto z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
+
+            auto phi = 2*pi*r1;
+            auto x = cos(phi)*sqrt(1-z*z);
+            auto y = sin(phi)*sqrt(1-z*z);
+
+            return vec3(x, y, z);
+        }
+    };
+
     double sphere::pdf_value(const point3& o, const vec3& v) const {
         hit_record rec;
         if (!this->hit(ray(o, v), interval(0.001, infinity), rec))
@@ -2458,25 +2469,6 @@ The sphere class needs the two PDF-related functions:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-pdf]: <kbd>[sphere.h]</kbd> Sphere with PDF]
-</div>
-
-<div class='together'>
-With the utility function:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline vec3 random_to_sphere(double radius, double distance_squared) {
-        auto r1 = random_double();
-        auto r2 = random_double();
-        auto z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
-
-        auto phi = 2*pi*r1;
-        auto x = cos(phi)*sqrt(1-z*z);
-        auto y = sin(phi)*sqrt(1-z*z);
-
-        return vec3(x, y, z);
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [rand-to-sphere]: <kbd>[pdf.h]</kbd> The random_to_sphere utility function]
 </div>
 
 <div class='together'>

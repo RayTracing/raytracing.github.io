@@ -19,7 +19,7 @@ class onb
   public:
     onb() {}
 
-    inline vec3 operator[](int i) const { return axis[i]; }
+    vec3 operator[](int i) const { return axis[i]; }
 
     vec3 u() const { return axis[0]; }
     vec3 v() const { return axis[1]; }
