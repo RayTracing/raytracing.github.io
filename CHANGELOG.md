@@ -14,6 +14,7 @@ Change Log -- Ray Tracing in One Weekend
   - Change: Cleaned up multiple cases where the `inline` keyword was unnecessary, and reorganized
     some global utility functions as either private static, or in better locations.
   - Fix: Remove redundant `virtual` keyword for methods with `override` (#805)
+  - Change: `aabb` class constructor treats two params as extreme points in any orientation (#733)
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)

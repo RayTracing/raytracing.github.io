@@ -17,7 +17,12 @@
 class aabb {
   public:
     aabb() {}
-    aabb(const point3& a, const point3& b) { minimum = a; maximum = b; }
+    aabb(const point3& a, const point3& b) {
+        // Treat the two points a and b as extrema for the bounding box, so we don't require a
+        // particular minimum/maximum coordinate order.
+        minimum = point3(fmin(a[0],b[0]), fmin(a[1],b[1]), fmin(a[2],b[2]));
+        maximum = point3(fmax(a[0],b[0]), fmax(a[1],b[1]), fmax(a[2],b[2]));
+    }
 
     point3 min() const {return minimum; }
     point3 max() const {return maximum; }
