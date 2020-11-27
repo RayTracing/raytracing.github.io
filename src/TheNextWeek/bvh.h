@@ -104,7 +104,7 @@ bvh_node::bvh_node(
     )
         std::cerr << "No bounding box in bvh_node constructor.\n";
 
-    box = surrounding_box(box_left, box_right);
+    box = aabb(box_left, box_right);
 }
 
 

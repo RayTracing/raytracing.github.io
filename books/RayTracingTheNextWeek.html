@@ -736,7 +736,8 @@ For a sphere, that `bounding_box` function is easy:
 
 <div class='together'>
 For `moving sphere`, we can take the box of the sphere at $t_0$, and the box of the sphere at $t_1$,
-and compute the box of those two boxes:
+and compute the box of those two boxes. We'll add a new `aabb` constructor that takes two boxes as
+input below.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
@@ -767,7 +768,7 @@ and compute the box of those two boxes:
         aabb box1(
             center(time_end) - vec3(radius, radius, radius),
             center(time_end) + vec3(radius, radius, radius));
-        output_box = surrounding_box(box0, box1);
+        output_box = aabb(box0, box1);
         return true;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -811,7 +812,7 @@ the fly because it is only usually called at BVH construction.
 
         for (const auto& object : objects) {
             if (!object->bounding_box(time_start, time_end, temp_box)) return false;
-            output_box = first_box ? temp_box : surrounding_box(output_box, temp_box);
+            output_box = first_box ? temp_box : aabb(output_box, temp_box);
             first_box = false;
         }
 
@@ -822,23 +823,27 @@ the fly because it is only usually called at BVH construction.
 </div>
 
 <div class='together'>
-This requires the `surrounding_box` function for `aabb` which computes the bounding box of two
-boxes:
+This requires a new `aabb` constructor that takes two boxes as input:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    aabb surrounding_box(aabb box0, aabb box1) {
-        point3 small(fmin(box0.min().x(), box1.min().x()),
-                     fmin(box0.min().y(), box1.min().y()),
-                     fmin(box0.min().z(), box1.min().z()));
+    class aabb {
+      public:
+        ...
+        aabb(aabb box0, aabb box1) {
+            minimum = {
+                fmin(box0.min().x(), box1.min().x()),
+                fmin(box0.min().y(), box1.min().y()),
+                fmin(box0.min().z(), box1.min().z())
+            };
 
-        point3 big(fmax(box0.max().x(), box1.max().x()),
-                   fmax(box0.max().y(), box1.max().y()),
-                   fmax(box0.max().z(), box1.max().z()));
-
-        return aabb(small,big);
-    }
+            maximum = {
+                fmax(box0.max().x(), box1.max().x()),
+                fmax(box0.max().y(), box1.max().y()),
+                fmax(box0.max().z(), box1.max().z())
+            };
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [surrounding-box]: <kbd>[aabb.h]</kbd> Surrounding bounding box]
+    [Listing [box-of-boxes]: <kbd>[aabb.h]</kbd> aabb from two boxes]
 </div>
 
 
@@ -980,7 +985,7 @@ This yields:
         )
             std::cerr << "No bounding box in bvh_node constructor.\n";
 
-        box = surrounding_box(box_left, box_right);
+        box = aabb(box_left, box_right);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [bvh-node]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy node]
