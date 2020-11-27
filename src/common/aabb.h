@@ -17,6 +17,7 @@
 class aabb {
   public:
     aabb() {}
+
     aabb(const point3& a, const point3& b) {
         // Treat the two points a and b as extrema for the bounding box, so we don't require a
         // particular minimum/maximum coordinate order.
@@ -24,8 +25,8 @@ class aabb {
         maximum = point3(fmax(a[0],b[0]), fmax(a[1],b[1]), fmax(a[2],b[2]));
     }
 
-    point3 min() const {return minimum; }
-    point3 max() const {return maximum; }
+    point3 min() const { return minimum; }
+    point3 max() const { return maximum; }
 
     bool hit(const ray& r, interval ray_t) const {
         for (int a = 0; a < 3; a++) {

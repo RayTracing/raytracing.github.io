@@ -610,10 +610,16 @@ passing in the interval $[t_{min}$, $t_{max}]$, we get:
     class aabb {
       public:
         aabb() {}
-        aabb(const point3& a, const point3& b) { minimum = a; maximum = b;}
 
-        point3 min() const {return minimum; }
-        point3 max() const {return maximum; }
+        aabb(const point3& a, const point3& b) {
+            // Treat the two points a and b as extrema for the bounding box, so we don't require a
+            // particular minimum/maximum coordinate order.
+            minimum = point3(fmin(a[0],b[0]), fmin(a[1],b[1]), fmin(a[2],b[2]));
+            maximum = point3(fmax(a[0],b[0]), fmax(a[1],b[1]), fmax(a[2],b[2]));
+        }
+
+        point3 min() const { return minimum; }
+        point3 max() const { return maximum; }
 
         bool hit(const ray& r, interval ray_t) const {
             for (int a = 0; a < 3; a++) {
@@ -629,6 +635,7 @@ passing in the interval $[t_{min}$, $t_{max}]$, we get:
             return true;
         }
 
+      public:
         point3 minimum;
         point3 maximum;
     };
@@ -647,20 +654,23 @@ the following version of the code. It works extremely well on many compilers, an
 as my go-to method:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline bool aabb::hit(const ray& r, interval ray_t) const {
-        for (int a = 0; a < 3; a++) {
-            auto invD = 1.0f / r.direction()[a];
-            auto t0 = (min()[a] - r.origin()[a]) * invD;
-            auto t1 = (max()[a] - r.origin()[a]) * invD;
-            if (invD < 0.0f)
-                std::swap(t0, t1);
-            auto ray_tmin = t0 > ray_t.min ? t0 : ray_t.min;
-            auto ray_tmax = t1 < ray_t.max ? t1 : ray_t.max;
-            if (ray_tmax <= ray_tmin)
-                return false;
+    class aabb {
+      public:
+        ...
+        bool hit(const ray& r, interval ray_t) const {
+            for (int a = 0; a < 3; a++) {
+                auto invD = 1.0f / r.direction()[a];
+                auto t0 = (min()[a] - r.origin()[a]) * invD;
+                auto t1 = (max()[a] - r.origin()[a]) * invD;
+                if (invD < 0.0f)
+                    std::swap(t0, t1);
+                auto ray_tmin = t0 > ray_t.min ? t0 : ray_t.min;
+                auto ray_tmax = t1 < ray_t.max ? t1 : ray_t.max;
+                if (ray_tmax <= ray_tmin)
+                    return false;
+            }
+            return true;
         }
-        return true;
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [aabb-hit]: <kbd>[aabb.h]</kbd> Axis-aligned bounding box hit function]
 </div>
