@@ -41,25 +41,6 @@ class aabb {
         return true;
     }
 
-    double area() const {
-        auto a = maximum.x() - minimum.x();
-        auto b = maximum.y() - minimum.y();
-        auto c = maximum.z() - minimum.z();
-        return 2*(a*b + b*c + c*a);
-    }
-
-    int longest_axis() const {
-        auto a = maximum.x() - minimum.x();
-        auto b = maximum.y() - minimum.y();
-        auto c = maximum.z() - minimum.z();
-        if (a > b && a > c)
-            return 0;
-        else if (b > c)
-            return 1;
-        else
-            return 2;
-    }
-
   public:
     point3 minimum;
     point3 maximum;
