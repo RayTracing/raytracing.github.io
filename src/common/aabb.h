@@ -42,19 +42,43 @@ class aabb {
     point3 min() const { return minimum; }
     point3 max() const { return maximum; }
 
-    bool hit(const ray& r, interval ray_t) const {
-        for (int a = 0; a < 3; a++) {
-            auto t0 = fmin((minimum[a] - r.origin()[a]) / r.direction()[a],
-                           (maximum[a] - r.origin()[a]) / r.direction()[a]);
-            auto t1 = fmax((minimum[a] - r.origin()[a]) / r.direction()[a],
-                           (maximum[a] - r.origin()[a]) / r.direction()[a]);
-            ray_t.min = fmax(t0, ray_t.min);
-            ray_t.max = fmin(t1, ray_t.max);
-            if (ray_t.max <= ray_t.min)
-                return false;
+    #if 1
+        // GitHub Issue #817
+        // For some reason I haven't figured out yet, this version is 10x faster than the
+        // version below. I'll come back and figure out why (and in the process, probably figure
+        // out how to configure CMake to create a profile build). Parking this here for now, to
+        // be removed before the v4 release.
+
+        bool hit(const ray& r, interval ray_t) const {
+            for (int a = 0; a < 3; a++) {
+                auto t0 = fmin((minimum[a] - r.origin()[a]) / r.direction()[a],
+                               (maximum[a] - r.origin()[a]) / r.direction()[a]);
+                auto t1 = fmax((minimum[a] - r.origin()[a]) / r.direction()[a],
+                               (maximum[a] - r.origin()[a]) / r.direction()[a]);
+                ray_t.min = fmax(t0, ray_t.min);
+                ray_t.max = fmin(t1, ray_t.max);
+                if (ray_t.max <= ray_t.min)
+                    return false;
+            }
+            return true;
         }
-        return true;
-    }
+    #else
+        bool hit(const ray& r, interval ray_t) const {
+            auto r_origin = r.origin();
+            auto r_dir = r.direction();
+            for (int a = 0; a < 3; a++) {
+                auto invD = 1.0f / r_dir[a];
+                auto orig = r_origin[a];
+                auto t0 = (minimum[a] - orig) * invD;
+                auto t1 = (maximum[a] - orig) * invD;
+                if (invD < 0)
+                    std::swap(t0, t1);
+                if (fmin(t1, ray_t.max) <= fmax(t0, ray_t.min))
+                    return false;
+            }
+            return true;
+        }
+    #endif
 
   public:
     point3 minimum;
