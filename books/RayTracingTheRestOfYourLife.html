@@ -2489,20 +2489,26 @@ hittables in and building a mixture PDF, or we could add PDF functions to `hitta
 think both tactics would work fine, but I will go with instrumenting `hittable_list`.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    double hittable_list::pdf_value(const point3& o, const vec3& v) const {
-        auto weight = 1.0/objects.size();
-        auto sum = 0.0;
+    class hittable_list : public hittable {
+      public:
+        ...
+        double pdf_value(const point3& o, const vec3& v) const override {
+            auto weight = 1.0/objects.size();
+            auto sum = 0.0;
 
-        for (const auto& object : objects)
-            sum += weight * object->pdf_value(o, v);
+            for (const auto& object : objects)
+                sum += weight * object->pdf_value(o, v);
 
-        return sum;
-    }
+            return sum;
+        }
 
-    vec3 hittable_list::random(const vec3& o) const {
-        auto int_size = static_cast<int>(objects.size());
-        return objects[random_int(0, int_size-1)]->random(o);
-    }
+        vec3 random(const vec3& o) const override {
+            auto int_size = static_cast<int>(objects.size());
+            return objects[random_int(0, int_size-1)]->random(o);
+        }
+
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [density-mixture]: <kbd>[hittable_list.h]</kbd> Creating a mixture of densities]
 </div>

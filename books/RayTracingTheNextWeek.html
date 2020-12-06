@@ -781,32 +781,24 @@ the fly because it is only usually called at BVH construction.
     class hittable_list : public hittable {
       public:
         ...
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
-
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override;
+        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+            if (objects.empty()) return false;
+
+            aabb temp_box;
+            bool first_box = true;
+
+            for (const auto& object : objects) {
+                if (!object->bounding_box(time_start, time_end, temp_box)) return false;
+                output_box = first_box ? temp_box : surrounding_box(output_box, temp_box);
+                first_box = false;
+            }
+
+            return true;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     };
-
-    ...
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    bool hittable_list::bounding_box(double time_start, double time_end, aabb& output_box) const {
-        if (objects.empty()) return false;
-
-        aabb temp_box;
-        bool first_box = true;
-
-        for (const auto& object : objects) {
-            if (!object->bounding_box(time_start, time_end, temp_box)) return false;
-            output_box = first_box ? temp_box : surrounding_box(output_box, temp_box);
-            first_box = false;
-        }
-
-        return true;
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hit-list-bbox]: <kbd>[hittable_list.h]</kbd> Hittable list with bounding box]
 </div>
