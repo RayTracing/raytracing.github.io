@@ -703,23 +703,16 @@ For a sphere, that `bounding_box` function is easy:
     class sphere : public hittable {
       public:
         ...
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
-
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override;
+        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+            output_box = aabb(
+                center - vec3(radius, radius, radius),
+                center + vec3(radius, radius, radius));
+            return true;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     };
-
-    ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    bool sphere::bounding_box(double time_start, double time_end, aabb& output_box) const {
-        output_box = aabb(
-            center - vec3(radius, radius, radius),
-            center + vec3(radius, radius, radius));
-        return true;
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-bbox]: <kbd>[sphere.h]</kbd> Sphere with bounding box]
 </div>
@@ -1172,20 +1165,25 @@ points on the unit sphere centered at the origin, and computes $u$ and $v$:
 Update the `sphere::hit()` function to use this function to update the hit record UV coordinates.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool sphere::hit(...) {
+    class sphere : public hittable {
+      public:
         ...
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            ...
 
-        rec.t = root;
-        rec.p = r.at(rec.t);
-        vec3 outward_normal = (rec.p - center) / radius;
-        rec.set_face_normal(r, outward_normal);
+            rec.t = root;
+            rec.p = r.at(rec.t);
+            vec3 outward_normal = (rec.p - center) / radius;
+            rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        get_sphere_uv(outward_normal, rec.u, rec.v);
+            get_sphere_uv(outward_normal, rec.u, rec.v);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        rec.mat_ptr = mat_ptr;
+            rec.mat_ptr = mat_ptr;
 
-        return true;
-    }
+            return true;
+        }
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [get-sphere-uv-call]: <kbd>[sphere.h]</kbd> Sphere UV coordinates from hit]
 </div>

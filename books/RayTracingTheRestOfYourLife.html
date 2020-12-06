@@ -2415,7 +2415,28 @@ The sphere class needs the two PDF-related functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
+      public:
         ...
+        double pdf_value(const point3& o, const vec3& v) const override {
+            hit_record rec;
+            if (!this->hit(ray(o, v), interval(0.001, infinity), rec))
+                return 0;
+
+            auto cos_theta_max = sqrt(1 - radius*radius/(center-o).length_squared());
+            auto solid_angle = 2*pi*(1-cos_theta_max);
+
+            return  1 / solid_angle;
+        }
+
+        vec3 random(const point3& o) const override {
+            vec3 direction = center - o;
+            auto distance_squared = direction.length_squared();
+            onb uvw;
+            uvw.build_from_w(direction);
+            return uvw.local(random_to_sphere(radius, distance_squared));
+        }
+        ...
+
       private:
         ...
         static vec3 random_to_sphere(double radius, double distance_squared) {
@@ -2430,25 +2451,6 @@ The sphere class needs the two PDF-related functions:
             return vec3(x, y, z);
         }
     };
-
-    double sphere::pdf_value(const point3& o, const vec3& v) const {
-        hit_record rec;
-        if (!this->hit(ray(o, v), interval(0.001, infinity), rec))
-            return 0;
-
-        auto cos_theta_max = sqrt(1 - radius*radius/(center-o).length_squared());
-        auto solid_angle = 2*pi*(1-cos_theta_max);
-
-        return  1 / solid_angle;
-    }
-
-    vec3 sphere::random(const point3& o) const {
-        vec3 direction = center - o;
-        auto distance_squared = direction.length_squared();
-        onb uvw;
-        uvw.build_from_w(direction);
-        return uvw.local(random_to_sphere(radius, distance_squared));
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-pdf]: <kbd>[sphere.h]</kbd> Sphere with PDF]
 </div>
