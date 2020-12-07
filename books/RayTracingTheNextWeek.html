@@ -823,8 +823,10 @@ The BVH Node Class
 A BVH is also going to be a `hittable` -- just like lists of `hittable`s. It’s really a container,
 but it can respond to the query “does this ray hit you?”. One design question is whether we have two
 classes, one for the tree, and one for the nodes in the tree; or do we have just one class and have
-the root just be a node we point to. I am a fan of the one class design when feasible. Here is such
-a class:
+the root just be a node we point to. The `hit` function is pretty straightforward: check whether the
+box for the node is hit, and if so, check the children and sort out any details.
+
+I am a fan of the one class design when feasible. Here is such a class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef BVH_H
@@ -846,11 +848,25 @@ a class:
 
         bvh_node(
             const std::vector<shared_ptr<hittable>>& src_objects,
-            size_t start, size_t end, double time_start, double time_end);
+            size_t start, size_t end, double time_start, double time_end
+        ) {
+            // To be implemented later.
+        }
 
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            if (!box.hit(r, ray_t))
+                return false;
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override;
+            bool hit_left = left->hit(r, ray_t, rec);
+            bool hit_right = right->hit(r, interval(ray_t.min, hit_left ? rec.t : ray_t.max), rec);
+
+            return hit_left || hit_right;
+        }
+
+        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+            output_box = box;
+            return true;
+        }
 
       public:
         shared_ptr<hittable> left;
@@ -858,35 +874,9 @@ a class:
         aabb box;
     };
 
-    bool bvh_node::bounding_box(double time_start, double time_end, aabb& output_box) const {
-        output_box = box;
-        return true;
-    }
-
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [bvh]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy]
-</div>
-
-Note that the children pointers are to generic hittables. They can be other `bvh_nodes`, or
-`spheres`, or any other `hittable`.
-
-<div class='together'>
-The `hit` function is pretty straightforward: check whether the box for the node is hit, and if so,
-check the children and sort out any details:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool bvh_node::hit(const ray& r, interval ray_t, hit_record& rec) const {
-        if (!box.hit(r, ray_t))
-            return false;
-
-        bool hit_left = left->hit(r, ray_t, rec);
-        bool hit_right = right->hit(r, interval(ray_t.min, hit_left ? rec.t : ray_t.max), rec);
-
-        return hit_left || hit_right;
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [bvh-hit]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy hit function]
 </div>
 
 
@@ -911,52 +901,57 @@ When the list coming in is two elements, I put one in each subtree and end the r
 traversal algorithm should be smooth and not have to check for null pointers, so if I just have one
 element I duplicate it in each subtree. Checking explicitly for three elements and just following
 one recursion would probably help a little, but I figure the whole method will get optimized later.
-This yields:
+The following code uses three methods--`box_x_compare`, `box_y_compare_`, and `box_z_compare`--that
+we haven't yet defined.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include <algorithm>
-    ...
 
-    bvh_node::bvh_node(
-        std::vector<shared_ptr<hittable>>& objects,
-        size_t start, size_t end, double time_start, double time_end
-    ) {
-        auto objects = src_objects; // Create a modifiable array of the source scene objects
+    class bvh_node : public hittable {
+      public:
+        ...
+        bvh_node(
+            std::vector<shared_ptr<hittable>>& objects,
+            size_t start, size_t end, double time_start, double time_end
+        ) {
+            auto objects = src_objects; // Create a modifiable array of the source scene objects
 
-        int axis = random_int(0,2);
-        auto comparator = (axis == 0) ? box_x_compare
-                        : (axis == 1) ? box_y_compare
-                                      : box_z_compare;
+            int axis = random_int(0,2);
+            auto comparator = (axis == 0) ? box_x_compare
+                            : (axis == 1) ? box_y_compare
+                                          : box_z_compare;
 
-        size_t object_span = end - start;
+            size_t object_span = end - start;
 
-        if (object_span == 1) {
-            left = right = objects[start];
-        } else if (object_span == 2) {
-            if (comparator(objects[start], objects[start+1])) {
-                left = objects[start];
-                right = objects[start+1];
+            if (object_span == 1) {
+                left = right = objects[start];
+            } else if (object_span == 2) {
+                if (comparator(objects[start], objects[start+1])) {
+                    left = objects[start];
+                    right = objects[start+1];
+                } else {
+                    left = objects[start+1];
+                    right = objects[start];
+                }
             } else {
-                left = objects[start+1];
-                right = objects[start];
+                std::sort(objects.begin() + start, objects.begin() + end, comparator);
+
+                auto mid = start + object_span/2;
+                left = make_shared<bvh_node>(objects, start, mid, time_start, time_end);
+                right = make_shared<bvh_node>(objects, mid, end, time_start, time_end);
             }
-        } else {
-            std::sort(objects.begin() + start, objects.begin() + end, comparator);
 
-            auto mid = start + object_span/2;
-            left = make_shared<bvh_node>(objects, start, mid, time_start, time_end);
-            right = make_shared<bvh_node>(objects, mid, end, time_start, time_end);
+            aabb box_left, box_right;
+
+            if (  !left->bounding_box (time_start, time_end, box_left)
+               || !right->bounding_box(time_start, time_end, box_right)
+            )
+                std::cerr << "No bounding box in bvh_node constructor.\n";
+
+            box = surrounding_box(box_left, box_right);
         }
-
-        aabb box_left, box_right;
-
-        if (  !left->bounding_box (time_start, time_end, box_left)
-           || !right->bounding_box(time_start, time_end, box_right)
-        )
-            std::cerr << "No bounding box in bvh_node constructor.\n";
-
-        box = surrounding_box(box_left, box_right);
-    }
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [bvh-node]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy node]
 </div>
@@ -987,28 +982,33 @@ axis index argument. Then define axis-specific comparison functions that use the
 function.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline bool box_compare(const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis) {
-        aabb box_a;
-        aabb box_b;
+    class bvh_node : public hittable {
+      ...
+      private:
+        static bool box_compare(
+            const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis
+        ) {
+            aabb box_a;
+            aabb box_b;
 
-        if (!a->bounding_box(0,0, box_a) || !b->bounding_box(0,0, box_b))
-            std::cerr << "No bounding box in bvh_node constructor.\n";
+            if (!a->bounding_box(0,0, box_a) || !b->bounding_box(0,0, box_b))
+                std::cerr << "No bounding box in bvh_node constructor.\n";
 
-        return box_a.min().e[axis] < box_b.min().e[axis];
-    }
+            return box_a.min().e[axis] < box_b.min().e[axis];
+        }
 
+        static bool box_x_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
+            return box_compare(a, b, 0);
+        }
 
-    bool box_x_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
-        return box_compare(a, b, 0);
-    }
+        static bool box_y_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
+            return box_compare(a, b, 1);
+        }
 
-    bool box_y_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
-        return box_compare(a, b, 1);
-    }
-
-    bool box_z_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
-        return box_compare(a, b, 2);
-    }
+        static bool box_z_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
+            return box_compare(a, b, 2);
+        }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [bvh-x-comp]: <kbd>[bvh.h]</kbd> BVH comparison function, X-axis]
 </div>
