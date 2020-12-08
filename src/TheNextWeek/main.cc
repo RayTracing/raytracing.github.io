@@ -344,4 +344,5 @@ int main() {
     }
 
     scene_desc.render();
+    return 0;
 }

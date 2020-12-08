@@ -79,4 +79,5 @@ int main() {
     scene scene_desc;
     random_spheres(scene_desc);
     scene_desc.render();
+    return 0;
 }

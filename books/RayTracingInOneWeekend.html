@@ -79,7 +79,7 @@ Let’s make some C++ code to output such a thing:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include <iostream>
 
-    void main() {
+    int main() {
 
         // Image
 
@@ -103,6 +103,7 @@ Let’s make some C++ code to output such a thing:
                 std::cout << ir << ' ' << ig << ' ' << ib << '\n';
             }
         }
+        return 0;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-initial]: <kbd>[main.cc]</kbd> Creating your first image]
@@ -391,7 +392,7 @@ Now we can change our main to use this:
 
     #include <iostream>
 
-    void main() {
+    int main() {
 
         // Image
 
@@ -413,6 +414,7 @@ Now we can change our main to use this:
         }
 
         std::cerr << "\nDone.\n";
+        return 0;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ppm-2]: <kbd>[main.cc]</kbd> Final code for the first PPM image]
@@ -523,7 +525,7 @@ for now because we’ll add antialiasing later):
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-    void main() {
+    int main() {
 
         // Image
 
@@ -562,6 +564,7 @@ for now because we’ll add antialiasing later):
         }
 
         std::cerr << "\nDone.\n";
+        return 0;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-blue-white-blend]: <kbd>[main.cc]</kbd> Rendering a blue-to-white gradient]
@@ -1222,7 +1225,7 @@ And the new main:
         return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
     }
 
-    void main() {
+    int main() {
 
         // Image
 
@@ -1267,6 +1270,7 @@ And the new main:
         }
 
         std::cerr << "\nDone.\n";
+        return 0;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-with-rtweekend-h]: <kbd>[main.cc]</kbd> The new main with hittables]
@@ -1560,7 +1564,7 @@ Main is also changed:
 
     ...
 
-    void main() {
+    int main() {
 
         // Image
 
@@ -1604,6 +1608,7 @@ Main is also changed:
         }
 
         std::cerr << "\nDone.\n";
+        return 0;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-multi-sample]: <kbd>[main.cc]</kbd> Rendering with multi-sampled pixels]
@@ -1750,7 +1755,7 @@ depth, returning no light contribution at the maximum depth:
 
     ...
 
-    void main() {
+    int main() {
 
         // Image
 
@@ -1784,6 +1789,7 @@ depth, returning no light contribution at the maximum depth:
         }
 
         std::cerr << "\nDone.\n";
+        return 0;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-depth]: <kbd>[main.cc]</kbd> ray_color() with depth limiting]
@@ -2307,7 +2313,7 @@ Now let’s add some metal spheres to our scene:
 
     ...
 
-    void main() {
+    int main() {
 
         // Image
 
@@ -2357,6 +2363,7 @@ Now let’s add some metal spheres to our scene:
         }
 
         std::cerr << "\nDone.\n";
+        return 0;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-with-metal]: <kbd>[main.cc]</kbd> Scene with metal spheres]
@@ -2417,7 +2424,7 @@ absorb those.
 We can try that out by adding fuzziness 0.3 and 1.0 to the metals:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void main() {
+    int main() {
         ...
         // World
 
@@ -2870,7 +2877,7 @@ With the new scene class, we trim a lot of code from main.cc. This is what's lef
     #include "scene.h"
     #include "sphere.h"
 
-    void main() {
+    int main() {
         scene scene_desc;
 
         const double aspect_ratio = 16.0 / 9.0;
@@ -2893,6 +2900,7 @@ With the new scene class, we trim a lot of code from main.cc. This is what's lef
         world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
 
         scene_desc.render();
+        return 0;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-with-scene]: <kdb>[main.cc]</kbd> main.cc using the new scene class]
@@ -2991,7 +2999,7 @@ settings after the call to `initialize()` will not update camera behavior until 
 And a small change to our `main()` routine defines the aspect ratio in the scene:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void main() {
+    int main() {
         scene scene_desc;
 
 
@@ -3074,7 +3082,7 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
 Now update `main()` to use a 90° field of view, looking at the point where two spheres touch.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void main() {
+    int main() {
         scene scene_desc;
 
         scene_desc.aspect_ratio = 16.0 / 9.0;
@@ -3100,6 +3108,7 @@ Now update `main()` to use a 90° field of view, looking at the point where two 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         scene_desc.render();
+        return 0;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-wide-angle]: <kbd>[main.cc]</kbd> Scene with wide-angle camera]
@@ -3179,7 +3188,7 @@ camera horizontally level until you decide to experiment with crazy camera angle
 We'll change back to the prior scene, and use the new viewpoint:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void main() {
+    int main() {
         scene scene_desc;
 
         scene_desc.aspect_ratio = 16.0 / 9.0;
@@ -3211,6 +3220,7 @@ We'll change back to the prior scene, and use the new viewpoint:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         scene_desc.render();
+        return 0;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-free-view]: <kbd>[main.cc]</kbd> Scene with alternate viewpoint]
@@ -3449,10 +3459,11 @@ scene with its own helper function:
     }
 
 
-    void main() {
+    int main() {
         scene scene_desc;
         random_spheres(scene_desc);
         scene_desc.render();
+        return 0;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-final]: <kbd>[main.cc]</kbd> Final scene]
