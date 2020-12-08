@@ -21,13 +21,14 @@ versions, use the print function in your browser.
 
 Project Status
 ---------------
-Hot on the heels of [v3.2.1][], we have a special Halloween release, [v3.2.2][], less than four
-weeks later. After this, we're going to hunker down for a while, working on our next major release:
-v4.0.0. We'll be tackling some larger refactorings to further simplify the code, tackle some large
-outstanding issues, and focus on more development of book 3: _Ray Tracing: The Rest of Your Life_.
+We just shipped a tiny release, [v3.2.3][], to get out two quick small fixes. Mostly we're very
+heads-down right now working on our major v4 release. Lots of changes. If you'd like to check it
+out, we're developing on the `dev-major` branch. We're tackling some larger refactorings to further
+simplify the code, address some large outstanding issues, and focus on more development and
+expansion of book 3: _Ray Tracing: The Rest of Your Life_.
 
-If you have a change you'd like to contribute, [please see our contribution
-guidelines][CONTRIBUTING].
+If you have a change you'd like to contribute,
+[please see our contribution guidelines][CONTRIBUTING].
 
 
 Directory Structure
@@ -157,8 +158,7 @@ review the [CONTRIBUTING][] document for the most effective way to proceed.
 [GitHub home]:     https://github.com/RayTracing/raytracing.github.io/
 [ImageMagick]:     https://imagemagick.org/
 [implementations]: https://github.com/RayTracing/raytracing.github.io/wiki/Implementations
-[v3.2.1]:          https://github.com/RayTracing/raytracing.github.io/releases/tag/v3.2.1
-[v3.2.2]:          https://github.com/RayTracing/raytracing.github.io/releases/tag/v3.2.2
+[v3.2.3]:          https://github.com/RayTracing/raytracing.github.io/releases/tag/v3.2.3
 [web1]:            https://raytracing.github.io/books/RayTracingInOneWeekend.html
 [web2]:            https://raytracing.github.io/books/RayTracingTheNextWeek.html
 [web3]:            https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html
