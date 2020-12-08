@@ -70,5 +70,4 @@ int main() {
     scene scene_desc;
     cornell_box(scene_desc);
     scene_desc.render();
-    return 0;
 }

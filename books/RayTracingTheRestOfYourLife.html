@@ -77,8 +77,8 @@ to pick a random point in a unit sphere:
 
 This code will always eventually arrive at a random point in the unit sphere, but we can't say
 beforehand how long it'll take. It may take only 1 iteration, it may take 2, 3, 4, or even longer.
-Whereas, MC programs give a statistical estimate of an answer, and this estimate gets more and more
-accurate the longer you run it. Which means that at a certain point, we can just decide
+Whereas, an MC program will give a statistical estimate of an answer, and this estimate will get
+more and more accurate the longer you run it. Which means that at a certain point, we can just decide
 that the answer is accurate _enough_ and call it quits. This basic characteristic of simple programs
 producing noisy but ever-better answers is what MC is all about, and is especially good for
 applications like graphics where great accuracy is not needed.
@@ -89,9 +89,9 @@ applications like graphics where great accuracy is not needed.
 Estimating Pi
 --------------
 <div class='together'>
-The canonical example of a MC algorithm is estimating $\pi$, so let's do that. There are many ways to
-estimate $\pi$, with the Buffon Needle problem being a classic case study. We’ll do a variation
-inspired by this method. Suppose you have a circle inscribed inside a square:
+The canonical example of a Monte Carlo algorithm is estimating $\pi$, so let's do that. There are
+many ways to estimate $\pi$, with the Buffon Needle problem being a classic case study. We’ll do a
+variation inspired by this method. Suppose you have a circle inscribed inside a square:
 
   ![Figure [circ-square]: Estimating π with a circle inside a square
   ](../images/fig-3.01-circ-square.jpg)
@@ -177,9 +177,10 @@ Stratified Samples (Jittering)
 -------------------------------
 <div class='together'>
 We get very quickly near $\pi$, and then more slowly zero in on it. This is an example of the _Law
-of Diminishing Returns_, where each sample helps less than the last. This is the worst part of MC.
-We can mitigate this diminishing return by _stratifying_ the samples (often called _jittering_),
-where instead of taking random samples, we take a grid and take one sample within each:
+of Diminishing Returns_, where each sample helps less than the last. This is the worst part of Monte
+Carlo. We can mitigate this diminishing return by _stratifying_ the samples (often called
+_jittering_), where instead of taking random samples, we take a grid and take one sample within
+each:
 
   ![Figure [jitter]: Sampling areas with jittered points](../images/fig-3.02-jitter.jpg)
 
@@ -380,7 +381,7 @@ If you are ever doing single-reflection or shadowing or some strictly 2D problem
 want to stratify.
 
 
-One Dimensional MC Integration
+One Dimensional Monte Carlo Integration
 ====================================================================================================
 
 Our Buffon Needle example is a way of calculating $\pi$ by solving for the ratio of the area of the
@@ -433,7 +434,7 @@ int main() {
 Expected Value
 --------------
 
-Let's take a step back and think about our MC algorithm a little bit more generally.
+Let's take a step back and think about our Monte Carlo algorithm a little bit more generally.
 
 If we assume that we have all of the following:
 
@@ -479,7 +480,7 @@ following:
 Within the continuous interval $[a,b]$, the expected value of continuous function $f(x')$ can be
 perfectly represented by summing an infinite number of random points within the interval. As this
 number of points approaches $\infty$ the average of the outputs tends to the exact answer. This is a
-MC algorithm.
+Monte Carlo algorithm.
 
 Taking random sampling points isn't our only way to solve for the expected value over an interval.
 We can also choose where we place our sampling points. If we had $N$ samples over an interval
@@ -516,13 +517,14 @@ that interval.
     $$  E[f(x) | a \leq x \leq b] = \frac{1}{b - a} \cdot \text{area}(f(x), a, b) $$
 
 
-Both the integral of a function and a MC sampling of that function can be used to solve for the
-average over a specific interval. While integration solves for the average with the sum of
-infinitely many infinitesmally small slices of the interval, a MC algorithm will approximate the
-same average by solving the sum of ever increasing random sample points within the interval.
-Counting the number of points that fall inside of an object isn't the only way to measure its
-average or area. Integration is also a common mathematical tool for this purpose. If a closed form
-exists for a problem, integration is frequently the most natural and clean way to formulate things.
+Both the integral of a function and a Monte Carlo sampling of that function can be used to solve for
+the average over a specific interval. While integration solves for the average with the sum of
+infinitely many infinitesmally small slices of the interval, a Monte Carlo algorithm will
+approximate the same average by solving the sum of ever increasing random sample points within the
+interval. Counting the number of points that fall inside of an object isn't the only way to measure
+its average or area. Integration is also a common mathematical tool for this purpose. If a closed
+form exists for a problem, integration is frequently the most natural and clean way to formulate
+things.
 
 I think a couple of examples will help.
 
@@ -540,7 +542,8 @@ We could solve this using integration:
     $$ I = \frac{1}{3} (2^3 - 0^3) $$
     $$ I = \frac{8}{3} $$
 
-Or, we could solve the integral using a MC. In computer sciency notation, we might write this as:
+Or, we could solve the integral using a Monte Carlo. In computer sciency notation, we might write
+this as:
 
     $$ I = \text{area}( x^2, 0, 2 ) $$
 
@@ -554,7 +557,7 @@ We could also write it as:
 </div>
 
 <div class='together'>
-The MC approach:
+The Monte Carlo approach:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -581,7 +584,7 @@ The MC approach:
 This, as expected, produces approximately the exact answer we get with integration, _i.e._
 $I = 8/3$. You could rightly point to this example and say that integration is actually a lot less
 work. That might be true in the case where the function is $f(x) = x^2$, but there exist many
-functions where it might be simpler to solve for the MC than for the integration, like
+functions where it might be simpler to solve for the Monte Carlo than for the integration, like
 $f(x) = sin^5(x)$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -592,8 +595,8 @@ $f(x) = sin^5(x)$.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-sin5]: Integrating sin^5]
 
-We could also use the MC algorithm for functions where an analytical integration
-does not exist, like $f(x) = \ln(\sin(x))$.
+We could also use the Monte Carlo algorithm for functions where an analytical integration does not
+exist, like $f(x) = \ln(\sin(x))$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     for (int i = 0; i < N; i++) {
@@ -624,8 +627,8 @@ that are actually placed about the scene. There might be two rays that intersect
 a surface, one that is randomly reflected toward the light and one that is not. The ray that is
 reflected toward the light will appear a very bright color. The ray that is reflected to somewhere
 else will appear a very dark color. The two intensities should really be somewhere in the middle.
-We could lessen this problem if we sent _more_ random samples toward this light, but this will cause
-the scene to be inaccurately bright.
+We could lessen this problem if we biased both of these rays so that they steered toward toward the
+light, but this would cause the scene to be inaccurately bright.
 
 For any given ray, we usually trace from the camera, through the scene, and terminate at a light.
 But imagine if we traced this same ray from the light source, through the scene, and terminated at
@@ -650,17 +653,17 @@ from the histogram Wikipedia page:
 </div>
 
 <div class='together'>
-If we had more trees in our data source, the number of bins would stay the same, but each bin would
-have a higher frequency of tree. If we divided the data into more bins, we'd have more bins, but
-each bin would have a lower frequency of tree. If we took the number of bins and raised it to
+If we had more items in our data source, the number of bins would stay the same, but each bin would
+have a higher frequency of item. If we divided the data into more bins, we'd have more bins, but
+each bin would have a lower frequency of item. If we took the number of bins and raised it to
 infinity, we'd have an infinite number of zero-frequency bins. To solve for this, we'll replace our
 histogram, which is a _discrete function_, with a _discrete density function_. A
 _discrete density function_ differs from a _discrete function_ in that it normalizes the y-axis to a
-fraction or percentage of the total, _i.e_ it's density, instead of a total count for each bin.
+fraction or percentage of the total, _i.e_ its density, instead of a total count for each bin.
 Converting from a _discrete function_ to a _discrete density function_ is trivial:
 
-    $$ \text{Density of Bin i} = \frac{\text{Number of trees in Bin i}}
-                                      {\text{Number of trees total}} $$
+    $$ \text{Density of Bin i} = \frac{\text{Number of items in Bin i}}
+                                      {\text{Number of items total}} $$
 
 
 Once we have a _discrete density function_, we can then convert it into a _density function_ by
@@ -674,8 +677,8 @@ total. If we had a specific tree we wanted to know the height of, we could creat
 _probability function_ that would tell us how likely it is for our tree to fall within a specific
 bin.
 
-    $$ \text{Probability of Bin i} = \frac{\text{Number of trees in Bin i}}
-                                          {\text{Number of trees total}} $$
+    $$ \text{Probability of Bin i} = \frac{\text{Number of items in Bin i}}
+                                          {\text{Number of items total}} $$
 
 If we combined our _probability function_ and our (continuous) _density function_, we could
 interpret that as a statistical predictor of a tree’s height:
@@ -691,9 +694,9 @@ can be  integrated over to determine how likely a result is over an integral.
 
 Constructing a PDF
 -------------------
-Let’s make a PDF and use it a bit to understand it more. Suppose I have a random number $r$ that is
-contained between $r=0$ and $r=2$ and whose probability is proportional to the value of $r$ itself.
-We would expect the PDF $p(r)$ to look something like this:
+Let’s make a PDF and use it a bit to understand it more. Suppose I have a random number $r$ between
+$0$ and $2$ whose probability is proportional to the value of $r$ itself. We would expect the PDF
+$p(r)$ to look something like this:
 
   ![Figure [linear-pdf]: A linear PDF](../images/fig-3.04-linear-pdf.jpg)
 
@@ -702,10 +705,10 @@ The PDF $p(r)$ is a linear function that starts with $0$ at $r=0$ and monotonica
 highest point at $p(2)$ for $r=2$. What is the value of $p(2)$? What is the value of $p(r)$? Maybe
 $p(2)$ is 2? The PDF increases linearly from 0 to 2, so guessing that the value of $p(2)$ is 2
 seems reasonable. At least it looks like it can't be 0. Remember that the PDF is a probability
-function. We are constraining the PDF so that it is wholly contained within $r=0$ and $r=2$. The PDF
-represents the continuous density function for a probabilistic list. If we know that everything in
-that list in contained within 0 and 2, we can say that the probability of getting a value between 0
-and 2 is 100%. Therefore, the area under the curve must sum to 1:
+function. We are constraining the PDF so that it lies in the range [0,2]. The PDF represents the
+continuous density function for a probabilistic list. If we know that everything in that list is
+contained within 0 and 2, we can say that the probability of getting a value between 0 and 2 is
+100%. Therefore, the area under the curve must sum to 1:
 
     $$ \text{area}(p(r), 0, 2) = 1 $$
 
@@ -723,7 +726,7 @@ We need to solve for the value of $C$. We can use integration to work backwards.
     $$ C = \frac{1}{2} $$
 
 That gives us the PDF of $p(r) = r/2$. Just as with histograms we can sum up (integrate) the
-region to figure out the probability that $r$ is in some interval $(x_0,x_1)$:
+region to figure out the probability that $r$ is in some interval $[x_0,x_1]$:
 
     $$ \text{Probability} (r | x_0 < r < x_1 ) = \text{area}(p(r), x_0, x_1) $$
     $$ \text{Probability} (r | x_0 < r < x_1 ) = \int_{x_0}^{x_1}  \frac{r}{2} dr $$
@@ -736,10 +739,10 @@ probability of 1.
 <div class='together'>
 After spending enough time with PDFs you might start referring to a PDF as the probability that a
 variable $r$ is value $x$, _i.e._ $p(r=x)$. Don't do this. For a continuous function, The
-probability that a variable is a specific value is always zero. If you ask "given the PDF $p(r)$,
-what are the odds that $r=1$"? For all PDFs this value is always zero. A PDF can only tell you the
+probability that a variable is a specific value is always zero. A PDF can only tell you the
 probability that a variable will fall within an interval. If the interval you're checking against is
-a constant number, then the PDF will always return a zero probability.
+a constant number, then the PDF will always return a zero probability. Here's a simple mathematical
+proof of this fact:
 
     $$ \text{Probability} (r = x) = \int_{x}^{x}  p(r) dr $$
     $$ = P(r) \Big|_{x}^{x} $$
@@ -765,13 +768,13 @@ bright. We already said that if we steer our samples toward the light then we _w
 inaccurately bright. We need to figure out how to steer our samples without introducing this
 inaccuracy, this will be explained a little bit later, but for now we'll focus on generating samples
 if we have a PDF. How do we generate a random number with a PDF? For that we will need some more
-machinery. Don’t worry this doesn’t go on forever!
+machinery. Don’t worry -- this doesn’t go on forever!
 
 <div class='together'>
 Our random number generator `random_double()` produces a random double between 0 and 1. The number
-generator is uniform between 0 and 1, so the double has an equal likelikhood of being any number
-between 0 and 1. If our PDF is uniform over a domain, say $a = 0$ and $b = 10$, then we can
-trivally produce perfect samples for this uniform PDF with
+generator is uniform between 0 and 1, so any number between 0 and 1 has equal likelihood. If our PDF
+is uniform over a domain, say $[0,10]$, then we can trivally produce perfect samples for this
+uniform PDF with
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     10.0 * random_double()
@@ -784,12 +787,12 @@ exists a function $f(d)$ that takes uniform input and produces a nonuniform dist
 PDF. Now we need to figure out a way to solve for $f(d)$.
 
 For the PDF given above, where $p(r) = \frac{r}{2}$, the probability of a random sample is higher
-toward 2 than it is toward 0. More 1.8s and 1.9s should be generated than 0.1s and 0.2s. If we put
-aside our mathematics hat for a second and put on our computer science hat, maybe we can figure out
-a smart way of partitioning the PDF. We know that there is a higher probability near 2 than near
-0, but what is the value that splits the probability in half? What is the value that a number chosen
-at random has a 50% chance of being higher than and 50% chance of being lower than? What is the $x$
-that solves:
+toward 2 than it is toward 0. There is a greater probability of getting a number betwween 1.8 and
+2 than 0 and 0.2. If we put aside our mathematics hat for a second and put on our computer
+science hat, maybe we can figure out a smart way of partitioning the PDF. We know that there is a
+higher probability near 2 than near 0, but what is the value that splits the probability in half?
+What is the value that a number chosen at random has a 50% chance of being higher than and 50%
+chance of being lower than? What is the $x$ that solves:
 
     $$ 50\% = \int_{0}^{x}  \frac{r}{2} dr  = \int_{x}^{2}  \frac{r}{2} dr $$
 
@@ -829,9 +832,9 @@ Our, new, crude approximation for $\frac{r}{2}$ is nonuniform (but only just):
 
     ![Figure [approx-f]: A nonuniform distribution for r/2](../images/fig-3.06-nonuniform-dist.jpg)
 
-We had the analytical solution to the integration above, so we could very very easily solve for the
-50% value. We could also solve for this experimentally. If we had a function that couldn't solve
-for the integration for--or didn't _want_ to solve the integration for--we could get an experimental
+We had the analytical solution to the integration above, so we could very easily solve for the 50%
+value. But we could also solve for this 50% value experimentally. There will be functions that we
+either can't or don't want to solve the integreation for. In these cases we can get an experimental
 result close to the real value. Let's take the function:
 
     $$ p(x) = e^{\frac{-x}{2 \pi}} sin^2(x) $$
@@ -840,7 +843,12 @@ Which looks a little something like this:
 
     ![Figure [exp-sin2]: A function that we don't want to solve analytically](../images/fig-3.07-exp-sin2.jpg)
 
-From $0$ to $2\pi$ as example:
+At this point you should be familiar with how to experimentally solve for the area under a curve.
+We'll be taking our existing code and modifying it slightly to get an estimate for the 50% value. We
+want to solve for the $x$ value that gives us half of the total area under the curve. As we go along
+and solve for the sum over `N` samples, we're also going to store these `N` samples and their
+associated `p(x)` value. After we solve for the total sum we'll go back through our samples once
+more and count up until we find an area that is half of the total. From $0$ to $2\pi$ as example:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -852,40 +860,48 @@ From $0$ to $2\pi$ as example:
     #include <math.h>
     #include <cmath>
     #include <stdlib.h>
-
+    
+    struct sample {
+        double x;
+        double p_x;
+    };
+    
+    bool compare_by_x(const sample& a, const sample& b) {
+        return a.x < b.x;
+    }
+    
     int main() {
         int N = 10000;
         double sum = 0.0;
-        // Get all of our samples
-        // Get the area under the curve
-        std::vector<std::pair<double, double>> samples;
+    
+        // iterate through all of our samples
+        std::vector<sample> samples;
         for (int i = 0; i < N; i++) {
+            // Get the area under the curve
             auto x = random_double(0,2 * pi);
-            auto p_x = exp(-x/ (2 * pi)) * sin(x) * sin(x);
+            auto sin_x = sin(x);
+            auto p_x = exp(-x/ (2 * pi)) * sin_x * sin_x;
             sum += p_x;
-            for(int s = 0; s < samples.size(); s++)
-            {
-                // sort by x
-                if(x > samples[s].first) {
-                    samples.insert(samples.begin() + s, std::pair<double, double>(x, p_x));
-                    break;
-                }
-            }
-            samples.push_back(std::pair<double, double>(x, p_x));
+            // store this sample
+            sample this_sample = {x, p_x};
+            samples.push_back(this_sample);
         }
-
+    
+        // Sort the samples by x
+        std::sort(samples.begin(), samples.end(), compare_by_x);
+    
         // Find out the sample at which we have half of our area
         double half_sum = sum / 2.0;
         double halfway_point;
         double accum = 0.0;
         for (int i = 0; i < N; i++){
-            accum += samples[i].second;
+            accum += samples[i].p_x;
             if (accum >= half_sum){
-                halfway_point = samples[i].first;
+                halfway_point = samples[i].x;
                 break;
             }
         }
-
+    
         std::cout << std::fixed << std::setprecision(12);
         std::cout << "Average = " << sum / N << '\n';
         std::cout << "Area under curve = " << 2 * pi * sum / N << '\n';
@@ -896,17 +912,17 @@ From $0$ to $2\pi$ as example:
 
 This code snippet isn't too different from what we had before. We're still solving for the sum
 over an interval (0 to $2\pi$). Only this time, we're also storing and sorting all of our samples by
-their input and output. We then use this to determine how many of the original samples sum up to
-half of the sum across the total interval. Once we know that $j$ of our first samples sum up to half
-of the total sum, we know that the $j\text{th}$ $x$ roughly cooresponds to our halfway point:
+their input and output. We use this to determine the point at which they subtotal half of the sum
+across the entire interval. Once we know that our first $j$ samples sum up to half of the total sum,
+we know that the $j\text{th}$ $x$ roughly corresponds to our halfway point:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Average = 0.314686555791
     Area under curve = 1.977233943713
-    Halfway = 2.017195883505
+    Halfway = 2.016002314977
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you solve for the integral from $0$ to $2.017$ and from $2.017$ to $2\pi$ you should get almost
+If you solve for the integral from $0$ to $2.016$ and from $2.016$ to $2\pi$ you should get almost
 exactly the same result for both.
 
 We have a method of solving for the halfway point that splits a PDF in half. If we wanted to, we
@@ -930,13 +946,12 @@ as the PDF for a distribution, you'll want to research the _Metropolis-Hastings 
 Approximating Distributions
 ---------------------------
 
-This was a lot of math and work to build up a couple of notions. Let's return to our initial PDF and
-enumerate a new term. Where we don't explicitly set a probability, we assume to be zero. So for our
-example from the beginning of the chapter, $p(r) = 0$, for $r < 0$ and $r > 2$. _i.e._, the
-probability of generating a random number there is zero. We can rewrite our $p(r)$ in piecewise
-fashion:
+This was a lot of math and work to build up a couple of notions. Let's return to our initial PDF. We
+assume the PDF to be zero where we don't explicitly set a probability. So for our example from the
+beginning of the chapter, $p(r) = 0$, for $r < 0$ and $r > 2$. That is, the probability of
+generating a random number there is zero. We can rewrite our $p(r)$ in piecewise fashion:
 
-    $$ p(r)=\begin{cases}0 & r < 0 \\ \frac{r}{2} & 0 < r < 2 \\ 0 & r > 2  \\  \end{cases} $$
+    $$ p(r)=\begin{cases}0 & r < 0 \\ \frac{r}{2} & 0 \leq r \leq 2 \\ 0 & r > 2  \\  \end{cases} $$
 
 If you consider what we were trying to do in the previous section, a lot of math revolved around the
 _accumulated_ area (or _accumulated_ probability) from zero. In the case of the function
@@ -944,7 +959,7 @@ _accumulated_ area (or _accumulated_ probability) from zero. In the case of the 
     $$ f(x) = e^{\frac{-x}{2 \pi}} sin^2(x)  $$
 
 we cared about the accumulated probability from $0$ to $2\pi$ (100%) and the accumulated probability
-from $0$ to $2.017$ (50%). We can generalize this to an important term, the
+from $0$ to $2.016$ (50%). We can generalize this to an important term, the
 _Cumulative Distribution Function_ $P(x)$ is defined as:
 
     $$ P(x) =  \int_{-\infty}^{x}  p(x') dx' $$
@@ -956,7 +971,7 @@ Or,
 Which is the amount of _cumulative_ probability from $-\infty$. If we take the integration outlined
 above, we get the piecewise $P(r)$:
 
-    $$ P(r)=\begin{cases}0 & r < 0 \\ \frac{r^2}{4} & 0 < r < 2 \\ 1 & r > 2  \\  \end{cases} $$
+    $$ P(r)=\begin{cases}0 & r < 0 \\ \frac{r^2}{4} & 0 \leq r \leq 2 \\ 1 & r > 2  \\  \end{cases} $$
 
 The _Probability Density Function_ (PDF) is the probability function that explains how likely an
 interval of numbers is to be chosen. The _Cumulative Distribution Function_ (CDF) is the
@@ -972,7 +987,7 @@ If we evaluate the CDF, $P(r)$, at $r = 1.0$, we get:
 
     $$ P(1.0) = \frac{1}{4} $$
 
-This says _a random variable plucked from our PDF has a 25% change of being 1 or lower_. We want a
+This says _a random variable plucked from our PDF has a 25% chance of being 1 or lower_. We want a
 function $f(d)$ that takes a uniform distribution between 0 and 1 (_i.e_ `f(random_double())`), and
 returns a random value according to a distribution that has the CDF $P(x) = \frac{x^2}{4}$. We don’t
 know yet know what the function $f(d)$ is analytically, but we do know that 25% of what it returns should
@@ -1018,13 +1033,12 @@ Looking closer at the equality:
 
     $$ f(P(x)) = x $$
 
-That just means that $f()$ just undoes whatever $P()$ does. So,
+That just means that $f()$ just undoes whatever $P()$ does. So, $f()$ is the inverse function:
 
     $$ f(d) = P^{-1}(x) $$
 
-The -1 means “inverse function”. Ugly notation, but standard. For our purposes, if we have PDF $p()$
-and cumulative distribution function $P()$, we can use this "inverse function" with a random number
-to get what we want:
+For our purposes, if we have PDF $p()$ and cumulative distribution function $P()$, we can use this
+"inverse function" with a random number to get what we want:
 
     $$ f(d) = P^{-1} (\text{random_double}()) $$
 </div>
@@ -1180,7 +1194,7 @@ sample we get:
 Which always returns the exact answer.
 
 <div class='together'>
-Let’s review now because that was most of the concepts that underlie MC ray tracers.
+Those were most of the concepts that underlie Monte Carlo ray tracers. Let's review:
 
   1. You have an integral of $f(x)$ over some domain $[a,b]$
   2. You pick a PDF $p$ that is non-zero and non-negative over $[a,b]$
@@ -1191,7 +1205,8 @@ approximates $f$, the faster that it will converge.
 </div>
 
 
-MC Integration on the Sphere of Directions
+
+Monte Carlo Integration on the Sphere of Directions
 ====================================================================================================
 
 In our ray tracer we pick random directions, and directions can be represented as points on the
@@ -1201,9 +1216,9 @@ Suppose we have this integral over all directions:
 
   $$ \int cos^2(\theta) $$
 
-By MC integration, we should just be able to sample $\cos^2(\theta) / p(\text{direction})$, but what
-is _direction_ in that context? We could make it based on polar coordinates, so $p$ would be in
-terms of $(\theta, \phi)$. However you do it, remember that a PDF has to integrate to 1 and
+By Monte Carlo integration, we should just be able to sample $\cos^2(\theta) / p(\text{direction})$,
+but what is _direction_ in that context? We could make it based on polar coordinates, so $p$ would
+be in terms of $(\theta, \phi)$. However you do it, remember that a PDF has to integrate to 1 and
 represent the relative probability of that direction being sampled. Recall that we have vec3
 functions to take uniform random samples in (`random_in_unit_sphere()`) or on
 (`random_unit_vector()`) a unit sphere.
@@ -1300,7 +1315,7 @@ or scattering position.
 The Scattering PDF
 -------------------
 <div class='together'>
-If we apply the MC basic formula we get the following statistical estimate:
+If we apply the Monte Carlo basic formula we get the following statistical estimate:
 
   $$ Color = \frac{A \cdot s(direction) \cdot \text{color}(direction)}{p(direction)} $$
 
@@ -1416,8 +1431,8 @@ light.
 </div>
 
 First, let’s instrument the code so that it explicitly samples some PDF and then normalizes for
-that. Remember MC basics: $\int f(x) \approx f(r)/p(r)$. For the Lambertian material, let’s sample
-like we do now: $p(direction) = \cos(\theta) / \pi$.
+that. Remember Monte Carlo basics: $\int f(x) \approx f(r)/p(r)$. For the Lambertian material, let’s
+sample like we do now: $p(direction) = \cos(\theta) / \pi$.
 
 <div class='together'>
 We modify the base-class `material` to enable this importance sampling:
@@ -1609,7 +1624,7 @@ $\phi$ are:
 
 <div class='together'>
 For uniform random numbers $r_1$ and $r_2$, the material presented in the
-One Dimensional MC Integration chapter leads to:
+One Dimensional Monte Carlo Integration chapter leads to:
 
   $$ r_1 = \int_{0}^{\phi} \frac{1}{2\pi} dt = \frac{\phi}{2\pi} $$
 
