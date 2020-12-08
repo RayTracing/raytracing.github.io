@@ -21,26 +21,16 @@ class aabb {
     aabb(const point3& a, const point3& b) {
         // Treat the two points a and b as extrema for the bounding box, so we don't require a
         // particular minimum/maximum coordinate order.
-        minimum = point3(fmin(a[0],b[0]), fmin(a[1],b[1]), fmin(a[2],b[2]));
-        maximum = point3(fmax(a[0],b[0]), fmax(a[1],b[1]), fmax(a[2],b[2]));
+        x = interval(fmin(a[0],b[0]), fmax(a[0],b[0]));
+        y = interval(fmin(a[1],b[1]), fmax(a[1],b[1]));
+        z = interval(fmin(a[2],b[2]), fmax(a[2],b[2]));
     }
 
-    aabb(aabb box0, aabb box1) {
-        minimum = {
-            fmin(box0.min().x(), box1.min().x()),
-            fmin(box0.min().y(), box1.min().y()),
-            fmin(box0.min().z(), box1.min().z())
-        };
-
-        maximum = {
-            fmax(box0.max().x(), box1.max().x()),
-            fmax(box0.max().y(), box1.max().y()),
-            fmax(box0.max().z(), box1.max().z())
-        };
+    aabb(const aabb& box0, const aabb& box1) {
+        x = interval(box0.x, box1.x);
+        y = interval(box0.y, box1.y);
+        z = interval(box0.z, box1.z);
     }
-
-    point3 min() const { return minimum; }
-    point3 max() const { return maximum; }
 
     #if 1
         // GitHub Issue #817
@@ -51,10 +41,10 @@ class aabb {
 
         bool hit(const ray& r, interval ray_t) const {
             for (int a = 0; a < 3; a++) {
-                auto t0 = fmin((minimum[a] - r.origin()[a]) / r.direction()[a],
-                               (maximum[a] - r.origin()[a]) / r.direction()[a]);
-                auto t1 = fmax((minimum[a] - r.origin()[a]) / r.direction()[a],
-                               (maximum[a] - r.origin()[a]) / r.direction()[a]);
+                auto t0 = fmin((axis(a).min - r.origin()[a]) / r.direction()[a],
+                               (axis(a).max - r.origin()[a]) / r.direction()[a]);
+                auto t1 = fmax((axis(a).min - r.origin()[a]) / r.direction()[a],
+                               (axis(a).max - r.origin()[a]) / r.direction()[a]);
                 ray_t.min = fmax(t0, ray_t.min);
                 ray_t.max = fmin(t1, ray_t.max);
                 if (ray_t.max <= ray_t.min)
@@ -69,8 +59,8 @@ class aabb {
             for (int a = 0; a < 3; a++) {
                 auto invD = 1.0f / r_dir[a];
                 auto orig = r_origin[a];
-                auto t0 = (minimum[a] - orig) * invD;
-                auto t1 = (maximum[a] - orig) * invD;
+                auto t0 = (axis(a).min - orig) * invD;
+                auto t1 = (axis(a).max - orig) * invD;
                 if (invD < 0)
                     std::swap(t0, t1);
                 if (fmin(t1, ray_t.max) <= fmax(t0, ray_t.min))
@@ -80,9 +70,21 @@ class aabb {
         }
     #endif
 
+    const interval& axis(int n) const {
+        if (n == 1) return y;
+        if (n == 2) return z;
+        return x;
+    }
+
+    aabb& operator+=(vec3 offset) {
+        x += offset.x();
+        y += offset.y();
+        z += offset.z();
+        return *this;
+    }
+
   public:
-    point3 minimum;
-    point3 maximum;
+    interval x, y, z;
 };
 
 

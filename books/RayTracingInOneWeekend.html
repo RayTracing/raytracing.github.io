@@ -1292,23 +1292,25 @@ and a maximum. We'll end up using this class quite often as we proceed.
 
     class interval {
       public:
-        double min, max;
+        interval() : min(+infinity), max(-infinity) {} // Default interval is empty
 
         interval(double _min, double _max) : min(_min), max(_max) {}
-        interval() : min(+infinity), max(-infinity) {} // Default interval is empty
 
         bool contains(double x) const {
             return min <= x && x <= max;
         }
+
+      public:
+        double min, max;
     };
 
     const static interval empty   (+infinity, -infinity);
     const static interval universe(-infinity, +infinity);
 
-
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [interval-initial]: <kbd>[interval.h]</kbd> Introducing the new interval class]
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable {
@@ -1319,7 +1321,6 @@ and a maximum. We'll end up using this class quite often as we proceed.
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hittable-with-interval]: <kbd>[hittable.h]</kbd> hittable::hit() using interval]
-
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1358,7 +1359,6 @@ and a maximum. We'll end up using this class quite often as we proceed.
     hittable_list::hit() using interval]
 
 
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1390,7 +1390,6 @@ and a maximum. We'll end up using this class quite often as we proceed.
     [Listing [sphere-with-interval]: <kbd>[sphere.h]</kbd> sphere using interval]
 
 
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
     color ray_color(const ray& r, const hittable& world) {
@@ -1403,6 +1402,7 @@ and a maximum. We'll end up using this class quite often as we proceed.
     ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-with-interval]: <kbd>[main.cc]</kbd> The new main using interval]
+
 
 
 Antialiasing
@@ -1520,12 +1520,14 @@ samples) when writing out the color. In addition, we'll add a handy utility func
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class interval {
+      public:
         ...
         double clamp(double x) const {
             if (x < min) return min;
             if (x > max) return max;
             return x;
         }
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [clamp]: <kbd>[interval.h]</kbd> The interval::clamp() utility function]
