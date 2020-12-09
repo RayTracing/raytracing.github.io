@@ -894,37 +894,35 @@ And here’s the sphere:
         sphere() {}
         sphere(point3 ctr, double r) : center(ctr), radius(r) {};
 
-        bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override;
+        bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override {
+            vec3 oc = r.origin() - center;
+            auto a = r.direction().length_squared();
+            auto half_b = dot(oc, r.direction());
+            auto c = oc.length_squared() - radius*radius;
+
+            auto discriminant = half_b*half_b - a*c;
+            if (discriminant < 0) return false;
+            auto sqrtd = sqrt(discriminant);
+
+            // Find the nearest root that lies in the acceptable range.
+            auto root = (-half_b - sqrtd) / a;
+            if (root < ray_tmin || ray_tmax < root) {
+                root = (-half_b + sqrtd) / a;
+                if (root < ray_tmin || ray_tmax < root)
+                    return false;
+            }
+
+            rec.t = root;
+            rec.p = r.at(rec.t);
+            rec.normal = (rec.p - center) / radius;
+
+            return true;
+        }
 
       public:
         point3 center;
         double radius;
     };
-
-    bool sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
-        vec3 oc = r.origin() - center;
-        auto a = r.direction().length_squared();
-        auto half_b = dot(oc, r.direction());
-        auto c = oc.length_squared() - radius*radius;
-
-        auto discriminant = half_b*half_b - a*c;
-        if (discriminant < 0) return false;
-        auto sqrtd = sqrt(discriminant);
-
-        // Find the nearest root that lies in the acceptable range.
-        auto root = (-half_b - sqrtd) / a;
-        if (root < ray_tmin || ray_tmax < root) {
-            root = (-half_b + sqrtd) / a;
-            if (root < ray_tmin || ray_tmax < root)
-                return false;
-        }
-
-        rec.t = root;
-        rec.p = r.at(rec.t);
-        rec.normal = (rec.p - center) / radius;
-
-        return true;
-    }
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1024,18 +1022,23 @@ calculation for us.
 And then we add the surface side determination to the class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool sphere::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+    class sphere : public hittable {
+      public:
         ...
+        bool here::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+            ...
 
-        rec.t = root;
-        rec.p = r.at(rec.t);
+            rec.t = root;
+            rec.p = r.at(rec.t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        vec3 outward_normal = (rec.p - center) / radius;
-        rec.set_face_normal(r, outward_normal);
+            vec3 outward_normal = (rec.p - center) / radius;
+            rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        return true;
-    }
+            return true;
+        }
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-final]: <kbd>[sphere.h]</kbd> The sphere class with normal determination]
 
@@ -1068,27 +1071,25 @@ that stores a list of `hittable`s:
         void clear() { objects.clear(); }
         void add(shared_ptr<hittable> object) { objects.push_back(object); }
 
-        bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override;
+        bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override {
+            hit_record temp_rec;
+            bool hit_anything = false;
+            auto closest_so_far = ray_tmax;
+
+            for (const auto& object : objects) {
+                if (object->hit(r, ray_tmin, closest_so_far, temp_rec)) {
+                    hit_anything = true;
+                    closest_so_far = temp_rec.t;
+                    rec = temp_rec;
+                }
+            }
+
+            return hit_anything;
+        }
 
       public:
         std::vector<shared_ptr<hittable>> objects;
     };
-
-    bool hittable_list::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
-        hit_record temp_rec;
-        bool hit_anything = false;
-        auto closest_so_far = ray_tmax;
-
-        for (const auto& object : objects) {
-            if (object->hit(r, ray_tmin, closest_so_far, temp_rec)) {
-                hit_anything = true;
-                closest_so_far = temp_rec.t;
-                rec = temp_rec;
-            }
-        }
-
-        return hit_anything;
-    }
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1314,9 +1315,10 @@ and a maximum. We'll end up using this class quite often as we proceed.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable {
-        public:
+      public:
+        ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1325,67 +1327,57 @@ and a maximum. We'll end up using this class quite often as we proceed.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable_list : public hittable {
+      public:
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        ...
-    };
-
-
+            hit_record temp_rec;
+            bool hit_anything = false;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    bool hittable_list::hit(const ray& r, interval ray_t, hit_record& rec) const {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        hit_record temp_rec;
-        bool hit_anything = false;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        auto closest_so_far = ray_t.max;
+            auto closest_so_far = ray_t.max;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        for (const auto& object : objects) {
+            for (const auto& object : objects) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            if (object->hit(r, interval(ray_t.min, closest_so_far), temp_rec)) {
+                if (object->hit(r, interval(ray_t.min, closest_so_far), temp_rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                hit_anything = true;
-                closest_so_far = temp_rec.t;
-                rec = temp_rec;
+                    hit_anything = true;
+                    closest_so_far = temp_rec.t;
+                    rec = temp_rec;
+                }
             }
-        }
 
-        return hit_anything;
-    }
+            return hit_anything;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hittable-list-with-interval]: <kbd>[hittable.h]</kbd>
-    hittable_list::hit() using interval]
-
+        hittable_list::hit() using interval]
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+      public:
         ...
-    };
-
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    bool sphere::hit(const ray& r, interval ray_t, hit_record& rec) const {
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        ...
+            ...
 
-        // Find the nearest root that lies in the acceptable range.
-        auto root = (-half_b - sqrtd) / a;
+            // Find the nearest root that lies in the acceptable range.
+            auto root = (-half_b - sqrtd) / a;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        if (!ray_t.contains(root)) {
+            if (!ray_t.contains(root)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            root = (-half_b + sqrtd) / a;
+                root = (-half_b + sqrtd) / a;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            if (!ray_t.contains(root))
+                if (!ray_t.contains(root))
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                return false;
+                    return false;
+            }
+            ...
         }
         ...
-    }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-with-interval]: <kbd>[sphere.h]</kbd> sphere using interval]
 
@@ -2109,7 +2101,19 @@ within `hit_record`. See the highlighted lines below:
           : center(ctr), radius(r), mat_ptr(m) {};
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            ...
+
+            rec.t = root;
+            rec.p = r.at(rec.t);
+            vec3 outward_normal = (rec.p - center) / radius;
+            rec.set_face_normal(r, outward_normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            rec.mat_ptr = mat_ptr;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            return true;
+        }
 
       public:
         point3 center;
@@ -2118,20 +2122,6 @@ within `hit_record`. See the highlighted lines below:
         shared_ptr<material> mat_ptr;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
-
-    bool sphere::hit(const ray& r, interval ray_t, hit_record& rec) const {
-        ...
-
-        rec.t = root;
-        rec.p = r.at(rec.t);
-        vec3 outward_normal = (rec.p - center) / radius;
-        rec.set_face_normal(r, outward_normal);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        rec.mat_ptr = mat_ptr;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        return true;
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-material]: <kbd>[sphere.h]</kbd> Ray-sphere intersection with added material information]
 </div>
@@ -3592,5 +3582,5 @@ Snippets
 <link rel='stylesheet' href='../style/book.css'>
 <style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
 <script src="markdeep.min.js"></script>
-<script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script>
+<script src="https://morgan3d.github.io/markdeep/latest/markdeep.min.js"></script>
 <script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

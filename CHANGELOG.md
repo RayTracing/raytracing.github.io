@@ -16,6 +16,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Remove redundant `virtual` keyword for methods with `override` (#805)
   - Change: `aabb` class constructor treats two params as extreme points in any orientation (#733)
   - Change: `aabb` class uses intervals for each axis (#796)
+  - Change: Moved all class method definitions inside class definition (#802)
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)
@@ -23,6 +24,16 @@ Change Log -- Ray Tracing in One Weekend
 ### The Next Week
 
 ### The Rest of Your Life
+
+
+----------------------------------------------------------------------------------------------------
+# v3.2.3 (2020-12-07)
+
+### Common
+  - Change: Markdeep library URL updated to new location
+
+### The Next Week
+  - Fix: Correct parameter name typo for `bvh_node` constructor parameter `src_objects`
 
 
 ----------------------------------------------------------------------------------------------------
