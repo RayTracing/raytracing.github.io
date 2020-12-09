@@ -186,7 +186,6 @@ those times need not match up with the camera aperture open and close.
 
     #include "hittable.h"
 
-
     class moving_sphere : public hittable {
       public:
         moving_sphere() {}
@@ -198,9 +197,13 @@ those times need not match up with the camera aperture open and close.
             time0(time_start), time1(time_end)
         {};
 
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            // To Be Implemented
+        }
 
-        point3 center(double time) const;
+        point3 center(double time) const {
+            return center0 + ((time - time0) / (time1 - time0))*(center1 - center0);
+        }
 
       public:
         point3 center0, center1;
@@ -208,10 +211,6 @@ those times need not match up with the camera aperture open and close.
         double radius;
         shared_ptr<material> mat_ptr;
     };
-
-    point3 moving_sphere::center(double time) const {
-        return center0 + ((time - time0) / (time1 - time0))*(center1 - center0);
-    }
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -226,37 +225,41 @@ The `moving_sphere::hit()` function is almost identical to the `sphere::hit()` f
 just needs to become a function `center(time)`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool moving_sphere::hit(const ray& r, interval ray_t, hit_record& rec) const {
-
+    class moving_sphere : public hittable {
+      public:
+        ...
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        vec3 oc = r.origin() - center(r.time());
+            vec3 oc = r.origin() - center(r.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        auto a = r.direction().length_squared();
-        auto half_b = dot(oc, r.direction());
-        auto c = oc.length_squared() - radius*radius;
+            auto a = r.direction().length_squared();
+            auto half_b = dot(oc, r.direction());
+            auto c = oc.length_squared() - radius*radius;
 
-        auto discriminant = half_b*half_b - a*c;
-        if (discriminant < 0) return false;
-        auto sqrtd = sqrt(discriminant);
+            auto discriminant = half_b*half_b - a*c;
+            if (discriminant < 0) return false;
+            auto sqrtd = sqrt(discriminant);
 
-        // Find the nearest root that lies in the acceptable range.
-        auto root = (-half_b - sqrtd) / a;
-        if (!ray_t.contains(root)) {
-            root = (-half_b + sqrtd) / a;
-            if (!ray_t.contains(root))
-                return false;
+            // Find the nearest root that lies in the acceptable range.
+            auto root = (-half_b - sqrtd) / a;
+            if (!ray_t.contains(root)) {
+                root = (-half_b + sqrtd) / a;
+                if (!ray_t.contains(root))
+                    return false;
+            }
+
+            rec.t = root;
+            rec.p = r.at(rec.t);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            auto outward_normal = (rec.p - center(r.time())) / radius;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            rec.set_face_normal(r, outward_normal);
+            rec.mat_ptr = mat_ptr;
+
+            return true;
         }
-
-        rec.t = root;
-        rec.p = r.at(rec.t);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        auto outward_normal = (rec.p - center(r.time())) / radius;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        rec.set_face_normal(r, outward_normal);
-        rec.mat_ptr = mat_ptr;
-
-        return true;
-    }
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [moving-sphere-hit]: <kbd>[moving_sphere.h]</kbd> Moving sphere hit function]
 </div>
@@ -703,23 +706,16 @@ For a sphere, that `bounding_box` function is easy:
     class sphere : public hittable {
       public:
         ...
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
-
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override;
+        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+            output_box = aabb(
+                center - vec3(radius, radius, radius),
+                center + vec3(radius, radius, radius));
+            return true;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     };
-
-    ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    bool sphere::bounding_box(double time_start, double time_end, aabb& output_box) const {
-        output_box = aabb(
-            center - vec3(radius, radius, radius),
-            center + vec3(radius, radius, radius));
-        return true;
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-bbox]: <kbd>[sphere.h]</kbd> Sphere with bounding box]
 </div>
@@ -742,24 +738,19 @@ and compute the box of those two boxes:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override;
+        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+            aabb box0(
+                center(time_start) - vec3(radius, radius, radius),
+                center(time_start) + vec3(radius, radius, radius));
+            aabb box1(
+                center(time_end) - vec3(radius, radius, radius),
+                center(time_end) + vec3(radius, radius, radius));
+            output_box = surrounding_box(box0, box1);
+            return true;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     };
-
-    ...
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    bool moving_sphere::bounding_box(double time_start, double time_end, aabb& output_box) const {
-        aabb box0(
-            center(time_start) - vec3(radius, radius, radius),
-            center(time_start) + vec3(radius, radius, radius));
-        aabb box1(
-            center(time_end) - vec3(radius, radius, radius),
-            center(time_end) + vec3(radius, radius, radius));
-        output_box = surrounding_box(box0, box1);
-        return true;
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [moving-sphere-bbox]: <kbd>[moving_sphere.h]</kbd> Moving sphere with bounding box]
 </div>
@@ -781,32 +772,24 @@ the fly because it is only usually called at BVH construction.
     class hittable_list : public hittable {
       public:
         ...
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
-
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override;
+        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+            if (objects.empty()) return false;
+
+            aabb temp_box;
+            bool first_box = true;
+
+            for (const auto& object : objects) {
+                if (!object->bounding_box(time_start, time_end, temp_box)) return false;
+                output_box = first_box ? temp_box : surrounding_box(output_box, temp_box);
+                first_box = false;
+            }
+
+            return true;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     };
-
-    ...
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    bool hittable_list::bounding_box(double time_start, double time_end, aabb& output_box) const {
-        if (objects.empty()) return false;
-
-        aabb temp_box;
-        bool first_box = true;
-
-        for (const auto& object : objects) {
-            if (!object->bounding_box(time_start, time_end, temp_box)) return false;
-            output_box = first_box ? temp_box : surrounding_box(output_box, temp_box);
-            first_box = false;
-        }
-
-        return true;
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hit-list-bbox]: <kbd>[hittable_list.h]</kbd> Hittable list with bounding box]
 </div>
@@ -838,8 +821,10 @@ The BVH Node Class
 A BVH is also going to be a `hittable` -- just like lists of `hittable`s. It’s really a container,
 but it can respond to the query “does this ray hit you?”. One design question is whether we have two
 classes, one for the tree, and one for the nodes in the tree; or do we have just one class and have
-the root just be a node we point to. I am a fan of the one class design when feasible. Here is such
-a class:
+the root just be a node we point to. The `hit` function is pretty straightforward: check whether the
+box for the node is hit, and if so, check the children and sort out any details.
+
+I am a fan of the one class design when feasible. Here is such a class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef BVH_H
@@ -861,11 +846,25 @@ a class:
 
         bvh_node(
             const std::vector<shared_ptr<hittable>>& src_objects,
-            size_t start, size_t end, double time_start, double time_end);
+            size_t start, size_t end, double time_start, double time_end
+        ) {
+            // To be implemented later.
+        }
 
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            if (!box.hit(r, ray_t))
+                return false;
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override;
+            bool hit_left = left->hit(r, ray_t, rec);
+            bool hit_right = right->hit(r, interval(ray_t.min, hit_left ? rec.t : ray_t.max), rec);
+
+            return hit_left || hit_right;
+        }
+
+        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+            output_box = box;
+            return true;
+        }
 
       public:
         shared_ptr<hittable> left;
@@ -873,35 +872,9 @@ a class:
         aabb box;
     };
 
-    bool bvh_node::bounding_box(double time_start, double time_end, aabb& output_box) const {
-        output_box = box;
-        return true;
-    }
-
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [bvh]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy]
-</div>
-
-Note that the children pointers are to generic hittables. They can be other `bvh_nodes`, or
-`spheres`, or any other `hittable`.
-
-<div class='together'>
-The `hit` function is pretty straightforward: check whether the box for the node is hit, and if so,
-check the children and sort out any details:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool bvh_node::hit(const ray& r, interval ray_t, hit_record& rec) const {
-        if (!box.hit(r, ray_t))
-            return false;
-
-        bool hit_left = left->hit(r, ray_t, rec);
-        bool hit_right = right->hit(r, interval(ray_t.min, hit_left ? rec.t : ray_t.max), rec);
-
-        return hit_left || hit_right;
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [bvh-hit]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy hit function]
 </div>
 
 
@@ -926,52 +899,57 @@ When the list coming in is two elements, I put one in each subtree and end the r
 traversal algorithm should be smooth and not have to check for null pointers, so if I just have one
 element I duplicate it in each subtree. Checking explicitly for three elements and just following
 one recursion would probably help a little, but I figure the whole method will get optimized later.
-This yields:
+The following code uses three methods--`box_x_compare`, `box_y_compare_`, and `box_z_compare`--that
+we haven't yet defined.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include <algorithm>
-    ...
 
-    bvh_node::bvh_node(
-        std::vector<shared_ptr<hittable>>& src_objects,
-        size_t start, size_t end, double time_start, double time_end
-    ) {
-        auto objects = src_objects; // Create a modifiable array of the source scene objects
+    class bvh_node : public hittable {
+      public:
+        ...
+        bvh_node(
+            std::vector<shared_ptr<hittable>>& src_objects,
+            size_t start, size_t end, double time_start, double time_end
+        ) {
+            auto objects = src_objects; // Create a modifiable array of the source scene objects
 
-        int axis = random_int(0,2);
-        auto comparator = (axis == 0) ? box_x_compare
-                        : (axis == 1) ? box_y_compare
-                                      : box_z_compare;
+            int axis = random_int(0,2);
+            auto comparator = (axis == 0) ? box_x_compare
+                            : (axis == 1) ? box_y_compare
+                                          : box_z_compare;
 
-        size_t object_span = end - start;
+            size_t object_span = end - start;
 
-        if (object_span == 1) {
-            left = right = objects[start];
-        } else if (object_span == 2) {
-            if (comparator(objects[start], objects[start+1])) {
-                left = objects[start];
-                right = objects[start+1];
+            if (object_span == 1) {
+                left = right = objects[start];
+            } else if (object_span == 2) {
+                if (comparator(objects[start], objects[start+1])) {
+                    left = objects[start];
+                    right = objects[start+1];
+                } else {
+                    left = objects[start+1];
+                    right = objects[start];
+                }
             } else {
-                left = objects[start+1];
-                right = objects[start];
+                std::sort(objects.begin() + start, objects.begin() + end, comparator);
+
+                auto mid = start + object_span/2;
+                left = make_shared<bvh_node>(objects, start, mid, time_start, time_end);
+                right = make_shared<bvh_node>(objects, mid, end, time_start, time_end);
             }
-        } else {
-            std::sort(objects.begin() + start, objects.begin() + end, comparator);
 
-            auto mid = start + object_span/2;
-            left = make_shared<bvh_node>(objects, start, mid, time_start, time_end);
-            right = make_shared<bvh_node>(objects, mid, end, time_start, time_end);
+            aabb box_left, box_right;
+
+            if (  !left->bounding_box (time_start, time_end, box_left)
+               || !right->bounding_box(time_start, time_end, box_right)
+            )
+                std::cerr << "No bounding box in bvh_node constructor.\n";
+
+            box = surrounding_box(box_left, box_right);
         }
-
-        aabb box_left, box_right;
-
-        if (  !left->bounding_box (time_start, time_end, box_left)
-           || !right->bounding_box(time_start, time_end, box_right)
-        )
-            std::cerr << "No bounding box in bvh_node constructor.\n";
-
-        box = surrounding_box(box_left, box_right);
-    }
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [bvh-node]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy node]
 </div>
@@ -1002,28 +980,33 @@ axis index argument. Then define axis-specific comparison functions that use the
 function.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline bool box_compare(const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis) {
-        aabb box_a;
-        aabb box_b;
+    class bvh_node : public hittable {
+      ...
+      private:
+        static bool box_compare(
+            const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis
+        ) {
+            aabb box_a;
+            aabb box_b;
 
-        if (!a->bounding_box(0,0, box_a) || !b->bounding_box(0,0, box_b))
-            std::cerr << "No bounding box in bvh_node constructor.\n";
+            if (!a->bounding_box(0,0, box_a) || !b->bounding_box(0,0, box_b))
+                std::cerr << "No bounding box in bvh_node constructor.\n";
 
-        return box_a.min().e[axis] < box_b.min().e[axis];
-    }
+            return box_a.min().e[axis] < box_b.min().e[axis];
+        }
 
+        static bool box_x_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
+            return box_compare(a, b, 0);
+        }
 
-    bool box_x_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
-        return box_compare(a, b, 0);
-    }
+        static bool box_y_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
+            return box_compare(a, b, 1);
+        }
 
-    bool box_y_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
-        return box_compare(a, b, 1);
-    }
-
-    bool box_z_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
-        return box_compare(a, b, 2);
-    }
+        static bool box_z_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
+            return box_compare(a, b, 2);
+        }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [bvh-x-comp]: <kbd>[bvh.h]</kbd> BVH comparison function, X-axis]
 </div>
@@ -1180,20 +1163,25 @@ points on the unit sphere centered at the origin, and computes $u$ and $v$:
 Update the `sphere::hit()` function to use this function to update the hit record UV coordinates.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool sphere::hit(...) {
+    class sphere : public hittable {
+      public:
         ...
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            ...
 
-        rec.t = root;
-        rec.p = r.at(rec.t);
-        vec3 outward_normal = (rec.p - center) / radius;
-        rec.set_face_normal(r, outward_normal);
+            rec.t = root;
+            rec.p = r.at(rec.t);
+            vec3 outward_normal = (rec.p - center) / radius;
+            rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        get_sphere_uv(outward_normal, rec.u, rec.v);
+            get_sphere_uv(outward_normal, rec.u, rec.v);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        rec.mat_ptr = mat_ptr;
+            rec.mat_ptr = mat_ptr;
 
-        return true;
-    }
+            return true;
+        }
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [get-sphere-uv-call]: <kbd>[sphere.h]</kbd> Sphere UV coordinates from hit]
 </div>
@@ -2362,7 +2350,23 @@ The actual `xy_rect` class is thus:
             shared_ptr<material> mat)
             : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
 
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            auto t = (k-r.origin().z()) / r.direction().z();
+            if (!ray_t.contains(t))
+                return false;
+            auto x = r.origin().x() + t*r.direction().x();
+            auto y = r.origin().y() + t*r.direction().y();
+            if (x < x0 || x1 < x || y < y0 || y1 < y)
+                return false;
+            rec.u = (x-x0)/(x1-x0);
+            rec.v = (y-y0)/(y1-y0);
+            rec.t = t;
+            auto outward_normal = vec3(0, 0, 1);
+            rec.set_face_normal(r, outward_normal);
+            rec.mat_ptr = mp;
+            rec.p = r.at(t);
+            return true;
+        }
 
         bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
             // The bounding box must have non-zero width in each dimension, so pad the Z
@@ -2379,31 +2383,6 @@ The actual `xy_rect` class is thus:
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [xy-rect]: <kbd>[aarect.h]</kbd> XY-plane rectangle objects]
-</div>
-
-<div class='together'>
-And the hit function is:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool xy_rect::hit(const ray& r, interval ray_t, hit_record& rec) const {
-        auto t = (k-r.origin().z()) / r.direction().z();
-        if (!ray_t.contains(t))
-            return false;
-        auto x = r.origin().x() + t*r.direction().x();
-        auto y = r.origin().y() + t*r.direction().y();
-        if (x < x0 || x1 < x || y < y0 || y1 < y)
-            return false;
-        rec.u = (x-x0)/(x1-x0);
-        rec.v = (y-y0)/(y1-y0);
-        rec.t = t;
-        auto outward_normal = vec3(0, 0, 1);
-        rec.set_face_normal(r, outward_normal);
-        rec.mat_ptr = mp;
-        rec.p = r.at(t);
-        return true;
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [xy-rect-hit]: <kbd>[aarect.h]</kbd> Hit function for XY rectangle objects]
 </div>
 
 
@@ -2494,7 +2473,23 @@ This is xz and yz:
         xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<material> mat)
           : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            auto t = (k-r.origin().y()) / r.direction().y();
+            if (!ray_t.contains(t))
+                return false;
+            auto x = r.origin().x() + t*r.direction().x();
+            auto z = r.origin().z() + t*r.direction().z();
+            if (x < x0 || x1 < x || z < z0 || z1 < z)
+                return false;
+            rec.u = (x-x0)/(x1-x0);
+            rec.v = (z-z0)/(z1-z0);
+            rec.t = t;
+            auto outward_normal = vec3(0, 1, 0);
+            rec.set_face_normal(r, outward_normal);
+            rec.mat_ptr = mp;
+            rec.p = r.at(t);
+            return true;
+        }
 
         bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
             // The bounding box must have non-zero width in each dimension, so pad the Y
@@ -2515,7 +2510,23 @@ This is xz and yz:
         yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<material> mat)
           : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            auto t = (k-r.origin().x()) / r.direction().x();
+            if (!ray_t.contains(t))
+                return false;
+            auto y = r.origin().y() + t*r.direction().y();
+            auto z = r.origin().z() + t*r.direction().z();
+            if (y < y0 || y1 < y || z < z0 || z1 < z)
+                return false;
+            rec.u = (y-y0)/(y1-y0);
+            rec.v = (z-z0)/(z1-z0);
+            rec.t = t;
+            auto outward_normal = vec3(1, 0, 0);
+            rec.set_face_normal(r, outward_normal);
+            rec.mat_ptr = mp;
+            rec.p = r.at(t);
+            return true;
+        }
 
         bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
             // The bounding box must have non-zero width in each dimension, so pad the X
@@ -2530,49 +2541,6 @@ This is xz and yz:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [xz-yz-rects]: <kbd>[aarect.h]</kbd> XZ and YZ rectangle objects]
-</div>
-
-<div class='together'>
-With unsurprising hit functions:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool xz_rect::hit(const ray& r, interval ray_t, hit_record& rec) const {
-        auto t = (k-r.origin().y()) / r.direction().y();
-        if (!ray_t.contains(t))
-            return false;
-        auto x = r.origin().x() + t*r.direction().x();
-        auto z = r.origin().z() + t*r.direction().z();
-        if (x < x0 || x1 < x || z < z0 || z1 < z)
-            return false;
-        rec.u = (x-x0)/(x1-x0);
-        rec.v = (z-z0)/(z1-z0);
-        rec.t = t;
-        auto outward_normal = vec3(0, 1, 0);
-        rec.set_face_normal(r, outward_normal);
-        rec.mat_ptr = mp;
-        rec.p = r.at(t);
-        return true;
-    }
-
-    bool yz_rect::hit(const ray& r, interval ray_t, hit_record& rec) const {
-        auto t = (k-r.origin().x()) / r.direction().x();
-        if (!ray_t.contains(t))
-            return false;
-        auto y = r.origin().y() + t*r.direction().y();
-        auto z = r.origin().z() + t*r.direction().z();
-        if (y < y0 || y1 < y || z < z0 || z1 < z)
-            return false;
-        rec.u = (y-y0)/(y1-y0);
-        rec.v = (z-z0)/(z1-z0);
-        rec.t = t;
-        auto outward_normal = vec3(1, 0, 0);
-        rec.set_face_normal(r, outward_normal);
-        rec.mat_ptr = mp;
-        rec.p = r.at(t);
-        return true;
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [xz-yz]: <kbd>[aarect.h]</kbd> XZ and YZ rectangle object hit functions]
 </div>
 
 
@@ -2656,9 +2624,24 @@ make an axis-aligned block primitive that holds 6 rectangles:
     class box : public hittable {
       public:
         box() {}
-        box(const point3& p0, const point3& p1, shared_ptr<material> ptr);
 
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        box(const point3& p0, const point3& p1, shared_ptr<material> ptr) {
+            box_min = p0;
+            box_max = p1;
+
+            sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr));
+            sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr));
+
+            sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), ptr));
+            sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr));
+
+            sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr));
+            sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
+        }
+
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            return sides.hit(r, ray_t, rec);
+        }
 
         bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
             output_box = aabb(box_min, box_max);
@@ -2670,24 +2653,6 @@ make an axis-aligned block primitive that holds 6 rectangles:
         point3 box_max;
         hittable_list sides;
     };
-
-    box::box(const point3& p0, const point3& p1, shared_ptr<material> ptr) {
-        box_min = p0;
-        box_max = p1;
-
-        sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr));
-        sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr));
-
-        sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), ptr));
-        sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr));
-
-        sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr));
-        sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
-    }
-
-    bool box::hit(const ray& r, interval ray_t, hit_record& rec) const {
-        return sides.hit(r, ray_t, rec);
-    }
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2739,36 +2704,32 @@ move any underlying hittable is a _translate_ instance.
         translate(shared_ptr<hittable> p, const vec3& displacement)
           : ptr(p), offset(displacement) {}
 
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            ray moved_r(r.origin() - offset, r.direction(), r.time());
+            if (!ptr->hit(moved_r, ray_t, rec))
+                return false;
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override;
+            rec.p += offset;
+            rec.set_face_normal(moved_r, rec.normal);
+
+            return true;
+        }
+
+        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+            if (!ptr->bounding_box(time_start, time_end, output_box))
+                return false;
+
+            output_box = aabb(
+                output_box.min() + offset,
+                output_box.max() + offset);
+
+            return true;
+        }
 
       public:
         shared_ptr<hittable> ptr;
         vec3 offset;
     };
-
-    bool translate::hit(const ray& r, interval ray_t, hit_record& rec) const {
-        ray moved_r(r.origin() - offset, r.direction(), r.time());
-        if (!ptr->hit(moved_r, ray_t, rec))
-            return false;
-
-        rec.p += offset;
-        rec.set_face_normal(moved_r, rec.normal);
-
-        return true;
-    }
-
-    bool translate::bounding_box(double time_start, double time_end, aabb& output_box) const {
-        if (!ptr->bounding_box(time_start, time_end, output_box))
-            return false;
-
-        output_box = aabb(
-            output_box.min() + offset,
-            output_box.max() + offset);
-
-        return true;
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [translate-class]: <kbd>[hittable.h]</kbd> Hittable translation class]
 </div>
@@ -2823,9 +2784,67 @@ For a y-rotation class we have:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class rotate_y : public hittable {
       public:
-        rotate_y(shared_ptr<hittable> p, double angle);
+        rotate_y(shared_ptr<hittable> p, double angle) {
+            auto radians = degrees_to_radians(angle);
+            sin_theta = sin(radians);
+            cos_theta = cos(radians);
+            hasbox = ptr->bounding_box(0, 1, bbox);
 
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+            point3 min( infinity,  infinity,  infinity);
+            point3 max(-infinity, -infinity, -infinity);
+
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 2; j++) {
+                    for (int k = 0; k < 2; k++) {
+                        auto x = i*bbox.max().x() + (1-i)*bbox.min().x();
+                        auto y = j*bbox.max().y() + (1-j)*bbox.min().y();
+                        auto z = k*bbox.max().z() + (1-k)*bbox.min().z();
+
+                        auto newx =  cos_theta*x + sin_theta*z;
+                        auto newz = -sin_theta*x + cos_theta*z;
+
+                        vec3 tester(newx, y, newz);
+
+                        for (int c = 0; c < 3; c++) {
+                            min[c] = fmin(min[c], tester[c]);
+                            max[c] = fmax(max[c], tester[c]);
+                        }
+                    }
+                }
+            }
+
+            bbox = aabb(min, max);
+        }
+
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            auto origin = r.origin();
+            auto direction = r.direction();
+
+            origin[0] = cos_theta*r.origin()[0] - sin_theta*r.origin()[2];
+            origin[2] = sin_theta*r.origin()[0] + cos_theta*r.origin()[2];
+
+            direction[0] = cos_theta*r.direction()[0] - sin_theta*r.direction()[2];
+            direction[2] = sin_theta*r.direction()[0] + cos_theta*r.direction()[2];
+
+            ray rotated_r(origin, direction, r.time());
+
+            if (!ptr->hit(rotated_r, ray_t, rec))
+                return false;
+
+            auto p = rec.p;
+            auto normal = rec.normal;
+
+            p[0] =  cos_theta*rec.p[0] + sin_theta*rec.p[2];
+            p[2] = -sin_theta*rec.p[0] + cos_theta*rec.p[2];
+
+            normal[0] =  cos_theta*rec.normal[0] + sin_theta*rec.normal[2];
+            normal[2] = -sin_theta*rec.normal[0] + cos_theta*rec.normal[2];
+
+            rec.p = p;
+            rec.set_face_normal(rotated_r, normal);
+
+            return true;
+        }
 
         bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
             output_box = bbox;
@@ -2841,82 +2860,6 @@ For a y-rotation class we have:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [rot-y]: <kbd>[hittable.h]</kbd> Hittable rotate-Y class]
-</div>
-
-<div class='together'>
-With constructor:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    rotate_y::rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
-        auto radians = degrees_to_radians(angle);
-        sin_theta = sin(radians);
-        cos_theta = cos(radians);
-        hasbox = ptr->bounding_box(0, 1, bbox);
-
-        point3 min( infinity,  infinity,  infinity);
-        point3 max(-infinity, -infinity, -infinity);
-
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 2; j++) {
-                for (int k = 0; k < 2; k++) {
-                    auto x = i*bbox.max().x() + (1-i)*bbox.min().x();
-                    auto y = j*bbox.max().y() + (1-j)*bbox.min().y();
-                    auto z = k*bbox.max().z() + (1-k)*bbox.min().z();
-
-                    auto newx =  cos_theta*x + sin_theta*z;
-                    auto newz = -sin_theta*x + cos_theta*z;
-
-                    vec3 tester(newx, y, newz);
-
-                    for (int c = 0; c < 3; c++) {
-                        min[c] = fmin(min[c], tester[c]);
-                        max[c] = fmax(max[c], tester[c]);
-                    }
-                }
-            }
-        }
-
-        bbox = aabb(min, max);
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [rot-y-rot]: <kbd>[hittable.h]</kbd> Rotate-Y rotate method]
-</div>
-
-<div class='together'>
-And the hit function:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool rotate_y::hit(const ray& r, interval ray_t, hit_record& rec) const {
-        auto origin = r.origin();
-        auto direction = r.direction();
-
-        origin[0] = cos_theta*r.origin()[0] - sin_theta*r.origin()[2];
-        origin[2] = sin_theta*r.origin()[0] + cos_theta*r.origin()[2];
-
-        direction[0] = cos_theta*r.direction()[0] - sin_theta*r.direction()[2];
-        direction[2] = sin_theta*r.direction()[0] + cos_theta*r.direction()[2];
-
-        ray rotated_r(origin, direction, r.time());
-
-        if (!ptr->hit(rotated_r, ray_t, rec))
-            return false;
-
-        auto p = rec.p;
-        auto normal = rec.normal;
-
-        p[0] =  cos_theta*rec.p[0] + sin_theta*rec.p[2];
-        p[2] = -sin_theta*rec.p[0] + cos_theta*rec.p[2];
-
-        normal[0] =  cos_theta*rec.normal[0] + sin_theta*rec.normal[2];
-        normal[2] = -sin_theta*rec.normal[0] + cos_theta*rec.normal[2];
-
-        rec.p = p;
-        rec.set_face_normal(rotated_r, normal);
-
-        return true;
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [rot-y-hit]: <kbd>[hittable.h]</kbd> Hittable Y-rotate hit function]
 </div>
 
 <div class='together'>
@@ -3006,7 +2949,52 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
           : boundary(b), neg_inv_density(-1/d), phase_function(make_shared<isotropic>(c))
         {}
 
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            // Print occasional samples when debugging. To enable, set enableDebug true.
+            const bool enableDebug = false;
+            const bool debugging = enableDebug && random_double() < 0.00001;
+
+            hit_record rec1, rec2;
+
+            if (!boundary->hit(r, universe, rec1))
+                return false;
+
+            if (!boundary->hit(r, interval(rec1.t+0.0001, infinity), rec2))
+                return false;
+
+            if (debugging) std::cerr << "\nray_tmin=" << rec1.t << ", ray_tmax=" << rec2.t << '\n';
+
+            if (rec1.t < ray_t.min) rec1.t = ray_t.min;
+            if (rec2.t > ray_t.max) rec2.t = ray_t.max;
+
+            if (rec1.t >= rec2.t)
+                return false;
+
+            if (rec1.t < 0)
+                rec1.t = 0;
+
+            const auto ray_length = r.direction().length();
+            const auto distance_inside_boundary = (rec2.t - rec1.t) * ray_length;
+            const auto hit_distance = neg_inv_density * log(random_double());
+
+            if (hit_distance > distance_inside_boundary)
+                return false;
+
+            rec.t = rec1.t + hit_distance / ray_length;
+            rec.p = r.at(rec.t);
+
+            if (debugging) {
+                std::cerr << "hit_distance = " <<  hit_distance << '\n'
+                          << "rec.t = " <<  rec.t << '\n'
+                          << "rec.p = " <<  rec.p << '\n';
+            }
+
+            rec.normal = vec3(1,0,0);  // arbitrary
+            rec.front_face = true;     // also arbitrary
+            rec.mat_ptr = phase_function;
+
+            return true;
+        }
 
         bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
             return boundary->bounding_box(time_start, time_end, output_box);
@@ -3044,60 +3032,6 @@ The scattering function of isotropic picks a uniform random direction:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [isotropic-class]: <kbd>[material.h]</kbd> The isotropic class]
-</div>
-
-<div class='together'>
-And the hit function is:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool constant_medium::hit(const ray& r, interval ray_t, hit_record& rec) const {
-        // Print occasional samples when debugging. To enable, set enableDebug true.
-        const bool enableDebug = false;
-        const bool debugging = enableDebug && random_double() < 0.00001;
-
-        hit_record rec1, rec2;
-
-        if (!boundary->hit(r, universe, rec1))
-            return false;
-
-        if (!boundary->hit(r, interval(rec1.t+0.0001, infinity), rec2))
-            return false;
-
-        if (debugging) std::cerr << "\nray_tmin=" << rec1.t << ", ray_tmax=" << rec2.t << '\n';
-
-        if (rec1.t < ray_t.min) rec1.t = ray_t.min;
-        if (rec2.t > ray_t.max) rec2.t = ray_t.max;
-
-        if (rec1.t >= rec2.t)
-            return false;
-
-        if (rec1.t < 0)
-            rec1.t = 0;
-
-        const auto ray_length = r.direction().length();
-        const auto distance_inside_boundary = (rec2.t - rec1.t) * ray_length;
-        const auto hit_distance = neg_inv_density * log(random_double());
-
-        if (hit_distance > distance_inside_boundary)
-            return false;
-
-        rec.t = rec1.t + hit_distance / ray_length;
-        rec.p = r.at(rec.t);
-
-        if (debugging) {
-            std::cerr << "hit_distance = " <<  hit_distance << '\n'
-                      << "rec.t = " <<  rec.t << '\n'
-                      << "rec.p = " <<  rec.p << '\n';
-        }
-
-        rec.normal = vec3(1,0,0);  // arbitrary
-        rec.front_face = true;     // also arbitrary
-        rec.mat_ptr = phase_function;
-
-        return true;
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [const-med-hit]: <kbd>[constant_medium.h]</kbd> Constant medium hit method]
 </div>
 
 The reason we have to be so careful about the logic around the boundary is we need to make sure this

@@ -1427,19 +1427,16 @@ class because it won't really be more complicated than utility functions:
             return a.x()*u() + a.y()*v() + a.z()*w();
         }
 
-        void build_from_w(const vec3&);
+        void build_from_w(const vec3& n) {
+            axis[2] = unit_vector(n);
+            vec3 a = (fabs(w().x()) > 0.9) ? vec3(0,1,0) : vec3(1,0,0);
+            axis[1] = unit_vector(cross(w(), a));
+            axis[0] = cross(w(), v());
+        }
 
       public:
         vec3 axis[3];
     };
-
-
-    void onb::build_from_w(const vec3& n) {
-        axis[2] = unit_vector(n);
-        vec3 a = (fabs(w().x()) > 0.9) ? vec3(0,1,0) : vec3(1,0,0);
-        axis[1] = unit_vector(cross(w(), a));
-        axis[0] = cross(w(), v());
-    }
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1874,7 +1871,6 @@ And we change `xz_rect` to implement those functions:
     class xz_rect : public hittable {
       public:
         ...
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double pdf_value(const point3& origin, const vec3& v) const override {
             hit_record rec;
@@ -1892,6 +1888,8 @@ And we change `xz_rect` to implement those functions:
             auto random_point = point3(random_double(x0,x1), k, random_double(z0,z1));
             return random_point - origin;
         }
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [xz-rect-pdf]: <kbd>[aarect.h]</kbd> XZ rect with pdf]
 </div>
@@ -2415,7 +2413,28 @@ The sphere class needs the two PDF-related functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
+      public:
         ...
+        double pdf_value(const point3& o, const vec3& v) const override {
+            hit_record rec;
+            if (!this->hit(ray(o, v), interval(0.001, infinity), rec))
+                return 0;
+
+            auto cos_theta_max = sqrt(1 - radius*radius/(center-o).length_squared());
+            auto solid_angle = 2*pi*(1-cos_theta_max);
+
+            return  1 / solid_angle;
+        }
+
+        vec3 random(const point3& o) const override {
+            vec3 direction = center - o;
+            auto distance_squared = direction.length_squared();
+            onb uvw;
+            uvw.build_from_w(direction);
+            return uvw.local(random_to_sphere(radius, distance_squared));
+        }
+        ...
+
       private:
         ...
         static vec3 random_to_sphere(double radius, double distance_squared) {
@@ -2430,25 +2449,6 @@ The sphere class needs the two PDF-related functions:
             return vec3(x, y, z);
         }
     };
-
-    double sphere::pdf_value(const point3& o, const vec3& v) const {
-        hit_record rec;
-        if (!this->hit(ray(o, v), interval(0.001, infinity), rec))
-            return 0;
-
-        auto cos_theta_max = sqrt(1 - radius*radius/(center-o).length_squared());
-        auto solid_angle = 2*pi*(1-cos_theta_max);
-
-        return  1 / solid_angle;
-    }
-
-    vec3 sphere::random(const point3& o) const {
-        vec3 direction = center - o;
-        auto distance_squared = direction.length_squared();
-        onb uvw;
-        uvw.build_from_w(direction);
-        return uvw.local(random_to_sphere(radius, distance_squared));
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-pdf]: <kbd>[sphere.h]</kbd> Sphere with PDF]
 </div>
@@ -2489,20 +2489,26 @@ hittables in and building a mixture PDF, or we could add PDF functions to `hitta
 think both tactics would work fine, but I will go with instrumenting `hittable_list`.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    double hittable_list::pdf_value(const point3& o, const vec3& v) const {
-        auto weight = 1.0/objects.size();
-        auto sum = 0.0;
+    class hittable_list : public hittable {
+      public:
+        ...
+        double pdf_value(const point3& o, const vec3& v) const override {
+            auto weight = 1.0/objects.size();
+            auto sum = 0.0;
 
-        for (const auto& object : objects)
-            sum += weight * object->pdf_value(o, v);
+            for (const auto& object : objects)
+                sum += weight * object->pdf_value(o, v);
 
-        return sum;
-    }
+            return sum;
+        }
 
-    vec3 hittable_list::random(const vec3& o) const {
-        auto int_size = static_cast<int>(objects.size());
-        return objects[random_int(0, int_size-1)]->random(o);
-    }
+        vec3 random(const vec3& o) const override {
+            auto int_size = static_cast<int>(objects.size());
+            return objects[random_int(0, int_size-1)]->random(o);
+        }
+
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [density-mixture]: <kbd>[hittable_list.h]</kbd> Creating a mixture of densities]
 </div>
