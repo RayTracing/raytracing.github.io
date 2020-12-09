@@ -31,6 +31,14 @@ If you have a change you'd like to contribute,
 [please see our contribution guidelines][CONTRIBUTING].
 
 
+GitHub Discusions
+------------------
+GitHub just released GitHub Discussions — a new feature to host conversations in a project without
+requiring everything to be an issue. This is likely a much better way to post questions, ask for
+advice, or just generally talk about the project. Is it useful? Don't know, but [let's give it a
+shot!](https://github.com/RayTracing/raytracing.github.io/discussions/).
+
+
 Directory Structure
 -------------------
 The organization of this repository is meant to be simple and self-evident at a glance:
