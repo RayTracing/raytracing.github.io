@@ -26,6 +26,16 @@ Change Log -- Ray Tracing in One Weekend
 
 
 ----------------------------------------------------------------------------------------------------
+# v3.2.3 (2020-12-07)
+
+### Common
+  - Change: Markdeep library URL updated to new location
+
+### The Next Week
+  - Fix: Correct parameter name typo for `bvh_node` constructor parameter `src_objects`
+
+
+----------------------------------------------------------------------------------------------------
 # v3.2.2 (2020-10-31)
 
 ### Common
