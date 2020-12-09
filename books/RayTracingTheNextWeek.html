@@ -264,6 +264,20 @@ just needs to become a function `center(time)`:
     [Listing [moving-sphere-hit]: <kbd>[moving_sphere.h]</kbd> Moving sphere hit function]
 </div>
 
+We need to implement the `interval::contains()` method mentioned above:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class interval {
+      public:
+        ...
+        bool contains(double x) const {
+            return min <= x && x <= max;
+        }
+        ...
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [interval-contains]: <kbd>interval.h</kbd> interval::contains() method]
+
 
 Tracking the Time of Ray Intersection
 --------------------------------------
@@ -613,27 +627,37 @@ passing in the interval $[t_{min}$, $t_{max}]$, we get:
     class aabb {
       public:
         aabb() {}
-        aabb(const point3& a, const point3& b) { minimum = a; maximum = b;}
 
-        point3 min() const {return minimum; }
-        point3 max() const {return maximum; }
+        aabb(const point3& a, const point3& b) {
+            // Treat the two points a and b as extrema for the bounding box, so we don't require a
+            // particular minimum/maximum coordinate order.
+            x = interval(fmin(a[0],b[0]), fmax(a[0],b[0]));
+            y = interval(fmin(a[1],b[1]), fmax(a[1],b[1]));
+            z = interval(fmin(a[2],b[2]), fmax(a[2],b[2]));
+        }
 
         bool hit(const ray& r, interval ray_t) const {
             for (int a = 0; a < 3; a++) {
-                auto t0 = fmin((minimum[a] - r.origin()[a]) / r.direction()[a],
-                               (maximum[a] - r.origin()[a]) / r.direction()[a]);
-                auto t1 = fmax((minimum[a] - r.origin()[a]) / r.direction()[a],
-                               (maximum[a] - r.origin()[a]) / r.direction()[a]);
-                auto ray_tmin = fmax(t0, ray_t.min);
-                auto ray_tmax = fmin(t1, ray_t.max);
-                if (ray_tmax <= ray_tmin)
+                auto t0 = fmin((axis(a).min - r.origin()[a]) / r.direction()[a],
+                               (axis(a).max - r.origin()[a]) / r.direction()[a]);
+                auto t1 = fmax((axis(a).min - r.origin()[a]) / r.direction()[a],
+                               (axis(a).max - r.origin()[a]) / r.direction()[a]);
+                ray_t.min = fmax(t0, ray_t.min);
+                ray_t.max = fmin(t1, ray_t.max);
+                if (ray_t.max <= ray_t.min)
                     return false;
             }
             return true;
         }
 
-        point3 minimum;
-        point3 maximum;
+        const interval& axis(int n) const {
+            if (n == 1) return y;
+            if (n == 2) return z;
+            return x;
+        }
+
+      public:
+        interval x, y, z;
     };
 
     #endif
@@ -650,20 +674,25 @@ the following version of the code. It works extremely well on many compilers, an
 as my go-to method:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline bool aabb::hit(const ray& r, interval ray_t) const {
-        for (int a = 0; a < 3; a++) {
-            auto invD = 1.0f / r.direction()[a];
-            auto t0 = (min()[a] - r.origin()[a]) * invD;
-            auto t1 = (max()[a] - r.origin()[a]) * invD;
-            if (invD < 0.0f)
-                std::swap(t0, t1);
-            auto ray_tmin = t0 > ray_t.min ? t0 : ray_t.min;
-            auto ray_tmax = t1 < ray_t.max ? t1 : ray_t.max;
-            if (ray_tmax <= ray_tmin)
-                return false;
+    class aabb {
+      public:
+        ...
+        bool hit(const ray& r, interval ray_t) const {
+            for (int a = 0; a < 3; a++) {
+                auto invD = 1.0f / r.direction()[a];
+                auto t0 = (min()[a] - r.origin()[a]) * invD;
+                auto t1 = (max()[a] - r.origin()[a]) * invD;
+                if (invD < 0.0f)
+                    std::swap(t0, t1);
+                auto ray_tmin = t0 > ray_t.min ? t0 : ray_t.min;
+                auto ray_tmax = t1 < ray_t.max ? t1 : ray_t.max;
+                if (ray_tmax <= ray_tmin)
+                    return false;
+            }
+            return true;
         }
-        return true;
-    }
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [aabb-hit]: <kbd>[aabb.h]</kbd> Axis-aligned bounding box hit function]
 </div>
@@ -722,7 +751,8 @@ For a sphere, that `bounding_box` function is easy:
 
 <div class='together'>
 For `moving sphere`, we can take the box of the sphere at $t_0$, and the box of the sphere at $t_1$,
-and compute the box of those two boxes:
+and compute the box of those two boxes. We'll add a new `aabb` constructor that takes two boxes as
+input below.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
@@ -745,7 +775,7 @@ and compute the box of those two boxes:
             aabb box1(
                 center(time_end) - vec3(radius, radius, radius),
                 center(time_end) + vec3(radius, radius, radius));
-            output_box = surrounding_box(box0, box1);
+            output_box = aabb(box0, box1);
             return true;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -781,7 +811,7 @@ the fly because it is only usually called at BVH construction.
 
             for (const auto& object : objects) {
                 if (!object->bounding_box(time_start, time_end, temp_box)) return false;
-                output_box = first_box ? temp_box : surrounding_box(output_box, temp_box);
+                output_box = first_box ? temp_box : aabb(output_box, temp_box);
                 first_box = false;
             }
 
@@ -795,23 +825,21 @@ the fly because it is only usually called at BVH construction.
 </div>
 
 <div class='together'>
-This requires the `surrounding_box` function for `aabb` which computes the bounding box of two
-boxes:
+This requires a new `aabb` constructor that takes two boxes as input:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    aabb surrounding_box(aabb box0, aabb box1) {
-        point3 small(fmin(box0.min().x(), box1.min().x()),
-                     fmin(box0.min().y(), box1.min().y()),
-                     fmin(box0.min().z(), box1.min().z()));
-
-        point3 big(fmax(box0.max().x(), box1.max().x()),
-                   fmax(box0.max().y(), box1.max().y()),
-                   fmax(box0.max().z(), box1.max().z()));
-
-        return aabb(small,big);
-    }
+    class aabb {
+      public:
+        ...
+        aabb(const aabb& box0, const aabb& box1) {
+            x = interval(box0.x, box1.x);
+            y = interval(box0.y, box1.y);
+            z = interval(box0.z, box1.z);
+        }
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [surrounding-box]: <kbd>[aabb.h]</kbd> Surrounding bounding box]
+    [Listing [box-of-boxes]: <kbd>[aabb.h]</kbd> aabb from two boxes]
 </div>
 
 
@@ -946,7 +974,7 @@ we haven't yet defined.
             )
                 std::cerr << "No bounding box in bvh_node constructor.\n";
 
-            box = surrounding_box(box_left, box_right);
+            box = aabb(box_left, box_right);
         }
         ...
     };
@@ -984,7 +1012,7 @@ function.
       ...
       private:
         static bool box_compare(
-            const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis
+            const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis_index
         ) {
             aabb box_a;
             aabb box_b;
@@ -992,7 +1020,7 @@ function.
             if (!a->bounding_box(0,0, box_a) || !b->bounding_box(0,0, box_b))
                 std::cerr << "No bounding box in bvh_node constructor.\n";
 
-            return box_a.min().e[axis] < box_b.min().e[axis];
+            return box_a.axis(axis_index).min < box_b.axis(axis_index).min;
         }
 
         static bool box_x_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
@@ -2719,9 +2747,7 @@ move any underlying hittable is a _translate_ instance.
             if (!ptr->bounding_box(time_start, time_end, output_box))
                 return false;
 
-            output_box = aabb(
-                output_box.min() + offset,
-                output_box.max() + offset);
+            output_box += offset;
 
             return true;
         }
@@ -2733,6 +2759,39 @@ move any underlying hittable is a _translate_ instance.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [translate-class]: <kbd>[hittable.h]</kbd> Hittable translation class]
 </div>
+
+The line `output_box += offset` in the `bounding_box()` method above requires some additional
+support.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class aabb {
+      public:
+        ...
+        aabb& operator+=(vec3 offset) {
+            x += offset.x();
+            y += offset.y();
+            z += offset.z();
+            return *this;
+        }
+        ...
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [aabb-plus-eq]: <kbd>[aabb.h]</kbd> The aabb::operator+= method]
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class interval {
+      public:
+        ...
+        interval& operator+=(double offset) {
+            min += offset;
+            max += offset;
+            return *this;
+        }
+        ...
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [interval-plus-eq]: <kbd>[interval.h]</kbd> The interval::operator+= method]
 
 
 Instance Rotation
@@ -2796,9 +2855,9 @@ For a y-rotation class we have:
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 2; j++) {
                     for (int k = 0; k < 2; k++) {
-                        auto x = i*bbox.max().x() + (1-i)*bbox.min().x();
-                        auto y = j*bbox.max().y() + (1-j)*bbox.min().y();
-                        auto z = k*bbox.max().z() + (1-k)*bbox.min().z();
+                        auto x = i*bbox.x.max + (1-i)*bbox.x.min;
+                        auto y = j*bbox.y.max + (1-j)*bbox.y.min;
+                        auto z = k*bbox.z.max + (1-k)*bbox.z.min;
 
                         auto newx =  cos_theta*x + sin_theta*z;
                         auto newz = -sin_theta*x + cos_theta*z;

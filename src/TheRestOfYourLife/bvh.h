@@ -90,7 +90,7 @@ class bvh_node : public hittable {
 
   private:
     static bool box_compare(
-        const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis
+        const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis_index
     ) {
         aabb box_a;
         aabb box_b;
@@ -98,7 +98,7 @@ class bvh_node : public hittable {
         if (!a->bounding_box(0,0, box_a) || !b->bounding_box(0,0, box_b))
             std::cerr << "No bounding box in bvh_node constructor.\n";
 
-        return box_a.min().e[axis] < box_b.min().e[axis];
+        return box_a.axis(axis_index).min < box_b.axis(axis_index).min;
     }
 
     static bool box_x_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {

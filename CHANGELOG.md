@@ -15,6 +15,7 @@ Change Log -- Ray Tracing in One Weekend
     some global utility functions as either private static, or in better locations.
   - Fix: Remove redundant `virtual` keyword for methods with `override` (#805)
   - Change: `aabb` class constructor treats two params as extreme points in any orientation (#733)
+  - Change: `aabb` class uses intervals for each axis (#796)
   - Change: Moved all class method definitions inside class definition (#802)
 
 ### In One Weekend

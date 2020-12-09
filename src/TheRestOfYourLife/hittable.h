@@ -93,9 +93,7 @@ class translate : public hittable {
         if (!ptr->bounding_box(time_start, time_end, output_box))
             return false;
 
-        output_box = aabb(
-            output_box.min() + offset,
-            output_box.max() + offset);
+        output_box += offset;
 
         return true;
     }
@@ -120,9 +118,9 @@ class rotate_y : public hittable {
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 2; j++) {
                 for (int k = 0; k < 2; k++) {
-                    auto x = i*bbox.max().x() + (1-i)*bbox.min().x();
-                    auto y = j*bbox.max().y() + (1-j)*bbox.min().y();
-                    auto z = k*bbox.max().z() + (1-k)*bbox.min().z();
+                    auto x = i*bbox.x.max + (1-i)*bbox.x.min;
+                    auto y = j*bbox.y.max + (1-j)*bbox.y.min;
+                    auto z = k*bbox.z.max + (1-k)*bbox.z.min;
 
                     auto newx =  cos_theta*x + sin_theta*z;
                     auto newz = -sin_theta*x + cos_theta*z;
