@@ -542,8 +542,8 @@ We could solve this using integration:
     $$ I = \frac{1}{3} (2^3 - 0^3) $$
     $$ I = \frac{8}{3} $$
 
-Or, we could solve the integral using a Monte Carlo. In computer sciency notation, we might write
-this as:
+Or, we could solve the integral using a Monte Carlo approach. In computer sciency notation, we might
+write this as:
 
     $$ I = \text{area}( x^2, 0, 2 ) $$
 
@@ -627,8 +627,8 @@ that are actually placed about the scene. There might be two rays that intersect
 a surface, one that is randomly reflected toward the light and one that is not. The ray that is
 reflected toward the light will appear a very bright color. The ray that is reflected to somewhere
 else will appear a very dark color. The two intensities should really be somewhere in the middle.
-We could lessen this problem if we biased both of these rays so that they steered toward toward the
-light, but this would cause the scene to be inaccurately bright.
+We could lessen this problem if we steered both of these rays toward the light, but this would cause
+the scene to be inaccurately bright.
 
 For any given ray, we usually trace from the camera, through the scene, and terminate at a light.
 But imagine if we traced this same ray from the light source, through the scene, and terminated at
@@ -654,10 +654,10 @@ from the histogram Wikipedia page:
 
 <div class='together'>
 If we had more items in our data source, the number of bins would stay the same, but each bin would
-have a higher frequency of item. If we divided the data into more bins, we'd have more bins, but
-each bin would have a lower frequency of item. If we took the number of bins and raised it to
-infinity, we'd have an infinite number of zero-frequency bins. To solve for this, we'll replace our
-histogram, which is a _discrete function_, with a _discrete density function_. A
+have a higher frequency of each item. If we divided the data into more bins, we'd have more bins,
+but each bin would have a lower frequency of each item. If we took the number of bins and raised it
+to infinity, we'd have an infinite number of zero-frequency bins. To solve for this, we'll replace
+our histogram, which is a _discrete function_, with a _discrete density function_. A
 _discrete density function_ differs from a _discrete function_ in that it normalizes the y-axis to a
 fraction or percentage of the total, _i.e_ its density, instead of a total count for each bin.
 Converting from a _discrete function_ to a _discrete density function_ is trivial:
@@ -728,8 +728,8 @@ We need to solve for the value of $C$. We can use integration to work backwards.
 That gives us the PDF of $p(r) = r/2$. Just as with histograms we can sum up (integrate) the
 region to figure out the probability that $r$ is in some interval $[x_0,x_1]$:
 
-    $$ \text{Probability} (r | x_0 < r < x_1 ) = \text{area}(p(r), x_0, x_1) $$
-    $$ \text{Probability} (r | x_0 < r < x_1 ) = \int_{x_0}^{x_1}  \frac{r}{2} dr $$
+    $$ \text{Probability} (r | x_0 \leq r \leq x_1 ) = \text{area}(p(r), x_0, x_1) $$
+    $$ \text{Probability} (r | x_0 \leq r \leq x_1 ) = \int_{x_0}^{x_1}  \frac{r}{2} dr $$
 
 To confirm your understanding, you should integrate over the region $r=0$ to $r=2$, you should get a
 probability of 1.
@@ -738,11 +738,11 @@ probability of 1.
 
 <div class='together'>
 After spending enough time with PDFs you might start referring to a PDF as the probability that a
-variable $r$ is value $x$, _i.e._ $p(r=x)$. Don't do this. For a continuous function, The
+variable $r$ is value $x$, _i.e._ $p(r=x)$. Don't do this. For a continuous function, the
 probability that a variable is a specific value is always zero. A PDF can only tell you the
-probability that a variable will fall within an interval. If the interval you're checking against is
-a constant number, then the PDF will always return a zero probability. Here's a simple mathematical
-proof of this fact:
+probability that a variable will fall within a given interval. If the interval you're checking
+against is a single value, then the PDF will always return a zero probability because its "bin" is
+infinitely thin (has zero width). Here's a simple mathematical proof of this fact:
 
     $$ \text{Probability} (r = x) = \int_{x}^{x}  p(r) dr $$
     $$ = P(r) \Big|_{x}^{x} $$
@@ -788,7 +788,7 @@ PDF. Now we need to figure out a way to solve for $f(d)$.
 
 For the PDF given above, where $p(r) = \frac{r}{2}$, the probability of a random sample is higher
 toward 2 than it is toward 0. There is a greater probability of getting a number betwween 1.8 and
-2 than 0 and 0.2. If we put aside our mathematics hat for a second and put on our computer
+2.0 than 0.0 and 0.2. If we put aside our mathematics hat for a second and put on our computer
 science hat, maybe we can figure out a smart way of partitioning the PDF. We know that there is a
 higher probability near 2 than near 0, but what is the value that splits the probability in half?
 What is the value that a number chosen at random has a 50% chance of being higher than and 50%
@@ -834,7 +834,7 @@ Our, new, crude approximation for $\frac{r}{2}$ is nonuniform (but only just):
 
 We had the analytical solution to the integration above, so we could very easily solve for the 50%
 value. But we could also solve for this 50% value experimentally. There will be functions that we
-either can't or don't want to solve the integreation for. In these cases we can get an experimental
+either can't or don't want to solve for the integration. In these cases, we can get an experimental
 result close to the real value. Let's take the function:
 
     $$ p(x) = e^{\frac{-x}{2 \pi}} sin^2(x) $$
@@ -846,9 +846,9 @@ Which looks a little something like this:
 At this point you should be familiar with how to experimentally solve for the area under a curve.
 We'll be taking our existing code and modifying it slightly to get an estimate for the 50% value. We
 want to solve for the $x$ value that gives us half of the total area under the curve. As we go along
-and solve for the sum over `N` samples, we're also going to store these `N` samples and their
+and solve for the sum over N samples, we're also going to store these N samples and their
 associated `p(x)` value. After we solve for the total sum we'll go back through our samples once
-more and count up until we find an area that is half of the total. From $0$ to $2\pi$ as example:
+more and count up until we find an area that is half of the total. From $0$ to $2\pi$ for example:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -948,8 +948,8 @@ Approximating Distributions
 
 This was a lot of math and work to build up a couple of notions. Let's return to our initial PDF. We
 assume the PDF to be zero where we don't explicitly set a probability. So for our example from the
-beginning of the chapter, $p(r) = 0$, for $r < 0$ and $r > 2$. That is, the probability of
-generating a random number there is zero. We can rewrite our $p(r)$ in piecewise fashion:
+beginning of the chapter, $p(r) = 0$, for $r \notin [0,2]$. We can rewrite our $p(r)$ in piecewise
+fashion:
 
     $$ p(r)=\begin{cases}0 & r < 0 \\ \frac{r}{2} & 0 \leq r \leq 2 \\ 0 & r > 2  \\  \end{cases} $$
 
