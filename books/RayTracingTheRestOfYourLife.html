@@ -27,7 +27,7 @@ severely limited by a missing mathematical foundation. In this volume, I assume 
 a highly interested student, or are someone who is pursuing a career related to ray tracing. We will
 be diving into the math of creating a very serious ray tracer. When you are done, you should be
 well equipped to use and modify the various commercial ray tracers found in many popular industries,
-such as the movie, television, product design, and architecture industries.
+such as the movie, television, product design, and architecture.
 
 There are many many things I do not cover in this short volume. There are many ways of writing Monte
 Carlo rendering programs--I dive into only one of them. I don’t cover shadow rays (instead deciding
@@ -77,8 +77,8 @@ to pick a random point in a unit sphere:
 
 This code will always eventually arrive at a random point in the unit sphere, but we can't say
 beforehand how long it'll take. It may take only 1 iteration, it may take 2, 3, 4, or even longer.
-Whereas, MC programs give a statistical estimate of an answer, and this estimate gets more and more
-accurate the longer you run it. Which means that at a certain point, we can just decide
+Whereas, an MC program will give a statistical estimate of an answer, and this estimate will get
+more and more accurate the longer you run it. Which means that at a certain point, we can just decide
 that the answer is accurate _enough_ and call it quits. This basic characteristic of simple programs
 producing noisy but ever-better answers is what MC is all about, and is especially good for
 applications like graphics where great accuracy is not needed.
@@ -89,9 +89,9 @@ applications like graphics where great accuracy is not needed.
 Estimating Pi
 --------------
 <div class='together'>
-The canonical example of a MC algorithm is estimating $\pi$, so let's do that. There are many ways to
-estimate $\pi$, with the Buffon Needle problem being a classic case study. We’ll do a variation
-inspired by this method. Suppose you have a circle inscribed inside a square:
+The canonical example of a Monte Carlo algorithm is estimating $\pi$, so let's do that. There are
+many ways to estimate $\pi$, with the Buffon Needle problem being a classic case study. We’ll do a
+variation inspired by this method. Suppose you have a circle inscribed inside a square:
 
   ![Figure [circ-square]: Estimating π with a circle inside a square
   ](../images/fig-3.01-circ-square.jpg)
@@ -118,7 +118,7 @@ centered at the origin:
     #include <math.h>
     #include <stdlib.h>
 
-    void main() {
+    int main() {
         int N = 100000;
         int inside_circle = 0;
         for (int i = 0; i < N; i++) {
@@ -151,7 +151,7 @@ If we change the program to run forever and just print out a running estimate:
     #include <math.h>
     #include <stdlib.h>
 
-    void main() {
+    int main() {
         int inside_circle = 0;
         int runs = 0;
         std::cout << std::fixed << std::setprecision(12);
@@ -177,9 +177,10 @@ Stratified Samples (Jittering)
 -------------------------------
 <div class='together'>
 We get very quickly near $\pi$, and then more slowly zero in on it. This is an example of the _Law
-of Diminishing Returns_, where each sample helps less than the last. This is the worst part of MC.
-We can mitigate this diminishing return by _stratifying_ the samples (often called _jittering_),
-where instead of taking random samples, we take a grid and take one sample within each:
+of Diminishing Returns_, where each sample helps less than the last. This is the worst part of Monte
+Carlo. We can mitigate this diminishing return by _stratifying_ the samples (often called
+_jittering_), where instead of taking random samples, we take a grid and take one sample within
+each:
 
   ![Figure [jitter]: Sampling areas with jittered points](../images/fig-3.02-jitter.jpg)
 
@@ -195,7 +196,7 @@ because we need to know the grid. Let’s take a million and try it both ways:
     #include <iostream>
     #include <iomanip>
 
-    void main() {
+    int main() {
         int inside_circle = 0;
         int inside_circle_stratified = 0;
         int sqrt_N = 1000;
@@ -311,10 +312,11 @@ location.
         world.add(box2);
     }
 
-    void main() {
+    int main() {
         scene scene_desc;
         cornell_box(scene_desc);
         scene_desc.render();
+        return 0;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estpi-3]: <kbd>[main.cc]</kbd> Stratifying the samples inside pixels]
@@ -358,7 +360,7 @@ location.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-estpi-3]: <kbd>[scene.h]</kbd> Stratifying the samples inside pixels (render)]
 
-If we compare the results from without stratification: 
+If we compare the results from without stratification:
 
   ![Image 1: Cornell box, no stratification](../images/img-3.01-cornell-no-strat.png class=pixel)
 
@@ -379,33 +381,183 @@ If you are ever doing single-reflection or shadowing or some strictly 2D problem
 want to stratify.
 
 
-One Dimensional MC Integration
+One Dimensional Monte Carlo Integration
 ====================================================================================================
 
-Integration is all about computing areas and volumes, so we could have framed
-chapter [A Simple Monte Carlo Program] in an integral form if we wanted to make it maximally
-confusing. But sometimes integration is the most natural and clean way to formulate things.
-Rendering is often such a problem.
+Our Buffon Needle example is a way of calculating $\pi$ by solving for the ratio of the area of the
+circle and the area of the inscribing square:
 
+    $$ \frac{\text{area}(circle)}{\text{area}(square)} = \frac{\pi}{4} $$
+
+We picked a bunch of random points in the inscribing square and counted the fraction of them that
+were also in the unit circle. This fraction was an estimate that tended toward $\frac{\pi}{4}$ as
+more points were added. If we didn't know the area of a circle, we could still solve for it using
+the above ratio. We know that the ratio of areas of the unit circle and the inscribing square is
+$\frac{\pi}{4}$, and we know that the area of a inscribing square is $4r^2$, so we could then use
+those two quanties to get the area of a circle:
+
+    $$ \frac{\text{area}(circle)}{\text{area}(square)} = \frac{\pi}{4} $$
+    $$ \frac{\text{area}(circle)}{(2r)^2} = \frac{\pi}{4} $$
+    $$ \text{area}(circle) = \frac{\pi}{4} 4r^2 $$
+    $$ \text{area}(circle) = \pi r^2 $$
+
+We choose a circle with radius $r = 1$ and get:
+
+    $$ \text{area}(circle) = \pi $$
+
+Our work above is equally valid as a means to solve for $pi$ as it is a means to solve for the area
+of a circle:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+#include "rtweekend.h"
+
+#include <iostream>
+#include <iomanip>
+#include <math.h>
+#include <stdlib.h>
+
+int main() {
+    int N = 100000;
+    int inside_circle = 0;
+    for (int i = 0; i < N; i++) {
+        auto x = random_double(-1,1);
+        auto y = random_double(-1,1);
+        if (x*x + y*y < 1)
+            inside_circle++;
+    }
+    std::cout << std::fixed << std::setprecision(12);
+    std::cout << "Estimated area of unit circle = " << (4.0 * inside_circle) / N << '\n';
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[Listing [estunitcircle]: <kbd>[pi.cc]</kbd> Estimating area of unit circle]
+
+Expected Value
+--------------
+
+Let's take a step back and think about our Monte Carlo algorithm a little bit more generally.
+
+If we assume that we have all of the following:
+
+1. A list of values $X$ that contains members $x_i$:
+
+    $$ X = (x_0, x_1, ..., x_{N-1})  $$
+
+2. A continuous function $f(x)$ that takes members from the list:
+
+    $$ y_i = f(x_i) $$
+
+3. A function $F(X)$ that takes the list $X$ as input and produces the list $Y$ as output:
+
+    $$ Y = F(X) $$
+
+4. Where output list $Y$ has members $y_i$:
+
+    $$ Y = (y_0, y_1, ..., y_{N-1}) = (f(x_0), f(x_1), ..., f(x_{N-1})) $$
+
+If we assume all of the above, then we could solve for the arithematic mean--the average--of the
+list $Y$ with the following:
+
+    $$ \text{average}(Y) = E[Y] = \frac{1}{N} \sum_{i=0}^{N-1} y_i $$
+    $$ = \frac{1}{N} \sum_{i=0}^{N-1} f(x_i) $$
+    $$ = E[F(X)] $$
+
+Where $E[Y]$ is referred to as the _expected value of_ $Y$. If the values of $x_i$ are chosen
+randomly from a continuous interval $[a,b]$ such that $ a \leq x_i \leq b $ for all values of $i$,
+then $E[F(X)]$ will approximate the average of the continuous function $f(x')$ over the the same
+interval $ a \leq x' \leq b $.
+
+    $$ E[f(x') | a \leq x' \leq b] \approx E[F(X) | X =
+        \{\small x_i | a \leq x_i \leq b \normalsize \} ] $$
+    $$ \approx E[Y = \{\small y_i = f(x_i) | a \leq x_i \leq b \normalsize \} ] $$
+
+    $$ \approx \frac{1}{N} \sum_{i=0}^{N-1} f(x_i) $$
+
+If we take the number of samples $N$ and take the limit as $N$ goes to $\infty$, then we get the
+following:
+
+    $$ E[f(x') | a \leq x' \leq b]  = \lim_{N \to +\infty} \frac{1}{N} \sum_{i=0}^{N-1} f(x_i) $$
+
+Within the continuous interval $[a,b]$, the expected value of continuous function $f(x')$ can be
+perfectly represented by summing an infinite number of random points within the interval. As this
+number of points approaches $\infty$ the average of the outputs tends to the exact answer. This is a
+Monte Carlo algorithm.
+
+Taking random sampling points isn't our only way to solve for the expected value over an interval.
+We can also choose where we place our sampling points. If we had $N$ samples over an interval
+$[a,b]$ then we could choose to equally space points throughout:
+
+    $$ x_i = a + i \Delta x $$
+    $$ \Delta x = \frac{b - a}{N} $$
+
+Then solving for their expected value:
+
+    $$ E[f(x') | a \leq x' \leq b] \approx \frac{1}{N} \sum_{i=0}^{N-1} f(x_i)
+        \Big|_{x_i = a + i \Delta x} $$
+    $$ E[f(x') | a \leq x' \leq b] \approx \frac{\Delta x}{b - a} \sum_{i=0}^{N-1} f(x_i)
+        \Big|_{x_i = a + i \Delta x} $$
+    $$ E[f(x') | a \leq x' \leq b] \approx \frac{1}{b - a} \sum_{i=0}^{N-1} f(x_i) \Delta x
+        \Big|_{x_i = a + i \Delta x} $$
+
+Take the limit as $N$ approaches $\infty$
+
+    $$ E[f(x') | a \leq x' \leq b] = \lim_{N \to +\infty} \frac{1}{b - a} \sum_{i=0}^{N-1}
+        f(x_i) \Delta x \Big|_{x_i = a + \Delta x * i} $$
+
+This is, of course, just a regular integral:
+
+    $$ E[f(x') | a \leq x' \leq b] = \frac{1}{b - a} \int_{a}^{b} f(x) dx $$
+
+The integral of a function is the area under the curve over that interval:
+
+    $$ \text{area}(f(x), a, b) = \int_{a}^{b} f(x) dx$$
+
+Therefore, the average over an interval is intrinsically linked with the area under the curve in
+that interval.
+
+    $$  E[f(x) | a \leq x \leq b] = \frac{1}{b - a} \cdot \text{area}(f(x), a, b) $$
+
+
+Both the integral of a function and a Monte Carlo sampling of that function can be used to solve for
+the average over a specific interval. While integration solves for the average with the sum of
+infinitely many infinitesmally small slices of the interval, a Monte Carlo algorithm will
+approximate the same average by solving the sum of ever increasing random sample points within the
+interval. Counting the number of points that fall inside of an object isn't the only way to measure
+its average or area. Integration is also a common mathematical tool for this purpose. If a closed
+form exists for a problem, integration is frequently the most natural and clean way to formulate
+things.
+
+I think a couple of examples will help.
 
 Integrating x²
 ---------------
-Let’s look at a classic integral:
-
-$$ I = \int_{0}^{2} x^2 dx $$
 
 <div class='together'>
-In computer sciency notation, we might write this as:
+Let’s look at a classic integral:
 
-$$ I = \text{area}( x^2, 0, 2 ) $$
+    $$ I = \int_{0}^{2} x^2 dx $$
+
+We could solve this using integration:
+
+    $$ I = \frac{1}{3} x^3 \Big|_{0}^{2} $$
+    $$ I = \frac{1}{3} (2^3 - 0^3) $$
+    $$ I = \frac{8}{3} $$
+
+Or, we could solve the integral using a Monte Carlo approach. In computer sciency notation, we might
+write this as:
+
+    $$ I = \text{area}( x^2, 0, 2 ) $$
 
 We could also write it as:
 
-$$ I = 2 \cdot \text{average}(x^2, 0, 2) $$
+    $$  E[f(x) | a \leq x \leq b] = \frac{1}{b - a} \cdot \text{area}(f(x), a, b) $$
+    $$ \text{average}(x^2, 0, 2) = \frac{1}{2 - 0} \cdot \text{area}( x^2, 0, 2 ) $$
+    $$ \text{average}(x^2, 0, 2) = \frac{1}{2 - 0} \cdot I $$
+    $$ I = 2 \cdot \text{average}(x^2, 0, 2) $$
+
 </div>
 
 <div class='together'>
-This suggests a MC approach:
+The Monte Carlo approach:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -415,7 +567,7 @@ This suggests a MC approach:
     #include <math.h>
     #include <stdlib.h>
 
-    void main() {
+    int main() {
         int N = 1000000;
         auto sum = 0.0;
         for (int i = 0; i < N; i++) {
@@ -423,32 +575,77 @@ This suggests a MC approach:
             sum += x*x;
         }
         std::cout << std::fixed << std::setprecision(12);
-        std::cout << "I = " << 2 * sum/N << '\n';
+        std::cout << "I = " << 2.0 * (sum / N) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [integ-xsq-1]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$]
+    [Listing [integ-xsq-1]: <kbd>[integrate_x_sq.cc]</kbd> Integrating x^2]
 </div>
 
-This, as expected, produces approximately the exact answer we get with algebra, $I = 8/3$. We could
-also do it for functions that we can’t analytically integrate like $\log(\sin(x))$. In graphics, we
-often have functions we can evaluate but can’t write down explicitly, or functions we can only
-probabilistically evaluate. That is in fact what the ray tracing `ray_color()` function of the last
-two books is -- we don’t know what color is seen in every direction, but we can statistically
-estimate it in any given dimension.
+This, as expected, produces approximately the exact answer we get with integration, _i.e._
+$I = 8/3$. You could rightly point to this example and say that integration is actually a lot less
+work. That might be true in the case where the function is $f(x) = x^2$, but there exist many
+functions where it might be simpler to solve for the Monte Carlo than for the integration, like
+$f(x) = sin^5(x)$.
 
-One problem with the random program we wrote in the first two books is that small light sources
-create too much noise. This is because our uniform sampling doesn’t sample these light sources often
-enough. Light sources are only sampled if a ray scatters toward them, but this can be unlikely for a
-small light, or a light that is far away. We could lessen this problem if we sent more random
-samples toward this light, but this will cause the scene to be inaccurately bright. We can remove
-this inaccuracy by downweighting these samples to adjust for the over-sampling. How we do that
-adjustment? To do that, we will need the concept of a _probability density function_.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        for (int i = 0; i < N; i++) {
+            auto x = random_double(0,2);
+            sum += pow(sin(x), 5.0);
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [integ-sin5]: Integrating sin^5]
+
+We could also use the Monte Carlo algorithm for functions where an analytical integration does not
+exist, like $f(x) = \ln(\sin(x))$.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    for (int i = 0; i < N; i++) {
+        auto x = random_double(0,2);
+        sum += log(sin(x));
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [integ-ln-sin]: Integrating ln(sin)]
+
+In graphics, we often have functions that we can write down explicitly but that have a complicated
+analytic integration, or, just as often, we have functions that _can_ be evaluated but that _can't_
+be written down explicitly, and we will frequently find ourselves with a function that can _only_ be
+evaluated probabilistically. The function `ray_color` from the first two books is an example of a
+function that can only be determined probabilistically. We can’t know what color can be seen from
+any given place in all directions, but we can statistically estimate which color can be seen from
+one particular place, for a single particular direction.
 
 
 Density Functions
 ------------------
 <div class='together'>
-First, what is a _density function_? It’s just a continuous form of a histogram. Here’s an example
+The `ray_color` function that we wrote in the first two books, while elegant in its simplicity, has
+a fairly _major_ problem. Small light sources create too much noise. This is because our uniform
+sampling doesn’t sample these light sources often enough. Light sources are only sampled if a ray
+scatters toward them, but this can be unlikely for a small light, or a light that is far away. If
+the background color is black, then the only real sources of light in the scene are from the lights
+that are actually placed about the scene. There might be two rays that intersect at nearby points on
+a surface, one that is randomly reflected toward the light and one that is not. The ray that is
+reflected toward the light will appear a very bright color. The ray that is reflected to somewhere
+else will appear a very dark color. The two intensities should really be somewhere in the middle.
+We could lessen this problem if we steered both of these rays toward the light, but this would cause
+the scene to be inaccurately bright.
+
+For any given ray, we usually trace from the camera, through the scene, and terminate at a light.
+But imagine if we traced this same ray from the light source, through the scene, and terminated at
+the camera. This ray would start with a bright intensity and would lose energy with each
+successive bounce around the scene. It would ultimately arrive at the camera, having been dimmed and
+colored by its reflections off various surfaces. Now, imagine if this ray was forced to bounce
+toward the camera as soon as it could. It would appear inaccurately bright because it hadn't been
+dimmed by successive bounces. This is analogous to sending more random samples toward the light. It
+would go a long way toward solving our problem of having a bright pixel next to a dark pixel, but it
+would then just make _all_ of our pixels bright.
+
+We can remove this inaccuracy by downweighting those samples to adjust for the over-sampling. How do
+we do this adjustment? Well, we'll first need to understand the concept of a
+_probability density function_. But to understand the concept of a _probability density function_,
+we'll first need to know what a _density function_ is.
+
+A _density function_ is just the continuous version of a histogram. Here’s an example of a histogram
 from the histogram Wikipedia page:
 
   ![Figure [histogram]: Histogram example](../images/fig-3.03-histogram.jpg)
@@ -456,160 +653,446 @@ from the histogram Wikipedia page:
 </div>
 
 <div class='together'>
-If we added data for more trees, the histogram would get taller. If we divided the data into more
-bins, it would get shorter. A discrete density function differs from a histogram in that it
-normalizes the frequency y-axis to a fraction or percentage (just a fraction times 100). A
-continuous histogram, where we take the number of bins to infinity, can’t be a fraction because the
-height of all the bins would drop to zero. A density function is one where we take the bins and
-adjust them so they don’t get shorter as we add more bins. For the case of the tree histogram above
-we might try:
+If we had more items in our data source, the number of bins would stay the same, but each bin would
+have a higher frequency of each item. If we divided the data into more bins, we'd have more bins,
+but each bin would have a lower frequency of each item. If we took the number of bins and raised it
+to infinity, we'd have an infinite number of zero-frequency bins. To solve for this, we'll replace
+our histogram, which is a _discrete function_, with a _discrete density function_. A
+_discrete density function_ differs from a _discrete function_ in that it normalizes the y-axis to a
+fraction or percentage of the total, _i.e_ its density, instead of a total count for each bin.
+Converting from a _discrete function_ to a _discrete density function_ is trivial:
 
-  $$ \text{bin-height} = \frac{(\text{Fraction of trees between height }H\text{ and }H’)}{(H-H’)} $$
+    $$ \text{Density of Bin i} = \frac{\text{Number of items in Bin i}}
+                                      {\text{Number of items total}} $$
+
+
+Once we have a _discrete density function_, we can then convert it into a _density function_ by
+changing our discrete values into continuous values.
+
+    $$ \text{Bin Density} = \frac{(\text{Fraction of trees between height }H\text{ and }H’)}
+                            {(H-H’)} $$
+
+So a _density function_ is a continuous histogram where all of the values are normalized against a
+total. If we had a specific tree we wanted to know the height of, we could create a
+_probability function_ that would tell us how likely it is for our tree to fall within a specific
+bin.
+
+    $$ \text{Probability of Bin i} = \frac{\text{Number of items in Bin i}}
+                                          {\text{Number of items total}} $$
+
+If we combined our _probability function_ and our (continuous) _density function_, we could
+interpret that as a statistical predictor of a tree’s height:
+
+  $$ \text{Probability a random tree is between } H \text{ and } H’ =
+        \text{Bin Density}\cdot(H-H’)$$
 </div>
 
-<div class='together'>
-That would work! We could interpret that as a statistical predictor of a tree’s height:
-
-  $$ \text{Probability a random tree is between } H \text{ and } H’ = \text{bin-height}\cdot(H-H’)$$
-</div>
-
-If we wanted to know about the chances of being in a span of multiple bins, we would sum.
-
-A _probability density function_, henceforth _PDF_, is that fractional histogram made continuous.
-
+Indeed, with this continuous probability function, we can now say the likelihood that any given tree
+has a height that places it within any arbitrary span of multiple bins. This is a
+_probability density function_ (henceforth _PDF_). In short, a PDF is a continuous function that
+can be  integrated over to determine how likely a result is over an integral.
 
 Constructing a PDF
 -------------------
-Let’s make a _PDF_ and use it a bit to understand it more. Suppose I want a random number $r$
-between 0 and 2 whose probability is proportional to itself: $r$. We would expect the PDF $p(r)$ to
-look something like the figure below, but how high should it be?
+Let’s make a PDF and use it a bit to understand it more. Suppose I have a random number $r$ between
+$0$ and $2$ whose probability is proportional to the value of $r$ itself. We would expect the PDF
+$p(r)$ to look something like this:
 
   ![Figure [linear-pdf]: A linear PDF](../images/fig-3.04-linear-pdf.jpg)
 
 <div class='together'>
-The height is just $p(2)$. What should that be? We could reasonably make it anything by
-convention, and we should pick something that is convenient. Just as with histograms we can sum up
-(integrate) the region to figure out the probability that $r$ is in some interval $(x_0,x_1)$:
+The PDF $p(r)$ is a linear function that starts with $0$ at $r=0$ and monotonically increases to its
+highest point at $p(2)$ for $r=2$. What is the value of $p(2)$? What is the value of $p(r)$? Maybe
+$p(2)$ is 2? The PDF increases linearly from 0 to 2, so guessing that the value of $p(2)$ is 2
+seems reasonable. At least it looks like it can't be 0. Remember that the PDF is a probability
+function. We are constraining the PDF so that it lies in the range [0,2]. The PDF represents the
+continuous density function for a probabilistic list. If we know that everything in that list is
+contained within 0 and 2, we can say that the probability of getting a value between 0 and 2 is
+100%. Therefore, the area under the curve must sum to 1:
 
-  $$ \text{Probability } x_0 < r < x_1 = C \cdot \text{area}(p(r), x_0, x_1) $$
+    $$ \text{area}(p(r), 0, 2) = 1 $$
+
+All linear functions can be represented as a constant term multiplied by the variable.
+
+    $$ p(r) = C \cdot r $$
+
+We need to solve for the value of $C$. We can use integration to work backwards.
+
+    $$ 1 = \text{area}(p(r), 0, 2) $$
+    $$ = \int_{0}^{2} C \cdot r dr $$
+    $$ = C \cdot \int_{0}^{2} r dr $$
+    $$ = C \cdot \frac{r^2}{2} \Big|_{0}^{2} $$
+    $$ = C ( \frac{2^2}{2} - \frac{0}{2} ) $$
+    $$ C = \frac{1}{2} $$
+
+That gives us the PDF of $p(r) = r/2$. Just as with histograms we can sum up (integrate) the
+region to figure out the probability that $r$ is in some interval $[x_0,x_1]$:
+
+    $$ \text{Probability} (r | x_0 \leq r \leq x_1 ) = \text{area}(p(r), x_0, x_1) $$
+    $$ \text{Probability} (r | x_0 \leq r \leq x_1 ) = \int_{x_0}^{x_1}  \frac{r}{2} dr $$
+
+To confirm your understanding, you should integrate over the region $r=0$ to $r=2$, you should get a
+probability of 1.
+</div>
+
+
+<div class='together'>
+After spending enough time with PDFs you might start referring to a PDF as the probability that a
+variable $r$ is value $x$, _i.e._ $p(r=x)$. Don't do this. For a continuous function, the
+probability that a variable is a specific value is always zero. A PDF can only tell you the
+probability that a variable will fall within a given interval. If the interval you're checking
+against is a single value, then the PDF will always return a zero probability because its "bin" is
+infinitely thin (has zero width). Here's a simple mathematical proof of this fact:
+
+    $$ \text{Probability} (r = x) = \int_{x}^{x}  p(r) dr $$
+    $$ = P(r) \Big|_{x}^{x} $$
+    $$ = P(x) - P(x) $$
+    $$ = 0 $$
+
+Finding the probability of a region surrounding x may not be zero:
+
+    $$ \text{Probability} (r | x - \Delta x < r < x + \Delta x ) =
+         \text{area}(p(r), x - \Delta x, x + \Delta x) $$
+    $$ = P(x + \Delta x) - P(x - \Delta x) $$
+
+</div>
+
+Choosing our Samples
+--------------------
+If we have a PDF for the function that we care about, then we have the probability that the function
+will return a value within an arbitrary interval. We can use this to determine where we should
+sample. Remember that this started as a quest to determine the best way to sample a scene so that we
+wouldn't get very bright pixels next to very dark pixels. If we have a PDF for the scene, then we
+can probabilistically steer our samples toward the light without making the image inaccurately
+bright. We already said that if we steer our samples toward the light then we _will_ make the image
+inaccurately bright. We need to figure out how to steer our samples without introducing this
+inaccuracy, this will be explained a little bit later, but for now we'll focus on generating samples
+if we have a PDF. How do we generate a random number with a PDF? For that we will need some more
+machinery. Don’t worry -- this doesn’t go on forever!
+
+<div class='together'>
+Our random number generator `random_double()` produces a random double between 0 and 1. The number
+generator is uniform between 0 and 1, so any number between 0 and 1 has equal likelihood. If our PDF
+is uniform over a domain, say $[0,10]$, then we can trivally produce perfect samples for this
+uniform PDF with
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    10.0 * random_double()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+That's an easy case, but the vast majority of cases that we're going to care about are nonuniform.
+We need to figure out a way to convert a uniform random number generator into a nonuniform random
+number generator, where the distribution is defined by the PDF. We'll just _assume_ that there
+exists a function $f(d)$ that takes uniform input and produces a nonuniform distribution weighted by
+PDF. Now we need to figure out a way to solve for $f(d)$.
+
+For the PDF given above, where $p(r) = \frac{r}{2}$, the probability of a random sample is higher
+toward 2 than it is toward 0. There is a greater probability of getting a number betwween 1.8 and
+2.0 than 0.0 and 0.2. If we put aside our mathematics hat for a second and put on our computer
+science hat, maybe we can figure out a smart way of partitioning the PDF. We know that there is a
+higher probability near 2 than near 0, but what is the value that splits the probability in half?
+What is the value that a number chosen at random has a 50% chance of being higher than and 50%
+chance of being lower than? What is the $x$ that solves:
+
+    $$ 50\% = \int_{0}^{x}  \frac{r}{2} dr  = \int_{x}^{2}  \frac{r}{2} dr $$
+
+Solving gives us:
+
+    $$ 0.5 = \frac{r^2}{4} \Big|_{0}^{x} $$
+    $$ 0.5 = \frac{x^2}{4} $$
+    $$ x^2 = 2$$
+    $$ x = \sqrt{2}$$
+
+As a crude approximation we could create a function `f(d)` that takes `double d = random_double()`.
+It checks to see if `d` is less than 0.5 or greater. If it is less than 0.5 it produces a uniform
+number between 0 and $\sqrt{2}$, if it is greater than 0.5 it produces a uniform number between
+$\sqrt{2}$ and 2.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    double function f(double d)
+    {
+        if(d <= 0.5)
+        {
+            return sqrt(2.0) * random_double();
+        }
+        else
+        {
+            return sqrt(2.0) + (2 - sqrt(2.0)) * random_double();
+        }
+
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [crude-approx]: A crude, first-order approximation to nonuniform PDF]
+
+While our initial random number generator was uniform from 0 to 1:
+
+   ![Figure [uniform-dist]: A uniform distribution](../images/fig-3.05-uniform-dist.jpg)
+
+Our, new, crude approximation for $\frac{r}{2}$ is nonuniform (but only just):
+
+    ![Figure [approx-f]: A nonuniform distribution for r/2](../images/fig-3.06-nonuniform-dist.jpg)
+
+We had the analytical solution to the integration above, so we could very easily solve for the 50%
+value. But we could also solve for this 50% value experimentally. There will be functions that we
+either can't or don't want to solve for the integration. In these cases, we can get an experimental
+result close to the real value. Let's take the function:
+
+    $$ p(x) = e^{\frac{-x}{2 \pi}} sin^2(x) $$
+
+Which looks a little something like this:
+
+    ![Figure [exp-sin2]: A function that we don't want to solve analytically](../images/fig-3.07-exp-sin2.jpg)
+
+At this point you should be familiar with how to experimentally solve for the area under a curve.
+We'll be taking our existing code and modifying it slightly to get an estimate for the 50% value. We
+want to solve for the $x$ value that gives us half of the total area under the curve. As we go along
+and solve for the sum over N samples, we're also going to store these N samples and their
+associated `p(x)` value. After we solve for the total sum we'll go back through our samples once
+more and count up until we find an area that is half of the total. From $0$ to $2\pi$ for example:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+    #include <algorithm>
+    #include <vector>
+    #include <iostream>
+    #include <iomanip>
+    #include <math.h>
+    #include <cmath>
+    #include <stdlib.h>
+    
+    struct sample {
+        double x;
+        double p_x;
+    };
+    
+    bool compare_by_x(const sample& a, const sample& b) {
+        return a.x < b.x;
+    }
+    
+    int main() {
+        int N = 10000;
+        double sum = 0.0;
+    
+        // iterate through all of our samples
+        std::vector<sample> samples;
+        for (int i = 0; i < N; i++) {
+            // Get the area under the curve
+            auto x = random_double(0,2 * pi);
+            auto sin_x = sin(x);
+            auto p_x = exp(-x/ (2 * pi)) * sin_x * sin_x;
+            sum += p_x;
+            // store this sample
+            sample this_sample = {x, p_x};
+            samples.push_back(this_sample);
+        }
+    
+        // Sort the samples by x
+        std::sort(samples.begin(), samples.end(), compare_by_x);
+    
+        // Find out the sample at which we have half of our area
+        double half_sum = sum / 2.0;
+        double halfway_point;
+        double accum = 0.0;
+        for (int i = 0; i < N; i++){
+            accum += samples[i].p_x;
+            if (accum >= half_sum){
+                halfway_point = samples[i].x;
+                break;
+            }
+        }
+    
+        std::cout << std::fixed << std::setprecision(12);
+        std::cout << "Average = " << sum / N << '\n';
+        std::cout << "Area under curve = " << 2 * pi * sum / N << '\n';
+        std::cout << "Halfway = " << halfway_point << '\n';
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [est-halfway]: <kbd>[estimate_halfway.cc]</kbd> Estimating the 50% point of a function]
+
+This code snippet isn't too different from what we had before. We're still solving for the sum
+over an interval (0 to $2\pi$). Only this time, we're also storing and sorting all of our samples by
+their input and output. We use this to determine the point at which they subtotal half of the sum
+across the entire interval. Once we know that our first $j$ samples sum up to half of the total sum,
+we know that the $j\text{th}$ $x$ roughly corresponds to our halfway point:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Average = 0.314686555791
+    Area under curve = 1.977233943713
+    Halfway = 2.016002314977
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you solve for the integral from $0$ to $2.016$ and from $2.016$ to $2\pi$ you should get almost
+exactly the same result for both.
+
+We have a method of solving for the halfway point that splits a PDF in half. If we wanted to, we
+could use this to create a nested binary partition of the PDF:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    1. Solve for halfway point of a PDF
+    2. Recurse into lower half, repeat step 1
+    3. Recurse into upper half, repeat step 1
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Stopping at a reasonable depth, say 6 - 10. As you can imagine, this could be computationally
+expensive. The algorithm written in code above is in $O(\mathbf{N^2})$ time, but could be rewritten
+using the _Heap_ data structure for  $O(\mathbf{NlogN})$ time. This is still quite expensive.
+Especially once we go multiple binary levels deep. But this will produce decent nonuniform
+distributions of nonuniform numbers. This divide and conquer method of producing nonuniform
+distributions is used somewhat commonly in practice, although there are much more efficient means
+of doing so than a simple binary partition. If you have an arbitrary function that you wish to use
+as the PDF for a distribution, you'll want to research the _Metropolis-Hastings Algorithm_.
+
+Approximating Distributions
+---------------------------
+
+This was a lot of math and work to build up a couple of notions. Let's return to our initial PDF. We
+assume the PDF to be zero where we don't explicitly set a probability. So for our example from the
+beginning of the chapter, $p(r) = 0$, for $r \notin [0,2]$. We can rewrite our $p(r)$ in piecewise
+fashion:
+
+    $$ p(r)=\begin{cases}0 & r < 0 \\ \frac{r}{2} & 0 \leq r \leq 2 \\ 0 & r > 2  \\  \end{cases} $$
+
+If you consider what we were trying to do in the previous section, a lot of math revolved around the
+_accumulated_ area (or _accumulated_ probability) from zero. In the case of the function
+
+    $$ f(x) = e^{\frac{-x}{2 \pi}} sin^2(x)  $$
+
+we cared about the accumulated probability from $0$ to $2\pi$ (100%) and the accumulated probability
+from $0$ to $2.016$ (50%). We can generalize this to an important term, the
+_Cumulative Distribution Function_ $P(x)$ is defined as:
+
+    $$ P(x) =  \int_{-\infty}^{x}  p(x') dx' $$
+
+Or,
+
+    $$ P(x) = \text{area}(p(x'), -\infty, x) $$
+
+Which is the amount of _cumulative_ probability from $-\infty$. If we take the integration outlined
+above, we get the piecewise $P(r)$:
+
+    $$ P(r)=\begin{cases}0 & r < 0 \\ \frac{r^2}{4} & 0 \leq r \leq 2 \\ 1 & r > 2  \\  \end{cases} $$
+
+The _Probability Density Function_ (PDF) is the probability function that explains how likely an
+interval of numbers is to be chosen. The _Cumulative Distribution Function_ (CDF) is the
+distribution function that explains how likely all numbers smaller than its input is to be chosen.
+To go from the PDF to the CDF, you need to integrate from $-\infty$ to $x$, but to go from the CDF
+to the PDF, all you need to do is take the derivative:
+
+    $$ p(x) = \frac{d}{dx}P(x) $$
 </div>
 
 <div class='together'>
-where $C$ is a scaling constant. We may as well make $C = 1$ for cleanliness, and that is exactly
-what is done in probability. We also know the probability $r$ has the value 1 somewhere, so for this
-case
+If we evaluate the CDF, $P(r)$, at $r = 1.0$, we get:
 
-  $$ \text{area}(p(r), 0, 2) = 1 $$
+    $$ P(1.0) = \frac{1}{4} $$
+
+This says _a random variable plucked from our PDF has a 25% chance of being 1 or lower_. We want a
+function $f(d)$ that takes a uniform distribution between 0 and 1 (_i.e_ `f(random_double())`), and
+returns a random value according to a distribution that has the CDF $P(x) = \frac{x^2}{4}$. We don’t
+know yet know what the function $f(d)$ is analytically, but we do know that 25% of what it returns should
+be less than 1.0, and 75% should be above 1.0. Likewise, we know that 50% of what it returns should
+be less than $\sqrt{2}$, and 50% should be above $\sqrt{2}$. If $f(d)$ monotonically increases, then
+we would expect $f(0.25) = 1.0$ and $f(0.5) = \sqrt{2}$. This can be generalized to figure out
+$f(d)$ for every possible input:
+
+    $$ f(P(x)) = x $$
+</div>
+
+
+<div class='together'>
+Let's take some more samples:
+
+    $$ P(0.0) = 0 $$
+    $$ P(0.5) = \frac{1}{16} $$
+    $$ P(1.0) = \frac{1}{4} $$
+    $$ P(1.5) = \frac{9}{16} $$
+    $$ P(2.0) = 1 $$
+
+so, the function $f()$ has values
+
+    $$ f(P(0.0)) = f(0) = 0 $$
+    $$ f(P(0.5)) = f(\frac{1}{16}) = 0.5 $$
+    $$ f(P(1.0)) = f(\frac{1}{4}) = 1.0 $$
+    $$ f(P(1.5)) = f(\frac{9}{16}) = 1.5 $$
+    $$ f(P(2.0)) = f(1) = 2.0 $$
+
+We could use these intermediate values and interpolate between them to approximate $f(d)$:
+
+    ![Figure [approx f]: Approximating the nonuniform f()](../images/fig-3.08-approx-f.jpg)
+
+If you can't solve for the PDF analytically, then you can't solve for the CDF analytically. After
+all, the CDF is just the integral of the PDF. However, you can still create a distribution that
+approximates the PDF. If you take a bunch of samples from the random function you want the PDF from,
+you can approximate the PDF by getting a histogram of the samples and then converting to a PDF.
+Alternatively, you can do as we did above and sort all of your samples.
 </div>
 
 <div class='together'>
-Since $p(r)$ is proportional to $r$, _i.e._, $p = C' \cdot r$ for some other constant $C'$
+Looking closer at the equality:
 
-  $$
-  area(C'r, 0, 2) = \int_{0}^{2} C' r dr
-                  = \frac{C'r^2}{2} \biggr|_{r=0}^{r=2}
-                  = \frac{C' \cdot 2^2}{2} - \frac{C' \cdot 0^2}{2}
-                  = 2C'
-  $$
+    $$ f(P(x)) = x $$
 
-So $p(r) = r/2$.
-</div>
+That just means that $f()$ just undoes whatever $P()$ does. So, $f()$ is the inverse function:
 
-How do we generate a random number with that PDF $p(r)$? For that we will need some more machinery.
-Don’t worry this doesn’t go on forever!
+    $$ f(d) = P^{-1}(x) $$
 
-<div class='together'>
-Given a random number from `d = random_double()` that is uniform and between 0 and 1, we should be
-able to find some function $f(d)$ that gives us what we want. Suppose $e = f(d) = d^2$. This is no
-longer a uniform PDF. The PDF of $e$ will be bigger near 1 than it is near 0 (squaring a number
-between 0 and 1 makes it smaller). To convert this general observation to a function, we need the
-cumulative probability distribution function $P(x)$:
+For our purposes, if we have PDF $p()$ and cumulative distribution function $P()$, we can use this
+"inverse function" with a random number to get what we want:
 
-  $$ P(x) = \text{area}(p, -\infty, x) $$
+    $$ f(d) = P^{-1} (\text{random_double}()) $$
 </div>
 
 <div class='together'>
-Note that for $x$ where we didn’t define $p(x)$, $p(x) = 0$, _i.e._, the probability of an $x$ there
-is zero. For our example PDF $p(r) = r/2$, the $P(x)$ is:
-
-  $$ P(x) = 0 : x < 0                 $$
-  $$ P(x) = \frac{x^2}{4} : 0 < x < 2 $$
-  $$ P(x) = 1 : x > 2                 $$
-</div>
-
-<div class='together'>
-One question is, what’s up with $x$ versus $r$? They are dummy variables -- analogous to the
-function arguments in a program. If we evaluate $P$ at $x = 1.0$, we get:
-
-  $$ P(1.0) = \frac{1}{4} $$
-</div>
-
-<div class='together'>
-This says _the probability that a random variable with our PDF is less than one is 25%_. This gives
-rise to a clever observation that underlies many methods to generate non-uniform random numbers. We
-want a function `f()` that when we call it as `f(random_double())` we get a return value with a PDF
-$\frac{x^2}{4}$. We don’t know what that is, but we do know that 25% of what it returns should be
-less than 1.0, and 75% should be above 1.0. If $f()$ is increasing, then we would expect $f(0.25) =
-1.0$. This can be generalized to figure out $f()$ for every possible input:
-
-  $$ f(P(x)) = x $$
-</div>
-
-<div class='together'>
-That means $f$ just undoes whatever $P$ does. So,
-
-  $$ f(x) = P^{-1}(x) $$
-</div>
-
-<div class='together'>
-The -1 means “inverse function”. Ugly notation, but standard. For our purposes, if we have PDF $p()$
-and cumulative distribution function $P()$, we can use this "inverse function" with a random number
-to get what we want:
-
-  $$ e = P^{-1} (\text{random_double}()) $$
-</div>
-
-<div class='together'>
-For our PDF $p(x) = x/2$, and corresponding $P(x)$, we need to compute the inverse of $P$. If we
+For our PDF $p(r) = r/2$, and corresponding $P(r)$, we need to compute the inverse of $P(r)$. If we
 have
 
-  $$ y = \frac{x^2}{4} $$
+    $$ y = \frac{r^2}{4} $$
 
-we get the inverse by solving for $x$ in terms of $y$:
+we get the inverse by solving for $r$ in terms of $y$:
 
-  $$ x = \sqrt{4y} $$
+    $$ r = \sqrt{4y} $$
 
-Thus our random number with density $p$ is found with:
+Which means the inverse of our CDF is defined as
 
-  $$ e = \sqrt{4\cdot\text{random_double}()} $$
-</div>
+    $$ P^{-1}(r) = \sqrt{4y} $$
 
-Note that this ranges from 0 to 2 as hoped, and if we check our work by replacing `random_double()`
-with $\frac{1}{4}$ we get 1 as expected.
+Thus our random number generator with density $p(r)$ can be created with:
 
-<div class='together'>
-We can now sample our old integral
+    $$ f(d) = \sqrt{4\cdot\text{random_double}()} $$
 
-  $$ I = \int_{0}^{2} x^2 $$
+Note that this ranges from 0 to 2 as hoped, and if we check our work, we replace `random_double()`
+with $1/4$ to get 1, and also replace with $1/2$ to get $\sqrt{2}$, just as expected.
 </div>
 
 <div class='together'>
-We need to account for the non-uniformity of the PDF of $x$. Where we sample too much we should
-down-weight. The PDF is a perfect measure of how much or little sampling is being done. So the
-weighting function should be proportional to $1/pdf$. In fact it is exactly $1/pdf$:
+We can now sample our old integral:
+
+    $$ I = \int_{0}^{2} x^2 dx $$
+
+We need to account for the nonuniformity of the PDF of $x$. Failing to account for this
+nonuniformity will introduce bias in our scene, indeed this bias is the source of our inaccurately
+bright image, so if we account for nonuniformity, we will get accurate results. Where we sample too
+much we should down-weight. For our new nonuniform random number generator the PDF defines how much
+or how little we sample a specific portion. So the weighting function should be proportional to
+$1/\text{pdf}$. In fact it is exactly $1/\text{pdf}$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    double f(double d) {
+        return sqrt(4.0 * d);
+    }
+
     double pdf(double x) {
-        return 0.5*x;
+        return 0.5 * x;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-    void main() {
+    int main() {
         int N = 1000000;
         auto sum = 0.0;
         for (int i = 0; i < N; i++) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            auto x = sqrt(random_double(0,4));
+            auto x = f(random_double());
             sum += x*x / pdf(x);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
@@ -623,28 +1106,30 @@ weighting function should be proportional to $1/pdf$. In fact it is exactly $1/p
 
 Importance Sampling
 --------------------
-Since we are sampling more where the integrand is big, we might expect less noise and thus faster
+Since we are sampling more where the PDF is big, we might expect less noise and thus faster
 convergence. In effect, we are steering our samples toward the parts of the distribution that are
-more _important_. This is why using a carefully chosen non-uniform PDF is usually called _importance
+more _important_. This is why using a carefully chosen nonuniform PDF is usually called _importance
 sampling_.
 
 <div class='together'>
-If we take that same code with uniform samples so the PDF = $1/2$ over the range [0,2] we can use
-the machinery to get `x = random_double(0,2)`, and the code is:
+We can choose whatever PDF we want. If we take that same code from before and set a uniform PDF of
+PDF = $1/2$ over the range [0,2], then the CDF is $P(x) = x/2$, so $f(d) = 2d$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    double f(double d) {
+        return 2.0 * d;
+    }
+
     double pdf(double x) {
         return 0.5;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-    void main() {
+    int main() {
         int N = 1000000;
         auto sum = 0.0;
         for (int i = 0; i < N; i++) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            auto x = random_double(0,2);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            auto x = f(random_double());
             sum += x*x / pdf(x);
         }
         std::cout << std::fixed << std::setprecision(12);
@@ -652,12 +1137,17 @@ the machinery to get `x = random_double(0,2)`, and the code is:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-xsq-3]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$, v3]
-</div>
 
-<div class='together'>
-Note that we don’t need that 2 in the `2*sum/N` anymore -- that is handled by the PDF, which is 2
-when you divide by it. You’ll note that importance sampling helps a little, but not a ton. We could
-make the PDF follow the integrand exactly:
+In this example we still converge to the correct answer of $8/3$. This is the same answer that we
+get using the "correct" $f(d)$ of $f(d)=\sqrt{4d}$. But you will find the convergence from the
+uniform PDF to take much longer. This should make sense, we were choosing to sample the important
+parts of the distribution more often, whereas here we just sample the whole distribution equally,
+without taking importance into account. Indeed, this is the case for any PDF that you create. They
+will all converge eventually. This is just another part of the power of the Monte Carlo algorithm.
+Even the naive PDF above that split the distribution into the two halves: 0 to $\sqrt{2}$ and
+$\sqrt{2}$ to 2. That will converge. Indeed it will converge more quickly than a pure uniform
+distribution, but slower than the $f(d) = \sqrt{4d}$. We could arbitrarily make the PDF follow the
+integrand exactly:
 
   $$ p(x) = \frac{3}{8}x^2 $$
 
@@ -667,7 +1157,7 @@ And we get the corresponding
 
 and
 
-  $$ P^{-1}(x) = 8x^\frac{1}{3} $$
+  $$ P^{-1}(x) = f(d) = 8d^\frac{1}{3} $$
 </div>
 
 <div class='together'>
@@ -676,20 +1166,22 @@ integrating $p$ analytically), but it’s a good exercise to make sure our code 
 sample we get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    double f(double d) {
+        return 8.0 * pow(random_double(), 1./3.);
+    }
+
     double pdf(double x) {
-        return 3*x*x/8;
+        return (3.0*x*x)/8.0;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-    void main() {
+    int main() {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         int N = 1;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         auto sum = 0.0;
         for (int i = 0; i < N; i++) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            auto x = pow(random_double(0,8), 1./3.);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            auto x = f(random_double()));
             sum += x*x / pdf(x);
         }
         std::cout << std::fixed << std::setprecision(12);
@@ -702,10 +1194,10 @@ sample we get:
 Which always returns the exact answer.
 
 <div class='together'>
-Let’s review now because that was most of the concepts that underlie MC ray tracers.
+Those were most of the concepts that underlie Monte Carlo ray tracers. Let's review:
 
   1. You have an integral of $f(x)$ over some domain $[a,b]$
-  2. You pick a PDF $p$ that is non-zero over $[a,b]$
+  2. You pick a PDF $p$ that is non-zero and non-negative over $[a,b]$
   3. You average a whole ton of $\frac{f(r)}{p(r)}$ where $r$ is a random number with PDF $p$.
 
 Any choice of PDF $p$ will always converge to the right answer, but the closer that $p$
@@ -714,7 +1206,7 @@ approximates $f$, the faster that it will converge.
 
 
 
-MC Integration on the Sphere of Directions
+Monte Carlo Integration on the Sphere of Directions
 ====================================================================================================
 
 In our ray tracer we pick random directions, and directions can be represented as points on the
@@ -724,9 +1216,9 @@ Suppose we have this integral over all directions:
 
   $$ \int cos^2(\theta) $$
 
-By MC integration, we should just be able to sample $\cos^2(\theta) / p(\text{direction})$, but what
-is _direction_ in that context? We could make it based on polar coordinates, so $p$ would be in
-terms of $(\theta, \phi)$. However you do it, remember that a PDF has to integrate to 1 and
+By Monte Carlo integration, we should just be able to sample $\cos^2(\theta) / p(\text{direction})$,
+but what is _direction_ in that context? We could make it based on polar coordinates, so $p$ would
+be in terms of $(\theta, \phi)$. However you do it, remember that a PDF has to integrate to 1 and
 represent the relative probability of that direction being sampled. Recall that we have vec3
 functions to take uniform random samples in (`random_in_unit_sphere()`) or on
 (`random_unit_vector()`) a unit sphere.
@@ -741,7 +1233,7 @@ the z axis:
         return 1 / (4*pi);
     }
 
-    void main() {
+    int main() {
         int N = 1000000;
         auto sum = 0.0;
         for (int i = 0; i < N; i++) {
@@ -768,7 +1260,7 @@ goes through. The solid angle $\omega$ and the projected area $A$ on the unit sp
 thing.
 
   ![Figure [solid-angle]: Solid angle / projected area of a sphere
-  ](../images/fig-3.05-solid-angle.jpg)
+  ](../images/fig-3.09-solid-angle.jpg)
 
 Now let’s go on to the light transport equation we are solving.
 
@@ -823,7 +1315,7 @@ or scattering position.
 The Scattering PDF
 -------------------
 <div class='together'>
-If we apply the MC basic formula we get the following statistical estimate:
+If we apply the Monte Carlo basic formula we get the following statistical estimate:
 
   $$ Color = \frac{A \cdot s(direction) \cdot \text{color}(direction)}{p(direction)} $$
 
@@ -939,8 +1431,8 @@ light.
 </div>
 
 First, let’s instrument the code so that it explicitly samples some PDF and then normalizes for
-that. Remember MC basics: $\int f(x) \approx f(r)/p(r)$. For the Lambertian material, let’s sample
-like we do now: $p(direction) = \cos(\theta) / \pi$.
+that. Remember Monte Carlo basics: $\int f(x) \approx f(r)/p(r)$. For the Lambertian material, let’s
+sample like we do now: $p(direction) = \cos(\theta) / \pi$.
 
 <div class='together'>
 We modify the base-class `material` to enable this importance sampling:
@@ -1132,7 +1624,7 @@ $\phi$ are:
 
 <div class='together'>
 For uniform random numbers $r_1$ and $r_2$, the material presented in the
-One Dimensional MC Integration chapter leads to:
+One Dimensional Monte Carlo Integration chapter leads to:
 
   $$ r_1 = \int_{0}^{\phi} \frac{1}{2\pi} dt = \frac{\phi}{2\pi} $$
 
@@ -1188,7 +1680,7 @@ Simplifying a little, $(1 - 2 r_2)^2 = 1 - 4r_2 + 4r_2^2$, so:
 We can output some of these:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void main() {
+    int main() {
         for (int i = 0; i < 200; i++) {
             auto r1 = random_double();
             auto r2 = random_double();
@@ -1206,7 +1698,7 @@ We can output some of these:
 And plot them for free on plot.ly (a great site with 3D scatterplot support):
 
   ![Figure [rand-pts-sphere]: Random points on the unit sphere
-  ](../images/fig-3.06-rand-pts-sphere.jpg)
+  ](../images/fig-3.10-rand-pts-sphere.jpg)
 
 </div>
 
@@ -1238,7 +1730,7 @@ Now for integration with importance sampling. $p(direction) = \frac{1}{2\pi}$, s
 which is $\cos^3(\theta) / (1/2\pi)$, and we can test this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void main() {
+    int main() {
         int N = 1000000;
         auto sum = 0.0;
         for (int i = 0; i < N; i++) {
@@ -1300,7 +1792,7 @@ Let’s also start generating them as random vectors:
     #include <math.h>
 
 
-    void main() {
+    int main() {
         int N = 1000000;
 
         auto sum = 0.0;
@@ -1499,7 +1991,7 @@ is $\frac{1}{A}$. What is it on the area of the unit sphere that defines directi
 there is a simple correspondence, as outlined in the diagram:
 
   ![Figure [shape-onto-pdf]: Projection of light shape onto PDF
-  ](../images/fig-3.07-shape-onto-pdf.jpg)
+  ](../images/fig-3.11-shape-onto-pdf.jpg)
 
 </div>
 
@@ -2381,7 +2873,7 @@ $\phi$ we sample like before, so:
 Now what is $\theta_{max}$?
 
   ![Figure [sphere-enclosing-cone]: A sphere-enclosing cone
-  ](../images/fig-3.08-sphere-enclosing-cone.jpg)
+  ](../images/fig-3.12-sphere-enclosing-cone.jpg)
 
 </div>
 

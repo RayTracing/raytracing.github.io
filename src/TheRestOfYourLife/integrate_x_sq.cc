@@ -16,11 +16,13 @@
 #include <math.h>
 #include <stdlib.h>
 
-
-double pdf(double x) {
-    return  3*x*x/8;
+double f(double d) {
+    return 8.0 * pow(random_double(), 1./3.);
 }
 
+double pdf(double x) {
+    return (3.0*x*x)/8.0;
+}
 
 int main() {
     int inside_circle = 0;
@@ -29,7 +31,7 @@ int main() {
 
     auto sum = 0.0;
     for (int i = 0; i < N; i++) {
-        auto x = pow(random_double(0,8), 1./3.);
+        auto x = f(random_double());
         sum += x*x / pdf(x);
     }
 

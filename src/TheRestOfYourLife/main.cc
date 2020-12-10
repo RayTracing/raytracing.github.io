@@ -66,7 +66,7 @@ void cornell_box(scene& scene_desc) {
 }
 
 
-void main() {
+int main() {
     scene scene_desc;
     cornell_box(scene_desc);
     scene_desc.render();
