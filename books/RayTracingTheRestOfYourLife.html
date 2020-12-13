@@ -809,7 +809,7 @@ number between 0 and $\sqrt{2}$, if it is greater than 0.5 it produces a uniform
 $\sqrt{2}$ and 2.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    double function f(double d)
+    double f(double d)
     {
         if(d <= 0.5)
         {
@@ -968,8 +968,10 @@ Or,
 
     $$ P(x) = \text{area}(p(x'), -\infty, x) $$
 
-Which is the amount of _cumulative_ probability from $-\infty$. If we take the integration outlined
-above, we get the piecewise $P(r)$:
+Which is the amount of _cumulative_ probability from $-\infty$. We rewrote the integral in terms of
+$x'$ instead of $x$ because of calculus rules, if you're not sure whaat it means, don't worry about
+it, you can just treat it like it's the same. If we take the integration outlined above, we get the
+piecewise $P(r)$:
 
     $$ P(r)=\begin{cases}0 & r < 0 \\ \frac{r^2}{4} & 0 \leq r \leq 2 \\ 1 & r > 2  \\  \end{cases} $$
 
@@ -1737,51 +1739,56 @@ In this and the next two chapters, we'll harden our understanding and our tools.
 
 Random Directions Relative to the Z Axis
 -----------------------------------------
-Let’s first figure out how to generate random directions. To simplify things, let’s assume the
-z-axis is the surface normal, and $\theta$ is the angle from the normal. We’ll get them oriented to
-the surface normal vector in the next chapter. We will only deal with distributions that are
-rotationally symmetric about $z$. So $p(direction) = f(\theta)$. If you have had advanced calculus,
-you may recall that on the sphere in spherical coordinates $dA = \sin(\theta) \cdot d\theta \cdot
-d\phi$. If you haven’t, you’ll have to take my word for the next step, but you’ll get it when you
-take advanced calculus.
+Let’s first figure out how to generate random directions. We already have a method to generate
+random directions using the rejection method, so let's create one using the inversion method. To
+simplify things, let’s assume the $z$ axis is the surface normal, and $\theta$ is the angle from the
+normal. We'll set everything up in terms of the $z$ axis this chapter, and we’ll get them oriented
+to the surface normal vector in the next chapter. We will only deal with distributions that are
+rotationally symmetric about $z$. So $p(\omega) = f(\theta)$.
 
 <div class='together'>
-Given a directional PDF, $p(direction) = f(\theta)$ on the sphere, the 1D PDFs on $\theta$ and
-$\phi$ are:
+Given a directional PDF, $p(\omega) = f(\theta)$ on the sphere, the one dimensional PDFs on $\theta$
+and $\phi$ are:
 
-  $$ a(\phi) = \frac{1}{2\pi} $$
-(uniform)
-  $$ b(\theta) = 2\pi f(\theta)\sin(\theta) $$
+    $$ a(\phi) = \frac{1}{2\pi} $$
+    $$ b(\theta) = 2\pi f(\theta)\sin(\theta) $$
 </div>
 
 <div class='together'>
-For uniform random numbers $r_1$ and $r_2$, the material presented in the
-One Dimensional Monte Carlo Integration chapter leads to:
+For uniform random numbers $r_1$ and $r_2$, we solve for the CDF of $\theta$ and $\phi$ so that we
+can invert the CDF to derive the random number generator.
 
-  $$ r_1 = \int_{0}^{\phi} \frac{1}{2\pi} dt = \frac{\phi}{2\pi} $$
+    $$ r_1 = \int_{0}^{\phi} a(\phi') d\phi' $$
+    $$ = \int_{0}^{\phi} \frac{1}{2\pi} d\phi' $$
+    $$ = \frac{\phi}{2\pi} $$
 
-Solving for $\phi$ we get:
+Invert to solve for $\phi$:
 
-  $$ \phi = 2 \pi \cdot r_1 $$
+    $$ \phi = 2 \pi \cdot r_1 $$
 
-For $\theta$ we have:
+This should match with your intuition. To solve for a random $\phi$ you can take a uniform random
+number in the interval [0,1] and multiply by $2\pi$ to cover the full range of all possible $\phi$
+values, which is just [0,$2\pi$]. You may not have a fully formed intuition for how to solve for a
+random value of $\theta$, so let's walk through the math to help you get set up. We rewrite $\phi$
+as $\phi'$ and $\theta$ as $\theta'$ just like before, as a formality. For $\theta$ we have:
 
-  $$ r_2 = \int_{0}^{\theta} 2 \pi f(t) \sin(t) dt $$
+    $$ r_2 = \int_{0}^{\theta} b(\theta') d\theta' $$
+    $$ = \int_{0}^{\theta} 2 \pi f(\theta') \sin(\theta') d\theta' $$
+
 </div>
 
 <div class='together'>
-Here, $t$ is a dummy variable. Let’s try some different functions for $f()$. Let’s first try a
-uniform density on the sphere. The area of the unit sphere is $4\pi$, so a uniform $p(direction) =
-\frac{1}{4\pi}$ on the unit sphere.
+Let’s try some different functions for $f()$. Let’s first try a uniform density on the sphere. The
+area of the unit sphere is $4\pi$, so a uniform $p(\omega) = \frac{1}{4\pi}$ on the unit sphere.
 
-  $$ r_2 = \int_{0}^{\theta} 2 \pi \frac{1}{4\pi} \sin(t) dt $$
-  $$ = \int_{0}^{\theta} \frac{1}{2} \sin(t) dt $$
-  $$ = \frac{-\cos(\theta)}{2} - \frac{-\cos(0)}{2} $$
-  $$ = \frac{1 - \cos(\theta)}{2} $$
+    $$ r_2 = \int_{0}^{\theta} 2 \pi \frac{1}{4\pi} \sin(\theta') d\theta' $$
+    $$ = \int_{0}^{\theta} \frac{1}{2} \sin(\theta') d\theta' $$
+    $$ = \frac{-\cos(\theta)}{2} - \frac{-\cos(0)}{2} $$
+    $$ = \frac{1 - \cos(\theta)}{2} $$
 
 Solving for $\cos(\theta)$ gives:
 
-  $$ \cos(\theta) = 1 - 2 r_2 $$
+    $$ \cos(\theta) = 1 - 2 r_2 $$
 
 We don’t solve for theta because we probably only need to know $\cos(\theta)$ anyway, and don’t want
 needless $\arccos()$ calls running around.
@@ -1790,28 +1797,32 @@ needless $\arccos()$ calls running around.
 <div class='together'>
 To generate a unit vector direction toward $(\theta,\phi)$ we convert to Cartesian coordinates:
 
-  $$ x = \cos(\phi) \cdot \sin(\theta) $$
-  $$ y = \sin(\phi) \cdot \sin(\theta) $$
-  $$ z = \cos(\theta) $$
+    $$ x = \cos(\phi) \cdot \sin(\theta) $$
+    $$ y = \sin(\phi) \cdot \sin(\theta) $$
+    $$ z = \cos(\theta) $$
 
-And using the identity that $\cos^2 + \sin^2 = 1$, we get the following in terms of random
-$(r_1,r_2)$:
+And using the identity $\cos^2 + \sin^2 = 1$, we get the following in terms of random $(r_1,r_2)$:
 
-  $$ x = \cos(2\pi \cdot r_1)\sqrt{1 - (1-2 r_2)^2} $$
-  $$ y = \sin(2\pi \cdot r_1)\sqrt{1 - (1-2 r_2)^2} $$
-  $$ z = 1 - 2  r_2 $$
+    $$ x = \cos(2\pi \cdot r_1)\sqrt{1 - (1-2 r_2)^2} $$
+    $$ y = \sin(2\pi \cdot r_1)\sqrt{1 - (1-2 r_2)^2} $$
+    $$ z = 1 - 2  r_2 $$
 
 Simplifying a little, $(1 - 2 r_2)^2 = 1 - 4r_2 + 4r_2^2$, so:
 
-  $$ x = \cos(2 \pi r_1) \cdot 2 \sqrt{r_2(1 - r_2)} $$
-  $$ y = \sin(2 \pi r_1) \cdot 2 \sqrt{r_2(1 - r_2)} $$
-  $$ z = 1 - 2 r_2 $$
+    $$ x = \cos(2 \pi r_1) \cdot 2 \sqrt{r_2(1 - r_2)} $$
+    $$ y = \sin(2 \pi r_1) \cdot 2 \sqrt{r_2(1 - r_2)} $$
+    $$ z = 1 - 2 r_2 $$
 </div>
 
 <div class='together'>
 We can output some of these:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+    #include <iostream>
+    #include <math.h>
+    
     int main() {
         for (int i = 0; i < 200; i++) {
             auto r1 = random_double();
@@ -1841,79 +1852,101 @@ Uniform Sampling a Hemisphere
 ------------------------------
 <div class='together'>
 Now let’s derive uniform on the hemisphere. The density being uniform on the hemisphere means
-$p(direction) = \frac{1}{2\pi}$. Just changing the constant in the theta equations yields:
+$p(\omega) = \frac{1}{2\pi}$. Just changing the constant in the theta equations yields:
 
-  $$ \cos(\theta) = 1 - r_2 $$
+    $$ r_2 = \int_{0}^{\theta} b(\theta') d\theta' $$
+    $$ = \int_{0}^{\theta} 2 \pi f(\theta') \sin(\theta') d\theta' $$
+    $$ = \int_{0}^{\theta} 2 \pi \frac{1}{2\pi} \sin(\theta') d\theta' $$
+    $$ \ldots $$
+    $$ \cos(\theta) = 1 - r_2 $$
 </div>
 
 <div class='together'>
-It is comforting that $\cos(\theta)$ will vary from 1 to 0, and thus theta will vary from 0 to
-$\pi/2$. Rather than plot it, let’s do a 2D integral with a known solution. Let’s integrate cosine
-cubed over the hemisphere (just picking something arbitrary with a known solution). First let’s do
-it by hand:
+This means that $\cos(\theta)$ will vary from 1 to 0, so $\theta$ will vary from 0 to $\pi/2$, which
+means that nothing will go below the horizon. Rather than plot it, let’s do a 2D integral with a
+known solution. Let’s integrate cosine cubed over the hemisphere (just picking something arbitrary
+with a known solution). First let’s do it by hand:
 
-  $$ \int \cos^3(\theta) dA $$
-  $$ = \int_{0}^{2 \pi} \int_{0}^{\pi /2} \cos^3(\theta) \sin(\theta) d\theta d\phi $$
-  $$ = 2 \pi \int_{0}^{\pi/2} \cos^3(\theta) \sin(\theta) = \frac{\pi}{2} $$
+    $$ \int_\omega \cos^3(\theta) dA $$
+    $$ = \int_{0}^{2 \pi} \int_{0}^{\pi /2} \cos^3(\theta) \sin(\theta) d\theta d\phi $$
+    $$ = 2 \pi \int_{0}^{\pi/2} \cos^3(\theta) \sin(\theta) d\theta = \frac{\pi}{2} $$
 </div>
 
 <div class='together'>
-Now for integration with importance sampling. $p(direction) = \frac{1}{2\pi}$, so we average $f/p$
-which is $\cos^3(\theta) / (1/2\pi)$, and we can test this:
+Now for integration with importance sampling. $p(\omega) = \frac{1}{2\pi}$, so we average
+$f()/p() = \cos^3(\theta) / \frac{1}{2\pi}$, and we can test this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+    #include <iostream>
+    #include <iomanip>
+    #include <math.h>
+    
+    double f(double r1, double r2) {
+        auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
+        auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
+        auto z = 1 - r2;
+        double cos_theta = z;
+        return cos_theta*cos_theta*cos_theta;
+    }
+    
+    double pdf(double r1, double r2) {
+        return 1.0 / (2.0*pi);
+    }
+    
     int main() {
         int N = 1000000;
+    
         auto sum = 0.0;
         for (int i = 0; i < N; i++) {
             auto r1 = random_double();
             auto r2 = random_double();
-            auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
-            auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
-            auto z = 1 - r2;
-            sum += z*z*z / (1.0/(2.0*pi));
+            sum += f(r1, r2) / pdf(r1, r2);
         }
+    
         std::cout << std::fixed << std::setprecision(12);
-        std::cout << "Pi/2     = " << pi/2 << '\n';
+        std::cout << "PI/2 = " << pi/2 << '\n';
         std::cout << "Estimate = " << sum/N << '\n';
-    }
+    }    
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [cos-cubed]: <kbd>[cos_cubed.cc]</kbd> Integration using $cos^3(x)$]
 </div>
 
 <div class='together'>
-Now let’s generate directions with $p(directions) = \cos(\theta) / \pi$.
+Now let’s generate directions with $p(\omega) = \cos(\theta) / \pi$.
 
-  $$ r_2 = \int_{0}^{\theta} 2 \pi \frac{\cos(t)}{\pi} \sin(t) = 1 - \cos^2(\theta) $$
+    $$ r_2 = \int_{0}^{\theta} 2 \pi \frac{\cos(\theta')}{\pi} \sin(\theta') d\theta'  =
+           1 - \cos^2(\theta) $$
 
 So,
 
-  $$ \cos(\theta) = \sqrt{1 - r_2} $$
+    $$ \cos(\theta) = \sqrt{1 - r_2} $$
 
 We can save a little algebra on specific cases by noting
 
-  $$ z = \cos(\theta) = \sqrt{1 - r_2} $$
-  $$ x = \cos(\phi) \sin(\theta) = \cos(2 \pi r_1) \sqrt{1 - z^2} = \cos(2 \pi r_1) \sqrt{r_2} $$
-  $$ y = \sin(\phi) \sin(\theta) = \sin(2 \pi r_1) \sqrt{1 - z^2} = \sin(2 \pi r_1) \sqrt{r_2} $$
+    $$ z = \cos(\theta) = \sqrt{1 - r_2} $$
+    $$ x = \cos(\phi) \sin(\theta) = \cos(2 \pi r_1) \sqrt{1 - z^2} = \cos(2 \pi r_1) \sqrt{r_2} $$
+    $$ y = \sin(\phi) \sin(\theta) = \sin(2 \pi r_1) \sqrt{1 - z^2} = \sin(2 \pi r_1) \sqrt{r_2} $$
 </div>
 
 <div class='together'>
-Let’s also start generating them as random vectors:
+Let’s create a function that generates random vectors weighted by this PDF:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline vec3 random_cosine_direction() {
         auto r1 = random_double();
         auto r2 = random_double();
-        auto z = sqrt(1-r2);
 
         auto phi = 2*pi*r1;
         auto x = cos(phi)*sqrt(r2);
         auto y = sin(phi)*sqrt(r2);
+        auto z = sqrt(1-r2);
 
         return vec3(x, y, z);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-cosine-direction]: <kbd>vec3.h</kbd> Random cosine direction utility function
+    [Listing [random-cosine-direction]: <kbd>[vec3.h]</kbd> Random cosine direction utility function]
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1922,50 +1955,69 @@ Let’s also start generating them as random vectors:
     #include <iostream>
     #include <iomanip>
     #include <math.h>
-
-
+    
+    double f(const vec3& d) {
+        auto cos_theta = d.z();
+        return cos_theta*cos_theta*cos_theta;
+    }
+    
+    double pdf(const vec3& d) {
+        return d.z() / pi;
+    }
+    
     int main() {
         int N = 1000000;
-
+    
         auto sum = 0.0;
         for (int i = 0; i < N; i++) {
-            auto v = random_cosine_direction();
-            sum += v.z()*v.z()*v.z() / (v.z()/pi);
+            vec3 d = random_cosine_direction();
+            sum += f(d) / pdf(d);
         }
-
+    
         std::cout << std::fixed << std::setprecision(12);
-        std::cout << "Pi/2     = " << pi/2 << '\n';
+        std::cout << "PI/2 = " << pi/2 << '\n';
         std::cout << "Estimate = " << sum/N << '\n';
-    }
+    }    
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [cos-density]: <kbd>[cos_density.cc]</kbd> Integration with cosine density function]
 </div>
 
-We can generate other densities later as we need them. In the next chapter we’ll get them aligned to
-the surface normal vector.
+We can generate other densities later as we need them. This `random_cosine_direction()` function
+produces a random direction weighted by $\cos(\theta)$ where $\theta$ is the angle from the $z$
+axis. We need to make this more general if we want to able able to produce reflections off of
+objects whose normals aren't perfectly aligned with the $z$ axis. In the next chapter we’ll
+generalize our work to arbitrary surface normal vectors.
 
 
 
 Orthonormal Bases
 ====================================================================================================
 
-In the last chapter we developed methods to generate random directions relative to the Z-axis. We’d
-like to be able to do that relative to a surface normal vector.
+In the last chapter we developed methods to generate random directions relative to the $z$ axis.
+We’d like to be able to do that relative to any surface normal vector.
 
 
 Relative Coordinates
 ---------------------
-An orthonormal basis (ONB) is a collection of three mutually orthogonal unit vectors. The Cartesian
-XYZ axes are one such ONB, and I sometimes forget that it has to sit in some real place with real
-orientation to have meaning in the real world, and some virtual place and orientation in the virtual
-world. A picture is a result of the relative positions/orientations of the camera and scene, so as
-long as the camera and scene are described in the same coordinate system, all is well.
+An orthonormal basis (ONB) is a collection of three mutually orthogonal unit vectors, it is a strict
+subtype of coordinate system. The Cartesian $xyz$ axes are an example of an orthonormal basis. A
+picture is the result of the relative positions and orientations of the objects in a scene projected
+onto the image plane of the camera. The camera and objects must be described in the same coordinate
+system, so that the projection onto the image plane is logically defined, otherwise the camera has
+no definitive means of correctly modelling the objects. Either the camera must be redefined in the
+objects' coordinate system, or the objects must be redefined in the camera's coordinate system. It's
+best to start with both in the same coordinate system, so no redefinition is necessary. So long as
+the camera and scene are described in the same coordinate system, all is well. The orthonormal basis
+defines how distances and orientations are represented in the space, but an orthonormal basis alone
+is not enough. The objects and the camera need to described by their displacement from a mutually
+defined location. This is just the origin $\mathbf{O}$ of the scene, it represents the center of the
+universe for everything to displace from.
 
 <div class='together'>
-Suppose we have an origin $\mathbf{O}$ and cartesian unit vectors $\mathbf{x}$, $\mathbf{y}$, and
+Suppose we have an origin $\mathbf{O}$ and Cartesian unit vectors $\mathbf{x}$, $\mathbf{y}$, and
 $\mathbf{z}$. When we say a location is (3,-2,7), we really are saying:
 
-  $$ \text{Location is } \mathbf{O} + 3\mathbf{x} - 2\mathbf{y} + 7\mathbf{z} $$
+    $$ \text{Location is } \mathbf{O} + 3\mathbf{x} - 2\mathbf{y} + 7\mathbf{z} $$
 </div>
 
 <div class='together'>
@@ -1973,55 +2025,63 @@ If we want to measure coordinates in another coordinate system with origin $\mat
 vectors $\mathbf{u}$, $\mathbf{v}$, and $\mathbf{w}$, we can just find the numbers $(u,v,w)$ such
 that:
 
-  $$ \text{Location is } \mathbf{O}' + u\mathbf{u} + v\mathbf{v} + w\mathbf{w} $$
+    $$ \text{Location is } \mathbf{O}' + u\mathbf{u} + v\mathbf{v} + w\mathbf{w} $$
 </div>
 
 
 Generating an Orthonormal Basis
 --------------------------------
-If you take an intro graphics course, there will be a lot of time spent on coordinate systems and
-4×4 coordinate transformation matrices. Pay attention, it’s important stuff in graphics! But we
-won’t need it. What we need to is generate random directions with a set distribution relative to
-$\mathbf{n}$. We don’t need an origin because a direction is relative to no specified origin. We do
-need two cotangent vectors that are mutually perpendicular to $\mathbf{n}$ and to each other.
+If you take an intro to graphics course, there will be a lot of time spent on coordinate systems and
+4×4 coordinate transformation matrices. Pay attention, it’s really important stuff! But we won’t be
+needing it for this book and we'll make do without it. What we do need is to generate random
+directions with a set distribution relative to the surface normal vector $\mathbf{n}$. We won’t be
+needing an origin for this because a direction is relative and has no specific origin. To start off
+with, we need two cotangent vectors that are each perpendicular to $\mathbf{n}$ and that are also
+perpendicular to each other.
 
 <div class='together'>
-Some models will come with one or more cotangent vectors. If our model has only one cotangent
-vector, then the process of making an ONB is a nontrivial one. Suppose we have any vector
-$\mathbf{a}$ that is of nonzero length and not parallel to $\mathbf{n}$. We can get
-vectors $\mathbf{s}$ and $\mathbf{t}$ perpendicular to $\mathbf{n}$ by using the
-property of the cross product that $\mathbf{c} \times \mathbf{d}$ is perpendicular to
-both $\mathbf{c}$ and $\mathbf{d}$:
+Some 3D object models will come with one or more cotangent vectors for each vertex. If our model has
+only one cotangent vector, then the process of making an ONB is a nontrivial one. Suppose we have
+any vector $\mathbf{a}$ that is of nonzero length and nonparallel with $\mathbf{n}$. We can get
+vectors $\mathbf{s}$ and $\mathbf{t}$ perpendicular to $\mathbf{n}$ by using the property of the
+cross product that $\mathbf{c} \times \mathbf{d}$ is perpendicular to both $\mathbf{c}$ and $\mathbf{d}$:
 
-  $$ \mathbf{t} = \text{unit_vector}(\mathbf{a} \times \mathbf{n}) $$
+    $$ \mathbf{t} = \text{unit_vector}(\mathbf{a} \times \mathbf{n}) $$
 
-  $$ \mathbf{s} = \mathbf{t} \times \mathbf{n} $$
+    $$ \mathbf{s} = \mathbf{t} \times \mathbf{n} $$
 </div>
 
 <div class='together'>
 This is all well and good, but the catch is that we may not be given an $\mathbf{a}$ when we load a
-model, and we don't have an $\mathbf{a}$ with our existing program. If we went ahead and picked an
-arbitrary $\mathbf{a}$ to use as our initial vector we may get an $\mathbf{a}$ that is parallel to
-$\mathbf{n}$. A common method is to use an if-statement to determine whether $\mathbf{n}$ is a
-particular axis, and if not, use that axis.
+model, and our current program doesn't have a way to generate one. If we went ahead and picked an
+arbitrary $\mathbf{a}$ to use as an initial vector we may get an $\mathbf{a}$ that is parallel to
+$\mathbf{n}$. So a common method is to pick an arbitrary axis and check to see if it's parralel to
+$\mathbf{n}$, if it is, just use another axis:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none
-    if absolute(n.x > 0.9)
-        a ← (0, 1, 0)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if (fabs(n.x()) > 0.9)
+        a = vec3(0, 1, 0)
     else
-        a ← (1, 0, 0)
+        a = vec3(1, 0, 0)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
 <div class='together'>
-Once we have an ONB of $\mathbf{s}$, $\mathbf{t}$, and $\mathbf{n}$, and we have a $random(x,y,z)$
-relative to the Z-axis, we can get the vector relative to $\mathbf{n}$ as:
+We then take the cross product to get $\mathbf{s}$ and $\mathbf{t}$
 
-  $$ \text{Random vector} = x \mathbf{s} + y \mathbf{t} + z \mathbf{n} $$
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    vec3 s = unit_vector(cross(w, a));
+    vec3 t = cross(w, v);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once we have an ONB of $\mathbf{s}$, $\mathbf{t}$, and $\mathbf{n}$, and we have a random $(x,y,z)$
+relative to the $z$ axis, we can get the vector relative to $\mathbf{n}$ with:
+
+    $$ \text{Random vector} = x \mathbf{s} + y \mathbf{t} + z \mathbf{n} $$
 </div>
 
-You may notice we used similar math to get rays from a camera. That could be viewed as a change to
-the camera’s natural coordinate system.
+If you remember, we used similar math to produce rays from a camera. You can think of that as a
+change to the camera’s natural coordinate system.
 
 
 The ONB Class
@@ -2032,37 +2092,45 @@ class because it won't really be more complicated than utility functions:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef ONB_H
     #define ONB_H
-
-    class onb {
+    
+    #include "rtweekend.h"    
+    
+    class onb
+    {
       public:
         onb() {}
-
+    
         vec3 operator[](int i) const { return axis[i]; }
-
+        vec3& operator[](int i) { return axis[i]; }
+    
         vec3 u() const { return axis[0]; }
         vec3 v() const { return axis[1]; }
         vec3 w() const { return axis[2]; }
-
+    
         vec3 local(double a, double b, double c) const {
             return a*u() + b*v() + c*w();
         }
-
+    
         vec3 local(const vec3& a) const {
             return a.x()*u() + a.y()*v() + a.z()*w();
         }
-
-        void build_from_w(const vec3& n) {
-            axis[2] = unit_vector(n);
-            vec3 a = (fabs(w().x()) > 0.9) ? vec3(0,1,0) : vec3(1,0,0);
-            axis[1] = unit_vector(cross(w(), a));
-            axis[0] = cross(w(), v());
+    
+        void build_from_w(const vec3& w) {
+            const vec3 unit_w = unit_vector(w);
+            const vec3 a = (fabs(unit_w.x()) > 0.9) ? vec3(0,1,0) : vec3(1,0,0);
+            const vec3 v = unit_vector(cross(unit_w, a));
+            const vec3 u = cross(unit_w, v);
+            axis[0] = u;
+            axis[1] = v;
+            axis[2] = unit_w;
         }
-
+    
       public:
         vec3 axis[3];
     };
-
-    #endif
+    
+    
+    #endif  
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [class-onb]: <kbd>[onb.h]</kbd> Orthonormal basis class]
 
@@ -2079,9 +2147,9 @@ We can rewrite our Lambertian material using this to get:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             onb uvw;
             uvw.build_from_w(rec.normal);
-            auto direction = uvw.local(random_cosine_direction());
+            auto scatter_direction = uvw.local(random_cosine_direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            scattered = ray(rec.p, unit_vector(direction), r_in.time());
+            scattered = ray(rec.p, unit_vector(scatter_direction), r_in.time());
             alb = albedo->value(rec.u, rec.v, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             pdf = dot(uvw.w(), scattered.direction()) / pi;
@@ -2095,32 +2163,34 @@ We can rewrite our Lambertian material using this to get:
 <div class='together'>
 Which produces:
 
-  ![Image 3: Cornell box, with orthonormal basis scatter function
+  ![Image 4: Cornell box, with orthonormal basis scatter function
   ](../images/img-3.03-cornell-ortho.jpg class=pixel)
 
-Is that right? We still don’t know for sure. Tracking down bugs is hard in the absence of reliable
-reference solutions. Let’s table that for now and get rid of some of that noise.
+Let’s get rid of some of that noise.
 </div>
+
 
 
 Sampling Lights Directly
 ====================================================================================================
 
-The problem with sampling almost uniformly over directions is that lights are not sampled any more
-than unimportant directions. We could use shadow rays and separate out direct lighting. Instead,
-I’ll just send more rays to the light. We can then use that later to send more rays in whatever
-direction we want.
+The problem with sampling uniformly over all directions is that lights are no more likely to be
+sampled than any arbirary or unimportant direction. We could use shadow rays to solve for the direct
+lighting at any given point. Instead, I’ll just use a PDF that sends more rays to the light. We can
+then turn around and change that PDF to send more rays in whatever direction we want.
 
 <div class='together'>
 It’s really easy to pick a random direction toward the light; just pick a random point on the light
-and send a ray in that direction. We also need to know the PDF, $p(direction)$. What is that?
+and send a ray in that direction. But we'll need to know the PDF, $p(\omega)$, so that we're not
+biasing our render. But what is that?
 
 
 Getting the PDF of a Light
 ---------------------------
-For a light of area $A$, if we sample uniformly on that light, the PDF on the surface of the light
-is $\frac{1}{A}$. What is it on the area of the unit sphere that defines directions? Fortunately,
-there is a simple correspondence, as outlined in the diagram:
+For a light with a surface area of $A$, if we sample uniformly on that light, the PDF on the surface
+is just $\frac{1}{A}$. How much area does the entire surface of the light take up if its projected
+back onto the unit sphere? Fortunately, there is a simple correspondence, as outlined in this
+diagram:
 
   ![Figure [shape-onto-pdf]: Projection of light shape onto PDF
   ](../images/fig-3.11-shape-onto-pdf.jpg)
@@ -2128,30 +2198,34 @@ there is a simple correspondence, as outlined in the diagram:
 </div>
 
 <div class='together'>
-If we look at a small area $dA$ on the light, the probability of sampling it is $p_q(q) \cdot dA$.
-On the sphere, the probability of sampling the small area $dw$ on the sphere is $p(direction) \cdot
-dw$. There is a geometric relationship between $dw$ and $dA$:
+If we look at a small area $dA$ on the light, the probability of sampling it is
+$p_{\text{q}}(\text{q}) \cdot dA$. On the sphere, the probability of sampling the small area $d\omega$ on the
+sphere is $p(\omega) \cdot d\omega$. There is a geometric relationship between $d\omega$ and $dA$:
 
-  $$ dw = \frac{dA \cdot \cos(alpha)}{distance^2(p,q)} $$
+    $$ d\omega = \frac{dA \cdot \cos(\theta)}{distance^2(\text{p},\text{q})} $$
 
-Since the probability of sampling dw and dA must be the same, we have
+Since the probability of sampling $d\omega$ and $dA$ must be the same, then
 
-  $$ p(direction) \cdot \frac{dA \cdot \cos(alpha)}{distance^2(p,q)}
-     = p_q(q) \cdot dA
-     = \frac{dA}{A}
-  $$
+    $$ p(\omega) \cdot d\omega = p_{\text{q}}(\text{q}) \cdot dA $$
+    $$ p(\omega) \cdot \frac{dA \cdot \cos(\theta)}{distance^2(\text{p},\text{q})}
+       =  p_{\text{q}}(\text{q}) \cdot dA $$
 
+We know that if we sample uniformly on the light the PDF on the surface is $\frac{1}{A}$:
+
+    $$ p_{\text{q}}(\text{q}) = \frac{1}{A} $$
+    $$ p(\omega) \cdot \frac{dA \cdot \cos(\theta)}{distance^2(\text{p},\text{q})}
+       =  \frac{dA}{A} $$
 So
 
-  $$ p(direction) = \frac{distance^2(p,q)}{\cos(alpha) \cdot A} $$
+  $$ p(\omega) = \frac{distance^2(\text{p},\text{q})}{\cos(\theta) \cdot A} $$
 </div>
 
 
 Light Sampling
 ---------------
 <div class='together'>
-If we hack our `ray_color()` function to sample the light in a very hard-coded fashion just to check
-that math and get the concept, we can add it (see the highlighted region):
+We can hack our `ray_color()` function to sample the light in a very hard-coded fashion just to
+check that we got the math and concept right:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class scene {
@@ -2224,13 +2298,35 @@ and there is a small space between light and ceiling. We probably want to have t
 down. We can do that by letting the emitted member function of hittable take extra information:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    color emitted(const ray& r_in, const hit_record& rec, double u, double v, const point3& p)
-    const override {
-        if (rec.front_face)
-            return emit->value(u, v, p);
-        else
+    class material {
+      public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        virtual color emitted(
+            const ray& r_in, const hit_record& rec, double u, double v, const point3& p
+        ) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             return color(0,0,0);
-    }
+        }
+
+        ...
+    };
+
+    class diffuse_light : public material {
+      public:
+        ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        color emitted(const ray& r_in, const hit_record& rec, double u, double v, const point3& p)
+        const override {
+            if (!rec.front_face)
+                return color(0,0,0);
+            return emit->value(u, v, p);
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [emitted-directional]: <kbd>[material.h]</kbd> Material emission, directional]
 </div>
