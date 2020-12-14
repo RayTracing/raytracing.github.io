@@ -17,6 +17,7 @@ Change Log -- Ray Tracing in One Weekend
   - Change: `aabb` class constructor treats two params as extreme points in any orientation (#733)
   - Change: `aabb` class uses intervals for each axis (#796)
   - Change: Moved all class method definitions inside class definition (#802)
+  - Fix: CSS fix for cases where code listing overflow; change to fit content (#826)
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)
