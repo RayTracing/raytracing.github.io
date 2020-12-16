@@ -6,13 +6,12 @@
 
 cmake_minimum_required ( VERSION 3.1.0 )
 
-project ( RTWeekend
-  VERSION 3.0.0
-  LANGUAGES CXX
-)
+project ( RTWeekend LANGUAGES CXX )
 
-# Set to c++11
-set ( CMAKE_CXX_STANDARD 11 )
+# Set to C++11
+set ( CMAKE_CXX_STANDARD          11 )
+set ( CMAKE_CXX_STANDARD_REQUIRED ON )
+set ( CMAKE_CXX_EXTENSIONS        OFF )
 
 # Source
 set ( COMMON_ALL
