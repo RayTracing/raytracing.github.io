@@ -1038,7 +1038,7 @@ function.
 
 
 
-Solid Textures
+Texture Mapping
 ====================================================================================================
 A texture in graphics usually means a function that makes the colors on a surface procedural. This
 procedure can be synthesis code, or it could be an image lookup, or a combination of both. We will
@@ -1046,8 +1046,9 @@ first make all colors a texture. Most programs keep constant rgb colors and text
 classes, so feel free to do something different, but I am a big believer in this architecture
 because being able to make any color a texture is great.
 
-The First Texture Class: Constant Texture
-------------------------------------------
+
+Constant Color Texture
+-----------------------
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef TEXTURE_H
@@ -1099,6 +1100,131 @@ ray-object hit point.
     [Listing [hit-record-uv]: <kbd>[hittable.h]</kbd> Adding U,V coordinates to the `hit_record`]
 
 We will also need to compute $(u,v)$ texture coordinates for hittables.
+
+
+Solid Textures: A Checker Texture
+----------------------------------
+<div class='together'>
+We can create a checker texture by noting that the sign of sine and cosine just alternates in a
+regular way, and if we multiply trig functions in all three dimensions, the sign of that product
+forms a 3D checker pattern.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class checker_texture : public texture {
+      public:
+        checker_texture() {}
+
+        checker_texture(shared_ptr<texture> texture_even, shared_ptr<texture> texture_odd)
+          : even(texture_even), odd(texture_odd) {}
+
+        checker_texture(color c1, color c2)
+          : even(make_shared<solid_color>(c1)) , odd(make_shared<solid_color>(c2)) {}
+
+        color value(double u, double v, const point3& p) const override {
+            auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
+            if (sines < 0)
+                return odd->value(u, v, p);
+            else
+                return even->value(u, v, p);
+        }
+
+      public:
+        shared_ptr<texture> odd;
+        shared_ptr<texture> even;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [checker-texture]: <kbd>[texture.h]</kbd> Checkered texture]
+</div>
+
+Those checker odd/even pointers can be to a constant texture or to some other procedural texture.
+This is in the spirit of shader networks introduced by Pat Hanrahan back in the 1980s.
+
+<div class='together'>
+If we add this to our `random_scene()` function’s base sphere:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    void random_spheres(scene& scene_desc) {
+        ...
+        hittable_list& world = scene_desc.world;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
+        world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        for (int a = -11; a < 11; a++) {
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [checker-example]: <kbd>[main.cc]</kbd> Checkered texture in use]
+
+We get:
+
+  ![Image 2: Spheres on checkered ground](../images/img-2.02-checker-ground.png class=pixel)
+
+</div>
+
+
+Rendering The Solid Checker Texture
+------------------------------------
+We're going to add a second scene to our program, and will add more scenes after that as we progress
+through this book. To help with this, we'll set up a switch statement to select the desired scene
+for a given run. It's a crude approach, but we're trying to keep things dead simple and focus on the
+raytracing. You may want to use a different approach in your own raytracer, such as supporting
+command-line arguments.
+
+<div class='together'>
+Here's the scene construction function:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    void two_spheres(scene& scene_desc) {
+        scene_desc.image_width       = 400;
+        scene_desc.aspect_ratio      = 16.0 / 9.0;
+        scene_desc.samples_per_pixel = 100;
+
+        scene_desc.cam.aperture = 0.0;
+        scene_desc.cam.vfov     = 20.0;
+        scene_desc.cam.lookfrom = point3(13,2,3);
+        scene_desc.cam.lookat   = point3(0,0,0);
+
+        hittable_list& world = scene_desc.world;
+
+        auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
+
+        world.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker)));
+        world.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker)));
+    }
+
+    int main() {
+        scene scene_desc;
+
+        scene_desc.cam.vup = vec3(0,1,0);
+        scene_desc.cam.focus_dist = 10.0;
+        scene_desc.cam.time_start = 0;
+        scene_desc.cam.time_end = 1;
+
+        switch (0) {
+            case 1:  random_spheres(scene_desc); break;
+            default: two_spheres(scene_desc);    break;
+        }
+
+        scene_desc.render();
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-two-checker]: <kbd>[main.cc]</kbd> Scene with two checkered spheres]
+</div>
+
+<div class='together'>
+We get this result:
+
+  ![Image 3: Checkered spheres](../images/img-2.03-checker-spheres.png class=pixel)
+
+</div>
+
+
+Image Textures
+---------------
 
 
 Texture Coordinates for Spheres
@@ -1251,126 +1377,226 @@ Now we can make textured materials by replacing the `const color& a` with a text
     [Listing [lambertian-textured]: <kbd>[material.h]</kbd> Lambertian material with texture]
 </div>
 
+From the hitpoint $\mathbf{P}$, we compute the surface coordinates $(u,v)$. We then use these to
+index into our procedural solid texture (like marble). We can also read in an image and use the
+2D $(u,v)$ texture coordinate to index into the image.
 
-A Checker Texture
-------------------
 <div class='together'>
-We can create a checker texture by noting that the sign of sine and cosine just alternates in a
-regular way, and if we multiply trig functions in all three dimensions, the sign of that product
-forms a 3D checker pattern.
+A direct way to use scaled $(u,v)$ in an image is to round the $u$ and $v$ to integers, and use that
+as $(i,j)$ pixels. This is awkward, because we don’t want to have to change the code when we change
+image resolution. So instead, one of the the most universal unofficial standards in graphics is to
+use texture coordinates instead of image pixel coordinates. These are just some form of fractional
+position in the image. For example, for pixel $(i,j)$ in an $N_x$ by $N_y$ image, the image texture
+position is:
+
+  $$ u = \frac{i}{N_x-1} $$
+  $$ v = \frac{j}{N_y-1} $$
+</div>
+
+This is just a fractional position.
+
+
+Accessing Texture Image Data
+-----------------------------
+Now it's time to create a texture class that holds an image. I am going to use my favorite image
+utility, [stb_image][]. It reads image data into a big array of unsigned chars. These are just
+packed RGBs with each component in the range [0,255] (black to full white). To help make loading our
+image files even easier, we provide a helper class to manage all this -- `rtw_image`. The following
+listing assumes that you have copied the `stb_image.h` header into a folder called `external`.
+Adjust according to your directory structure.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class checker_texture : public texture {
+    #ifndef RTW_STB_IMAGE_H
+    #define RTW_STB_IMAGE_H
+
+    // Disable strict warnings for this header from the Microsoft Visual C++ compiler.
+    #ifdef _MSC_VER
+        #pragma warning (push, 0)
+    #endif
+
+    #define STB_IMAGE_IMPLEMENTATION
+    #define STBI_FAILURE_USERMSG
+    #include "external/stb_image.h"
+
+    #include <cstdlib>
+    #include <iostream>
+
+    class rtw_image {
       public:
-        checker_texture() {}
+        rtw_image() : data(nullptr) {}
 
-        checker_texture(shared_ptr<texture> texture_even, shared_ptr<texture> texture_odd)
-          : even(texture_even), odd(texture_odd) {}
+        rtw_image(const char* image_filename) {
+            // Loads image data from the specified file. If the RTW_IMAGES environment variable is
+            // defined, looks only in that directory for the image file. If the image was not found,
+            // searches for the specified image file first from the current directory, then in the
+            // images/ subdirectory, then the _parent's_ images/ subdirectory, and then _that_
+            // parent, on so on, for six levels up. If the image was not loaded successfully,
+            // width() and height() will return 0.
 
-        checker_texture(color c1, color c2)
-          : even(make_shared<solid_color>(c1)) , odd(make_shared<solid_color>(c2)) {}
+            auto filename = std::string(image_filename);
+            const auto imagedir = getenv("RTW_IMAGES");
 
-        color value(double u, double v, const point3& p) const override {
-            auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
-            if (sines < 0)
-                return odd->value(u, v, p);
-            else
-                return even->value(u, v, p);
+            // Hunt for the image file in some likely locations.
+            if (imagedir && load(std::string(imagedir) + "/" + image_filename)) return;
+            if (load(filename)) return;
+            if (load("images/" + filename)) return;
+            if (load("../images/" + filename)) return;
+            if (load("../../images/" + filename)) return;
+            if (load("../../../images/" + filename)) return;
+            if (load("../../../../images/" + filename)) return;
+            if (load("../../../../../images/" + filename)) return;
+            if (load("../../../../../../images/" + filename)) return;
+
+            std::cerr << "ERROR: Could not load image file '" << image_filename << "'.\n";
         }
 
-      public:
-        shared_ptr<texture> odd;
-        shared_ptr<texture> even;
-    };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [checker-texture]: <kbd>[texture.h]</kbd> Checkered texture]
-</div>
+        ~rtw_image() { STBI_FREE(data); }
 
-Those checker odd/even pointers can be to a constant texture or to some other procedural texture.
-This is in the spirit of shader networks introduced by Pat Hanrahan back in the 1980s.
+        bool load(const std::string filename) {
+            // Loads image data from the given file name. Returns true if the load succeeded.
+            auto n = bytes_per_pixel; // Dummy out parameter: original components per pixel
+            data = stbi_load(filename.c_str(), &image_width, &image_height, &n, bytes_per_pixel);
+            bytes_per_scanline = image_width * bytes_per_pixel;
+            return data != nullptr;
+        }
+
+        int width()  const { return (data == nullptr) ? 0 : image_width; }
+        int height() const { return (data == nullptr) ? 0 : image_height; }
+
+        const unsigned char* pixel_data(int x, int y) const {
+            // Return the address of the three bytes of the pixel at x,y (or magenta if no data).
+            static unsigned char magenta[] = { 255, 0, 255 };
+            if (data == nullptr) return magenta;
+
+            x = clamp(x, 0, image_width);
+            y = clamp(y, 0, image_height);
+
+            return data + y*bytes_per_scanline + x*bytes_per_pixel;
+        }
+
+      private:
+        const int bytes_per_pixel = 3;
+        unsigned char *data;
+        int image_width, image_height;
+        int bytes_per_scanline;
+
+        static int clamp(int x, int low, int high) {
+            // Return the value clamped to the range [low, high).
+            if (x < low) return low;
+            if (x < high) return x;
+            return high - 1;
+        }
+    };
+
+    // Restore MSVC compiler warnings
+    #ifdef _MSC_VER
+        #pragma warning (pop)
+    #endif
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rtw_image]: <kbd>[rtw_stb_image.h] The rtw_image helper class]
+
+If you are writing your implementation in a language other than C or C++, you'll need to locate (or
+write) an image loading library that provides similar functionality.
 
 <div class='together'>
-If we add this to our `random_scene()` function’s base sphere:
+The `image_texture` class uses the `rtw_image` class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void random_spheres(scene& scene_desc) {
-        ...
-        hittable_list& world = scene_desc.world;
+    #include "rtweekend.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "rtw_stb_image.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "perlin.h"
 
+    ...
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
-        world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class image_texture : public texture {
+      public:
+        image_texture() {}
+        image_texture(const char* filename) : image(filename) {}
 
-        for (int a = -11; a < 11; a++) {
-        ...
-    }
+        color value(double u, double v, const vec3& p) const override {
+            // If we have no texture data, then return solid cyan as a debugging aid.
+            if (image.height() <= 0) return color(0,1,1);
+
+            // Clamp input texture coordinates to [0,1] x [1,0]
+            u = interval(0,1).clamp(u);
+            v = 1.0 - interval(0,1).clamp(v);  // Flip V to image coordinates
+
+            auto i = static_cast<int>(u * image.width());
+            auto j = static_cast<int>(v * image.height());
+            auto pixel = image.pixel_data(i,j);
+
+            const auto color_scale = 1.0 / 255.0;
+            return color(color_scale*pixel[0], color_scale*pixel[1], color_scale*pixel[2]);
+        }
+
+      private:
+        rtw_image image;
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [checker-example]: <kbd>[main.cc]</kbd> Checkered texture in use]
-
-We get:
-
-  ![Image 2: Spheres on checkered ground](../images/img-2.02-checker-ground.png class=pixel)
-
+    [Listing [img-texture]: <kbd>[texture.h]</kbd> Image texture class]
 </div>
 
 
-Rendering a Scene with a Checkered Texture
--------------------------------------------
-We're going to add a second scene to our program, and will add more scenes after that as we progress
-through this book. To help with this, we'll set up a switch statement to select the desired scene
-for a given run. It's a crude approach, but we're trying to keep things dead simple and focus on the
-raytracing. You may want to use a different approach in your own raytracer, such as supporting
-command-line arguments.
+Rendering The Image Texture
+----------------------------
+<div class='together'>
+I just grabbed a random earth map from the web -- any standard projection will do for our purposes.
+
+  ![Image 14: earthmap.jpg](../images/earthmap.jpg class=pixel)
+
+</div>
 
 <div class='together'>
-Here's the scene construction function:
+Here's the code to read an image from a file and then assign it to a diffuse material:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void two_spheres(scene& scene_desc) {
+    void earth(scene& scene_desc) {
         scene_desc.image_width       = 400;
         scene_desc.aspect_ratio      = 16.0 / 9.0;
         scene_desc.samples_per_pixel = 100;
 
         scene_desc.cam.aperture = 0.0;
         scene_desc.cam.vfov     = 20.0;
-        scene_desc.cam.lookfrom = point3(13,2,3);
+        scene_desc.cam.lookfrom = point3(0,0,12);
         scene_desc.cam.lookat   = point3(0,0,0);
 
-        hittable_list& world = scene_desc.world;
+        auto earth_texture = make_shared<image_texture>("earthmap.jpg");
+        auto earth_surface = make_shared<lambertian>(earth_texture);
+        auto globe = make_shared<sphere>(point3(0,0,0), 2, earth_surface);
 
-        auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
-
-        world.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker)));
-        world.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker)));
+        scene_desc.world = hittable_list(globe);
     }
 
     int main() {
-        scene scene_desc;
-
-        scene_desc.cam.vup = vec3(0,1,0);
-        scene_desc.cam.focus_dist = 10.0;
-        scene_desc.cam.time_start = 0;
-        scene_desc.cam.time_end = 1;
-
+        ...
         switch (0) {
-            case 1:  random_spheres(scene_desc); break;
-            default: two_spheres(scene_desc);    break;
+            case 1:  random_spheres(scene_desc);     break;
+            case 2:  two_spheres(scene_desc);        break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            case 3:  two_perlin_spheres(scene_desc); break;
+            default: earth(scene_desc);              break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
         scene_desc.render();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [scene-two-checker]: <kbd>[main.cc]</kbd> Scene with two checkered spheres]
+    [Listing [stbi-load-use]: <kbd>[main.cc]</kbd> Using stbi_load() to load an image]
 </div>
 
-<div class='together'>
-We get this result:
+We start to see some of the power of all colors being textures -- we can assign any kind of texture
+to the lambertian material, and lambertian doesn’t need to be aware of it.
 
-  ![Image 3: Checkered spheres](../images/img-2.03-checker-spheres.png class=pixel)
+If the photo comes back with a large cyan sphere in the middle, then `stb_image` failed to find your
+Earth map photo. The program will look for the file in the same directory as the executable. Make
+sure to copy the Earth into your build directory, or rewrite `earth()` to point somewhere else.
 
-</div>
+  ![Image 15: Earth-mapped sphere](../images/img-2.15-earth-sphere.png class=pixel)
 
 
 
@@ -1949,232 +2175,6 @@ Which yields:
   ![Image 13: Perlin noise, marbled texture](../images/img-2.13-perlin-marble.png class=pixel)
 
 </div>
-
-
-
-Image Texture Mapping
-====================================================================================================
-From the hitpoint $\mathbf{P}$, we compute the surface coordinates $(u,v)$. We then use these to
-index into our procedural solid texture (like marble). We can also read in an image and use the
-2D $(u,v)$ texture coordinate to index into the image.
-
-<div class='together'>
-A direct way to use scaled $(u,v)$ in an image is to round the $u$ and $v$ to integers, and use that
-as $(i,j)$ pixels. This is awkward, because we don’t want to have to change the code when we change
-image resolution. So instead, one of the the most universal unofficial standards in graphics is to
-use texture coordinates instead of image pixel coordinates. These are just some form of fractional
-position in the image. For example, for pixel $(i,j)$ in an $N_x$ by $N_y$ image, the image texture
-position is:
-
-  $$ u = \frac{i}{N_x-1} $$
-  $$ v = \frac{j}{N_y-1} $$
-</div>
-
-This is just a fractional position.
-
-
-Storing Texture Image Data
----------------------------
-Now it's time to create a texture class that holds an image. I am going to use my favorite image
-utility, [stb_image][]. It reads image data into a big array of unsigned chars. These are just
-packed RGBs with each component in the range [0,255] (black to full white). To help make loading our
-image files even easier, we provide a helper class to manage all this -- `rtw_image`. The following
-listing assumes that you have copied the `stb_image.h` header into a folder called `external`.
-Adjust according to your directory structure.
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef RTW_STB_IMAGE_H
-    #define RTW_STB_IMAGE_H
-
-    // Disable strict warnings for this header from the Microsoft Visual C++ compiler.
-    #ifdef _MSC_VER
-        #pragma warning (push, 0)
-    #endif
-
-    #define STB_IMAGE_IMPLEMENTATION
-    #define STBI_FAILURE_USERMSG
-    #include "external/stb_image.h"
-
-    #include <cstdlib>
-    #include <iostream>
-
-    class rtw_image {
-      public:
-        rtw_image() : data(nullptr) {}
-
-        rtw_image(const char* image_filename) {
-            // Loads image data from the specified file. If the RTW_IMAGES environment variable is
-            // defined, looks only in that directory for the image file. If the image was not found,
-            // searches for the specified image file first from the current directory, then in the
-            // images/ subdirectory, then the _parent's_ images/ subdirectory, and then _that_
-            // parent, on so on, for six levels up. If the image was not loaded successfully,
-            // width() and height() will return 0.
-
-            auto filename = std::string(image_filename);
-            const auto imagedir = getenv("RTW_IMAGES");
-
-            // Hunt for the image file in some likely locations.
-            if (imagedir && load(std::string(imagedir) + "/" + image_filename)) return;
-            if (load(filename)) return;
-            if (load("images/" + filename)) return;
-            if (load("../images/" + filename)) return;
-            if (load("../../images/" + filename)) return;
-            if (load("../../../images/" + filename)) return;
-            if (load("../../../../images/" + filename)) return;
-            if (load("../../../../../images/" + filename)) return;
-            if (load("../../../../../../images/" + filename)) return;
-
-            std::cerr << "ERROR: Could not load image file '" << image_filename << "'.\n";
-        }
-
-        ~rtw_image() { STBI_FREE(data); }
-
-        bool load(const std::string filename) {
-            // Loads image data from the given file name. Returns true if the load succeeded.
-            auto n = bytes_per_pixel; // Dummy out parameter: original components per pixel
-            data = stbi_load(filename.c_str(), &image_width, &image_height, &n, bytes_per_pixel);
-            bytes_per_scanline = image_width * bytes_per_pixel;
-            return data != nullptr;
-        }
-
-        int width()  const { return (data == nullptr) ? 0 : image_width; }
-        int height() const { return (data == nullptr) ? 0 : image_height; }
-
-        const unsigned char* pixel_data(int x, int y) const {
-            // Return the address of the three bytes of the pixel at x,y (or magenta if no data).
-            static unsigned char magenta[] = { 255, 0, 255 };
-            if (data == nullptr) return magenta;
-
-            x = clamp(x, 0, image_width);
-            y = clamp(y, 0, image_height);
-
-            return data + y*bytes_per_scanline + x*bytes_per_pixel;
-        }
-
-      private:
-        const int bytes_per_pixel = 3;
-        unsigned char *data;
-        int image_width, image_height;
-        int bytes_per_scanline;
-
-        static int clamp(int x, int low, int high) {
-            // Return the value clamped to the range [low, high).
-            if (x < low) return low;
-            if (x < high) return x;
-            return high - 1;
-        }
-    };
-
-    // Restore MSVC compiler warnings
-    #ifdef _MSC_VER
-        #pragma warning (pop)
-    #endif
-
-    #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [rtw_image]: <kbd>[rtw_stb_image.h] The rtw_image helper class]
-
-If you are writing your implementation in a language other than C or C++, you'll need to locate (or
-write) an image loading library that provides similar functionality.
-
-<div class='together'>
-The `image_texture` class uses the `rtw_image` class:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    #include "rtw_stb_image.h"
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "perlin.h"
-
-    ...
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    class image_texture : public texture {
-      public:
-        image_texture() {}
-        image_texture(const char* filename) : image(filename) {}
-
-        color value(double u, double v, const vec3& p) const override {
-            // If we have no texture data, then return solid cyan as a debugging aid.
-            if (image.height() <= 0) return color(0,1,1);
-
-            // Clamp input texture coordinates to [0,1] x [1,0]
-            u = interval(0,1).clamp(u);
-            v = 1.0 - interval(0,1).clamp(v);  // Flip V to image coordinates
-
-            auto i = static_cast<int>(u * image.width());
-            auto j = static_cast<int>(v * image.height());
-            auto pixel = image.pixel_data(i,j);
-
-            const auto color_scale = 1.0 / 255.0;
-            return color(color_scale*pixel[0], color_scale*pixel[1], color_scale*pixel[2]);
-        }
-
-      private:
-        rtw_image image;
-    };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [img-texture]: <kbd>[texture.h]</kbd> Image texture class]
-</div>
-
-
-Using an Image Texture
------------------------
-<div class='together'>
-I just grabbed a random earth map from the web -- any standard projection will do for our purposes.
-
-  ![Image 14: earthmap.jpg](../images/earthmap.jpg class=pixel)
-
-</div>
-
-<div class='together'>
-Here's the code to read an image from a file and then assign it to a diffuse material:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void earth(scene& scene_desc) {
-        scene_desc.image_width       = 400;
-        scene_desc.aspect_ratio      = 16.0 / 9.0;
-        scene_desc.samples_per_pixel = 100;
-
-        scene_desc.cam.aperture = 0.0;
-        scene_desc.cam.vfov     = 20.0;
-        scene_desc.cam.lookfrom = point3(0,0,12);
-        scene_desc.cam.lookat   = point3(0,0,0);
-
-        auto earth_texture = make_shared<image_texture>("earthmap.jpg");
-        auto earth_surface = make_shared<lambertian>(earth_texture);
-        auto globe = make_shared<sphere>(point3(0,0,0), 2, earth_surface);
-
-        scene_desc.world = hittable_list(globe);
-    }
-
-    int main() {
-        ...
-        switch (0) {
-            case 1:  random_spheres(scene_desc);     break;
-            case 2:  two_spheres(scene_desc);        break;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            case 3:  two_perlin_spheres(scene_desc); break;
-            default: earth(scene_desc);              break;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        }
-
-        scene_desc.render();
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [stbi-load-use]: <kbd>[main.cc]</kbd> Using stbi_load() to load an image]
-</div>
-
-We start to see some of the power of all colors being textures -- we can assign any kind of texture
-to the lambertian material, and lambertian doesn’t need to be aware of it.
-
-If the photo comes back with a large cyan sphere in the middle, then `stb_image` failed to find your
-Earth map photo. The program will look for the file in the same directory as the executable. Make
-sure to copy the Earth into your build directory, or rewrite `earth()` to point somewhere else.
-
-  ![Image 15: Earth-mapped sphere](../images/img-2.15-earth-sphere.png class=pixel)
 
 
 
@@ -3176,6 +3176,7 @@ We get:
 
 A Scene Testing All New Features
 ====================================================================================================
+
 Let’s put it all together, with a big thin mist covering everything, and a blue subsurface
 reflection sphere (we didn’t implement that explicitly, but a volume inside a dielectric is what a
 subsurface material is). The biggest limitation left in the renderer is no shadow rays, but that is
