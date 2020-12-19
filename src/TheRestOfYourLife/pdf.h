@@ -30,8 +30,8 @@ class cosine_pdf : public pdf {
     cosine_pdf(const vec3& w) { uvw.build_from_w(w); }
 
     double value(const vec3& direction) const override {
-        auto cosine = dot(unit_vector(direction), uvw.w());
-        return (cosine <= 0) ? 0 : cosine/pi;
+        auto cosine_theta = dot(unit_vector(direction), uvw.w());
+        return (cosine_theta <= 0) ? 0 : cosine_theta/pi;
     }
 
     vec3 generate() const override {
@@ -45,19 +45,19 @@ class cosine_pdf : public pdf {
 
 class hittable_pdf : public pdf {
   public:
-    hittable_pdf(const hittable_list& p, const point3& origin) : ptr(p), o(origin) {}
+    hittable_pdf(const hittable_list& ptr, const point3& o) : hittable_ptr(ptr), origin(o) {}
 
     double value(const vec3& direction) const override {
-        return ptr.pdf_value(o, direction);
+        return hittable_ptr.pdf_value(origin, direction);
     }
 
     vec3 generate() const override {
-        return ptr.random(o);
+        return hittable_ptr.random(origin);
     }
 
   public:
-    point3 o;
-    const hittable_list& ptr;
+    point3 origin;
+    const hittable_list& hittable_ptr;
 };
 
 

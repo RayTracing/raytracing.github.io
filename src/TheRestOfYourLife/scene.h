@@ -70,8 +70,8 @@ class scene {
         if (!rec.mat_ptr->scatter(r, rec, srec))
             return emitted;
 
-        if (srec.is_specular) {
-            return srec.attenuation * ray_color(srec.specular_ray, depth-1);
+        if (srec.skip_pdf) {
+            return srec.attenuation * ray_color(srec.skip_pdf_ray, depth-1);
         }
 
         auto light_ptr = make_shared<hittable_pdf>(lights, rec.p);
