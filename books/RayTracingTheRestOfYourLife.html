@@ -969,7 +969,7 @@ Or,
     $$ P(x) = \text{area}(p(x'), -\infty, x) $$
 
 Which is the amount of _cumulative_ probability from $-\infty$. We rewrote the integral in terms of
-$x'$ instead of $x$ because of calculus rules, if you're not sure whaat it means, don't worry about
+$x'$ instead of $x$ because of calculus rules, if you're not sure what it means, don't worry about
 it, you can just treat it like it's the same. If we take the integration outlined above, we get the
 piecewise $P(r)$:
 
@@ -1513,7 +1513,7 @@ We modify the base-class `material` to enable this importance sampling:
             return color(0,0,0);
         }
 
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, color& albedo, ray& scattered, double& pdf
         ) const {
@@ -1524,7 +1524,7 @@ We modify the base-class `material` to enable this importance sampling:
         const {
             return 0;
         }
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [class-material]: <kbd>[material.h]</kbd>
@@ -1720,12 +1720,12 @@ material, we'll get a slightly different image.
 It’s pretty close to our old picture, but there are differences that are not just noise. The front
 of the tall box is much more uniform in color. If you weren't sure what the material properties of
 your objects were, it's pretty reasonable to just go ahead and assume a uniform PDF, and while that
-might converge slowly, it's not going to ruin your render. That said, if you weren't sure what the correct
-sampling pattern for your material was, your choice of PDF is not going to be your biggest concern
-because incorrectly choosing your sampling pattern _will_ ruin your render. At the very least it will
-produce an incorrect result. You may find yourself with the most difficult kind of bug to find in a
-Monte Carlo program -- a bug that produces a reasonable looking image! You won’t know if the bug is
-in the first version of the program, or the second, or both!
+might converge slowly, it's not going to ruin your render. That said, if you weren't sure what the
+correct sampling pattern for your material was, your choice of PDF is not going to be your biggest
+concern because incorrectly choosing your sampling pattern _will_ ruin your render. At the very
+least it will produce an incorrect result. You may find yourself with the most difficult kind of bug
+to find in a Monte Carlo program -- a bug that produces a reasonable looking image! You won’t know
+if the bug is in the first version of the program, or the second, or both!
 
 Let’s build some infrastructure to address this.
 
@@ -1741,14 +1741,14 @@ Random Directions Relative to the Z Axis
 -----------------------------------------
 Let’s first figure out how to generate random directions. We already have a method to generate
 random directions using the rejection method, so let's create one using the inversion method. To
-simplify things, let’s assume the $z$ axis is the surface normal, and $\theta$ is the angle from the
-normal. We'll set everything up in terms of the $z$ axis this chapter, and we’ll get them oriented
-to the surface normal vector in the next chapter. We will only deal with distributions that are
-rotationally symmetric about $z$. So $p(\omega) = f(\theta)$.
+simplify things, assume the $z$ axis is the surface normal, and $\theta$ is the angle from the
+normal. We'll set everything up in terms of the $z$ axis this chapter. Next chapter we’ll get them
+oriented to the surface normal vector. We will only deal with distributions that are rotationally
+symmetric about $z$. So $p(\omega) = f(\theta)$.
 
 <div class='together'>
-Given a directional PDF, $p(\omega) = f(\theta)$ on the sphere, the one dimensional PDFs on $\theta$
-and $\phi$ are:
+Given a directional PDF on the sphere (where $p(\omega) = f(\theta)$), the one dimensional PDFs on
+$\theta$ and $\phi$ are:
 
     $$ a(\phi) = \frac{1}{2\pi} $$
     $$ b(\theta) = 2\pi f(\theta)\sin(\theta) $$
@@ -1852,7 +1852,7 @@ Uniform Sampling a Hemisphere
 ------------------------------
 <div class='together'>
 Now let’s derive uniform on the hemisphere. The density being uniform on the hemisphere means
-$p(\omega) = \frac{1}{2\pi}$. Just changing the constant in the theta equations yields:
+$p(\omega) = f(\theta) = \frac{1}{2\pi}$. Just changing the constant in the theta equations yields:
 
     $$ r_2 = \int_{0}^{\theta} b(\theta') d\theta' $$
     $$ = \int_{0}^{\theta} 2 \pi f(\theta') \sin(\theta') d\theta' $$
@@ -1863,9 +1863,9 @@ $p(\omega) = \frac{1}{2\pi}$. Just changing the constant in the theta equations 
 
 <div class='together'>
 This means that $\cos(\theta)$ will vary from 1 to 0, so $\theta$ will vary from 0 to $\pi/2$, which
-means that nothing will go below the horizon. Rather than plot it, let’s do a 2D integral with a
-known solution. Let’s integrate cosine cubed over the hemisphere (just picking something arbitrary
-with a known solution). First let’s do it by hand:
+means that nothing will go below the horizon. Rather than plot it, we'll solve for a 2D integral
+with a known solution. Let’s integrate cosine cubed over the hemisphere (just picking something
+arbitrary with a known solution). First we'll solve the integral by hand:
 
     $$ \int_\omega \cos^3(\theta) dA $$
     $$ = \int_{0}^{2 \pi} \int_{0}^{\pi /2} \cos^3(\theta) \sin(\theta) d\theta d\phi $$
@@ -1913,11 +1913,17 @@ $f()/p() = \cos^3(\theta) / \frac{1}{2\pi}$, and we can test this:
     [Listing [cos-cubed]: <kbd>[cos_cubed.cc]</kbd> Integration using $cos^3(x)$]
 </div>
 
-<div class='together'>
-Now let’s generate directions with $p(\omega) = \cos(\theta) / \pi$.
 
-    $$ r_2 = \int_{0}^{\theta} 2 \pi \frac{\cos(\theta')}{\pi} \sin(\theta') d\theta'  =
-           1 - \cos^2(\theta) $$
+Cosine Sampling a Hemisphere
+------------------------------
+<div class='together'>
+We'll now continue trying to solve for cosine cubed over the horizon, but we'll change our PDF to
+generate directions with $p(\omega) =  f(\theta) = \cos(\theta) / \pi$.
+
+    $$ r_2 = \int_{0}^{\theta} b(\theta') d\theta' $$
+    $$ = \int_{0}^{\theta} 2 \pi f(\theta') \sin(\theta') d\theta' $$
+    $$ = \int_{0}^{\theta} 2 \pi \frac{\cos(\theta')}{\pi} \sin(\theta') d\theta' $$
+    $$ = 1 - \cos^2(\theta) $$
 
 So,
 
@@ -1931,7 +1937,7 @@ We can save a little algebra on specific cases by noting
 </div>
 
 <div class='together'>
-Let’s create a function that generates random vectors weighted by this PDF:
+Here's a function that generates random vectors weighted by this PDF:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline vec3 random_cosine_direction() {
@@ -1984,34 +1990,34 @@ Let’s create a function that generates random vectors weighted by this PDF:
 
 We can generate other densities later as we need them. This `random_cosine_direction()` function
 produces a random direction weighted by $\cos(\theta)$ where $\theta$ is the angle from the $z$
-axis. We need to make this more general if we want to able able to produce reflections off of
-objects whose normals aren't perfectly aligned with the $z$ axis. In the next chapter we’ll
-generalize our work to arbitrary surface normal vectors.
+axis.
 
 
 
 Orthonormal Bases
 ====================================================================================================
 
-In the last chapter we developed methods to generate random directions relative to the $z$ axis.
-We’d like to be able to do that relative to any surface normal vector.
+In the last chapter we developed methods to generate random directions relative to the $z$ axis. If
+we want to be able to produce reflections off of any surface, we are going to need to make this more
+general: Not all normals are going to be perfectly aligned with the $z$ axis. So in this chapter
+we are going to generalize our methods so that they support arbitrary surface normal vectors.
 
 
 Relative Coordinates
 ---------------------
-An orthonormal basis (ONB) is a collection of three mutually orthogonal unit vectors, it is a strict
-subtype of coordinate system. The Cartesian $xyz$ axes are an example of an orthonormal basis. A
-picture is the result of the relative positions and orientations of the objects in a scene projected
-onto the image plane of the camera. The camera and objects must be described in the same coordinate
-system, so that the projection onto the image plane is logically defined, otherwise the camera has
-no definitive means of correctly modelling the objects. Either the camera must be redefined in the
-objects' coordinate system, or the objects must be redefined in the camera's coordinate system. It's
-best to start with both in the same coordinate system, so no redefinition is necessary. So long as
-the camera and scene are described in the same coordinate system, all is well. The orthonormal basis
-defines how distances and orientations are represented in the space, but an orthonormal basis alone
-is not enough. The objects and the camera need to described by their displacement from a mutually
-defined location. This is just the origin $\mathbf{O}$ of the scene, it represents the center of the
-universe for everything to displace from.
+An _orthonormal basis_ (ONB) is a collection of three mutually orthogonal unit vectors. It is a
+strict subtype of coordinate system. The Cartesian $xyz$ axes are one example of an orthonormal
+basis. All of our renders are the result of the relative positions and orientations of the objects
+in a scene projected onto the image plane of the camera. The camera and objects must be described in
+the same coordinate system, so that the projection onto the image plane is logically defined,
+otherwise the camera has no definitive means of correctly rendering the objects. Either the camera
+must be redefined in the objects' coordinate system, or the objects must be redefined in the
+camera's coordinate system. It's best to start with both in the same coordinate system, so no
+redefinition is necessary. So long as the camera and scene are described in the same coordinate
+system, all is well. The orthonormal basis defines how distances and orientations are represented in
+the space, but an orthonormal basis alone is not enough. The objects and the camera need to
+described by their displacement from a mutually defined location. This is just the origin
+$\mathbf{O}$ of the scene; it represents the center of the universe for everything to displace from.
 
 <div class='together'>
 Suppose we have an origin $\mathbf{O}$ and Cartesian unit vectors $\mathbf{x}$, $\mathbf{y}$, and
@@ -2044,19 +2050,20 @@ Some 3D object models will come with one or more cotangent vectors for each vert
 only one cotangent vector, then the process of making an ONB is a nontrivial one. Suppose we have
 any vector $\mathbf{a}$ that is of nonzero length and nonparallel with $\mathbf{n}$. We can get
 vectors $\mathbf{s}$ and $\mathbf{t}$ perpendicular to $\mathbf{n}$ by using the property of the
-cross product that $\mathbf{c} \times \mathbf{d}$ is perpendicular to both $\mathbf{c}$ and $\mathbf{d}$:
+cross product that $\mathbf{n} \times \mathbf{a}$ is perpendicular to both $\mathbf{n}$ and
+$\mathbf{a}$:
 
-    $$ \mathbf{t} = \text{unit_vector}(\mathbf{a} \times \mathbf{n}) $$
+    $$ \mathbf{s} = \text{unit_vector}(\mathbf{n} \times \mathbf{a}) $$
 
-    $$ \mathbf{s} = \mathbf{t} \times \mathbf{n} $$
+    $$ \mathbf{t} = \mathbf{n} \times \mathbf{s} $$
 </div>
 
 <div class='together'>
 This is all well and good, but the catch is that we may not be given an $\mathbf{a}$ when we load a
 model, and our current program doesn't have a way to generate one. If we went ahead and picked an
 arbitrary $\mathbf{a}$ to use as an initial vector we may get an $\mathbf{a}$ that is parallel to
-$\mathbf{n}$. So a common method is to pick an arbitrary axis and check to see if it's parralel to
-$\mathbf{n}$, if it is, just use another axis:
+$\mathbf{n}$. So a common method is to pick an arbitrary axis and check to see if it's parallel to
+$\mathbf{n}$ (which we assume to be of unit length), if it is, just use another axis:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if (fabs(n.x()) > 0.9)
@@ -2070,12 +2077,14 @@ $\mathbf{n}$, if it is, just use another axis:
 We then take the cross product to get $\mathbf{s}$ and $\mathbf{t}$
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    vec3 s = unit_vector(cross(w, a));
-    vec3 t = cross(w, v);
+    vec3 s = unit_vector(cross(n, a));
+    vec3 t = cross(n, s);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Once we have an ONB of $\mathbf{s}$, $\mathbf{t}$, and $\mathbf{n}$, and we have a random $(x,y,z)$
-relative to the $z$ axis, we can get the vector relative to $\mathbf{n}$ with:
+Note that we don't need to take the unit vector for $\mathbf{t}$. Since $\mathbf{n}$ and
+$\mathbf{s}$ are both unit vectors, their cross product $\mathbf{t}$ will be also. Once we have an
+ONB of $\mathbf{s}$, $\mathbf{t}$, and $\mathbf{n}$, and we have a random $(x,y,z)$ relative to the
+$z$ axis, we can get the vector relative to $\mathbf{n}$ with:
 
     $$ \text{Random vector} = x \mathbf{s} + y \mathbf{t} + z \mathbf{n} $$
 </div>
@@ -2199,8 +2208,9 @@ diagram:
 
 <div class='together'>
 If we look at a small area $dA$ on the light, the probability of sampling it is
-$p_{\text{q}}(\text{q}) \cdot dA$. On the sphere, the probability of sampling the small area $d\omega$ on the
-sphere is $p(\omega) \cdot d\omega$. There is a geometric relationship between $d\omega$ and $dA$:
+$p_{\text{q}}(\text{q}) \cdot dA$. On the sphere, the probability of sampling the small area
+$d\omega$ on the sphere is $p(\omega) \cdot d\omega$. There is a geometric relationship between
+$d\omega$ and $dA$:
 
     $$ d\omega = \frac{dA \cdot \cos(\theta)}{distance^2(\text{p},\text{q})} $$
 
