@@ -168,11 +168,11 @@ inline vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat) {
 inline vec3 random_cosine_direction() {
     auto r1 = random_double();
     auto r2 = random_double();
-    auto z = sqrt(1-r2);
 
     auto phi = 2*pi*r1;
     auto x = cos(phi)*sqrt(r2);
     auto y = sin(phi)*sqrt(r2);
+    auto z = sqrt(1-r2);
 
     return vec3(x, y, z);
 }
