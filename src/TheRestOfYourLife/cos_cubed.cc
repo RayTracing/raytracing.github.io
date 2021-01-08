@@ -16,8 +16,8 @@
 #include <math.h>
 
 double f(double r1, double r2) {
-    auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
-    auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
+    // auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
+    // auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
     auto z = 1 - r2;
     double cos_theta = z;
     return cos_theta*cos_theta*cos_theta;
