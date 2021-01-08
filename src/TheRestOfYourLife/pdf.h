@@ -31,7 +31,7 @@ class cosine_pdf : public pdf {
 
     double value(const vec3& direction) const override {
         auto cosine_theta = dot(unit_vector(direction), uvw.w());
-        return (cosine_theta <= 0) ? 0 : cosine_theta/pi;
+        return fmax(0, cosine_theta/pi);
     }
 
     vec3 generate() const override {
@@ -45,7 +45,9 @@ class cosine_pdf : public pdf {
 
 class hittable_pdf : public pdf {
   public:
-    hittable_pdf(const hittable_list& ptr, const point3& o) : hittable_ptr(ptr), origin(o) {}
+    hittable_pdf(const hittable_list& _hittable_ptr, const point3& _origin)
+      : hittable_ptr(_hittable_ptr), origin(_origin)
+    {}
 
     double value(const vec3& direction) const override {
         return hittable_ptr.pdf_value(origin, direction);

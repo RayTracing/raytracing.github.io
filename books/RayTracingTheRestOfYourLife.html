@@ -1883,8 +1883,8 @@ $f()/p() = \cos^3(\theta) / \frac{1}{2\pi}$, and we can test this:
     #include <math.h>
 
     double f(double r1, double r2) {
-        auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
-        auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
+        // auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
+        // auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
         auto z = 1 - r2;
         double cos_theta = z;
         return cos_theta*cos_theta*cos_theta;
@@ -2406,27 +2406,25 @@ The PDF Class
 -------------
 <div class='together'>
 We've worked with PDFs in quite a lot of code already. I think that now is a good time to figure out
-how we want to standardize the usage of PDFs in our codebase. We already know that we are going to
-have a PDF for the surface and a PDF for the light, so let's create a `pdf` parent class that we can
-inherit from. So far, we've had a `pdf()` function that took a direction and returned the PDF's
-distribution value for that direction. This value has so far been one of $1/4\pi$, $1/2\pi$, and
-$\cos(\theta)/\pi$. In a couple of our examples we generated the random direction using a different
-distribution than the distribution of the PDF. We covered this quite a lot in the
-chapter Playing with Importance Sampling. In general, if we know the distribution of our random
-directions, we should use a PDF with the same distribution, this will lead to the fastest
-convergence. With that in mind, we can create a `pdf` class that is responsible both generating
-random directions and determining the value of the PDF. From all of this, any `pdf` class should be
-responsible for,
+how we want to standardize our usage of PDFs. We already know that we are going to have a PDF for
+the surface and a PDF for the light, so let's create a `pdf` base class. So far, we've had a `pdf()`
+function that took a direction and returned the PDF's distribution value for that direction. This
+value has so far been one of $1/4\pi$, $1/2\pi$, and $\cos(\theta)/\pi$. In a couple of our examples
+we generated the random direction using a different distribution than the
+distribution of the PDF. We covered this quite a lot in the chapter Playing with Importance
+Sampling. In general, if we know the distribution of our random directions, we should use a PDF with
+the same distribution. This will lead to the fastest convergence. With that in mind, we'll create a
+`pdf` class that is responsible for generating random directions and determining the value of the
+PDF. From all of this, any `pdf` class should be responsible for,
 
-1. Generate a random direction weighted by the internal PDF distribution
-2. What is the PDF distribution value for that direction?
+1. Return a random direction weighted by the internal PDF distribution, and
+2. Return the corresponding PDF distribution value in that direction
 </div>
 
 <div class='together'>
-The details of how all of this is done under the hood varies for $pSurface$ and $pLight$, but that
-is exactly what class hierarchies were invented for! It’s never obvious what goes in an abstract
-class, so my approach is to be greedy and hope a minimal interface works, and for `pdf` this
-implies:
+The details of how this is done under the hood varies for $pSurface$ and $pLight$, but that is
+exactly what class hierarchies were invented for! It’s never obvious what goes in an abstract class,
+so my approach is to be greedy and hope a minimal interface works, and for `pdf` this implies:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef PDF_H
@@ -2461,7 +2459,7 @@ a cosine density:
 
         double value(const vec3& direction) const override {
             auto cosine_theta = dot(unit_vector(direction), uvw.w());
-            return (cosine_theta <= 0) ? 0 : cosine_theta/pi;
+            return fmax(0, cosine_theta/pi);
         }
 
         vec3 generate() const override {
@@ -2518,8 +2516,8 @@ We can try this cosine PDF in the `ray_color()` function:
 </div>
 
 <div class='together'>
-This yields an exactly matching result so all that we’ve done so far is move some computation up
-into the `cosine_pdf` class:
+This yields an exactly matching result so all we’ve done so far is move some computation up into the
+`cosine_pdf` class:
 
   ![Image 9: Cornell box with a cosine density _pdf_
   ](../images/img-3.06-cornell-cos-pdf.jpg class=pixel)
@@ -2535,7 +2533,9 @@ Now we can try sampling directions toward a `hittable`, like the light.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable_pdf : public pdf {
       public:
-        hittable_pdf(shared_ptr<hittable> ptr, const point3& o) : hittable_ptr(ptr), origin(o) {}
+        hittable_pdf(const hittable_list& _hittable_ptr, const point3& _origin)
+          : hittable_ptr(_hittable_ptr), origin(_origin)
+        {}
 
         double value(const vec3& direction) const override {
             return hittable_ptr->pdf_value(origin, direction);
@@ -2556,7 +2556,7 @@ Now we can try sampling directions toward a `hittable`, like the light.
 <div class='together'>
 If we want to sample the light, we will need `hittable` to answer some queries that it doesn’t yet
 have an interface for. The above code assumes the existence of two as-of-yet unimplemented functions
-in the `hittable` class: `pdf_value()` and `random()`. We'll need to add these functions for the
+in the `hittable` class: `pdf_value()` and `random()`. We need to add these functions for the
 program to compile. We could go through all of the `hittable` subclasses and add these functions,
 but that would be a hassle, so we’ll just add two trivial functions to the `hittable` base class.
 This breaks our previously pure abstract implementation, but it saves work. Feel free to write these
@@ -2637,15 +2637,6 @@ Add a `light_ptr` member variable to `scene`:
         camera        cam;
 
         ...
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [scene-light]: <kbd>[scene.h]</kbd> add a pointer to the light in our scene description]
-
-Rewrite `ray_color()` for our changes:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class scene {
-        ...
       private:
         color ray_color(const ray& r, int depth) {
             ...
@@ -2700,9 +2691,9 @@ At 10 samples per pixel we get:
 The Mixture PDF Class
 ----------------------
 <div class='together'>
-As was briefly mentioned in chapter Playing with Importance Sampling, we can create linear mixtures
-of any PDFs to form mixture densities that are also PDFs. Any weighted average of PDFs is also a
-PDF. As long as the weights are positive and add up to any one, we have a new PDF.
+As was briefly mentioned in the chapter Playing with Importance Sampling, we can create linear
+mixtures of any PDFs to form mixture densities that are also PDFs. Any weighted average of PDFs is
+also a PDF. As long as the weights are positive and add up to any one, we have a new PDF.
 
   $$ pMixture() = w_0 p_0() + w_1 p_1() + w_2 p_2() + \ldots + w_{n-1} p_{n-1}() $$
 
@@ -2736,7 +2727,7 @@ For one, figuring out which PDF the random direction came from is probably not t
 have any plumbing for `generate()` to tell `value()` what the original `random_double()` was, so we
 can't trivially say which PDF the random direction comes from. If we thought that the above was
 correct, we would have to solve backwards to figure which PDF the direction could come from. Which
-honestly sounds like a nightmare, but, fortunately, we don't need to do that. There are some
+honestly sounds like a nightmare, but fortunately we don't need to do that. There are some
 directions that both PDFs could have generated. For example, a direction toward the light could have
 been generated by either $pLight$ _or_ $pSurface$. It is sufficient for us to solve for the pdf
 value of $pSurface$ and of $pLight$ for a random direction and then take the PDF mixture weights to
@@ -2821,34 +2812,37 @@ Some Architectural Decisions
 ====================================================================================================
 
 We won't write any code in this chapter. We’re at a crossroads and we need to make some
-architectural decisions. The mixture-density approach is an alternative to having more traditional
-shadow rays, which are rays that check to see if an intersection is lit by the lights in the scene.
-The mixture-density approach is something that I personally prefer, because in addition to lights
-you can sample windows or bright cracks under doors or whatever else you think might be bright --
-or important. But you'll see shadow rays in most professional path tracers. Typically they'll have
-a predefined number of shadow rays (_e.g_ 1, 4, 8, 16) where over the course of rendering, at each
-place where the path tracing ray intersects, they'll send these terminal shadow rays to random
-lights in the scene to determine if the intersection is lit by that random light. The intersection
-will either be lit by that light, or completely in shadow, where more shadow rays lead to a more
-accurate illumination. After all of the shadow rays terminate (either at a light or at an occluding
-surface), the inital path tracing ray continues on and more shadow rays are sent at the next
-intersection. You can't tell the shadow rays what is important, you can only tell them what is
-emissive, so shadow rays work best on simpler scenes that don't have overly complicated photon
-distribution. That said, shadow rays terminate at the first thing they run into and don't bounce
-around, so one shadow ray is cheaper than one path tracing ray, which is the reason that you'll
-typically see a lot more shadow rays than path tracing rays (_e.g_ 1, 4, 8, 16). You could choose
-shadow rays over mixture-density in a more restricted scene; that’s a personal design preference.
-Shadow rays tend to be cheaper for a crude result than mixture-density and is becoming increasingly
-common in realtime.
+architectural decisions.
+
+The mixture-density approach is an alternative to having more traditional shadow rays. These are
+rays that check for an unobstructed path from an intersection point to a given light source. Rays
+that intersect an object between a point and a given light source indicate that the intersection
+point is in the shadow of that particular light source. The mixture-density approach is something
+that I personally prefer, because in addition to lights, you can sample windows or bright cracks
+under doors or whatever else you think might be bright -- or important. But you'll still see shadow
+rays in most professional path tracers. Typically they'll have a predefined number of shadow rays
+(_e.g_ 1, 4, 8, 16) where over the course of rendering, at each place where the path tracing ray
+intersects, they'll send these terminal shadow rays to random lights in the scene to determine if
+the intersection is lit by that random light. The intersection will either be lit by that light, or
+completely in shadow, where more shadow rays lead to a more accurate illumination. After all of the
+shadow rays terminate (either at a light or at an occluding surface), the inital path tracing ray
+continues on and more shadow rays are sent at the next intersection. You can't tell the shadow rays
+what is important, you can only tell them what is emissive, so shadow rays work best on simpler
+scenes that don't have overly complicated photon distribution. That said, shadow rays terminate at
+the first thing they run into and don't bounce around, so one shadow ray is cheaper than one path
+tracing ray, which is the reason that you'll typically see a lot more shadow rays than path tracing
+rays (_e.g_ 1, 4, 8, 16). You could choose shadow rays over mixture-density in a more restricted
+scene; that’s a personal design preference. Shadow rays tend to be cheaper for a crude result than
+mixture-density and is becoming increasingly common in realtime.
 
 There are some other issues with the code.
 
 The PDF construction is hard coded in the `ray_color()` function. We should clean that up.
 
-We've accidentally broken the specular rays (glass and metal) and they are no longer supported.
-The math would continue to work out if we just made their scattering function a delta function. But
-that would lead to all kinds of floating point disasters. We could either make specular reflections
-a special case that skips $f()/p()$, or we could set surface roughness to a really small -- but
+We've accidentally broken the specular rays (glass and metal), and they are no longer supported.
+The math would continue to work out if we just made their scattering function a delta function, but
+that would lead to all kinds of floating point disasters. We could either make specular reflection
+a special case that skips $f()/p()$, or we could set surface roughness to a very small -- but
 nonzero -- value and have almost-mirrors that look perfectly smooth but that don’t generate NaNs. I
 don’t have an opinion on which way to do it (I have tried both and they both have their advantages),
 but we have smooth metal and glass code anyway, so we'll add perfect specular surfaces that just
@@ -2859,8 +2853,8 @@ a more interesting functional background. Some environment maps are HDR (the RGB
 normalized floats rather than 0–255 bytes). Our output has been HDR all along; we’ve just been
 truncating it.
 
-Finally, our renderer is RGB and a more physically based one -- like an automobile manufacturer
-might use -- would probably need to use spectral colors and maybe even polarization. For a movie
+Finally, our renderer is RGB. A more physically based one -- like an automobile manufacturer might
+use -- would probably need to use spectral colors and maybe even polarization. For a movie
 renderer, most studios still get away with RGB. You can make a hybrid renderer that has both modes,
 but that is of course harder. I’m going to stick to RGB for now, but I will touch on this at the end
 of the book.
@@ -2889,21 +2883,21 @@ One thing we would like to allow for is a material -- like varnished wood -- tha
 specular (the polish) and partially diffuse (the wood). Some renderers have the material generate
 two rays: one specular and one diffuse. I am not fond of branching, so I would rather have the
 material randomly decide whether it is diffuse or specular. The catch with that approach is that we
-need to be careful when we ask for the PDF value and `ray_color()` needs to be aware of whether this
-ray is diffuse or specular. Fortunately, we have decided that we should only call the `pdf_value()`
-if it is diffuse, so we can handle that implicitly.
+need to be careful when we ask for the PDF value, and `ray_color()` needs to be aware of whether
+this ray is diffuse or specular. Fortunately, we have decided that we should only call the
+`pdf_value()` if it is diffuse, so we can handle that implicitly.
 
 <div class='together'>
 We can redesign `material` and stuff all the new arguments into a class like we did for `hittable`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     class scatter_record {
-        public:
-          color attenuation;
-          shared_ptr<pdf> pdf_ptr;
-          bool skip_pdf;
-          ray skip_pdf_ray;
-      };
+      public:
+        color attenuation;
+        shared_ptr<pdf> pdf_ptr;
+        bool skip_pdf;
+        ray skip_pdf_ray;
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     class material {
@@ -3146,15 +3140,16 @@ Sampling a Sphere Object
 <div class='together'>
 The noisiness on the ceiling could be reduced by making a PDF of the metal block. We would also want
 a PDF for the block if we made it glass. But making a PDF for a block is quite a bit of work and
-isn't terribly interesting, so, let’s create a PDF for a glass sphere instead. It's quicker and
-makes for a more interesting render. We need to figure out how to sample a sphere to determine an
+isn't terribly interesting, so let’s create a PDF for a glass sphere instead. It's quicker and makes
+for a more interesting render. We need to figure out how to sample a sphere to determine an
 appropriate PDF distribution. If we want to sample a sphere from a point outside of the sphere, we
 can't just pick a random point on its surface and be done. If we did that, we would frequently pick
 a point on the far side of the sphere, which would be occluded by the front side of the sphere. We
 need a way to uniformly sample the side of the sphere that is visible from an arbitrary point. When
 we sample a sphere’s solid angle uniformly from a point outside the sphere, we are really just
-sampling a cone uniformly (the cone is tangent to the sphere). Let’s say the code has `theta_max`.
-Recall from the Generating Random Directions chapter that to sample $\theta$ we have:
+sampling a cone uniformly. The cone axis goes from the ray origin through the sphere center, with
+the sides of the cone tangent to the sphere -- see illustration below. Let’s say the code has
+`theta_max`. Recall from the Generating Random Directions chapter that to sample $\theta$ we have:
 
   $$ r_2 = \int_{0}^{\theta} 2 \pi f(\theta') \sin(\theta') d\theta' $$
 
