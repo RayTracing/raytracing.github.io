@@ -3007,6 +3007,8 @@ and dielectric materials are easy to fix.
     class metal : public material {
       public:
         metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
             srec.attenuation = albedo;
@@ -3017,8 +3019,8 @@ and dielectric materials are easy to fix.
                 ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
             return true;
         }
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
       public:
         color albedo;
         double fuzz;
@@ -3028,9 +3030,11 @@ and dielectric materials are easy to fix.
 
     class dielectric : public material {
       public:
-        ...
-        bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
+        dielectric(double index_of_refraction) : ir(index_of_refraction) {}
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
             srec.attenuation = color(1.0, 1.0, 1.0);
             srec.pdf_ptr = nullptr;
             srec.skip_pdf = true;
@@ -3055,6 +3059,7 @@ and dielectric materials are easy to fix.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             return true;
         }
+
       ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
