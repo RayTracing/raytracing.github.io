@@ -1040,11 +1040,32 @@ function.
 
 Texture Mapping
 ====================================================================================================
-A texture in graphics usually means a function that makes the colors on a surface procedural. This
-procedure can be synthesis code, or it could be an image lookup, or a combination of both. We will
-first make all colors a texture. Most programs keep constant rgb colors and textures in different
-classes, so feel free to do something different, but I am a big believer in this architecture
-because being able to make any color a texture is great.
+_Texture mapping_ in computer graphics is the process of applying a material effect to an object in
+the scene. The "texture" part is the effect, and the "mapping" part is in the mathematical sense of
+mapping one space onto another. This effect could be any material property: color, shininess, bump
+geometry (called _Bump Mapping_), or even material existence (to create cut-out regions of the
+surface).
+
+The most common type of texture mapping maps an image onto the surface of an object, defining the
+color at each point on the object’s surface. In practice, we implement the process in reverse: given
+some point on the object, we’ll look up the color defined by the texture map.
+
+To begin with, we'll make the texture colors procedural, and will create a texture map of constant
+color. Most programs keep constant RGB colors and textures in different classes, so feel free to do
+something different, but I am a big believer in this architecture because it's great being able to
+make any color a texture.
+
+In order to perform the texture lookup, we need a _texture coordinate_. This coordinate can be
+defined in many ways, and we'll develop this idea as we progress. For now, we'll pass in two
+dimensional texture coordinates. By convention, such coordinates are $u$ and $v$. For a constant
+texture, every $u,v$ pair yields a constant color, so we can actually ignore the coordinates
+completely. However, other texture types will need these coordinates, so we keep these in the method
+interface.
+
+The primary method of ouor texture classes is the `color value(...)` method, which returns the
+texture color given the input coordinates. In addition to taking the point's texture coordinates $u$
+and $v$, we also provide the position of the point in question, for reasons that will become
+apparent later.
 
 
 Constant Color Texture
@@ -1068,7 +1089,7 @@ Constant Color Texture
 
         solid_color(double red, double green, double blue) : solid_color(color(red,green,blue)) {}
 
-        color value(double u, double v, const vec3& p) const override {
+        color value(double u, double v, const point3& p) const override {
             return color_value;
         }
 
@@ -1080,7 +1101,7 @@ Constant Color Texture
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [texture]: <kbd>[texture.h]</kbd> A texture class]
 
-We'll need to update the `hit_record` structure to store the U,V surface coordinates of the
+We'll need to update the `hit_record` structure to store the $u,v$ surface coordinates of the
 ray-object hit point.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1097,47 +1118,64 @@ ray-object hit point.
         bool front_face;
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [hit-record-uv]: <kbd>[hittable.h]</kbd> Adding U,V coordinates to the `hit_record`]
+    [Listing [hit-record-uv]: <kbd>[hittable.h]</kbd> Adding $u,v$ coordinates to the `hit_record`]
 
-We will also need to compute $(u,v)$ texture coordinates for hittables.
+We will also need to compute $(u,v)$ texture coordinates for a given point on each type of
+`hittable`.
 
 
 Solid Textures: A Checker Texture
 ----------------------------------
-<div class='together'>
-We can create a checker texture by noting that the sign of sine and cosine just alternates in a
-regular way, and if we multiply trig functions in all three dimensions, the sign of that product
-forms a 3D checker pattern.
+The next simplest texture map type is the solid texture, which depends only on the position of each
+point in 3D space. You can think of a solid texture (of color) as coloring space itself, visible on
+the object surface. For this reason, the object can move through the colors of the texture as it
+changes position, though usually you would want to fix the relationship between the object and the
+solid texture.
+
+To accomplish the checkered pattern, we'll first compute the floor of each component of the input
+point. We could truncate the coordinates, but that would pull values toward zero, which would give
+us the same color on both sides of zero. The floor function will always shift values to the integer
+value on the left (toward negative infinity). Given these three integer results, we take their sum
+and compute the result modulo two, which gives us either 0 or 1. Zero maps to the even color, and
+one to the odd color.
+
+Finally, we add a scaling factor to the texture, to allow us to control the size of the checker
+pattern in the scene.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class checker_texture : public texture {
       public:
         checker_texture() {}
 
-        checker_texture(shared_ptr<texture> texture_even, shared_ptr<texture> texture_odd)
-          : even(texture_even), odd(texture_odd) {}
+        checker_texture(double _scale, shared_ptr<texture> _even, shared_ptr<texture> _odd)
+          : inv_scale(1.0 / _scale), even(_even), odd(_odd) {}
 
-        checker_texture(color c1, color c2)
-          : even(make_shared<solid_color>(c1)) , odd(make_shared<solid_color>(c2)) {}
+        checker_texture(double _scale, color c1, color c2)
+          : inv_scale(1.0 / _scale),
+            even(make_shared<solid_color>(c1)),
+            odd(make_shared<solid_color>(c2))
+        {}
 
         color value(double u, double v, const point3& p) const override {
-            auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
-            if (sines < 0)
-                return odd->value(u, v, p);
-            else
-                return even->value(u, v, p);
+            auto xInteger = static_cast<int>(std::floor(inv_scale * p.x()));
+            auto yInteger = static_cast<int>(std::floor(inv_scale * p.y()));
+            auto zInteger = static_cast<int>(std::floor(inv_scale * p.z()));
+
+            bool isOdd = (xInteger + yInteger + zInteger) % 2 == 0;
+
+            return isOdd ? odd->value(u, v, p) : even->value(u, v, p);
         }
 
       public:
+        double inv_scale;
         shared_ptr<texture> odd;
         shared_ptr<texture> even;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [checker-texture]: <kbd>[texture.h]</kbd> Checkered texture]
-</div>
 
-Those checker odd/even pointers can be to a constant texture or to some other procedural texture.
-This is in the spirit of shader networks introduced by Pat Hanrahan back in the 1980s.
+Those checker odd/even parameters can point to a constant texture or to some other procedural
+texture. This is in the spirit of shader networks introduced by Pat Hanrahan back in the 1980s.
 
 <div class='together'>
 If we add this to our `random_scene()` function’s base sphere:
@@ -1149,7 +1187,7 @@ If we add this to our `random_scene()` function’s base sphere:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
+        auto checker = make_shared<checker_texture>(0.32, color(.2, .3, .1), color(.9, .9, .9));
         world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -1190,7 +1228,7 @@ Here's the scene construction function:
 
         hittable_list& world = scene_desc.world;
 
-        auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
+        auto checker = make_shared<checker_texture>(0.8, color(.2, .3, .1), color(.9, .9, .9));
 
         world.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker)));
         world.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker)));
@@ -1222,13 +1260,22 @@ We get this result:
 
 </div>
 
-
-Image Textures
----------------
+You may think the result looks a bit odd. Since `checker_texture` is a spatial texture, we're really
+looking at the surface of the sphere cutting through the three-dimensional checker space. There are
+many situations where this is perfect, or at least sufficient. In many other situations, we really
+want to get a consistent effect on the surface of our objects. That approach is covered next.
 
 
 Texture Coordinates for Spheres
 --------------------------------
+Constant-color textures use no coordinates. Solid (or spatial) textures use the coordinates of a
+point in space. Now it's time to make use of the $u,v$ texture coordinates. These coordinates
+specify the location on 2D source image (or in some 2D parameterized space). To get this, we need a
+way to find the $u,v$ coordinates of any point on the surface of a 3D object. This mapping is
+completely arbitrary, but generally you'd like to have cover the entire surface, and scale, orient
+and stretch the 2D image in a way that makes some sense. We'll start with deriving a scheme to get
+$u,v$ coordinates on a sphere.
+
 <div class='together'>
 For spheres, texture coordinates are usually based on some form of longitude and latitude, _i.e._,
 spherical coordinates. So we compute $(\theta,\phi)$ in spherical coordinates, where $\theta$ is the
@@ -1518,7 +1565,7 @@ The `image_texture` class uses the `rtw_image` class:
         image_texture() {}
         image_texture(const char* filename) : image(filename) {}
 
-        color value(double u, double v, const vec3& p) const override {
+        color value(double u, double v, const point3& p) const override {
             // If we have no texture data, then return solid cyan as a debugging aid.
             if (image.height() <= 0) return color(0,1,1);
 
