@@ -20,8 +20,10 @@
 class sphere : public hittable {
   public:
     sphere() {}
-    sphere(point3 ctr, double r, shared_ptr<material> m)
-      : center(ctr), radius(r), mat_ptr(m) {};
+    sphere(point3 ctr, double r, shared_ptr<material> m) : center(ctr), radius(r), mat_ptr(m) {
+        const auto rvec = vec3(radius, radius, radius);
+        bbox = aabb(center - rvec, center + rvec);
+    };
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         vec3 oc = r.origin() - center;
@@ -51,10 +53,8 @@ class sphere : public hittable {
         return true;
     }
 
-    bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
-        output_box = aabb(
-            center - vec3(radius, radius, radius),
-            center + vec3(radius, radius, radius));
+    bool bounding_box(aabb& output_box) const override {
+        output_box = bbox;
         return true;
     }
 
@@ -81,6 +81,7 @@ class sphere : public hittable {
     point3 center;
     double radius;
     shared_ptr<material> mat_ptr;
+    aabb bbox;
 
   private:
     static void get_sphere_uv(const point3& p, double& u, double& v) {

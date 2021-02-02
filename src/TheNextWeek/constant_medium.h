@@ -75,8 +75,8 @@ class constant_medium : public hittable {
         return true;
     }
 
-    bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
-        return boundary->bounding_box(time_start, time_end, output_box);
+    bool bounding_box(aabb& output_box) const override {
+        return boundary->bounding_box(output_box);
     }
 
   public:

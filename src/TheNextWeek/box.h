@@ -39,7 +39,7 @@ class box : public hittable {
         return sides.hit(r, ray_t, rec);
     }
 
-    bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+    bool bounding_box(aabb& output_box) const override {
         output_box = aabb(box_min, box_max);
         return true;
     }
