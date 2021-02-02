@@ -1057,12 +1057,12 @@ make any color a texture.
 
 In order to perform the texture lookup, we need a _texture coordinate_. This coordinate can be
 defined in many ways, and we'll develop this idea as we progress. For now, we'll pass in two
-dimensional texture coordinates. By convention, such coordinates are $u$ and $v$. For a constant
-texture, every $u,v$ pair yields a constant color, so we can actually ignore the coordinates
-completely. However, other texture types will need these coordinates, so we keep these in the method
-interface.
+dimensional texture coordinates. By convention, texture coordinates are named $u$ and $v$. For a
+constant texture, every $(u,v)$ pair yields a constant color, so we can actually ignore the
+coordinates completely. However, other texture types will need these coordinates, so we keep these
+in the method interface.
 
-The primary method of ouor texture classes is the `color value(...)` method, which returns the
+The primary method of our texture classes is the `color value(...)` method, which returns the
 texture color given the input coordinates. In addition to taking the point's texture coordinates $u$
 and $v$, we also provide the position of the point in question, for reasons that will become
 apparent later.
@@ -1126,18 +1126,24 @@ We will also need to compute $(u,v)$ texture coordinates for a given point on ea
 
 Solid Textures: A Checker Texture
 ----------------------------------
-The next simplest texture map type is the solid texture, which depends only on the position of each
-point in 3D space. You can think of a solid texture (of color) as coloring space itself, visible on
-the object surface. For this reason, the object can move through the colors of the texture as it
-changes position, though usually you would want to fix the relationship between the object and the
+A solid (or spatial) texture depends only on the position of each point in 3D space. You can think
+of a solid texture as if it's coloring all of the points in space itself, instead of coloring a
+given object in that space. For this reason, the object can move through the colors of the texture
+as it changes position, though usually you would to fix the relationship between the object and the
 solid texture.
+
+To explore spatial textures, we'll implement a spatial `checker_texture` class, which implements a
+three-dimensional checker pattern. Since a spatial texture function is driven by a given position in
+space, the texture `value()` function ignores the `u` and `v` parameters, and uses only the `p`
+parameter.
 
 To accomplish the checkered pattern, we'll first compute the floor of each component of the input
 point. We could truncate the coordinates, but that would pull values toward zero, which would give
 us the same color on both sides of zero. The floor function will always shift values to the integer
-value on the left (toward negative infinity). Given these three integer results, we take their sum
-and compute the result modulo two, which gives us either 0 or 1. Zero maps to the even color, and
-one to the odd color.
+value on the left (toward negative infinity). Given these three integer results
+($\lfloor x \rfloor, \lfloor y \rfloor, \lfloor z \rfloor$) we take their sum and compute the
+result modulo two, which gives us either 0 or 1. Zero maps to the even color, and one to the odd
+color.
 
 Finally, we add a scaling factor to the texture, to allow us to control the size of the checker
 pattern in the scene.
@@ -1161,9 +1167,9 @@ pattern in the scene.
             auto yInteger = static_cast<int>(std::floor(inv_scale * p.y()));
             auto zInteger = static_cast<int>(std::floor(inv_scale * p.z()));
 
-            bool isOdd = (xInteger + yInteger + zInteger) % 2 == 0;
+            bool isEven = (xInteger + yInteger + zInteger) % 2 == 0;
 
-            return isOdd ? odd->value(u, v, p) : even->value(u, v, p);
+            return isEven ? even->value(u, v, p) : odd->value(u, v, p);
         }
 
       public:
@@ -1272,9 +1278,9 @@ Constant-color textures use no coordinates. Solid (or spatial) textures use the 
 point in space. Now it's time to make use of the $u,v$ texture coordinates. These coordinates
 specify the location on 2D source image (or in some 2D parameterized space). To get this, we need a
 way to find the $u,v$ coordinates of any point on the surface of a 3D object. This mapping is
-completely arbitrary, but generally you'd like to have cover the entire surface, and scale, orient
-and stretch the 2D image in a way that makes some sense. We'll start with deriving a scheme to get
-$u,v$ coordinates on a sphere.
+completely arbitrary, but generally you'd like to cover the entire surface, and be able to scale,
+orient and stretch the 2D image in a way that makes some sense. We'll start with deriving a scheme
+to get the $u,v$ coordinates of a sphere.
 
 <div class='together'>
 For spheres, texture coordinates are usually based on some form of longitude and latitude, _i.e._,

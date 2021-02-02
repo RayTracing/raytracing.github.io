@@ -58,9 +58,9 @@ class checker_texture : public texture {
         auto yInteger = static_cast<int>(std::floor(inv_scale * p.y()));
         auto zInteger = static_cast<int>(std::floor(inv_scale * p.z()));
 
-        bool isOdd = (xInteger + yInteger + zInteger) % 2 == 0;
+        bool isEven = (xInteger + yInteger + zInteger) % 2 == 0;
 
-        return isOdd ? odd->value(u, v, p) : even->value(u, v, p);
+        return isEven ? even->value(u, v, p) : odd->value(u, v, p);
     }
 
   public:
