@@ -191,7 +191,7 @@ those times need not match up with the camera aperture open and close.
             point3 ctr0, point3 ctr1, double r, shared_ptr<material> m,
             double time_start, double time_end)
             :
-            center0(ctr0), center1(ctr1), radius(r), mat_ptr(m),
+            center0(ctr0), center1(ctr1), radius(r), mat(m),
             time0(time_start), time1(time_end)
         {};
 
@@ -207,7 +207,7 @@ those times need not match up with the camera aperture open and close.
         point3 center0, center1;
         double time0, time1;
         double radius;
-        shared_ptr<material> mat_ptr;
+        shared_ptr<material> mat;
     };
 
     #endif
@@ -252,7 +252,7 @@ just needs to become a function `center(time)`:
             auto outward_normal = (rec.p - center(r.time())) / radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             rec.set_face_normal(r, outward_normal);
-            rec.mat_ptr = mat_ptr;
+            rec.mat = mat;
 
             return true;
         }
@@ -1109,7 +1109,7 @@ ray-object hit point.
       public:
         vec3 p;
         vec3 normal;
-        shared_ptr<material> mat_ptr;
+        shared_ptr<material> mat;
         double t;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double u;
@@ -1379,7 +1379,7 @@ Update the `sphere::hit()` function to use this function to update the hit recor
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             get_sphere_uv(outward_normal, rec.u, rec.v);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            rec.mat_ptr = mat_ptr;
+            rec.mat = mat;
 
             return true;
         }
@@ -2330,9 +2330,9 @@ the new `emitted` value.
 
             ray scattered;
             color attenuation;
-            color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+            color emitted = rec.mat->emitted(rec.u, rec.v, rec.p);
 
-            if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+            if (!rec.mat->scatter(r, rec, attenuation, scattered))
                 return emitted;
 
             return emitted + attenuation * ray_color(scattered, depth-1);
@@ -2421,9 +2421,8 @@ The actual `xy_rect` class is thus:
       public:
         xy_rect() {}
 
-        xy_rect(double _x0, double _x1, double _y0, double _y1, double _k,
-            shared_ptr<material> mat)
-            : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
+        xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, shared_ptr<material> _m)
+            : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mat(_m) {};
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             auto t = (k-r.origin().z()) / r.direction().z();
@@ -2438,7 +2437,7 @@ The actual `xy_rect` class is thus:
             rec.t = t;
             auto outward_normal = vec3(0, 0, 1);
             rec.set_face_normal(r, outward_normal);
-            rec.mat_ptr = mp;
+            rec.mat = mat;
             rec.p = r.at(t);
             return true;
         }
@@ -2451,7 +2450,7 @@ The actual `xy_rect` class is thus:
         }
 
       public:
-        shared_ptr<material> mp;
+        shared_ptr<material> mat;
         double x0, x1, y0, y1, k;
     };
 
@@ -2545,8 +2544,8 @@ This is xz and yz:
       public:
         xz_rect() {}
 
-        xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<material> mat)
-          : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+        xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<material> _m)
+          : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mat(_m) {};
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             auto t = (k-r.origin().y()) / r.direction().y();
@@ -2561,7 +2560,7 @@ This is xz and yz:
             rec.t = t;
             auto outward_normal = vec3(0, 1, 0);
             rec.set_face_normal(r, outward_normal);
-            rec.mat_ptr = mp;
+            rec.mat = mat;
             rec.p = r.at(t);
             return true;
         }
@@ -2574,7 +2573,7 @@ This is xz and yz:
         }
 
       public:
-        shared_ptr<material> mp;
+        shared_ptr<material> mat;
         double x0, x1, z0, z1, k;
     };
 
@@ -2582,8 +2581,8 @@ This is xz and yz:
       public:
         yz_rect() {}
 
-        yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<material> mat)
-          : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+        yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<material> _m)
+          : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mat(_m) {};
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             auto t = (k-r.origin().x()) / r.direction().x();
@@ -2598,7 +2597,7 @@ This is xz and yz:
             rec.t = t;
             auto outward_normal = vec3(1, 0, 0);
             rec.set_face_normal(r, outward_normal);
-            rec.mat_ptr = mp;
+            rec.mat = mat;
             rec.p = r.at(t);
             return true;
         }
@@ -2611,7 +2610,7 @@ This is xz and yz:
         }
 
       public:
-        shared_ptr<material> mp;
+        shared_ptr<material> mat;
         double y0, y1, z0, z1, k;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3095,7 +3094,7 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
 
             rec.normal = vec3(1,0,0);  // arbitrary
             rec.front_face = true;     // also arbitrary
-            rec.mat_ptr = phase_function;
+            rec.mat = phase_function;
 
             return true;
         }

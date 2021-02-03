@@ -22,7 +22,7 @@ class moving_sphere : public hittable {
     moving_sphere(
         point3 ctr0, point3 ctr1, double r, shared_ptr<material> m,
         double time_start, double time_end)
-      : center0(ctr0), center1(ctr1), radius(r), mat_ptr(m), time0(time_start), time1(time_end)
+      : center0(ctr0), center1(ctr1), radius(r), mat(m), time0(time_start), time1(time_end)
     {};
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
@@ -47,7 +47,7 @@ class moving_sphere : public hittable {
         rec.p = r.at(rec.t);
         vec3 outward_normal = (rec.p - center(r.time())) / radius;
         rec.set_face_normal(r, outward_normal);
-        rec.mat_ptr = mat_ptr;
+        rec.mat = mat;
 
         return true;
     }
@@ -71,7 +71,7 @@ class moving_sphere : public hittable {
     point3 center0, center1;
     double time0, time1;
     double radius;
-    shared_ptr<material> mat_ptr;
+    shared_ptr<material> mat;
 };
 
 

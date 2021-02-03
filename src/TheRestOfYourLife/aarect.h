@@ -20,8 +20,8 @@ class xy_rect : public hittable {
   public:
     xy_rect() {}
 
-    xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, shared_ptr<material> mat)
-      : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
+    xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, shared_ptr<material> _m)
+      : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mat(_m) {};
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         auto t = (k-r.origin().z()) / r.direction().z();
@@ -38,7 +38,7 @@ class xy_rect : public hittable {
         rec.t = t;
         auto outward_normal = vec3(0, 0, 1);
         rec.set_face_normal(r, outward_normal);
-        rec.mat_ptr = mp;
+        rec.mat = mat;
         rec.p = r.at(t);
 
         return true;
@@ -52,7 +52,7 @@ class xy_rect : public hittable {
     }
 
   public:
-    shared_ptr<material> mp;
+    shared_ptr<material> mat;
     double x0, x1, y0, y1, k;
 };
 
@@ -61,8 +61,8 @@ class xz_rect : public hittable {
   public:
     xz_rect() {}
 
-    xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<material> mat)
-      : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+    xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<material> _m)
+      : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mat(_m) {};
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         auto t = (k-r.origin().y()) / r.direction().y();
@@ -79,7 +79,7 @@ class xz_rect : public hittable {
         rec.t = t;
         auto outward_normal = vec3(0, 1, 0);
         rec.set_face_normal(r, outward_normal);
-        rec.mat_ptr = mp;
+        rec.mat = mat;
         rec.p = r.at(t);
 
         return true;
@@ -110,7 +110,7 @@ class xz_rect : public hittable {
     }
 
   public:
-    shared_ptr<material> mp;
+    shared_ptr<material> mat;
     double x0, x1, z0, z1, k;
 };
 
@@ -119,8 +119,8 @@ class yz_rect : public hittable {
   public:
     yz_rect() {}
 
-    yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<material> mat)
-      : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+    yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<material> _m)
+      : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mat(_m) {};
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         auto t = (k-r.origin().x()) / r.direction().x();
@@ -137,7 +137,7 @@ class yz_rect : public hittable {
         rec.t = t;
         auto outward_normal = vec3(1, 0, 0);
         rec.set_face_normal(r, outward_normal);
-        rec.mat_ptr = mp;
+        rec.mat = mat;
         rec.p = r.at(t);
 
         return true;
@@ -151,7 +151,7 @@ class yz_rect : public hittable {
     }
 
   public:
-    shared_ptr<material> mp;
+    shared_ptr<material> mat;
     double y0, y1, z0, z1, k;
 };
 

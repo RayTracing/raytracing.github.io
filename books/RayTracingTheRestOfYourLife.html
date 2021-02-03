@@ -1600,13 +1600,13 @@ And the `ray_color` function gets a minor modification:
             color albedo;
             ray scattered;
             double pdf;
-            color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+            color emitted = rec.mat->emitted(rec.u, rec.v, rec.p);
 
-            if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf))
+            if (!rec.mat->scatter(r, rec, albedo, scattered, pdf))
                 return emitted;
 
             return emitted
-                 + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                 + albedo * rec.mat->scattering_pdf(r, rec, scattered)
                           * ray_color(scattered, depth-1) / pdf;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
@@ -2253,11 +2253,11 @@ check that we got the math and concept right:
 
             ray scattered;
             color attenuation;
-            color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+            color emitted = rec.mat->emitted(rec.u, rec.v, rec.p);
             double pdf;
             color albedo;
 
-            if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf))
+            if (!rec.mat->scatter(r, rec, albedo, scattered, pdf))
                 return emitted;
 
 
@@ -2280,7 +2280,7 @@ check that we got the math and concept right:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return emitted
-                 + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                 + albedo * rec.mat->scattering_pdf(r, rec, scattered)
                           * ray_color(scattered, depth-1) / pdf;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2492,11 +2492,11 @@ We can try this cosine PDF in the `ray_color()` function:
 
             ray scattered;
             color attenuation;
-            color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+            color emitted = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
             double pdf_val;
             color albedo;
 
-            if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
+            if (!rec.mat->scatter(r, rec, albedo, scattered, pdf_val))
                 return emitted;
 
 
@@ -2507,7 +2507,7 @@ We can try this cosine PDF in the `ray_color()` function:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return emitted
-                 + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                 + albedo * rec.mat->scattering_pdf(r, rec, scattered)
                           * ray_color(scattered, depth-1) / pdf_val;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2642,11 +2642,11 @@ Add a `light_ptr` member variable to `scene`:
 
             ray scattered;
             color attenuation;
-            color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+            color emitted = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
             double pdf_val;
             color albedo;
 
-            if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
+            if (!rec.mat->scatter(r, rec, albedo, scattered, pdf_val))
                 return emitted;
 
 
@@ -2657,7 +2657,7 @@ Add a `light_ptr` member variable to `scene`:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return emitted
-                 + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                 + albedo * rec.mat->scattering_pdf(r, rec, scattered)
                           * ray_color(scattered, depth-1) / pdf_val;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2773,11 +2773,11 @@ plug it into `ray_color()`:
 
             ray scattered;
             color attenuation;
-            color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+            color emitted = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
             double pdf_val;
             color albedo;
 
-            if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
+            if (!rec.mat->scatter(r, rec, albedo, scattered, pdf_val))
                 return emitted;
 
 
@@ -2791,7 +2791,7 @@ plug it into `ray_color()`:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return emitted
-                 + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                 + albedo * rec.mat->scattering_pdf(r, rec, scattered)
                           * ray_color(scattered, depth-1) / pdf_val;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2974,8 +2974,8 @@ And `ray_color()` changes are small:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             scatter_record srec;
-            color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
-            if (!rec.mat_ptr->scatter(r, rec, srec))
+            color emitted = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
+            if (!rec.mat->scatter(r, rec, srec))
                 return emitted;
 
             auto light_ptr = make_shared<hittable_pdf>(lights, rec.p);
@@ -2985,7 +2985,7 @@ And `ray_color()` changes are small:
             auto pdf_val = p.value(scattered.direction());
 
             return emitted
-                + srec.attenuation * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                + srec.attenuation * rec.mat->scattering_pdf(r, rec, scattered)
                                    * ray_color(scattered, depth-1) / pdf_val;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
@@ -3078,8 +3078,8 @@ materials that we're treating specularly.
         color ray_color(const ray& r, int depth) {
             ...
             scatter_record srec;
-            color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
-            if (!rec.mat_ptr->scatter(r, rec, srec))
+            color emitted = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
+            if (!rec.mat->scatter(r, rec, srec))
                 return emitted;
 
 
