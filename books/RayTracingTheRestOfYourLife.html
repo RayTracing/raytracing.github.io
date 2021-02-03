@@ -2346,13 +2346,13 @@ We also need to flip the light so its normals point in the $-y$ direction:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class flip_face : public hittable {
       public:
-        flip_face(shared_ptr<hittable> p) : ptr(p) {}
+        flip_face(shared_ptr<hittable> p) : object(p) {}
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-            if (!ptr->hit(r, ray_t, rec))
+            if (!object->hit(r, ray_t, rec))
                 return false;
 
-            if (!ptr->hit(r, ray_tmin, ray_tmax, rec))
+            if (!object->hit(r, ray_tmin, ray_tmax, rec))
                 return false;
 
             rec.front_face = !rec.front_face;
@@ -2360,11 +2360,11 @@ We also need to flip the light so its normals point in the $-y$ direction:
         }
 
         bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
-            return ptr->bounding_box(time_start, time_end, output_box);
+            return object->bounding_box(time_start, time_end, output_box);
         }
 
       public:
-        shared_ptr<hittable> ptr;
+        shared_ptr<hittable> object;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [flip-face]: <kbd>[hittable.h]</kbd> We use a hittable object to flip the light]
