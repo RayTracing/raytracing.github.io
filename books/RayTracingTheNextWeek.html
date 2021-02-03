@@ -106,64 +106,22 @@ a time period.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
-        camera(
-        void initialize(double aspect_ratio = 1.0) {
-            auto theta = degrees_to_radians(vfov);
-            auto h = tan(theta/2);
-            auto viewport_height = 2.0 * h;
-            auto viewport_width = aspect_ratio * viewport_height;
-
-            w = unit_vector(lookfrom - lookat);
-            u = unit_vector(cross(vup, w));
-            v = cross(w, u);
-
-            origin = lookfrom;
-            horizontal = focus_dist * viewport_width * u;
-            vertical = focus_dist * viewport_height * v;
-            lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
-
-            lens_radius = aperture / 2;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            time0 = time_start;
-            time1 = time_end;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        }
-
+        ...
         ray get_ray(double s, double t) const {
             vec3 rd = lens_radius * random_in_unit_disk();
             vec3 offset = u * rd.x() + v * rd.y();
+            const auto ray_time = random_double(0.0, 1.0);
 
             return ray(
                 origin + offset,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 lower_left_corner + s*horizontal + t*vertical - origin - offset,
-                random_double(time0, time1)
+                ray_time
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             );
         }
 
-      public:
-        double vfov       = 40;
-        double aperture   = 0;
-        double focus_dist = 10;
-
-        point3 lookfrom = point3(0,0,-1);
-        point3 lookat   = point3(0,0,0);
-        vec3   vup      = vec3(0,1,0);
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double time_start = 0;
-        double time_end = 1;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-      private:
-        point3 origin;
-        point3 lower_left_corner;
-        vec3 horizontal;
-        vec3 vertical;
-        vec3 u, v, w;
-        double lens_radius;
+        ...
     };
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -187,27 +145,33 @@ those times need not match up with the camera aperture open and close.
     class moving_sphere : public hittable {
       public:
         moving_sphere() {}
-        moving_sphere(
-            point3 ctr0, point3 ctr1, double r, shared_ptr<material> m,
-            double time_start, double time_end)
-            :
-            center0(ctr0), center1(ctr1), radius(r), mat_ptr(m),
-            time0(time_start), time1(time_end)
-        {};
+        moving_sphere(point3 c0, point3 c1, double r, shared_ptr<material> m)
+          : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat_ptr(m)
+        {
+            // To Be Implemented
+        };
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             // To Be Implemented
         }
 
+        bool bounding_box(aabb& output_box) const override {
+            output_box = bbox;
+            return true;
+        }
+
         point3 center(double time) const {
-            return center0 + ((time - time0) / (time1 - time0))*(center1 - center0);
+            // Linearly interpolate from center0 to center1 according to time, where t=0 yields
+            // center0, and t=1 yields center1.
+            return center0 + time * center_vec;
         }
 
       public:
         point3 center0, center1;
-        double time0, time1;
+        vec3 center_vec;
         double radius;
         shared_ptr<material> mat_ptr;
+        aabb bbox;
     };
 
     #endif
@@ -388,7 +352,7 @@ closing at time 1.) Each sphere moves from its center $\mathbf{C}$ at time $t=0$
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                         auto center2 = center + vec3(0, random_double(0,.5), 0);
                         world.add(make_shared<moving_sphere>(
-                            center, center2, 0.2, sphere_material, 0.0, 1.0));
+                            center, center2, 0.2, sphere_material));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                     } else if (choose_mat < 0.95) {
                     ...
@@ -716,7 +680,7 @@ the entire time interval [`time0`,`time1`].
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+        virtual bool bounding_box(aabb& output_box)
             const = 0;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
@@ -732,15 +696,29 @@ For a sphere, that `bounding_box` function is easy:
     class sphere : public hittable {
       public:
         ...
+        sphere() {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
-            output_box = aabb(
-                center - vec3(radius, radius, radius),
-                center + vec3(radius, radius, radius));
+        sphere(point3 ctr, double r, shared_ptr<material> m) : center(ctr), radius(r), mat_ptr(m) {
+            const auto rvec = vec3(radius, radius, radius);
+            bbox = aabb(center - rvec, center + rvec);
+        };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        bool bounding_box(aabb& output_box) const override {
+            output_box = bbox;
             return true;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
+
+      public:
+        point3 center;
+        double radius;
+        shared_ptr<material> mat_ptr;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        aabb bbox;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-bbox]: <kbd>[sphere.h]</kbd> Sphere with bounding box]
@@ -761,18 +739,20 @@ input below.
     class moving_sphere : public hittable {
       public:
         ...
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+        moving_sphere(point3 c0, point3 c1, double r, shared_ptr<material> m)
+          : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat_ptr(m)
+        {
+            const auto rvec = vec3(radius, radius, radius);
+            const aabb box0(center0 - rvec, center0 + rvec);
+            const aabb box1(center1 - rvec, center1 + rvec);
+            bbox = aabb(box0, box1);
+        };
 
+        ...
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
-            aabb box0(
-                center(time_start) - vec3(radius, radius, radius),
-                center(time_start) + vec3(radius, radius, radius));
-            aabb box1(
-                center(time_end) - vec3(radius, radius, radius),
-                center(time_end) + vec3(radius, radius, radius));
-            output_box = aabb(box0, box1);
+        bool bounding_box(aabb& output_box) const override {
+            output_box = bbox;
             return true;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -800,14 +780,14 @@ the fly because it is only usually called at BVH construction.
       public:
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+        bool bounding_box(aabb& output_box) const override {
             if (objects.empty()) return false;
 
             aabb temp_box;
             bool first_box = true;
 
             for (const auto& object : objects) {
-                if (!object->bounding_box(time_start, time_end, temp_box)) return false;
+                if (!object->bounding_box(temp_box)) return false;
                 output_box = first_box ? temp_box : aabb(output_box, temp_box);
                 first_box = false;
             }
@@ -865,14 +845,9 @@ I am a fan of the one class design when feasible. Here is such a class:
       public:
         bvh_node();
 
-        bvh_node(const hittable_list& list, double time_start, double time_end)
-          : bvh_node(list.objects, 0, list.objects.size(), time_start, time_end)
-        {}
+        bvh_node(const hittable_list& list) : bvh_node(list.objects, 0, list.objects.size()) {}
 
-        bvh_node(
-            const std::vector<shared_ptr<hittable>>& src_objects,
-            size_t start, size_t end, double time_start, double time_end
-        ) {
+        bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
             // To be implemented later.
         }
 
@@ -886,7 +861,7 @@ I am a fan of the one class design when feasible. Here is such a class:
             return hit_left || hit_right;
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+        bool bounding_box(aabb& output_box) const override {
             output_box = box;
             return true;
         }
@@ -933,10 +908,7 @@ we haven't yet defined.
     class bvh_node : public hittable {
       public:
         ...
-        bvh_node(
-            std::vector<shared_ptr<hittable>>& src_objects,
-            size_t start, size_t end, double time_start, double time_end
-        ) {
+        bvh_node(std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
             auto objects = src_objects; // Create a modifiable array of the source scene objects
 
             int axis = random_int(0,2);
@@ -960,15 +932,13 @@ we haven't yet defined.
                 std::sort(objects.begin() + start, objects.begin() + end, comparator);
 
                 auto mid = start + object_span/2;
-                left = make_shared<bvh_node>(objects, start, mid, time_start, time_end);
-                right = make_shared<bvh_node>(objects, mid, end, time_start, time_end);
+                left = make_shared<bvh_node>(objects, start, mid);
+                right = make_shared<bvh_node>(objects, mid, end);
             }
 
             aabb box_left, box_right;
 
-            if (  !left->bounding_box (time_start, time_end, box_left)
-               || !right->bounding_box(time_start, time_end, box_right)
-            )
+            if (!left->bounding_box(box_left) || !right->bounding_box(box_right))
                 std::cerr << "No bounding box in bvh_node constructor.\n";
 
             box = aabb(box_left, box_right);
@@ -1014,7 +984,7 @@ function.
             aabb box_a;
             aabb box_b;
 
-            if (!a->bounding_box(0,0, box_a) || !b->bounding_box(0,0, box_b))
+            if (!a->bounding_box(box_a) || !b->bounding_box(box_b))
                 std::cerr << "No bounding box in bvh_node constructor.\n";
 
             return box_a.axis(axis_index).min < box_b.axis(axis_index).min;
@@ -1035,6 +1005,32 @@ function.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [bvh-x-comp]: <kbd>[bvh.h]</kbd> BVH comparison function, X-axis]
 </div>
+
+At this point, we're ready to use our new BVH code. Let's use it on our `random_spheres()` scene.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+
+    void random_spheres(scene& scene_desc) {
+        scene_desc.aspect_ratio      = 16.0 / 9.0;
+        scene_desc.image_width       = 400;
+        scene_desc.samples_per_pixel = 100;
+
+        ...
+
+        auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
+        world.add(make_shared<sphere>(point3(-4, 1, 0), 1.0, material2));
+
+        auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
+        world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        scene_desc.world = hittable_list(make_shared<bvh_node>(world));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-spheres-bvh]: <kbd>[main.cc]</kbd> Random spheres, using BVH]
 
 
 
@@ -2443,7 +2439,7 @@ The actual `xy_rect` class is thus:
             return true;
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+        bool bounding_box(aabb& output_box) const override {
             // The bounding box must have non-zero width in each dimension, so pad the Z
             // dimension a small amount.
             output_box = aabb(point3(x0, y0, k-0.0001), point3(x1, y1, k+0.0001));
@@ -2566,7 +2562,7 @@ This is xz and yz:
             return true;
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+        bool bounding_box(aabb& output_box) const override {
             // The bounding box must have non-zero width in each dimension, so pad the Y
             // dimension a small amount.
             output_box = aabb(point3(x0, k-0.0001, z0), point3(x1, k+0.0001, z1));
@@ -2603,7 +2599,7 @@ This is xz and yz:
             return true;
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+        bool bounding_box(aabb& output_box) const override {
             // The bounding box must have non-zero width in each dimension, so pad the X
             // dimension a small amount.
             output_box = aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
@@ -2717,7 +2713,7 @@ make an axis-aligned block primitive that holds 6 rectangles:
             return sides.hit(r, ray_t, rec);
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+        bool bounding_box(aabb& output_box) const override {
             output_box = aabb(box_min, box_max);
             return true;
         }
@@ -2789,12 +2785,11 @@ move any underlying hittable is a _translate_ instance.
             return true;
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
-            if (!ptr->bounding_box(time_start, time_end, output_box))
+        bool bounding_box(aabb& output_box) const override {
+            if (!ptr->bounding_box(output_box))
                 return false;
 
             output_box += offset;
-
             return true;
         }
 
@@ -2893,7 +2888,7 @@ For a y-rotation class we have:
             auto radians = degrees_to_radians(angle);
             sin_theta = sin(radians);
             cos_theta = cos(radians);
-            hasbox = ptr->bounding_box(0, 1, bbox);
+            hasbox = ptr->bounding_box(bbox);
 
             point3 min( infinity,  infinity,  infinity);
             point3 max(-infinity, -infinity, -infinity);
@@ -2951,7 +2946,7 @@ For a y-rotation class we have:
             return true;
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+        bool bounding_box(aabb& output_box) const override {
             output_box = bbox;
             return hasbox;
         }
@@ -3100,8 +3095,8 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
             return true;
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
-            return boundary->bounding_box(time_start, time_end, output_box);
+        bool bounding_box(aabb& output_box) const override {
+            return boundary->bounding_box(output_box);
         }
 
       public:
@@ -3272,7 +3267,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 
         hittable_list& world = scene_desc.world;
 
-        world.add(make_shared<bvh_node>(boxes1, 0, 1));
+        world.add(make_shared<bvh_node>(boxes1));
 
         auto light = make_shared<diffuse_light>(color(7, 7, 7));
         world.add(make_shared<xz_rect>(123, 423, 147, 412, 554, light));
@@ -3307,7 +3302,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 
         world.add(make_shared<translate>(
             make_shared<rotate_y>(
-                make_shared<bvh_node>(boxes2, 0.0, 1.0), 15),
+                make_shared<bvh_node>(boxes2), 15),
                 vec3(-100,270,395)
             )
         );

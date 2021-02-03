@@ -25,7 +25,7 @@ class moving_sphere : public hittable {
         const auto rvec = vec3(radius, radius, radius);
         const aabb box0(center0 - rvec, center0 + rvec);
         const aabb box1(center1 - rvec, center1 + rvec);
-        bounds = aabb(box0, box1);
+        bbox = aabb(box0, box1);
     };
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
@@ -56,7 +56,7 @@ class moving_sphere : public hittable {
     }
 
     bool bounding_box(aabb& output_box) const override {
-        output_box = bounds;
+        output_box = bbox;
         return true;
     }
 
@@ -71,7 +71,7 @@ class moving_sphere : public hittable {
     vec3 center_vec;
     double radius;
     shared_ptr<material> mat_ptr;
-    aabb bounds;
+    aabb bbox;
 };
 
 
