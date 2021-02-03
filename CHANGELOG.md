@@ -1,7 +1,7 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
-# v4.0.0 (pending, targeted for 2020-12-20)
+# v4.0.0 (pending)
 
 ### Common
   - Change: Introduce new `interval` class used throughout codebase (#777)
@@ -23,6 +23,9 @@ Change Log -- Ray Tracing in One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)
 
 ### The Next Week
+  - Change: Rearranged the texture-mapping presentation. The three types (solid, spatial, image) are
+    now sequenced in that order, and the checker texture presented more explicitly as an
+    illustration of a spatial texture.
 
 ### The Rest of Your Life
 
