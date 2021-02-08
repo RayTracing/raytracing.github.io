@@ -23,7 +23,7 @@ class hit_record {
   public:
     point3 p;
     vec3 normal;
-    shared_ptr<material> mat_ptr;
+    shared_ptr<material> mat;
     double t;
     double u;
     double v;
@@ -47,11 +47,11 @@ class hittable {
 class translate : public hittable {
   public:
     translate(shared_ptr<hittable> p, const vec3& displacement)
-      : ptr(p), offset(displacement) {}
+      : object(p), offset(displacement) {}
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         ray moved_r(r.origin() - offset, r.direction(), r.time());
-        if (!ptr->hit(moved_r, ray_t, rec))
+        if (!object->hit(moved_r, ray_t, rec))
             return false;
 
         rec.p += offset;
@@ -61,7 +61,7 @@ class translate : public hittable {
     }
 
     bool bounding_box(aabb& output_box) const override {
-        if (!ptr->bounding_box(output_box))
+        if (!object->bounding_box(output_box))
             return false;
 
         output_box += offset;
@@ -69,18 +69,18 @@ class translate : public hittable {
     }
 
   public:
-    shared_ptr<hittable> ptr;
+    shared_ptr<hittable> object;
     vec3 offset;
 };
 
 
 class rotate_y : public hittable {
   public:
-    rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
+    rotate_y(shared_ptr<hittable> p, double angle) : object(p) {
         auto radians = degrees_to_radians(angle);
         sin_theta = sin(radians);
         cos_theta = cos(radians);
-        hasbox = ptr->bounding_box(bbox);
+        hasbox = object->bounding_box(bbox);
 
         point3 min( infinity,  infinity,  infinity);
         point3 max(-infinity, -infinity, -infinity);
@@ -120,7 +120,7 @@ class rotate_y : public hittable {
 
         ray rotated_r(origin, direction, r.time());
 
-        if (!ptr->hit(rotated_r, ray_t, rec))
+        if (!object->hit(rotated_r, ray_t, rec))
             return false;
 
         auto p = rec.p;
@@ -144,7 +144,7 @@ class rotate_y : public hittable {
     }
 
   public:
-    shared_ptr<hittable> ptr;
+    shared_ptr<hittable> object;
     double sin_theta;
     double cos_theta;
     bool hasbox;

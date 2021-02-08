@@ -63,7 +63,7 @@ class scene {
         if (world.hit(r, interval(0.001, infinity), rec)) {
             ray scattered;
             color attenuation;
-            if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+            if (rec.mat->scatter(r, rec, attenuation, scattered))
                 return attenuation * ray_color(scattered, depth-1);
             return color(0,0,0);
         }

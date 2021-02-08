@@ -1842,7 +1842,8 @@ point approximation the sphere intersector gives us. So we need to ignore hits v
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [reflect-tolerance]: <kbd>[main.cc]</kbd> Calculating reflected ray origins with tolerance]
+    [Listing [reflect-tolerance]: <kbd>[main.cc]</kbd>
+    Calculating reflected ray origins with tolerance]
 
 This gets rid of the shadow acne problem. Yes it is really called that.
 </div>
@@ -2061,7 +2062,7 @@ that the pointer is to a class, which the “class material” in the hittable c
         point3 p;
         vec3 normal;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        shared_ptr<material> mat_ptr;
+        shared_ptr<material> mat;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         double t;
         bool front_face;
@@ -2092,7 +2093,7 @@ within `hit_record`. See the highlighted lines below:
         sphere() {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         sphere(point3 ctr, double r, shared_ptr<material> m)
-          : center(ctr), radius(r), mat_ptr(m) {};
+          : center(ctr), radius(r), mat(m) {};
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
@@ -2103,7 +2104,7 @@ within `hit_record`. See the highlighted lines below:
             vec3 outward_normal = (rec.p - center) / radius;
             rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            rec.mat_ptr = mat_ptr;
+            rec.mat = mat;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return true;
@@ -2113,11 +2114,12 @@ within `hit_record`. See the highlighted lines below:
         point3 center;
         double radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        shared_ptr<material> mat_ptr;
+        shared_ptr<material> mat;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [sphere-material]: <kbd>[sphere.h]</kbd> Ray-sphere intersection with added material information]
+    [Listing [sphere-material]: <kbd>[sphere.h]</kbd>
+    Ray-sphere intersection with added material information]
 </div>
 
 
@@ -2263,7 +2265,7 @@ We need to modify the `ray_color()` function to use this:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             ray scattered;
             color attenuation;
-            if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+            if (rec.mat->scatter(r, rec, attenuation, scattered))
                 return attenuation * ray_color(scattered, world, depth-1);
             return color(0,0,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2824,7 +2826,7 @@ Naturally, we'll name this the `scene` class.
             if (world.hit(r, interval(0.001, infinity), rec)) {
                 ray scattered;
                 color attenuation;
-                if (rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+                if (rec.mat->scatter(r, rec, attenuation, scattered))
                     return attenuation * ray_color(scattered, depth-1);
                 return color(0,0,0);
             }

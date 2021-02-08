@@ -20,7 +20,7 @@
 class sphere : public hittable {
   public:
     sphere() {}
-    sphere(point3 ctr, double r, shared_ptr<material> m) : center(ctr), radius(r), mat_ptr(m) {
+    sphere(point3 ctr, double r, shared_ptr<material> m) : center(ctr), radius(r), mat(m) {
         const auto rvec = vec3(radius, radius, radius);
         bbox = aabb(center - rvec, center + rvec);
     };
@@ -48,7 +48,7 @@ class sphere : public hittable {
         vec3 outward_normal = (rec.p - center) / radius;
         rec.set_face_normal(r, outward_normal);
         get_sphere_uv(outward_normal, rec.u, rec.v);
-        rec.mat_ptr = mat_ptr;
+        rec.mat = mat;
 
         return true;
     }
@@ -80,7 +80,7 @@ class sphere : public hittable {
   public:
     point3 center;
     double radius;
-    shared_ptr<material> mat_ptr;
+    shared_ptr<material> mat;
     aabb bbox;
 
   private:

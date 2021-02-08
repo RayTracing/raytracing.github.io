@@ -77,9 +77,9 @@ to pick a random point in a unit sphere:
 This code will always eventually arrive at a random point in the unit sphere, but we can't say
 beforehand how long it'll take. It may take only 1 iteration, it may take 2, 3, 4, or even longer.
 Whereas, an MC program will give a statistical estimate of an answer, and this estimate will get
-more and more accurate the longer you run it. Which means that at a certain point, we can just decide
-that the answer is accurate _enough_ and call it quits. This basic characteristic of simple programs
-producing noisy but ever-better answers is what MC is all about, and is especially good for
+more and more accurate the longer you run it. Which means that at a certain point, we can just
+decide that the answer is accurate _enough_ and call it quits. This basic characteristic of simple
+programs producing noisy but ever-better answers is what MC is all about, and is especially good for
 applications like graphics where great accuracy is not needed.
 
 </div>
@@ -839,7 +839,8 @@ result close to the real value. Let's take the function:
 
 Which looks a little something like this:
 
-    ![Figure [exp-sin2]: A function that we don't want to solve analytically](../images/fig-3.07-exp-sin2.jpg)
+    ![Figure [exp-sin2]: A function that we don't want to solve analytically
+    ](../images/fig-3.07-exp-sin2.jpg)
 
 At this point you should be familiar with how to experimentally solve for the area under a curve.
 We'll be taking our existing code and modifying it slightly to get an estimate for the 50% value. We
@@ -971,7 +972,12 @@ $x'$ instead of $x$ because of calculus rules, if you're not sure what it means,
 it, you can just treat it like it's the same. If we take the integration outlined above, we get the
 piecewise $P(r)$:
 
-    $$ P(r)=\begin{cases}0 & r < 0 \\ \frac{r^2}{4} & 0 \leq r \leq 2 \\ 1 & r > 2  \\  \end{cases} $$
+    $$ P(r)=\begin{cases}
+           0             & r < 0           \\
+           \frac{r^2}{4} & 0 \leq r \leq 2 \\
+           1             & 2 < r           \\
+       \end{cases}
+    $$
 
 The _Probability Density Function_ (PDF) is the probability function that explains how likely an
 interval of numbers is to be chosen. The _Cumulative Distribution Function_ (CDF) is the
@@ -990,11 +996,11 @@ If we evaluate the CDF, $P(r)$, at $r = 1.0$, we get:
 This says _a random variable plucked from our PDF has a 25% chance of being 1 or lower_. We want a
 function $f(d)$ that takes a uniform distribution between 0 and 1 (_i.e_ `f(random_double())`), and
 returns a random value according to a distribution that has the CDF $P(x) = \frac{x^2}{4}$. We don’t
-know yet know what the function $f(d)$ is analytically, but we do know that 25% of what it returns should
-be less than 1.0, and 75% should be above 1.0. Likewise, we know that 50% of what it returns should
-be less than $\sqrt{2}$, and 50% should be above $\sqrt{2}$. If $f(d)$ monotonically increases, then
-we would expect $f(0.25) = 1.0$ and $f(0.5) = \sqrt{2}$. This can be generalized to figure out
-$f(d)$ for every possible input:
+know yet know what the function $f(d)$ is analytically, but we do know that 25% of what it returns
+should be less than 1.0, and 75% should be above 1.0. Likewise, we know that 50% of what it returns
+should be less than $\sqrt{2}$, and 50% should be above $\sqrt{2}$. If $f(d)$ monotonically
+increases, then we would expect $f(0.25) = 1.0$ and $f(0.5) = \sqrt{2}$. This can be generalized to
+figure out $f(d)$ for every possible input:
 
     $$ f(P(x)) = x $$
 </div>
@@ -1594,13 +1600,13 @@ And the `ray_color` function gets a minor modification:
             color albedo;
             ray scattered;
             double pdf;
-            color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+            color emitted = rec.mat->emitted(rec.u, rec.v, rec.p);
 
-            if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf))
+            if (!rec.mat->scatter(r, rec, albedo, scattered, pdf))
                 return emitted;
 
             return emitted
-                 + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                 + albedo * rec.mat->scattering_pdf(r, rec, scattered)
                           * ray_color(scattered, depth-1) / pdf;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
@@ -1653,7 +1659,8 @@ perfect match for the real distribution, it will take longer to converge:
 </div>
 
 <div class='together'>
-You should get a very similar result to before, only with slightly more noise, it may be hard to see.
+You should get a very similar result to before, only with slightly more noise, it may be hard to
+see.
 
   ![Image 4: Cornell box, with imperfect PDF
   ](../images/img-3.02-cornell-refactor2.jpg class=pixel)
@@ -1945,7 +1952,8 @@ Here's a function that generates random vectors weighted by this PDF:
         return vec3(x, y, z);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-cosine-direction]: <kbd>[vec3.h]</kbd> Random cosine direction utility function]
+    [Listing [random-cosine-direction]: <kbd>[vec3.h]</kbd>
+    Random cosine direction utility function]
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2245,11 +2253,11 @@ check that we got the math and concept right:
 
             ray scattered;
             color attenuation;
-            color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+            color emitted = rec.mat->emitted(rec.u, rec.v, rec.p);
             double pdf;
             color albedo;
 
-            if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf))
+            if (!rec.mat->scatter(r, rec, albedo, scattered, pdf))
                 return emitted;
 
 
@@ -2272,7 +2280,7 @@ check that we got the math and concept right:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return emitted
-                 + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                 + albedo * rec.mat->scattering_pdf(r, rec, scattered)
                           * ray_color(scattered, depth-1) / pdf;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2338,13 +2346,13 @@ We also need to flip the light so its normals point in the $-y$ direction:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class flip_face : public hittable {
       public:
-        flip_face(shared_ptr<hittable> p) : ptr(p) {}
+        flip_face(shared_ptr<hittable> p) : object(p) {}
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-            if (!ptr->hit(r, ray_t, rec))
+            if (!object->hit(r, ray_t, rec))
                 return false;
 
-            if (!ptr->hit(r, ray_tmin, ray_tmax, rec))
+            if (!object->hit(r, ray_tmin, ray_tmax, rec))
                 return false;
 
             rec.front_face = !rec.front_face;
@@ -2352,11 +2360,11 @@ We also need to flip the light so its normals point in the $-y$ direction:
         }
 
         bool bounding_box(aabb& output_box) const override {
-            return ptr->bounding_box(output_box);
+            return object->bounding_box(output_box);
         }
 
       public:
-        shared_ptr<hittable> ptr;
+        shared_ptr<hittable> object;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [flip-face]: <kbd>[hittable.h]</kbd> We use a hittable object to flip the light]
@@ -2484,11 +2492,11 @@ We can try this cosine PDF in the `ray_color()` function:
 
             ray scattered;
             color attenuation;
-            color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+            color emitted = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
             double pdf_val;
             color albedo;
 
-            if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
+            if (!rec.mat->scatter(r, rec, albedo, scattered, pdf_val))
                 return emitted;
 
 
@@ -2499,7 +2507,7 @@ We can try this cosine PDF in the `ray_color()` function:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return emitted
-                 + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                 + albedo * rec.mat->scattering_pdf(r, rec, scattered)
                           * ray_color(scattered, depth-1) / pdf_val;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2633,11 +2641,11 @@ Add a `light_ptr` member variable to `scene`:
 
             ray scattered;
             color attenuation;
-            color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+            color emitted = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
             double pdf_val;
             color albedo;
 
-            if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
+            if (!rec.mat->scatter(r, rec, albedo, scattered, pdf_val))
                 return emitted;
 
 
@@ -2648,7 +2656,7 @@ Add a `light_ptr` member variable to `scene`:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return emitted
-                 + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                 + albedo * rec.mat->scattering_pdf(r, rec, scattered)
                           * ray_color(scattered, depth-1) / pdf_val;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2662,7 +2670,8 @@ Set the `light_ptr` to the light in the middle of the ceiling:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene_desc.light_ptr = make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>());
+        scene_desc.light_ptr =
+            make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2763,11 +2772,11 @@ plug it into `ray_color()`:
 
             ray scattered;
             color attenuation;
-            color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
+            color emitted = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
             double pdf_val;
             color albedo;
 
-            if (!rec.mat_ptr->scatter(r, rec, albedo, scattered, pdf_val))
+            if (!rec.mat->scatter(r, rec, albedo, scattered, pdf_val))
                 return emitted;
 
 
@@ -2781,7 +2790,7 @@ plug it into `ray_color()`:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return emitted
-                 + albedo * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                 + albedo * rec.mat->scattering_pdf(r, rec, scattered)
                           * ray_color(scattered, depth-1) / pdf_val;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2964,8 +2973,8 @@ And `ray_color()` changes are small:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             scatter_record srec;
-            color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
-            if (!rec.mat_ptr->scatter(r, rec, srec))
+            color emitted = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
+            if (!rec.mat->scatter(r, rec, srec))
                 return emitted;
 
             auto light_ptr = make_shared<hittable_pdf>(lights, rec.p);
@@ -2975,7 +2984,7 @@ And `ray_color()` changes are small:
             auto pdf_val = p.value(scattered.direction());
 
             return emitted
-                + srec.attenuation * rec.mat_ptr->scattering_pdf(r, rec, scattered)
+                + srec.attenuation * rec.mat->scattering_pdf(r, rec, scattered)
                                    * ray_color(scattered, depth-1) / pdf_val;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
@@ -3068,8 +3077,8 @@ materials that we're treating specularly.
         color ray_color(const ray& r, int depth) {
             ...
             scatter_record srec;
-            color emitted = rec.mat_ptr->emitted(r, rec, rec.u, rec.v, rec.p);
-            if (!rec.mat_ptr->scatter(r, rec, srec))
+            color emitted = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
+            if (!rec.mat->scatter(r, rec, srec))
                 return emitted;
 
 
@@ -3105,13 +3114,14 @@ that.
         box1 = make_shared<rotate_y>(box1, 15);
         box1 = make_shared<translate>(box1, vec3(265,0,295));
         world.add(box1);
-        
+
         shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
         box2 = make_shared<rotate_y>(box2, -18);
         box2 = make_shared<translate>(box2, vec3(130,0,65));
         world.add(box2);
 
-        scene_desc.light_ptr = make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>());
+        scene_desc.light_ptr =
+            make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>());
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-cornell-al]: <kbd>[main.cc]</kbd> Cornell box scene with aluminum material]
@@ -3273,20 +3283,21 @@ We can first try just sampling the sphere rather than the light:
         world.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
 
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         box1 = make_shared<rotate_y>(box1, 15);
         box1 = make_shared<translate>(box1, vec3(265,0,295));
         world.add(box1);
-    
+
         auto glass = make_shared<dielectric>(1.5);
         world.add(make_shared<sphere>(point3(190,90,190), 90 , glass));
 
 
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene_desc.light_ptr = make_shared<sphere>(point3(190, 90, 190), 90, shared_ptr<material>());
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        scene_desc.light_ptr =
+            make_shared<sphere>(point3(190, 90, 190), 90, shared_ptr<material>());
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sampling-sphere]: <kbd>[main.cc]</kbd> Sampling just the sphere]
@@ -3315,7 +3326,7 @@ think both tactics would work fine, but I will go with instrumenting `hittable_l
     class hittable_list : public hittable {
       public:
         ...
-        
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double pdf_value(const point3& o, const vec3& v) const override {

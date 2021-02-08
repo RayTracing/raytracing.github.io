@@ -20,7 +20,7 @@ class moving_sphere : public hittable {
   public:
     moving_sphere() {}
     moving_sphere(point3 c0, point3 c1, double r, shared_ptr<material> m)
-      : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat_ptr(m)
+      : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat(m)
     {
         const auto rvec = vec3(radius, radius, radius);
         const aabb box0(center0 - rvec, center0 + rvec);
@@ -50,7 +50,7 @@ class moving_sphere : public hittable {
         rec.p = r.at(rec.t);
         vec3 outward_normal = (rec.p - center(r.time())) / radius;
         rec.set_face_normal(r, outward_normal);
-        rec.mat_ptr = mat_ptr;
+        rec.mat = mat;
 
         return true;
     }
@@ -70,7 +70,7 @@ class moving_sphere : public hittable {
     point3 center0, center1;
     vec3 center_vec;
     double radius;
-    shared_ptr<material> mat_ptr;
+    shared_ptr<material> mat;
     aabb bbox;
 };
 

@@ -170,7 +170,7 @@ really can be sampled at any time.)
       public:
         moving_sphere() {}
         moving_sphere(point3 c0, point3 c1, double r, shared_ptr<material> m)
-          : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat_ptr(m)
+          : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat(m)
         { };
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
@@ -187,7 +187,7 @@ really can be sampled at any time.)
         point3 center0, center1;
         vec3 center_vec;
         double radius;
-        shared_ptr<material> mat_ptr;
+        shared_ptr<material> mat;
     };
 
     #endif
@@ -232,7 +232,7 @@ just needs to become a function `center(time)`:
             auto outward_normal = (rec.p - center(r.time())) / radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             rec.set_face_normal(r, outward_normal);
-            rec.mat_ptr = mat_ptr;
+            rec.mat = mat;
 
             return true;
         }
@@ -1134,7 +1134,7 @@ ray-object hit point.
       public:
         vec3 p;
         vec3 normal;
-        shared_ptr<material> mat_ptr;
+        shared_ptr<material> mat;
         double t;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double u;
@@ -1402,7 +1402,7 @@ Update the `sphere::hit()` function to use this function to update the hit recor
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             get_sphere_uv(outward_normal, rec.u, rec.v);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            rec.mat_ptr = mat_ptr;
+            rec.mat = mat;
 
             return true;
         }
@@ -2099,7 +2099,7 @@ And the interpolation becomes a bit more complicated:
       private:
         ...
         static double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto uu = u*u*(3-2*u);
             auto vv = v*v*(3-2*v);
             auto ww = w*w*(3-2*w);
@@ -2353,9 +2353,9 @@ the new `emitted` value.
 
             ray scattered;
             color attenuation;
-            color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+            color emitted = rec.mat->emitted(rec.u, rec.v, rec.p);
 
-            if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+            if (!rec.mat->scatter(r, rec, attenuation, scattered))
                 return emitted;
 
             return emitted + attenuation * ray_color(scattered, depth-1);
@@ -2442,9 +2442,8 @@ The actual `xy_rect` class is thus:
       public:
         xy_rect() {}
 
-        xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, 
-            shared_ptr<material> mat)
-            : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
+        xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, shared_ptr<material> _m)
+            : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mat(_m) {};
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             auto t = (k-r.origin().z()) / r.direction().z();
@@ -2459,7 +2458,7 @@ The actual `xy_rect` class is thus:
             rec.t = t;
             auto outward_normal = vec3(0, 0, 1);
             rec.set_face_normal(r, outward_normal);
-            rec.mat_ptr = mp;
+            rec.mat = mat;
             rec.p = r.at(t);
             return true;
         }
@@ -2472,7 +2471,7 @@ The actual `xy_rect` class is thus:
         }
 
       public:
-        shared_ptr<material> mp;
+        shared_ptr<material> mat;
         double x0, x1, y0, y1, k;
     };
 
@@ -2566,8 +2565,8 @@ This is xz and yz:
       public:
         xz_rect() {}
 
-        xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<material> mat)
-          : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+        xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<material> _m)
+          : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mat(_m) {};
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             auto t = (k-r.origin().y()) / r.direction().y();
@@ -2582,7 +2581,7 @@ This is xz and yz:
             rec.t = t;
             auto outward_normal = vec3(0, 1, 0);
             rec.set_face_normal(r, outward_normal);
-            rec.mat_ptr = mp;
+            rec.mat = mat;
             rec.p = r.at(t);
             return true;
         }
@@ -2595,7 +2594,7 @@ This is xz and yz:
         }
 
       public:
-        shared_ptr<material> mp;
+        shared_ptr<material> mat;
         double x0, x1, z0, z1, k;
     };
 
@@ -2603,8 +2602,8 @@ This is xz and yz:
       public:
         yz_rect() {}
 
-        yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<material> mat)
-          : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+        yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<material> _m)
+          : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mat(_m) {};
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             auto t = (k-r.origin().x()) / r.direction().x();
@@ -2619,7 +2618,7 @@ This is xz and yz:
             rec.t = t;
             auto outward_normal = vec3(1, 0, 0);
             rec.set_face_normal(r, outward_normal);
-            rec.mat_ptr = mp;
+            rec.mat = mat;
             rec.p = r.at(t);
             return true;
         }
@@ -2632,7 +2631,7 @@ This is xz and yz:
         }
 
       public:
-        shared_ptr<material> mp;
+        shared_ptr<material> mat;
         double y0, y1, z0, z1, k;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2720,18 +2719,18 @@ make an axis-aligned block primitive that holds 6 rectangles:
       public:
         box() {}
 
-        box(const point3& p0, const point3& p1, shared_ptr<material> ptr) {
+        box(const point3& p0, const point3& p1, shared_ptr<material> mat) {
             box_min = p0;
             box_max = p1;
 
-            sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr));
-            sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr));
+            sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), mat));
+            sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), mat));
 
-            sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), ptr));
-            sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr));
+            sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), mat));
+            sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), mat));
 
-            sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr));
-            sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
+            sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), mat));
+            sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), mat));
         }
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
@@ -2797,11 +2796,11 @@ move any underlying hittable is a _translate_ instance.
     class translate : public hittable {
       public:
         translate(shared_ptr<hittable> p, const vec3& displacement)
-          : ptr(p), offset(displacement) {}
+          : object(p), offset(displacement) {}
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             ray moved_r(r.origin() - offset, r.direction(), r.time());
-            if (!ptr->hit(moved_r, ray_t, rec))
+            if (!object->hit(moved_r, ray_t, rec))
                 return false;
 
             rec.p += offset;
@@ -2811,7 +2810,7 @@ move any underlying hittable is a _translate_ instance.
         }
 
         bool bounding_box(aabb& output_box) const override {
-            if (!ptr->bounding_box(output_box))
+            if (!object->bounding_box(output_box))
                 return false;
 
             output_box += offset;
@@ -2819,7 +2818,7 @@ move any underlying hittable is a _translate_ instance.
         }
 
       public:
-        shared_ptr<hittable> ptr;
+        shared_ptr<hittable> object;
         vec3 offset;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2909,11 +2908,11 @@ For a y-rotation class we have:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class rotate_y : public hittable {
       public:
-        rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
+        rotate_y(shared_ptr<hittable> p, double angle) : object(p) {
             auto radians = degrees_to_radians(angle);
             sin_theta = sin(radians);
             cos_theta = cos(radians);
-            hasbox = ptr->bounding_box(bbox);
+            hasbox = object->bounding_box(bbox);
 
             point3 min( infinity,  infinity,  infinity);
             point3 max(-infinity, -infinity, -infinity);
@@ -2953,7 +2952,7 @@ For a y-rotation class we have:
 
             ray rotated_r(origin, direction, r.time());
 
-            if (!ptr->hit(rotated_r, ray_t, rec))
+            if (!object->hit(rotated_r, ray_t, rec))
                 return false;
 
             auto p = rec.p;
@@ -2977,7 +2976,7 @@ For a y-rotation class we have:
         }
 
       public:
-        shared_ptr<hittable> ptr;
+        shared_ptr<hittable> object;
         double sin_theta;
         double cos_theta;
         bool hasbox;
@@ -3115,7 +3114,7 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
 
             rec.normal = vec3(1,0,0);  // arbitrary
             rec.front_face = true;     // also arbitrary
-            rec.mat_ptr = phase_function;
+            rec.mat = phase_function;
 
             return true;
         }
