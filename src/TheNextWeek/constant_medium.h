@@ -75,9 +75,7 @@ class constant_medium : public hittable {
         return true;
     }
 
-    bool bounding_box(aabb& output_box) const override {
-        return boundary->bounding_box(output_box);
-    }
+    aabb bounding_box() const override { return boundary->bounding_box(); }
 
   public:
     shared_ptr<hittable> boundary;

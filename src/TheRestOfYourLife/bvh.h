@@ -23,14 +23,9 @@ class bvh_node : public hittable {
   public:
     bvh_node();
 
-    bvh_node(const hittable_list& list, double time0, double time1)
-      : bvh_node(list.objects, 0, list.objects.size(), time0, time1)
-    {}
+    bvh_node(const hittable_list& list) : bvh_node(list.objects, 0, list.objects.size()) {}
 
-    bvh_node(
-        const std::vector<shared_ptr<hittable>>& src_objects,
-        size_t start, size_t end, double time0, double time1
-    ) {
+    bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
         auto objects = src_objects; // Create a modifiable array of the source scene objects
 
         int axis = random_int(0,2);
@@ -54,49 +49,35 @@ class bvh_node : public hittable {
             std::sort(objects.begin() + start, objects.begin() + end, comparator);
 
             auto mid = start + object_span/2;
-            left = make_shared<bvh_node>(objects, start, mid, time0, time1);
-            right = make_shared<bvh_node>(objects, mid, end, time0, time1);
+            left = make_shared<bvh_node>(objects, start, mid);
+            right = make_shared<bvh_node>(objects, mid, end);
         }
 
-        aabb box_left, box_right;
-
-        if (!left->bounding_box(box_left) || !right->bounding_box(box_right))
-            std::cerr << "No bounding box in bvh_node constructor.\n";
-
-        box = surrounding_box(box_left, box_right);
+        bbox = aabb(left->bounding_box(), right->bounding_box());
     }
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-        if (!box.hit(r, ray_t))
+        if (!bbox.hit(r, ray_t))
             return false;
 
         bool hit_left = left->hit(r, ray_t, rec);
-        bool hit_right = right->hit(r, interval(ray_tmin, hit_left ? rec.t : ray_tmax), rec);
+        bool hit_right = right->hit(r, interval(ray_t.min, hit_left ? rec.t : ray_t.max), rec);
 
         return hit_left || hit_right;
     }
 
-    bool bounding_box(aabb& output_box) const override {
-        output_box = box;
-        return true;
-    }
+    aabb bounding_box() const override { return bbox; }
 
   public:
     shared_ptr<hittable> left;
     shared_ptr<hittable> right;
-    aabb box;
+    aabb bbox;
 
   private:
     static bool box_compare(
         const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis_index
     ) {
-        aabb box_a;
-        aabb box_b;
-
-        if (!a->bounding_box(box_a) || !b->bounding_box(box_b))
-            std::cerr << "No bounding box in bvh_node constructor.\n";
-
-        return box_a.axis(axis_index).min < box_b.axis(axis_index).min;
+        return a->bounding_box().axis(axis_index).min < b->bounding_box().axis(axis_index).min;
     }
 
     static bool box_x_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {

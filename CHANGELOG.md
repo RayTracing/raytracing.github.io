@@ -20,6 +20,8 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: CSS fix for cases where code listing overflow; change to fit content (#826)
   - Change: `hittable` member variable `ptr` renamed to `object`
   - Change: general rename of `mat_ptr` to `mat` (material)
+  - Change: hittable::bounding_box() signature has changed to always return a value. Bounding boxes
+    now have a formal empty state, determined by new is_empty() method. (#859)
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)

@@ -55,10 +55,7 @@ class moving_sphere : public hittable {
         return true;
     }
 
-    bool bounding_box(aabb& output_box) const override {
-        output_box = bbox;
-        return true;
-    }
+    aabb bounding_box() const override { return bbox; }
 
     point3 center(double time) const {
         // Linearly interpolate from center0 to center1 according to time, where t=0 yields

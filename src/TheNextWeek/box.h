@@ -13,6 +13,7 @@
 
 #include "rtweekend.h"
 
+#include "aabb.h"
 #include "aarect.h"
 #include "hittable_list.h"
 
@@ -21,10 +22,9 @@ class box : public hittable {
   public:
     box() {}
 
-    box(const point3& p0, const point3& p1, shared_ptr<material> mat) {
-        box_min = p0;
-        box_max = p1;
-
+    box(const point3& p0, const point3& p1, shared_ptr<material> mat)
+      : box_min(p0), box_max(p1), bbox(p0, p1)
+    {
         sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), mat));
         sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), mat));
 
@@ -39,15 +39,13 @@ class box : public hittable {
         return sides.hit(r, ray_t, rec);
     }
 
-    bool bounding_box(aabb& output_box) const override {
-        output_box = aabb(box_min, box_max);
-        return true;
-    }
+    aabb bounding_box() const override { return bbox; }
 
   public:
     point3 box_min;
     point3 box_max;
     hittable_list sides;
+    aabb bbox;
 };
 
 

@@ -32,12 +32,6 @@ class interval {
         return x;
     }
 
-    interval& operator+=(double offset) {
-        min += offset;
-        max += offset;
-        return *this;
-    }
-
     static const interval empty;
     static const interval universe;
 
@@ -47,6 +41,14 @@ class interval {
 
 const interval interval::empty    = interval(+infinity, -infinity);
 const interval interval::universe = interval(-infinity, +infinity);
+
+interval operator+(const interval& ival, double displacement) {
+    return interval(ival.min + displacement, ival.max + displacement);
+}
+
+interval operator+(double displacement, const interval& ival) {
+    return ival + displacement;
+}
 
 
 #endif
