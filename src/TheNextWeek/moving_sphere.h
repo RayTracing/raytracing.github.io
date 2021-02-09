@@ -19,11 +19,14 @@
 class moving_sphere : public hittable {
   public:
     moving_sphere() {}
-    moving_sphere(
-        point3 ctr0, point3 ctr1, double r, shared_ptr<material> m,
-        double time_start, double time_end)
-      : center0(ctr0), center1(ctr1), radius(r), mat(m), time0(time_start), time1(time_end)
-    {};
+    moving_sphere(point3 c0, point3 c1, double r, shared_ptr<material> m)
+      : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat(m)
+    {
+        const auto rvec = vec3(radius, radius, radius);
+        const aabb box0(center0 - rvec, center0 + rvec);
+        const aabb box1(center1 - rvec, center1 + rvec);
+        bbox = aabb(box0, box1);
+    };
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         vec3 oc = r.origin() - center(r.time());
@@ -52,26 +55,23 @@ class moving_sphere : public hittable {
         return true;
     }
 
-    bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
-        aabb box0(
-            center(time_start) - vec3(radius, radius, radius),
-            center(time_start) + vec3(radius, radius, radius));
-        aabb box1(
-            center(time_end) - vec3(radius, radius, radius),
-            center(time_end) + vec3(radius, radius, radius));
-        output_box = aabb(box0, box1);
+    bool bounding_box(aabb& output_box) const override {
+        output_box = bbox;
         return true;
     }
 
     point3 center(double time) const {
-        return center0 + ((time - time0) / (time1 - time0))*(center1 - center0);
+        // Linearly interpolate from center0 to center1 according to time, where t=0 yields
+        // center0, and t=1 yields center1.
+        return center0 + time * center_vec;
     }
 
   public:
     point3 center0, center1;
-    double time0, time1;
+    vec3 center_vec;
     double radius;
     shared_ptr<material> mat;
+    aabb bbox;
 };
 
 

@@ -39,28 +39,27 @@ at the end of this book.
 
 Motion Blur
 ====================================================================================================
-When you decided to ray trace, you decided that visual quality was worth more than run-time. In your
-fuzzy reflection and defocus blur you needed multiple samples per pixel. Once you have taken a step
-down that road, the good news is that almost all effects can be brute-forced. Motion blur is
-certainly one of those. In a real camera, the shutter opens and stays open for a time interval, and
-the camera and objects may move during that time. Its really an average of what the camera sees over
-that interval that we want.
+When you decided to ray trace, you decided that visual quality was worth more than run-time. When
+rendering fuzzy reflection and defocus blur, we used multiple samples per pixel. Once you have taken
+a step down that road, the good news is that almost _all_ effects can be similarly brute-forced.
+Motion blur is certainly one of those.
+
+In a real camera, the shutter remains open for a short time interval, during which the camera and
+objects in the world may move. To accurately reproduce such a camera shot, we seek an average of
+all the instant images that the camera perceives while its shutter is open to the world.
 
 
 Introduction of SpaceTime Ray Tracing
 --------------------------------------
-We can get a random estimate by sending each ray at some random time when the shutter is open. As
-long as the objects are where they should be at that time, we can get the right average answer with
-a ray that is at exactly a single time. This is fundamentally why random ray tracing tends to be
-simple.
-
-The basic idea is to generate rays at random times while the shutter is open and intersect the model
-at that one time. The way it is usually done is to have the camera move and the objects move, but
-have each ray exist at exactly one time. This way the “engine” of the ray tracer can just make sure
-the objects are where they need to be for the ray, and the intersection guts don’t change much.
+We can get a random estimate of a single photon by sending a single ray at some random instant in
+time when the shutter is open. As long as the objects are where they should be at that instant, we
+can get an accurate measure of the light for that ray at that same instant. This is yet another
+example of how random (Monte Carlo) ray tracing ends up being quite simple. Brute force wins again!
 
 <div class='together'>
-For this we will first need to have a ray store the time it exists at:
+Since the “engine” of the ray tracer can just make sure the objects are where they need to be for
+each ray, the intersection guts don’t change much. To accomplish this, we need to store the exact
+time for each ray:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class ray {
@@ -82,7 +81,7 @@ For this we will first need to have a ray store the time it exists at:
             return orig + t*dir;
         }
 
-      public:
+      private:
         point3 orig;
         vec3 dir;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -94,10 +93,35 @@ For this we will first need to have a ray store the time it exists at:
 </div>
 
 
+Managing Time
+--------------
+Before continuing, let's think about time, and how we might manage it across one or more renders.
+There are two aspects of shutter timing to think about: the time from one shutter opening to the
+next shutter opening, and how long the shutter stays open for each frame. Standard movie film used
+to be shot at 24 frames per second. Modern digital films can be 30 or even 60 frames per second.
+Each frame can have its own shutter speed, which need not be -- and typically isn't -- the maximum
+duration of the entire shutter period. You could have the shutter open for 1/1000th of a second per
+frame, or 1/60th of a second. It may surprise you to learn that for most film motion pictures, the
+screen is actually dark more than it is lit up with the movie frames!
+
+If you wanted to render a sequence of images, you would need to set up the camera with the
+appropriate shutter timings: frame-to-frame period, shutter/render duration, and the total number of
+frames (or total shot time). If the camera is moving and the world is static, you're good to go.
+However, if anything in the world is moving, you would need to add a method to `hittable` to
+broadcast the current shot timing to every object in the world. This method would then provide a way
+for all animate objects to set up their motion during that frame.
+
+This is fairly straight-forward, and definitely a fun avenue for you to experiment with if you wish.
+However, for our purposes right now, we're going to proceed with a drastically simplified model. We
+will be render only a single frame, assuming a start at time = 0 and ending at time = 1. Our first
+task is to modify the camera to launch rays with random times in $[0,1]$, and our second task will
+be the creation of an animate sphere class.
+
+
 Updating the Camera to Simulate Motion Blur
 --------------------------------------------
-Now we need to modify the camera to generate rays at a random time between the start time and the
-end time. Should the camera keep track of the time interval, or should that be up to the user of
+We need to modify the camera to generate rays at a random instant between the start time and the end
+time. Should the camera keep track of the time interval, or should that be up to the user of the
 camera when a ray is created? When in doubt, I like to make constructors complicated if it makes
 calls simple, so I will make the camera keep track, but that’s a personal preference. Not many
 changes are needed to camera because for now it is not allowed to move; it just sends out rays over
@@ -106,64 +130,22 @@ a time period.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
-        camera(
-        void initialize(double aspect_ratio = 1.0) {
-            auto theta = degrees_to_radians(vfov);
-            auto h = tan(theta/2);
-            auto viewport_height = 2.0 * h;
-            auto viewport_width = aspect_ratio * viewport_height;
-
-            w = unit_vector(lookfrom - lookat);
-            u = unit_vector(cross(vup, w));
-            v = cross(w, u);
-
-            origin = lookfrom;
-            horizontal = focus_dist * viewport_width * u;
-            vertical = focus_dist * viewport_height * v;
-            lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
-
-            lens_radius = aperture / 2;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            time0 = time_start;
-            time1 = time_end;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        }
-
+        ...
         ray get_ray(double s, double t) const {
             vec3 rd = lens_radius * random_in_unit_disk();
             vec3 offset = u * rd.x() + v * rd.y();
+            const auto ray_time = random_double(0.0, 1.0);
 
             return ray(
                 origin + offset,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 lower_left_corner + s*horizontal + t*vertical - origin - offset,
-                random_double(time0, time1)
+                ray_time
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             );
         }
 
-      public:
-        double vfov       = 40;
-        double aperture   = 0;
-        double focus_dist = 10;
-
-        point3 lookfrom = point3(0,0,-1);
-        point3 lookat   = point3(0,0,0);
-        vec3   vup      = vec3(0,1,0);
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double time_start = 0;
-        double time_end = 1;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-      private:
-        point3 origin;
-        point3 lower_left_corner;
-        vec3 horizontal;
-        vec3 vertical;
-        vec3 u, v, w;
-        double lens_radius;
+        ...
     };
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -172,9 +154,9 @@ a time period.
 
 Adding Moving Spheres
 ----------------------
-We also need a moving object. I’ll create a sphere class that has its center move linearly from
-`center0` at `time_start` to `center1` at `time_end`. Outside that time interval it continues on, so
-those times need not match up with the camera aperture open and close.
+Now to create a moving object. I’ll create a sphere class that has its center move linearly from
+`center0` at time 0 to `center1` at time 1. (It continues on outside that time interval, so it
+really can be sampled at any time.)
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef MOVING_SPHERE_H
@@ -187,25 +169,23 @@ those times need not match up with the camera aperture open and close.
     class moving_sphere : public hittable {
       public:
         moving_sphere() {}
-        moving_sphere(
-            point3 ctr0, point3 ctr1, double r, shared_ptr<material> m,
-            double time_start, double time_end)
-            :
-            center0(ctr0), center1(ctr1), radius(r), mat(m),
-            time0(time_start), time1(time_end)
-        {};
+        moving_sphere(point3 c0, point3 c1, double r, shared_ptr<material> m)
+          : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat(m)
+        { };
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-            // To Be Implemented
+            // Implementation below.
         }
 
         point3 center(double time) const {
-            return center0 + ((time - time0) / (time1 - time0))*(center1 - center0);
+            // Linearly interpolate from center0 to center1 according to time, where t=0 yields
+            // center0, and t=1 yields center1.
+            return center0 + time * center_vec;
         }
 
       public:
         point3 center0, center1;
-        double time0, time1;
+        vec3 center_vec;
         double radius;
         shared_ptr<material> mat;
     };
@@ -262,7 +242,7 @@ just needs to become a function `center(time)`:
     [Listing [moving-sphere-hit]: <kbd>[moving_sphere.h]</kbd> Moving sphere hit function]
 </div>
 
-We need to implement the `interval::contains()` method mentioned above:
+We need to implement the new `interval::contains()` method mentioned above:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class interval {
@@ -341,9 +321,8 @@ Putting Everything Together
 ----------------------------
 <div class='together'>
 The code below takes the example diffuse spheres from the scene at the end of the last book, and
-makes them move during the image render. (Think of a camera with shutter opening at time 0 and
-closing at time 1.) Each sphere moves from its center $\mathbf{C}$ at time $t=0$ to $\mathbf{C} +
-(0, r/2, 0)$ at time $t=1$, where $r$ is a random number in $[0,1)$:
+makes them move during the image render. Each sphere moves from its center $\mathbf{C}$ at time
+$t=0$ to $\mathbf{C} + (0, r/2, 0)$ at time $t=1$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
@@ -388,7 +367,7 @@ closing at time 1.) Each sphere moves from its center $\mathbf{C}$ at time $t=0$
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                         auto center2 = center + vec3(0, random_double(0,.5), 0);
                         world.add(make_shared<moving_sphere>(
-                            center, center2, 0.2, sphere_material, 0.0, 1.0));
+                            center, center2, 0.2, sphere_material));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                     } else if (choose_mat < 0.95) {
                     ...
@@ -716,7 +695,7 @@ the entire time interval [`time0`,`time1`].
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
+        virtual bool bounding_box(aabb& output_box)
             const = 0;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
@@ -732,22 +711,37 @@ For a sphere, that `bounding_box` function is easy:
     class sphere : public hittable {
       public:
         ...
+        sphere() {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
-            output_box = aabb(
-                center - vec3(radius, radius, radius),
-                center + vec3(radius, radius, radius));
+        sphere(point3 ctr, double r, shared_ptr<material> m) : center(ctr), radius(r), mat_ptr(m) {
+            const auto rvec = vec3(radius, radius, radius);
+            bbox = aabb(center - rvec, center + rvec);
+        };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        bool bounding_box(aabb& output_box) const override {
+            output_box = bbox;
             return true;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
+
+      public:
+        point3 center;
+        double radius;
+        shared_ptr<material> mat_ptr;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        aabb bbox;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-bbox]: <kbd>[sphere.h]</kbd> Sphere with bounding box]
 </div>
 
 <div class='together'>
-For `moving sphere`, we can take the box of the sphere at $t_0$, and the box of the sphere at $t_1$,
+For `moving sphere`, we want the bounds of all places the moving sphere could occupy while it moves.
+To do this, we can take the box of the sphere at time = 0, and the box of the sphere at time = 1,
 and compute the box of those two boxes. We'll add a new `aabb` constructor that takes two boxes as
 input below.
 
@@ -761,22 +755,37 @@ input below.
     class moving_sphere : public hittable {
       public:
         ...
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        moving_sphere(point3 c0, point3 c1, double r, shared_ptr<material> m)
+          : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat_ptr(m)
+        {
+            const auto rvec = vec3(radius, radius, radius);
+            const aabb box0(center0 - rvec, center0 + rvec);
+            const aabb box1(center1 - rvec, center1 + rvec);
+            bbox = aabb(box0, box1);
+        };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        ...
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
-            aabb box0(
-                center(time_start) - vec3(radius, radius, radius),
-                center(time_start) + vec3(radius, radius, radius));
-            aabb box1(
-                center(time_end) - vec3(radius, radius, radius),
-                center(time_end) + vec3(radius, radius, radius));
-            output_box = aabb(box0, box1);
+        bool bounding_box(aabb& output_box) const override {
+            output_box = bbox;
             return true;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
+
+      public:
+        point3 center0, center1;
+        vec3 center_vec;
+        double radius;
+        shared_ptr<material> mat_ptr;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        aabb bbox;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [moving-sphere-bbox]: <kbd>[moving_sphere.h]</kbd> Moving sphere with bounding box]
@@ -800,14 +809,14 @@ the fly because it is only usually called at BVH construction.
       public:
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+        bool bounding_box(aabb& output_box) const override {
             if (objects.empty()) return false;
 
             aabb temp_box;
             bool first_box = true;
 
             for (const auto& object : objects) {
-                if (!object->bounding_box(time_start, time_end, temp_box)) return false;
+                if (!object->bounding_box(temp_box)) return false;
                 output_box = first_box ? temp_box : aabb(output_box, temp_box);
                 first_box = false;
             }
@@ -865,14 +874,9 @@ I am a fan of the one class design when feasible. Here is such a class:
       public:
         bvh_node();
 
-        bvh_node(const hittable_list& list, double time_start, double time_end)
-          : bvh_node(list.objects, 0, list.objects.size(), time_start, time_end)
-        {}
+        bvh_node(const hittable_list& list) : bvh_node(list.objects, 0, list.objects.size()) {}
 
-        bvh_node(
-            const std::vector<shared_ptr<hittable>>& src_objects,
-            size_t start, size_t end, double time_start, double time_end
-        ) {
+        bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
             // To be implemented later.
         }
 
@@ -886,7 +890,7 @@ I am a fan of the one class design when feasible. Here is such a class:
             return hit_left || hit_right;
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+        bool bounding_box(aabb& output_box) const override {
             output_box = box;
             return true;
         }
@@ -933,10 +937,7 @@ we haven't yet defined.
     class bvh_node : public hittable {
       public:
         ...
-        bvh_node(
-            std::vector<shared_ptr<hittable>>& src_objects,
-            size_t start, size_t end, double time_start, double time_end
-        ) {
+        bvh_node(std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
             auto objects = src_objects; // Create a modifiable array of the source scene objects
 
             int axis = random_int(0,2);
@@ -960,15 +961,13 @@ we haven't yet defined.
                 std::sort(objects.begin() + start, objects.begin() + end, comparator);
 
                 auto mid = start + object_span/2;
-                left = make_shared<bvh_node>(objects, start, mid, time_start, time_end);
-                right = make_shared<bvh_node>(objects, mid, end, time_start, time_end);
+                left = make_shared<bvh_node>(objects, start, mid);
+                right = make_shared<bvh_node>(objects, mid, end);
             }
 
             aabb box_left, box_right;
 
-            if (  !left->bounding_box (time_start, time_end, box_left)
-               || !right->bounding_box(time_start, time_end, box_right)
-            )
+            if (!left->bounding_box(box_left) || !right->bounding_box(box_right))
                 std::cerr << "No bounding box in bvh_node constructor.\n";
 
             box = aabb(box_left, box_right);
@@ -1014,7 +1013,7 @@ function.
             aabb box_a;
             aabb box_b;
 
-            if (!a->bounding_box(0,0, box_a) || !b->bounding_box(0,0, box_b))
+            if (!a->bounding_box(box_a) || !b->bounding_box(box_b))
                 std::cerr << "No bounding box in bvh_node constructor.\n";
 
             return box_a.axis(axis_index).min < box_b.axis(axis_index).min;
@@ -1035,6 +1034,32 @@ function.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [bvh-x-comp]: <kbd>[bvh.h]</kbd> BVH comparison function, X-axis]
 </div>
+
+At this point, we're ready to use our new BVH code. Let's use it on our `random_spheres()` scene.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+
+    void random_spheres(scene& scene_desc) {
+        scene_desc.aspect_ratio      = 16.0 / 9.0;
+        scene_desc.image_width       = 400;
+        scene_desc.samples_per_pixel = 100;
+
+        ...
+
+        auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
+        world.add(make_shared<sphere>(point3(-4, 1, 0), 1.0, material2));
+
+        auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
+        world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        scene_desc.world = hittable_list(make_shared<bvh_node>(world));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-spheres-bvh]: <kbd>[main.cc]</kbd> Random spheres, using BVH]
 
 
 
@@ -1245,8 +1270,6 @@ Here's the scene construction function:
 
         scene_desc.cam.vup = vec3(0,1,0);
         scene_desc.cam.focus_dist = 10.0;
-        scene_desc.cam.time_start = 0;
-        scene_desc.cam.time_end = 1;
 
         switch (0) {
             case 1:  random_spheres(scene_desc); break;
@@ -2354,8 +2377,6 @@ the new `emitted` value.
 
         scene_desc.cam.vup = vec3(0,1,0);
         scene_desc.cam.focus_dist = 10.0;
-        scene_desc.cam.time_start = 0;
-        scene_desc.cam.time_end = 1;
 
         ...
     }
@@ -2442,7 +2463,7 @@ The actual `xy_rect` class is thus:
             return true;
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+        bool bounding_box(aabb& output_box) const override {
             // The bounding box must have non-zero width in each dimension, so pad the Z
             // dimension a small amount.
             output_box = aabb(point3(x0, y0, k-0.0001), point3(x1, y1, k+0.0001));
@@ -2565,7 +2586,7 @@ This is xz and yz:
             return true;
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+        bool bounding_box(aabb& output_box) const override {
             // The bounding box must have non-zero width in each dimension, so pad the Y
             // dimension a small amount.
             output_box = aabb(point3(x0, k-0.0001, z0), point3(x1, k+0.0001, z1));
@@ -2602,7 +2623,7 @@ This is xz and yz:
             return true;
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+        bool bounding_box(aabb& output_box) const override {
             // The bounding box must have non-zero width in each dimension, so pad the X
             // dimension a small amount.
             output_box = aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
@@ -2716,7 +2737,7 @@ make an axis-aligned block primitive that holds 6 rectangles:
             return sides.hit(r, ray_t, rec);
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+        bool bounding_box(aabb& output_box) const override {
             output_box = aabb(box_min, box_max);
             return true;
         }
@@ -2788,12 +2809,11 @@ move any underlying hittable is a _translate_ instance.
             return true;
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
-            if (!object->bounding_box(time_start, time_end, output_box))
+        bool bounding_box(aabb& output_box) const override {
+            if (!object->bounding_box(output_box))
                 return false;
 
             output_box += offset;
-
             return true;
         }
 
@@ -2892,7 +2912,7 @@ For a y-rotation class we have:
             auto radians = degrees_to_radians(angle);
             sin_theta = sin(radians);
             cos_theta = cos(radians);
-            hasbox = object->bounding_box(0, 1, bbox);
+            hasbox = object->bounding_box(bbox);
 
             point3 min( infinity,  infinity,  infinity);
             point3 max(-infinity, -infinity, -infinity);
@@ -2950,7 +2970,7 @@ For a y-rotation class we have:
             return true;
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+        bool bounding_box(aabb& output_box) const override {
             output_box = bbox;
             return hasbox;
         }
@@ -3099,8 +3119,8 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
             return true;
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
-            return boundary->bounding_box(time_start, time_end, output_box);
+        bool bounding_box(aabb& output_box) const override {
+            return boundary->bounding_box(output_box);
         }
 
       public:
@@ -3271,7 +3291,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 
         hittable_list& world = scene_desc.world;
 
-        world.add(make_shared<bvh_node>(boxes1, 0, 1));
+        world.add(make_shared<bvh_node>(boxes1));
 
         auto light = make_shared<diffuse_light>(color(7, 7, 7));
         world.add(make_shared<xz_rect>(123, 423, 147, 412, 554, light));
@@ -3279,7 +3299,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         auto center1 = point3(400, 400, 200);
         auto center2 = center1 + vec3(30,0,0);
         auto moving_sphere_material = make_shared<lambertian>(color(0.7, 0.3, 0.1));
-        world.add(make_shared<moving_sphere>(center1, center2, 50, moving_sphere_material, 0, 1));
+        world.add(make_shared<moving_sphere>(center1, center2, 50, moving_sphere_material));
 
         world.add(make_shared<sphere>(point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
         world.add(make_shared<sphere>(
@@ -3306,7 +3326,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 
         world.add(make_shared<translate>(
             make_shared<rotate_y>(
-                make_shared<bvh_node>(boxes2, 0.0, 1.0), 15),
+                make_shared<bvh_node>(boxes2), 15),
                 vec3(-100,270,395)
             )
         );

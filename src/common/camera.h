@@ -37,10 +37,12 @@ class camera {
     ray get_ray(double s, double t) const {
         vec3 rd = lens_radius * random_in_unit_disk();
         vec3 offset = u * rd.x() + v * rd.y();
+        const auto ray_time = random_double(0.0, 1.0);
+
         return ray(
             origin + offset,
             lower_left_corner + s*horizontal + t*vertical - origin - offset,
-            random_double(time_start, time_end)
+            ray_time
         );
     }
 
@@ -52,9 +54,6 @@ class camera {
     point3 lookfrom = point3(0,0,-1);
     point3 lookat   = point3(0,0,0);
     vec3   vup      = vec3(0,1,0);
-
-    double time_start = 0;
-    double time_end = 1;
 
   private:
     point3 origin;

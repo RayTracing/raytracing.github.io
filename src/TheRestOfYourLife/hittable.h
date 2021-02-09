@@ -40,7 +40,7 @@ class hittable {
   public:
     virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
 
-    virtual bool bounding_box(double time_start, double time_end, aabb& output_box) const = 0;
+    virtual bool bounding_box(aabb& output_box) const = 0;
 
     virtual double pdf_value(const vec3& o, const vec3& v) const {
         return 0.0;
@@ -64,8 +64,8 @@ class flip_face : public hittable {
         return true;
     }
 
-    bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
-        return ptr->bounding_box(time_start, time_end, output_box);
+    bool bounding_box(aabb& output_box) const override {
+        return ptr->bounding_box(output_box);
     }
 
   public:
@@ -89,12 +89,11 @@ class translate : public hittable {
         return true;
     }
 
-    bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
-        if (!ptr->bounding_box(time_start, time_end, output_box))
+    bool bounding_box(aabb& output_box) const override {
+        if (!ptr->bounding_box(output_box))
             return false;
 
         output_box += offset;
-
         return true;
     }
 
@@ -110,7 +109,7 @@ class rotate_y : public hittable {
         auto radians = degrees_to_radians(angle);
         sin_theta = sin(radians);
         cos_theta = cos(radians);
-        hasbox = ptr->bounding_box(0, 1, bbox);
+        hasbox = ptr->bounding_box(bbox);
 
         point3 min( infinity,  infinity,  infinity);
         point3 max(-infinity, -infinity, -infinity);
@@ -168,7 +167,7 @@ class rotate_y : public hittable {
         return true;
     }
 
-    bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
+    bool bounding_box(aabb& output_box) const override {
         output_box = bbox;
         return hasbox;
     }

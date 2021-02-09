@@ -2359,8 +2359,8 @@ We also need to flip the light so its normals point in the $-y$ direction:
             return true;
         }
 
-        bool bounding_box(double time_start, double time_end, aabb& output_box) const override {
-            return object->bounding_box(time_start, time_end, output_box);
+        bool bounding_box(aabb& output_box) const override {
+            return object->bounding_box(output_box);
         }
 
       public:
@@ -2566,8 +2566,7 @@ functions through to subclasses if you want a purely abstract `hittable` interfa
       public:
         virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
 
-        virtual bool bounding_box(double time_start, double time_end, aabb& output_box)
-            const = 0;
+        virtual bool bounding_box(aabb& output_box) const = 0;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight

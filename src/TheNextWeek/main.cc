@@ -36,9 +36,6 @@ void random_spheres(scene& scene_desc) {
     scene_desc.cam.aperture   = 0.1;
     scene_desc.cam.focus_dist = 10.0;
 
-    scene_desc.cam.time_start = 0.0;
-    scene_desc.cam.time_end   = 1.0;
-
     hittable_list& world = scene_desc.world;
 
     auto checker = make_shared<checker_texture>(0.32, color(.2, .3, .1), color(.9, .9, .9));
@@ -58,7 +55,7 @@ void random_spheres(scene& scene_desc) {
                     sphere_material = make_shared<lambertian>(albedo);
                     auto center2 = center + vec3(0, random_double(0,.5), 0);
                     world.add(make_shared<moving_sphere>(
-                        center, center2, 0.2, sphere_material, 0.0, 1.0));
+                        center, center2, 0.2, sphere_material));
                 } else if (choose_mat < 0.95) {
                     // metal
                     auto albedo = color::random(0.5, 1);
@@ -83,7 +80,7 @@ void random_spheres(scene& scene_desc) {
     auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
     world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
-    scene_desc.world = hittable_list(make_shared<bvh_node>(world, 0.0, 1.0));
+    scene_desc.world = hittable_list(make_shared<bvh_node>(world));
 }
 
 
@@ -271,7 +268,7 @@ void final_scene(scene& scene_desc) {
 
     hittable_list& world = scene_desc.world;
 
-    world.add(make_shared<bvh_node>(boxes1, 0, 1));
+    world.add(make_shared<bvh_node>(boxes1));
 
     auto light = make_shared<diffuse_light>(color(7, 7, 7));
     world.add(make_shared<xz_rect>(123, 423, 147, 412, 554, light));
@@ -279,7 +276,7 @@ void final_scene(scene& scene_desc) {
     auto center1 = point3(400, 400, 200);
     auto center2 = center1 + vec3(30,0,0);
     auto moving_sphere_material = make_shared<lambertian>(color(0.7, 0.3, 0.1));
-    world.add(make_shared<moving_sphere>(center1, center2, 50, moving_sphere_material, 0, 1));
+    world.add(make_shared<moving_sphere>(center1, center2, 50, moving_sphere_material));
 
     world.add(make_shared<sphere>(point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
     world.add(make_shared<sphere>(
@@ -306,7 +303,7 @@ void final_scene(scene& scene_desc) {
 
     world.add(make_shared<translate>(
         make_shared<rotate_y>(
-            make_shared<bvh_node>(boxes2, 0.0, 1.0), 15),
+            make_shared<bvh_node>(boxes2), 15),
             vec3(-100,270,395)
         )
     );
@@ -325,11 +322,8 @@ int main() {
     scene scene_desc;
 
     scene_desc.background = color(0.70, 0.80, 1.00);
-
     scene_desc.cam.vup = vec3(0,1,0);
     scene_desc.cam.focus_dist = 10.0;
-    scene_desc.cam.time_start = 0;
-    scene_desc.cam.time_end = 1;
 
     switch (0) {
         case 1:  random_spheres(scene_desc);     break;

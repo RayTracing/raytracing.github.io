@@ -28,6 +28,8 @@ Change Log -- Ray Tracing in One Weekend
   - Change: Rearranged the texture-mapping presentation. The three types (solid, spatial, image) are
     now sequenced in that order, and the checker texture presented more explicitly as an
     illustration of a spatial texture.
+  - Change: Broad rewrite of time management for moving objects, primarily `camera` and
+    `moving_sphere`, but also impacting the API for `hittable::bounding_box()` (#799)
 
 ### The Rest of Your Life
 

@@ -34,8 +34,6 @@ void cornell_box(scene& scene_desc) {
     scene_desc.cam.vfov         = 40.0;
     scene_desc.cam.aperture     = 0.0;
     scene_desc.cam.focus_dist   = 10.0;
-    scene_desc.cam.time_start   = 0.0;
-    scene_desc.cam.time_end     = 1.0;
 
     hittable_list& world = scene_desc.world;
 
