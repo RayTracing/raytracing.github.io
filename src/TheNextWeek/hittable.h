@@ -47,7 +47,7 @@ class hittable {
 class translate : public hittable {
   public:
     translate(shared_ptr<hittable> p, const vec3& displacement)
-      : object(p), offset(displacement), bbox()
+      : object(p), offset(displacement)
     {
         bbox = object->bounding_box() + offset;
     }

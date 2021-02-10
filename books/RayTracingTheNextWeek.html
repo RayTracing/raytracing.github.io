@@ -404,9 +404,10 @@ The Key Idea
 -------------
 <div class='together'>
 The key idea of a bounding volume over a set of primitives is to find a volume that fully encloses
-(bounds) all the objects. For example, suppose you computed a bounding sphere of 10 objects. Any ray
-that misses the bounding sphere definitely misses all ten objects. If the ray hits the bounding
-sphere, then it might hit one of the ten objects. So the bounding code is always of the form:
+(bounds) all the objects. For example, suppose you computed a sphere that bounds 10 objects. Any ray
+that misses the bounding sphere definitely misses all ten objects inside. If the ray hits the
+bounding sphere, then it might hit one of the ten objects. So the bounding code is always of the
+form:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if (ray hits bounding object)
@@ -456,13 +457,13 @@ better than the alternatives, but this design choice is always something to keep
 encounter unusual types of models.
 
 From now on we will call axis-aligned bounding rectangular parallelepiped (really, that is what they
-need to be called if precise) axis-aligned bounding boxes, or AABBs. Any method you want to use to
+need to be called if precise) _axis-aligned bounding boxes_, or AABBs. Any method you want to use to
 intersect a ray with an AABB is fine. And all we need to know is whether or not we hit it; we don’t
-need hit points or normals or any of that stuff that we need for an object we want to display.
+need hit points or normals or any of the stuff we need to display the object.
 
 <div class='together'>
 Most people use the “slab” method. This is based on the observation that an n-dimensional AABB is
-just the intersection of n axis-aligned intervals, often called “slabs” An interval is just the
+just the intersection of n axis-aligned intervals, often called “slabs”. An interval is just the
 points between two endpoints, _e.g._, $x$ such that $3 < x < 5$, or more succinctly $x$ in $(3,5)$.
 In 2D, two intervals overlapping makes a 2D AABB (a rectangle):
 
@@ -473,14 +474,14 @@ In 2D, two intervals overlapping makes a 2D AABB (a rectangle):
 <div class='together'>
 For a ray to hit one interval we first need to figure out whether the ray hits the boundaries. For
 example, again in 2D, this is the ray parameters $t_0$ and $t_1$. (If the ray is parallel to the
-plane those will be undefined.)
+plane, its intersection with the plane will be undefined.)
 
   ![Figure [ray-slab]: Ray-slab intersection](../images/fig-2.03-ray-slab.jpg)
 
 </div>
 
 <div class='together'>
-In 3D, those boundaries are planes. The equations for the planes are $x = x_0$, and $x = x_1$. Where
+In 3D, those boundaries are planes. The equations for the planes are $x = x_0$ and $x = x_1$. Where
 does the ray hit that plane? Recall that the ray can be thought of as just a function that given a
 $t$ returns a location $\mathbf{P}(t)$:
 
@@ -488,8 +489,8 @@ $t$ returns a location $\mathbf{P}(t)$:
 </div>
 
 <div class='together'>
-That equation applies to all three of the x/y/z coordinates. For example, $x(t) = A_x + t b_x$. This
-ray hits the plane $x = x_0$ at the $t$ that satisfies this equation:
+This equation applies to all three of the x/y/z coordinates. For example, $x(t) = A_x + t b_x$. This
+ray hits the plane $x = x_0$ at the parameter $t$ that satisfies this equation:
 
   $$ x_0 = A_x + t_0 b_x $$
 </div>
@@ -534,7 +535,7 @@ slab method:
     compute (tx0, tx1)
     compute (ty0, ty1)
     compute (tz0, tz1)
-    return overlap?( (tx0, tx1), (ty0, ty1), (tz0, tz1))
+    return overlap ? ((tx0, tx1), (ty0, ty1), (tz0, tz1))
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </div>
 
@@ -555,9 +556,9 @@ First let’s look at computing the intervals:
 
 <div class='together'>
 One troublesome thing is that perfectly valid rays will have $b_x = 0$, causing division by zero.
-Some of those rays are inside the slab, and some are not. Also, the zero will have a ± sign under
-IEEE floating point. The good news for $b_x = 0$ is that $t_{x0}$ and $t_{x1}$ will both be +∞ or
-both be -∞ if not between $x_0$ and $x_1$. So, using min and max should get us the right answers:
+Some of those rays are inside the slab, and some are not. Also, the zero will have a ± sign when
+using IEEE floating point. The good news for $b_x = 0$ is that $t_{x0}$ and $t_{x1}$ will both be +∞
+or both be -∞ if not between $x_0$ and $x_1$. So, using min and max should get us the right answers:
 
   $$ t_{x0} = \min(
      \frac{x_0 - A_x}{b_x},
@@ -602,7 +603,10 @@ passing in the interval $[t_{min}$, $t_{max}]$, we get:
 
     class aabb {
       public:
-        aabb() {}
+        aabb() {} // The default AABB is empty, since intervals are empty by default.
+
+        aabb(const interval& ix, const interval& iy, const interval& iz)
+          : x(ix), y(iy), z(iz) { }
 
         aabb(const point3& a, const point3& b) {
             // Treat the two points a and b as extrema for the bounding box, so we don't require a
@@ -679,9 +683,16 @@ Constructing Bounding Boxes for Hittables
 <div class='together'>
 We now need to add a function to compute the bounding boxes of all the hittables. Then we will make
 a hierarchy of boxes over all the primitives, and the individual primitives--like spheres--will live
-at the leaves. That function returns a bool because not all primitives have bounding boxes (_e.g._,
-infinite planes). In addition, moving objects will have a bounding box that encloses the object for
-the entire time interval [`time0`,`time1`].
+at the leaves.
+
+Recall that `interval` values constructed without arguments will be empty by default. Since an
+`aabb` object has an interval for each of its three dimensions, each of these will then be empty by
+default, and therefore `aabb` objects will be empty by default. Thus, some objects may have empty
+bounding volumes. For example, consider a `hittable_list` object with no children. Happily, the way
+we've designed our interval class, the math all works out.
+
+Finally, recall that some objects may be animated. Such objects should return their bounds over the
+entire range of motion, from time=0 to time=1.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "aabb.h"
@@ -695,8 +706,7 @@ the entire time interval [`time0`,`time1`].
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        virtual bool bounding_box(aabb& output_box)
-            const = 0;
+        virtual aabb bounding_box() const = 0;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     };
@@ -705,32 +715,33 @@ the entire time interval [`time0`,`time1`].
 </div>
 
 <div class='together'>
-For a sphere, that `bounding_box` function is easy:
+For a sphere, the `bounding_box` function is easy:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
       public:
         ...
         sphere() {}
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        sphere(point3 ctr, double r, shared_ptr<material> m) : center(ctr), radius(r), mat_ptr(m) {
+        sphere(point3 ctr, double r, shared_ptr<material> m) : center(ctr), radius(r), mat(m) {
             const auto rvec = vec3(radius, radius, radius);
             bbox = aabb(center - rvec, center + rvec);
         };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
+        ...
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool bounding_box(aabb& output_box) const override {
-            output_box = bbox;
-            return true;
-        }
+        aabb bounding_box() const override { return bbox; }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
 
       public:
         point3 center;
         double radius;
-        shared_ptr<material> mat_ptr;
+        shared_ptr<material> mat;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         aabb bbox;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -739,11 +750,9 @@ For a sphere, that `bounding_box` function is easy:
     [Listing [sphere-bbox]: <kbd>[sphere.h]</kbd> Sphere with bounding box]
 </div>
 
-<div class='together'>
-For `moving sphere`, we want the bounds of all places the moving sphere could occupy while it moves.
-To do this, we can take the box of the sphere at time = 0, and the box of the sphere at time = 1,
-and compute the box of those two boxes. We'll add a new `aabb` constructor that takes two boxes as
-input below.
+For `moving sphere`, we want the bounds of its entire range of motion. To do this, we can take the
+box of the sphere at time=0, and the box of the sphere at time=1, and compute the box of those two
+boxes.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
@@ -757,7 +766,7 @@ input below.
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         moving_sphere(point3 c0, point3 c1, double r, shared_ptr<material> m)
-          : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat_ptr(m)
+          : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat(m)
         {
             const auto rvec = vec3(radius, radius, radius);
             const aabb box0(center0 - rvec, center0 + rvec);
@@ -765,38 +774,52 @@ input below.
             bbox = aabb(box0, box1);
         };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
         ...
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool bounding_box(aabb& output_box) const override {
-            output_box = bbox;
-            return true;
-        }
+        aabb bounding_box() const override { return bbox; }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
         ...
 
       public:
         point3 center0, center1;
         vec3 center_vec;
         double radius;
-        shared_ptr<material> mat_ptr;
+        shared_ptr<material> mat;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         aabb bbox;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [moving-sphere-bbox]: <kbd>[moving_sphere.h]</kbd> Moving sphere with bounding box]
+
+<div class='together'>
+Now we need a new `aabb` constructor that takes two boxes as input:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class aabb {
+      public:
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        aabb(const aabb& box0, const aabb& box1) {
+            x = interval(box0.x, box1.x);
+            y = interval(box0.y, box1.y);
+            z = interval(box0.z, box1.z);
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        ...
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [aabb-from-two-aabb]: <kbd>[aabb.h]</kbd> AABB constructor from two AABB inputs]
 </div>
 
 
 Creating Bounding Boxes of Lists of Objects
 --------------------------------------------
 <div class='together'>
-For lists you can store the bounding box at construction, or compute it on the fly. I like doing it
-the fly because it is only usually called at BVH construction.
+Now we'll update the `hittable_list` object, computing the bounds of its children. We'll update the
+bounding box incrementally as each new child is added.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
@@ -809,43 +832,27 @@ the fly because it is only usually called at BVH construction.
       public:
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool bounding_box(aabb& output_box) const override {
-            if (objects.empty()) return false;
-
-            aabb temp_box;
-            bool first_box = true;
-
-            for (const auto& object : objects) {
-                if (!object->bounding_box(temp_box)) return false;
-                output_box = first_box ? temp_box : aabb(output_box, temp_box);
-                first_box = false;
-            }
-
-            return true;
+        void add(shared_ptr<hittable> object) {
+            objects.push_back(object);
+            bbox = aabb(bbox, object->bounding_box());
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        aabb bounding_box() const override { return bbox; }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+
+      public:
+        std::vector<shared_ptr<hittable>> objects;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        aabb bbox;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hit-list-bbox]: <kbd>[hittable_list.h]</kbd> Hittable list with bounding box]
-</div>
-
-<div class='together'>
-This requires a new `aabb` constructor that takes two boxes as input:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class aabb {
-      public:
-        ...
-        aabb(const aabb& box0, const aabb& box1) {
-            x = interval(box0.x, box1.x);
-            y = interval(box0.y, box1.y);
-            z = interval(box0.z, box1.z);
-        }
-        ...
-    };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [box-of-boxes]: <kbd>[aabb.h]</kbd> aabb from two boxes]
 </div>
 
 
@@ -890,10 +897,7 @@ I am a fan of the one class design when feasible. Here is such a class:
             return hit_left || hit_right;
         }
 
-        bool bounding_box(aabb& output_box) const override {
-            output_box = box;
-            return true;
-        }
+        aabb bounding_box() const override { return bbox; }
 
       public:
         shared_ptr<hittable> left;
@@ -965,12 +969,7 @@ we haven't yet defined.
                 right = make_shared<bvh_node>(objects, mid, end);
             }
 
-            aabb box_left, box_right;
-
-            if (!left->bounding_box(box_left) || !right->bounding_box(box_right))
-                std::cerr << "No bounding box in bvh_node constructor.\n";
-
-            box = aabb(box_left, box_right);
+            bbox = aabb(left->bounding_box(), right->bounding_box());
         }
         ...
     };
@@ -1010,13 +1009,7 @@ function.
         static bool box_compare(
             const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis_index
         ) {
-            aabb box_a;
-            aabb box_b;
-
-            if (!a->bounding_box(box_a) || !b->bounding_box(box_b))
-                std::cerr << "No bounding box in bvh_node constructor.\n";
-
-            return box_a.axis(axis_index).min < box_b.axis(axis_index).min;
+            return a->bounding_box().axis(axis_index).min < b->bounding_box().axis(axis_index).min;
         }
 
         static bool box_x_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
@@ -2443,16 +2436,20 @@ The actual `xy_rect` class is thus:
         xy_rect() {}
 
         xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, shared_ptr<material> _m)
-            : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mat(_m) {};
+          : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mat(_m),
+            bbox(point3(x0, y0, k-0.0001), point3(x1, y1, k+0.0001))
+        {}
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             auto t = (k-r.origin().z()) / r.direction().z();
             if (!ray_t.contains(t))
                 return false;
+
             auto x = r.origin().x() + t*r.direction().x();
             auto y = r.origin().y() + t*r.direction().y();
             if (x < x0 || x1 < x || y < y0 || y1 < y)
                 return false;
+
             rec.u = (x-x0)/(x1-x0);
             rec.v = (y-y0)/(y1-y0);
             rec.t = t;
@@ -2460,19 +2457,16 @@ The actual `xy_rect` class is thus:
             rec.set_face_normal(r, outward_normal);
             rec.mat = mat;
             rec.p = r.at(t);
+
             return true;
         }
 
-        bool bounding_box(aabb& output_box) const override {
-            // The bounding box must have non-zero width in each dimension, so pad the Z
-            // dimension a small amount.
-            output_box = aabb(point3(x0, y0, k-0.0001), point3(x1, y1, k+0.0001));
-            return true;
-        }
+        aabb bounding_box() const override { return bbox; }
 
       public:
         shared_ptr<material> mat;
         double x0, x1, y0, y1, k;
+        aabb bbox;
     };
 
     #endif
@@ -2566,16 +2560,20 @@ This is xz and yz:
         xz_rect() {}
 
         xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<material> _m)
-          : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mat(_m) {};
+          : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mat(_m),
+            bbox(point3(x0, k-0.0001, z0), point3(x1, k+0.0001, z1))
+        {}
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             auto t = (k-r.origin().y()) / r.direction().y();
             if (!ray_t.contains(t))
                 return false;
+
             auto x = r.origin().x() + t*r.direction().x();
             auto z = r.origin().z() + t*r.direction().z();
             if (x < x0 || x1 < x || z < z0 || z1 < z)
                 return false;
+
             rec.u = (x-x0)/(x1-x0);
             rec.v = (z-z0)/(z1-z0);
             rec.t = t;
@@ -2583,19 +2581,16 @@ This is xz and yz:
             rec.set_face_normal(r, outward_normal);
             rec.mat = mat;
             rec.p = r.at(t);
+
             return true;
         }
 
-        bool bounding_box(aabb& output_box) const override {
-            // The bounding box must have non-zero width in each dimension, so pad the Y
-            // dimension a small amount.
-            output_box = aabb(point3(x0, k-0.0001, z0), point3(x1, k+0.0001, z1));
-            return true;
-        }
+        aabb bounding_box() const override { return bbox; }
 
       public:
         shared_ptr<material> mat;
         double x0, x1, z0, z1, k;
+        aabb bbox;
     };
 
     class yz_rect : public hittable {
@@ -2603,7 +2598,9 @@ This is xz and yz:
         yz_rect() {}
 
         yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<material> _m)
-          : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mat(_m) {};
+          : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mat(_m),
+            bbox(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1))
+        {}
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             auto t = (k-r.origin().x()) / r.direction().x();
@@ -2623,16 +2620,12 @@ This is xz and yz:
             return true;
         }
 
-        bool bounding_box(aabb& output_box) const override {
-            // The bounding box must have non-zero width in each dimension, so pad the X
-            // dimension a small amount.
-            output_box = aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
-            return true;
-        }
+        aabb bounding_box() const override { return bbox; }
 
       public:
         shared_ptr<material> mat;
         double y0, y1, z0, z1, k;
+        aabb bbox;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [xz-yz-rects]: <kbd>[aarect.h]</kbd> XZ and YZ rectangle objects]
@@ -2719,10 +2712,9 @@ make an axis-aligned block primitive that holds 6 rectangles:
       public:
         box() {}
 
-        box(const point3& p0, const point3& p1, shared_ptr<material> mat) {
-            box_min = p0;
-            box_max = p1;
-
+        box(const point3& p0, const point3& p1, shared_ptr<material> mat)
+          : box_min(p0), box_max(p1), bbox(p0, p1)
+        {
             sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), mat));
             sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), mat));
 
@@ -2737,15 +2729,13 @@ make an axis-aligned block primitive that holds 6 rectangles:
             return sides.hit(r, ray_t, rec);
         }
 
-        bool bounding_box(aabb& output_box) const override {
-            output_box = aabb(box_min, box_max);
-            return true;
-        }
+        aabb bounding_box() const override { return bbox; }
 
       public:
         point3 box_min;
         point3 box_max;
         hittable_list sides;
+        aabb bbox;
     };
 
     #endif
@@ -2796,7 +2786,10 @@ move any underlying hittable is a _translate_ instance.
     class translate : public hittable {
       public:
         translate(shared_ptr<hittable> p, const vec3& displacement)
-          : object(p), offset(displacement) {}
+          : object(p), offset(displacement)
+        {
+            bbox = object->bounding_box() + offset;
+        }
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             ray moved_r(r.origin() - offset, r.direction(), r.time());
@@ -2809,54 +2802,60 @@ move any underlying hittable is a _translate_ instance.
             return true;
         }
 
-        bool bounding_box(aabb& output_box) const override {
-            if (!object->bounding_box(output_box))
-                return false;
-
-            output_box += offset;
-            return true;
-        }
+        aabb bounding_box() const override { return bbox; }
 
       public:
         shared_ptr<hittable> object;
         vec3 offset;
+        aabb bbox;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [translate-class]: <kbd>[hittable.h]</kbd> Hittable translation class]
 </div>
 
-The line `output_box += offset` in the `bounding_box()` method above requires some additional
-support.
+The expression `object->bounding_box() + offset` above requires some additional support.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class aabb {
-      public:
-        ...
-        aabb& operator+=(vec3 offset) {
-            x += offset.x();
-            y += offset.y();
-            z += offset.z();
-            return *this;
-        }
         ...
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [aabb-plus-eq]: <kbd>[aabb.h]</kbd> The aabb::operator+= method]
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    aabb operator+(const aabb& bbox, const vec3& offset) {
+        return aabb(bbox.x + offset.x(), bbox.y + offset.y(), bbox.z + offset.z());
+    }
+
+    aabb operator+(const vec3& offset, const aabb& bbox) {
+        return bbox + offset;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [aabb-plus-offset]: <kbd>[aabb.h]</kbd> The aabb + offset operator]
+
+
+Since each dimension of an `aabb` is represented as an interval, we'll need to extend `interval`
+with an addition operator as well.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class interval {
-      public:
-        ...
-        interval& operator+=(double offset) {
-            min += offset;
-            max += offset;
-            return *this;
-        }
         ...
     };
+
+    const interval interval::empty    = interval(+infinity, -infinity);
+    const interval interval::universe = interval(-infinity, +infinity);
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    interval operator+(const interval& ival, double displacement) {
+        return interval(ival.min + displacement, ival.max + displacement);
+    }
+
+    interval operator+(double displacement, const interval& ival) {
+        return ival + displacement;
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [interval-plus-eq]: <kbd>[interval.h]</kbd> The interval::operator+= method]
+    [Listing [interval-plus-displacement]:
+    <kbd>[interval.h]</kbd> The interval + displacement operator]
 
 
 Instance Rotation
@@ -2912,7 +2911,7 @@ For a y-rotation class we have:
             auto radians = degrees_to_radians(angle);
             sin_theta = sin(radians);
             cos_theta = cos(radians);
-            hasbox = object->bounding_box(bbox);
+            bbox = object->bounding_box();
 
             point3 min( infinity,  infinity,  infinity);
             point3 max(-infinity, -infinity, -infinity);
@@ -2970,16 +2969,12 @@ For a y-rotation class we have:
             return true;
         }
 
-        bool bounding_box(aabb& output_box) const override {
-            output_box = bbox;
-            return hasbox;
-        }
+        aabb bounding_box() const override { return bbox; }
 
       public:
         shared_ptr<hittable> object;
         double sin_theta;
         double cos_theta;
-        bool hasbox;
         aabb bbox;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3119,9 +3114,7 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
             return true;
         }
 
-        bool bounding_box(aabb& output_box) const override {
-            return boundary->bounding_box(output_box);
-        }
+        aabb bounding_box() const override { return boundary->bounding_box(); }
 
       public:
         shared_ptr<hittable> boundary;

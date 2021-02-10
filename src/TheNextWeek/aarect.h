@@ -125,6 +125,7 @@ class yz_rect : public hittable {
     }
 
     aabb bounding_box() const override { return bbox; }
+
   public:
     shared_ptr<material> mat;
     double y0, y1, z0, z1, k;
