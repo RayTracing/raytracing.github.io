@@ -35,10 +35,6 @@ class aabb {
         z = interval(box0.z, box1.z);
     }
 
-    bool is_empty() const {
-        return x.is_empty() || y.is_empty() || z.is_empty();
-    }
-
     #if 1
         // GitHub Issue #817
         // For some reason I haven't figured out yet, this version is 10x faster than the

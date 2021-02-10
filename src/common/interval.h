@@ -18,10 +18,6 @@ class interval {
     interval(const interval& a, const interval& b)
       : min(fmin(a.min, b.min)), max(fmax(a.max, b.max)) {}
 
-    bool is_empty() const {
-        return max < min;
-    }
-
     bool contains(double x) const {
         return min <= x && x <= max;
     }
@@ -32,8 +28,7 @@ class interval {
         return x;
     }
 
-    static const interval empty;
-    static const interval universe;
+    static const interval empty, universe;
 
   public:
     double min, max;
