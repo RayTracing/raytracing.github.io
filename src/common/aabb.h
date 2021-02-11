@@ -16,7 +16,10 @@
 
 class aabb {
   public:
-    aabb() {}
+    aabb() {} // The default AABB is empty, since intervals are empty by default.
+
+    aabb(const interval& ix, const interval& iy, const interval& iz)
+      : x(ix), y(iy), z(iz) { }
 
     aabb(const point3& a, const point3& b) {
         // Treat the two points a and b as extrema for the bounding box, so we don't require a
@@ -76,16 +79,17 @@ class aabb {
         return x;
     }
 
-    aabb& operator+=(vec3 offset) {
-        x += offset.x();
-        y += offset.y();
-        z += offset.z();
-        return *this;
-    }
-
   public:
     interval x, y, z;
 };
+
+aabb operator+(const aabb& bbox, const vec3& offset) {
+    return aabb(bbox.x + offset.x(), bbox.y + offset.y(), bbox.z + offset.z());
+}
+
+aabb operator+(const vec3& offset, const aabb& bbox) {
+    return bbox + offset;
+}
 
 
 #endif

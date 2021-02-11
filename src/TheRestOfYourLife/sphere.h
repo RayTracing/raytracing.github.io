@@ -20,10 +20,11 @@
 class sphere : public hittable {
   public:
     sphere() {}
+
     sphere(point3 ctr, double r, shared_ptr<material> m) : center(ctr), radius(r), mat(m) {
         const auto rvec = vec3(radius, radius, radius);
         bbox = aabb(center - rvec, center + rvec);
-    };
+    }
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         vec3 oc = r.origin() - center;
@@ -53,10 +54,7 @@ class sphere : public hittable {
         return true;
     }
 
-    bool bounding_box(aabb& output_box) const override {
-        output_box = bbox;
-        return true;
-    }
+    aabb bounding_box() const override { return bbox; }
 
     double pdf_value(const point3& o, const vec3& v) const override {
         hit_record rec;

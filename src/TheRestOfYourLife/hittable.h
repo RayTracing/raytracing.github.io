@@ -40,7 +40,7 @@ class hittable {
   public:
     virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
 
-    virtual bool bounding_box(aabb& output_box) const = 0;
+    virtual aabb bounding_box() const = 0;
 
     virtual double pdf_value(const vec3& o, const vec3& v) const {
         return 0.0;
@@ -54,33 +54,34 @@ class hittable {
 
 class flip_face : public hittable {
   public:
-    flip_face(shared_ptr<hittable> p) : ptr(p) {}
+    flip_face(shared_ptr<hittable> p) : object(p) {}
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-        if (!ptr->hit(r, ray_t, rec))
+        if (!object->hit(r, ray_t, rec))
             return false;
 
         rec.front_face = !rec.front_face;
         return true;
     }
 
-    bool bounding_box(aabb& output_box) const override {
-        return ptr->bounding_box(output_box);
-    }
+    aabb bounding_box() const override { return object->bounding_box(); }
 
   public:
-    shared_ptr<hittable> ptr;
+    shared_ptr<hittable> object;
 };
 
 
 class translate : public hittable {
   public:
     translate(shared_ptr<hittable> p, const vec3& displacement)
-        : ptr(p), offset(displacement) {}
+      : object(p), offset(displacement)
+    {
+        bbox = object->bounding_box() + offset;
+    }
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         ray moved_r(r.origin() - offset, r.direction(), r.time());
-        if (!ptr->hit(moved_r, ray_t, rec))
+        if (!object->hit(moved_r, ray_t, rec))
             return false;
 
         rec.p += offset;
@@ -89,27 +90,22 @@ class translate : public hittable {
         return true;
     }
 
-    bool bounding_box(aabb& output_box) const override {
-        if (!ptr->bounding_box(output_box))
-            return false;
-
-        output_box += offset;
-        return true;
-    }
+    aabb bounding_box() const override { return bbox; }
 
   public:
-    shared_ptr<hittable> ptr;
+    shared_ptr<hittable> object;
     vec3 offset;
+    aabb bbox;
 };
 
 
 class rotate_y : public hittable {
   public:
-    rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
+    rotate_y(shared_ptr<hittable> p, double angle) : object(p) {
         auto radians = degrees_to_radians(angle);
         sin_theta = sin(radians);
         cos_theta = cos(radians);
-        hasbox = ptr->bounding_box(bbox);
+        bbox = object->bounding_box();
 
         point3 min( infinity,  infinity,  infinity);
         point3 max(-infinity, -infinity, -infinity);
@@ -149,7 +145,7 @@ class rotate_y : public hittable {
 
         ray rotated_r(origin, direction, r.time());
 
-        if (!ptr->hit(rotated_r, ray_t, rec))
+        if (!object->hit(rotated_r, ray_t, rec))
             return false;
 
         auto p = rec.p;
@@ -167,16 +163,12 @@ class rotate_y : public hittable {
         return true;
     }
 
-    bool bounding_box(aabb& output_box) const override {
-        output_box = bbox;
-        return hasbox;
-    }
+    aabb bounding_box() const override { return bbox; }
 
   public:
-    shared_ptr<hittable> ptr;
+    shared_ptr<hittable> object;
     double sin_theta;
     double cos_theta;
-    bool hasbox;
     aabb bbox;
 };
 

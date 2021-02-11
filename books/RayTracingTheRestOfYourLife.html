@@ -809,15 +809,10 @@ $\sqrt{2}$ and 2.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     double f(double d)
     {
-        if(d <= 0.5)
-        {
+        if (d <= 0.5)
             return sqrt(2.0) * random_double();
-        }
         else
-        {
             return sqrt(2.0) + (2 - sqrt(2.0)) * random_double();
-        }
-
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [crude-approx]: A crude, first-order approximation to nonuniform PDF]
@@ -1512,6 +1507,7 @@ We modify the base-class `material` to enable this importance sampling:
         virtual color emitted(double u, double v, const point3& p) const {
             return color(0,0,0);
         }
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         virtual bool scatter(
@@ -2352,16 +2348,11 @@ We also need to flip the light so its normals point in the $-y$ direction:
             if (!object->hit(r, ray_t, rec))
                 return false;
 
-            if (!object->hit(r, ray_tmin, ray_tmax, rec))
-                return false;
-
             rec.front_face = !rec.front_face;
             return true;
         }
 
-        bool bounding_box(aabb& output_box) const override {
-            return object->bounding_box(output_box);
-        }
+        aabb bounding_box() const override { return object->bounding_box(); }
 
       public:
         shared_ptr<hittable> object;
@@ -2566,7 +2557,7 @@ functions through to subclasses if you want a purely abstract `hittable` interfa
       public:
         virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
 
-        virtual bool bounding_box(aabb& output_box) const = 0;
+        virtual aabb bounding_box() const = 0;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight

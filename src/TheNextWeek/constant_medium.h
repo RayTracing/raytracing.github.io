@@ -35,7 +35,7 @@ class constant_medium : public hittable {
 
         hit_record rec1, rec2;
 
-        if (!boundary->hit(r, universe, rec1))
+        if (!boundary->hit(r, interval::universe, rec1))
             return false;
 
         if (!boundary->hit(r, interval(rec1.t+0.0001, infinity), rec2))
@@ -75,9 +75,7 @@ class constant_medium : public hittable {
         return true;
     }
 
-    bool bounding_box(aabb& output_box) const override {
-        return boundary->bounding_box(output_box);
-    }
+    aabb bounding_box() const override { return boundary->bounding_box(); }
 
   public:
     shared_ptr<hittable> boundary;
