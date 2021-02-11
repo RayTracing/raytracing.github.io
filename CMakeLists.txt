@@ -48,6 +48,7 @@ set ( SOURCE_NEXT_WEEK
   src/TheNextWeek/hittable_list.h
   src/TheNextWeek/material.h
   src/TheNextWeek/moving_sphere.h
+  src/TheNextWeek/planar.h
   src/TheNextWeek/scene.h
   src/TheNextWeek/sphere.h
   src/TheNextWeek/main.cc

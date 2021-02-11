@@ -19,6 +19,7 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "moving_sphere.h"
+#include "planar.h"
 #include "scene.h"
 #include "sphere.h"
 #include "texture.h"
@@ -318,6 +319,35 @@ void default_scene(scene& scene_desc) {
 }
 
 
+void planar_test(scene& scene_desc) {
+    scene_desc.image_width       = 400;
+    scene_desc.aspect_ratio      = 1.0;
+    scene_desc.samples_per_pixel = 4;
+    scene_desc.max_depth         = 4;
+
+    scene_desc.cam.aperture = 0.0;
+    scene_desc.cam.vfov     = 20.0;
+    scene_desc.cam.lookfrom = point3(0,0,12);
+    scene_desc.cam.lookat   = point3(0,0,0);
+
+    auto earth_texture = make_shared<image_texture>("earthmap.jpg");
+    auto mat = make_shared<lambertian>(earth_texture);
+
+    //scene_desc.world.add(make_shared<sphere>(point3(0,0,0), 2, earth_surface));
+
+///// Four new primitive types below. I'm leaning toward keeping only quads, but hinting at
+///// triangles, ellipses, annuli and other 2D shapes as possibilities. Hmmm, I haven't yet
+///// done stencil for giggles; think I'll do that too for my own fun.
+
+    //auto thing = make_shared<quad>(point3(-2,-2,4), vec3(4,0,0), vec3(0,4,0), mat);
+    auto thing = make_shared<ellipse>(point3(0,0,0), vec3(2,0,0), vec3(0,1,0), mat);
+    //auto thing = make_shared<annulus>(point3(0,0,0), vec3(1,0,0), vec3(0,1,0), 1.0, 2.0, mat);
+    //auto thing = make_shared<tri>(point3(-2,-2,0), vec3(4,0,0), vec3(0,4,0), mat);
+
+    scene_desc.world.add(thing);
+}
+
+
 int main() {
     scene scene_desc;
 
@@ -335,6 +365,8 @@ int main() {
         case 7:  cornell_smoke(scene_desc);      break;
         case 8:  final_scene(scene_desc);        break;
         default: default_scene(scene_desc);      break;
+
+        case 0: planar_test(scene_desc); break;
     }
 
     scene_desc.render();

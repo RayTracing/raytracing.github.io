@@ -35,6 +35,27 @@ class aabb {
         z = interval(box0.z, box1.z);
     }
 
+    const interval& axis(int n) const {
+        if (n == 1) return y;
+        if (n == 2) return z;
+        return x;
+    }
+
+/// Bounding-box padding is currently done for each derived class of `aarect`. However, padding
+/// is required for all 2D primitives, so it seems better to make such padding an option on the
+/// AABB class instead. This method is called whenever one or more dimensions might have zero
+/// thickness. In this case, I continue with a buried, hard-coded pad -- not production quality,
+/// but certainly appropriate for this project.
+
+    aabb pad() {
+        const double delta = 0.0001;
+        interval& new_x = (x.size() >= delta) ? x : x.expand(delta);
+        interval& new_y = (y.size() >= delta) ? y : y.expand(delta);
+        interval& new_z = (z.size() >= delta) ? z : z.expand(delta);
+
+        return aabb(new_x, new_y, new_z);
+    }
+
     #if 1
         // GitHub Issue #817
         // For some reason I haven't figured out yet, this version is 10x faster than the
@@ -72,12 +93,6 @@ class aabb {
             return true;
         }
     #endif
-
-    const interval& axis(int n) const {
-        if (n == 1) return y;
-        if (n == 2) return z;
-        return x;
-    }
 
   public:
     interval x, y, z;
