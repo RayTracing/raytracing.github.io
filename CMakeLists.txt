@@ -17,6 +17,8 @@ set ( CMAKE_CXX_EXTENSIONS        OFF )
 set ( COMMON_ALL
   src/common/rtweekend.h
   src/common/camera.h
+  src/common/color.h
+  src/common/interval.h
   src/common/ray.h
   src/common/vec3.h
 )
