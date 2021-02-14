@@ -23,7 +23,7 @@ class interval {
     }
 
     interval expand(double delta) const {
-        return interval(min - delta, max + delta);
+        return interval(min - delta/2, max + delta/2);
     }
 
     bool contains(double x) const {
@@ -39,7 +39,7 @@ class interval {
 /// Toying with the idea of a global constant [0,1] interval, since it's used in multiple
 /// places. Alternate name: `interval::zero_one`.
 
-    static const interval empty, universe, unit;
+    static const interval empty, universe;
 
   public:
     double min, max;
@@ -47,7 +47,6 @@ class interval {
 
 const interval interval::empty    = interval(+infinity, -infinity);
 const interval interval::universe = interval(-infinity, +infinity);
-const interval interval::unit     = interval(0, 1);
 
 interval operator+(const interval& ival, double displacement) {
     return interval(ival.min + displacement, ival.max + displacement);

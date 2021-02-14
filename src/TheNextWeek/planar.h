@@ -22,10 +22,10 @@
 class planar : public hittable {
   public:
     planar(const point3& o, const vec3& side_A, const vec3& side_B, shared_ptr<material> m)
-      : origin(o), a(side_A), b(side_B), mat(m)
+      : plane_origin(o), a(side_A), b(side_B), mat(m)
     {
         normal = unit_vector(cross(a, b));
-        D = -dot(normal, origin);
+        D = -dot(normal, plane_origin);
         a /= dot(a,a);
         b /= dot(b,b);
 
@@ -34,14 +34,14 @@ class planar : public hittable {
         interval u_bounds, v_bounds;
         get_uv_bounds(u_bounds, v_bounds);
         bbox = aabb(
-            origin + (u_bounds.min * side_A) + (v_bounds.min * side_B),
-            origin + (u_bounds.max * side_A) + (v_bounds.max * side_B)
+            plane_origin + (u_bounds.min * side_A) + (v_bounds.min * side_B),
+            plane_origin + (u_bounds.max * side_A) + (v_bounds.max * side_B)
         );
     }
 
     virtual void get_uv_bounds(interval& u_bounds, interval& v_bounds) {
-        u_bounds = interval::unit;
-        v_bounds = interval::unit;
+        u_bounds = interval(0,1);
+        v_bounds = interval(0,1);
     }
 
     virtual bool hit_uv(double u, double v) const = 0;
@@ -50,7 +50,10 @@ class planar : public hittable {
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         auto denom = dot(normal, r.direction());
-        if (fabs(denom) < 1e-8) return false;
+
+        // No hit if the ray is parallel to the plane.
+        if (fabs(denom) < 1e-8)
+            return false;
 
         auto t = (-D - dot(normal, r.origin())) / denom;
         if (!ray_t.contains(t))
@@ -58,7 +61,7 @@ class planar : public hittable {
 
         auto intersection = r.at(t);
 
-        vec3 planar_hitpt_vector = intersection - origin;
+        vec3 planar_hitpt_vector = intersection - plane_origin;
 
         auto u = dot(planar_hitpt_vector, a);
         auto v = dot(planar_hitpt_vector, b);
@@ -75,10 +78,10 @@ class planar : public hittable {
         return true;
     }
 
-    aabb bounding_box() const { return bbox; }
+    aabb bounding_box() const override { return bbox; }
 
   protected:
-    point3 origin;
+    point3 plane_origin;
     vec3 normal;
     double D;
     vec3 a, b;
@@ -94,7 +97,7 @@ class quad : public planar {
     {}
 
     bool hit_uv(double u, double v) const override {
-        return interval::unit.contains(u) && interval::unit.contains(v);
+        return (0 <= u) && (u <= 1) && (0 <= v) && (v <= 1);
     }
 };
 
