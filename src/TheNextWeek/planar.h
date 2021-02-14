@@ -15,13 +15,9 @@
 
 #include <cmath>
 
-//// This class is somewhat complex, but that's because it serves as a base class for very
-//// simple derived classes, where you really only need to worry about construction, bounds,
-//// and UV hit determination.
-
-class planar : public hittable {
+class quad : public hittable {
   public:
-    planar(const point3& o, const vec3& side_A, const vec3& side_B, shared_ptr<material> m)
+    quad(const point3& o, const vec3& side_A, const vec3& side_B, shared_ptr<material> m)
       : plane_origin(o), a(side_A), b(side_B), mat(m)
     {
         normal = unit_vector(cross(a, b));
@@ -30,6 +26,7 @@ class planar : public hittable {
         b /= dot(b,b);
 
 /////// By default, bounded to the world coordinates of UV<0,0> to UV<1,1>.
+/////// Might make this invariant.
 
         interval u_bounds, v_bounds;
         get_uv_bounds(u_bounds, v_bounds);
@@ -44,9 +41,11 @@ class planar : public hittable {
         v_bounds = interval(0,1);
     }
 
-    virtual bool hit_uv(double u, double v) const = 0;
+    virtual bool hit_uv(double u, double v) const {
+        return (0 <= u) && (u <= 1) && (0 <= v) && (v <= 1);
+    }
 
-/// The distinction of this method is that it calls `hit_uv()` to filter on UV coordinates.
+/// This method calls `hit_uv()` to filter on UV coordinates.
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         auto denom = dot(normal, r.direction());
@@ -90,22 +89,10 @@ class planar : public hittable {
 };
 
 
-class quad : public planar {
-  public:
-    quad(const point3& o, const vec3& side_A, const vec3& side_B, shared_ptr<material> m)
-      : planar(o, side_A, side_B, m)
-    {}
-
-    bool hit_uv(double u, double v) const override {
-        return (0 <= u) && (u <= 1) && (0 <= v) && (v <= 1);
-    }
-};
-
-
-class tri : public planar {
+class tri : public quad {
   public:
     tri(const point3& o, const vec3& side_A, const vec3& side_B, shared_ptr<material> m)
-      : planar(o, side_A, side_B, m)
+      : quad(o, side_A, side_B, m)
     {}
 
     bool hit_uv(double u, double v) const override {
@@ -116,12 +103,12 @@ class tri : public planar {
 };
 
 
-class ellipse : public planar {
+class ellipse : public quad {
   public:
     ellipse(
         const point3& center, const vec3& radius_A, const vec3& radius_B,
         shared_ptr<material> m)
-      : planar(center - radius_A - radius_B, 2 * radius_A, 2 * radius_B, m)
+      : quad(center - radius_A - radius_B, 2 * radius_A, 2 * radius_B, m)
     { }
 
     bool hit_uv(double u, double v) const override {
@@ -132,12 +119,12 @@ class ellipse : public planar {
 };
 
 
-class annulus : public planar {
+class annulus : public quad {
   public:
     annulus(
         const point3& center, const vec3& side_A, const vec3& side_B,
         double radius_inner, double radius_outer, shared_ptr<material> m)
-      : planar(
+      : quad(
             center - radius_outer*unit_vector(side_A) - radius_outer*unit_vector(side_B),
             2 * radius_outer * unit_vector(side_A),
             2 * radius_outer * unit_vector(side_B),

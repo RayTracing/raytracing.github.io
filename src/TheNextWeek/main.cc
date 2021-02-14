@@ -339,10 +339,23 @@ void planar_test(scene& scene_desc) {
 ///// triangles, ellipses, annuli and other 2D shapes as possibilities. Hmmm, I haven't yet
 ///// done stencil for giggles; think I'll do that too for my own fun.
 
-    //auto thing = make_shared<quad>(point3(-2,-2,4), vec3(4,0,0), vec3(0,4,0), mat);
-    auto thing = make_shared<ellipse>(point3(0,0,0), vec3(2,0,0), vec3(0,1,0), mat);
-    //auto thing = make_shared<annulus>(point3(0,0,0), vec3(1,0,0), vec3(0,1,0), 1.0, 2.0, mat);
-    //auto thing = make_shared<tri>(point3(-2,-2,0), vec3(4,0,0), vec3(0,4,0), mat);
+    shared_ptr<hittable> thing;
+    switch (0) {
+        default:
+        case 0:
+            thing = make_shared<quad>(point3(-2,-2,4), vec3(4,0,0), vec3(0,4,0), mat);
+            break;
+        case 1:
+            thing = make_shared<ellipse>(point3(0,0,0), vec3(2,0,0), vec3(0,1,0), mat);
+            break;
+        case 2:
+            thing =
+                make_shared<annulus>(point3(0,0,0), vec3(1,0,0), vec3(0,1,0), 1.0, 2.0, mat);
+            break;
+        case 3:
+            thing = make_shared<tri>(point3(-2,-2,0), vec3(4,0,0), vec3(0,4,0), mat);
+            break;
+    }
 
     scene_desc.world.add(thing);
 }
