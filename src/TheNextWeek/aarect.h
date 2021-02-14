@@ -49,8 +49,8 @@ class xy_rect : public hittable {
     aabb bounding_box() const override { return bbox; }
 
   public:
-    shared_ptr<material> mat;
     double x0, x1, y0, y1, k;
+    shared_ptr<material> mat;
     aabb bbox;
 };
 
@@ -88,8 +88,8 @@ class xz_rect : public hittable {
     aabb bounding_box() const override { return bbox; }
 
   public:
-    shared_ptr<material> mat;
     double x0, x1, z0, z1, k;
+    shared_ptr<material> mat;
     aabb bbox;
 };
 
@@ -127,8 +127,8 @@ class yz_rect : public hittable {
     aabb bounding_box() const override { return bbox; }
 
   public:
-    shared_ptr<material> mat;
     double y0, y1, z0, z1, k;
+    shared_ptr<material> mat;
     aabb bbox;
 };
 

@@ -1099,6 +1099,8 @@ Constant Color Texture
 
     class texture {
       public:
+        virtual ~texture() = default;
+
         virtual color value(double u, double v, const point3& p) const = 0;
     };
 
@@ -1194,8 +1196,8 @@ pattern in the scene.
 
       public:
         double inv_scale;
-        shared_ptr<texture> odd;
         shared_ptr<texture> even;
+        shared_ptr<texture> odd;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [checker-texture]: <kbd>[texture.h]</kbd> Checkered texture]
@@ -2293,12 +2295,15 @@ class return black:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material {
       public:
+        ...
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         virtual color emitted(double u, double v, const point3& p) const {
             return color(0,0,0);
         }
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         virtual bool scatter(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
         ) const = 0;
@@ -2466,8 +2471,8 @@ The actual `xy_rect` class is thus:
         aabb bounding_box() const override { return bbox; }
 
       public:
-        shared_ptr<material> mat;
         double x0, x1, y0, y1, k;
+        shared_ptr<material> mat;
         aabb bbox;
     };
 
@@ -2590,8 +2595,8 @@ This is xz and yz:
         aabb bounding_box() const override { return bbox; }
 
       public:
-        shared_ptr<material> mat;
         double x0, x1, z0, z1, k;
+        shared_ptr<material> mat;
         aabb bbox;
     };
 
@@ -2625,8 +2630,8 @@ This is xz and yz:
         aabb bounding_box() const override { return bbox; }
 
       public:
-        shared_ptr<material> mat;
         double y0, y1, z0, z1, k;
+        shared_ptr<material> mat;
         aabb bbox;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3120,8 +3125,8 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
 
       public:
         shared_ptr<hittable> boundary;
-        shared_ptr<material> phase_function;
         double neg_inv_density;
+        shared_ptr<material> phase_function;
     };
 
     #endif

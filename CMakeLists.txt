@@ -17,6 +17,8 @@ set ( CMAKE_CXX_EXTENSIONS        OFF )
 set ( COMMON_ALL
   src/common/rtweekend.h
   src/common/camera.h
+  src/common/color.h
+  src/common/interval.h
   src/common/ray.h
   src/common/vec3.h
 )
@@ -71,6 +73,18 @@ set ( SOURCE_REST_OF_YOUR_LIFE
   src/TheRestOfYourLife/main.cc
 )
 
+include_directories(src/common)
+
+# Specific Compiler Flags
+
+message (STATUS "Compiler ID: " ${CMAKE_CXX_COMPILER_ID})
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options("/we 4265") # Class has virtual functions, but its non-trivial destructor is not virtual
+    add_compile_options("/w3 5038") # Data member will be initialized after [other] data member
+    add_compile_options("/we 5204") # Class has virtual functions, but its trivial destructor is not virtual
+endif()
+
 # Executables
 add_executable(inOneWeekend      ${SOURCE_ONE_WEEKEND})
 add_executable(theNextWeek       ${SOURCE_NEXT_WEEK})
@@ -82,5 +96,3 @@ add_executable(pi                src/TheRestOfYourLife/pi.cc                ${CO
 add_executable(estimate_halfway  src/TheRestOfYourLife/estimate_halfway.cc  ${COMMON_ALL})
 add_executable(sphere_importance src/TheRestOfYourLife/sphere_importance.cc ${COMMON_ALL})
 add_executable(sphere_plot       src/TheRestOfYourLife/sphere_plot.cc       ${COMMON_ALL})
-
-include_directories(src/common)

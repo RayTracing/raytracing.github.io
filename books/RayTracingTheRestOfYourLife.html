@@ -1504,9 +1504,7 @@ We modify the base-class `material` to enable this importance sampling:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material {
       public:
-        virtual color emitted(double u, double v, const point3& p) const {
-            return color(0,0,0);
-        }
+        ...
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2305,6 +2303,9 @@ down. We can do that by letting the emitted member function of hittable take ext
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material {
       public:
+        ...
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         virtual color emitted(
             const ray& r_in, const hit_record& rec, double u, double v, const point3& p
@@ -2312,7 +2313,6 @@ down. We can do that by letting the emitted member function of hittable take ext
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             return color(0,0,0);
         }
-
         ...
     };
 
@@ -2523,21 +2523,21 @@ Now we can try sampling directions toward a `hittable`, like the light.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable_pdf : public pdf {
       public:
-        hittable_pdf(const hittable_list& _hittable_ptr, const point3& _origin)
-          : hittable_ptr(_hittable_ptr), origin(_origin)
+        hittable_pdf(const hittable_list& _objects, const point3& _origin)
+          : objects(_objects), origin(_origin)
         {}
 
         double value(const vec3& direction) const override {
-            return hittable_ptr->pdf_value(origin, direction);
+            return objects.pdf_value(origin, direction);
         }
 
         vec3 generate() const override {
-            return hittable_ptr->random(origin);
+            return objects.random(origin);
         }
 
       public:
+        const hittable_list& objects;
         point3 origin;
-        shared_ptr<hittable> hittable_ptr;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [class-hittable-pdf]: <kbd>[pdf.h]</kbd> The hittable_pdf class]
@@ -2555,9 +2555,7 @@ functions through to subclasses if you want a purely abstract `hittable` interfa
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable {
       public:
-        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
-
-        virtual aabb bounding_box() const = 0;
+        ...
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2890,11 +2888,7 @@ We can redesign `material` and stuff all the new arguments into a class like we 
 
     class material {
       public:
-        virtual color emitted(
-            const ray& r_in, const hit_record& rec, double u, double v, const point3& p
-        ) const {
-            return color(0,0,0);
-        }
+        ...
 
         virtual bool scatter(
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2903,11 +2897,7 @@ We can redesign `material` and stuff all the new arguments into a class like we 
         ) const {
             return false;
         }
-
-        virtual double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
-        const {
-            return 0;
-        }
+        ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [material-refactor]: <kbd>[material.h]</kbd> Refactoring the material class]

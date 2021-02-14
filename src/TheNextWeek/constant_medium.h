@@ -79,8 +79,8 @@ class constant_medium : public hittable {
 
   public:
     shared_ptr<hittable> boundary;
-    shared_ptr<material> phase_function;
     double neg_inv_density;
+    shared_ptr<material> phase_function;
 };
 
 
