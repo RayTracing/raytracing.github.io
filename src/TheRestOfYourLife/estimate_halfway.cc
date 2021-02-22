@@ -48,7 +48,7 @@ int main() {
 
     // Find out the sample at which we have half of our area
     double half_sum = sum / 2.0;
-    double halfway_point;
+    double halfway_point = 0.0;
     double accum = 0.0;
     for (int i = 0; i < N; i++){
         accum += samples[i].p_x;
