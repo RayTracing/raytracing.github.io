@@ -28,6 +28,8 @@ class scatter_record {
 
 class material {
   public:
+    virtual ~material() = default;
+
     virtual color emitted(
         const ray& r_in, const hit_record& rec, double u, double v, const point3& p
     ) const {

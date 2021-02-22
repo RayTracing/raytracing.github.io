@@ -21,6 +21,7 @@ Change Log -- Ray Tracing in One Weekend
   - Change: `hittable` member variable `ptr` renamed to `object`
   - Change: general rename of `mat_ptr` to `mat` (material)
   - Change: hittable::bounding_box() signature has changed to always return a value (#859)
+  - Fix: Enabled compiler warnings for MSVC, Clang, GNU. Cleaned up warnings as fit (#865)
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)

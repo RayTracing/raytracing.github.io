@@ -19,6 +19,8 @@
 
 class texture {
   public:
+    virtual ~texture() = default;
+
     virtual color value(double u, double v, const point3& p) const = 0;
 };
 
@@ -65,8 +67,8 @@ class checker_texture : public texture {
 
   public:
     double inv_scale;
-    shared_ptr<texture> odd;
     shared_ptr<texture> even;
+    shared_ptr<texture> odd;
 };
 
 

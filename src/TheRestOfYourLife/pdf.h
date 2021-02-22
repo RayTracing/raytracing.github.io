@@ -45,21 +45,21 @@ class cosine_pdf : public pdf {
 
 class hittable_pdf : public pdf {
   public:
-    hittable_pdf(const hittable_list& _hittable_ptr, const point3& _origin)
-      : hittable_ptr(_hittable_ptr), origin(_origin)
+    hittable_pdf(const hittable_list& _objects, const point3& _origin)
+      : objects(_objects), origin(_origin)
     {}
 
     double value(const vec3& direction) const override {
-        return hittable_ptr.pdf_value(origin, direction);
+        return objects.pdf_value(origin, direction);
     }
 
     vec3 generate() const override {
-        return hittable_ptr.random(origin);
+        return objects.random(origin);
     }
 
   public:
+    const hittable_list& objects;
     point3 origin;
-    const hittable_list& hittable_ptr;
 };
 
 

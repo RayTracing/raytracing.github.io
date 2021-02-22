@@ -25,8 +25,6 @@ double pdf(double x) {
 }
 
 int main() {
-    int inside_circle = 0;
-    int inside_circle_stratified = 0;
     int N = 1;
 
     auto sum = 0.0;
