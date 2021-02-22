@@ -75,7 +75,9 @@ set ( SOURCE_REST_OF_YOUR_LIFE
 
 include_directories(src/common)
 
-# Specific Compiler Flags
+# Specific compiler flags below. We're not going to add options for all possible compilers, but if
+# you're new to CMake (like we are), the following may be a helpful example if you're using a
+# different compiler or want to set different compiler options.
 
 message (STATUS "Compiler ID: " ${CMAKE_CXX_COMPILER_ID})
 
