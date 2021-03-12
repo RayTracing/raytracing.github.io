@@ -10,26 +10,12 @@ https://raytracing.github.io/, so we can keep the content up-to-date with the la
 improvements.
 
 
-Repository Organization
-------------------------
-This repository has the following organization
-
-```bash
-raytracing.github.io/      # Repository root
-    books/                 # Book content
-    images/                # All figures, renderings and other images used throughout the project
-    src/                   # Source code
-        common/            # Source code that is common to two or more books
-        InOneWeekend/      # The final form of source code for Ray Tracing in One Weekend
-        TheNextWeek/       # The final form of source code for Ray Tracing: The Next Week
-        TheRestOfYourLife/ # The final form of source code for Ray Tracing: The Rest of Your Life
-    style/                 # CSS for books and web site
-```
-
-The latest official release can be found in the `master` branch. All ongoing development work (and
-all of the latest changes) will be in the `dev-patch`, `dev-minor`, and `dev-major` branches. The
-appropriate target branch for any pull requests you want to make will be determined in the
-associated issue first (all PRs should have an associated issue).
+Development Branches
+---------------------
+We use `master` as our release branch. _Generally, changes should never go directly to the master
+branch_. All ongoing development work (and all of the latest changes) will be in the `dev-patch`,
+`dev-minor`, or `dev-major` branches. The appropriate target branch for any pull requests you want
+to make will be determined in the associated issue first (all PRs should have an associated issue).
 
 
 Issues
@@ -49,23 +35,29 @@ please include the file, function/class, and line number(s) if that applies.
 
 Pull Requests
 --------------
-To contribute a change to the project, please follow these steps:
+To contribute a change to the project, *please follow these steps*:
 
   1. [Create a GitHub issue](https://github.com/RayTracing/raytracing.github.io/issues).
 
-  2. Participate in the discussion as needed. We'll ensure that the work doesn't conflict with or
+  2. Let us know whether you're willing to make the fix yourself.
+
+  3. Participate in the discussion as needed. We'll ensure that the work doesn't conflict with or
      duplicate other work planned or in progress, and decide which development branch is correct
      for the release type and release schedule.
 
-  3. Create your changes in a feature branch (or fork) from the assigned development branch
-     (probably `dev-patch`, `dev-minor`, `dev-major`, or `future`).
+  4. Create your changes in a feature branch (or fork) from the assigned development branch
+     (`dev-patch`, `dev-minor`, `dev-major`).
 
-  4. Follow existing code style.
+  5. Follow the existing code style.
 
-  5. When ready, create a pull request and request a review from "rt-contributors".
+  6. Include a one-line summary change at the bottom of the current development section in the
+     changelog. Include a reference to the associated GitHub issue.
 
-New to GitHub? We'll walk you through the process above. Just mention that you'd like a little
-guidance in the proposal issue.
+  7. When ready, create your pull request and request a review from "rt-contributors".
+
+If anything above sounds daunting, note that you'll get _massive_ credit for actually reading the
+CONTRIBUTING.md and following the process above -- so we'd be delighted to answer any questions and
+guide you through the process.
 
 
 Questions
