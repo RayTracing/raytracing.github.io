@@ -15,61 +15,80 @@
 
 
 class aabb {
-    public:
-        aabb() {}
-        aabb(const point3& a, const point3& b) { minimum = a; maximum = b; }
+  public:
+    aabb() {} // The default AABB is empty, since intervals are empty by default.
 
-        point3 min() const {return minimum; }
-        point3 max() const {return maximum; }
+    aabb(const interval& ix, const interval& iy, const interval& iz)
+      : x(ix), y(iy), z(iz) { }
 
-        bool hit(const ray& r, double t_min, double t_max) const {
+    aabb(const point3& a, const point3& b) {
+        // Treat the two points a and b as extrema for the bounding box, so we don't require a
+        // particular minimum/maximum coordinate order.
+        x = interval(fmin(a[0],b[0]), fmax(a[0],b[0]));
+        y = interval(fmin(a[1],b[1]), fmax(a[1],b[1]));
+        z = interval(fmin(a[2],b[2]), fmax(a[2],b[2]));
+    }
+
+    aabb(const aabb& box0, const aabb& box1) {
+        x = interval(box0.x, box1.x);
+        y = interval(box0.y, box1.y);
+        z = interval(box0.z, box1.z);
+    }
+
+    #if 1
+        // GitHub Issue #817
+        // For some reason I haven't figured out yet, this version is 10x faster than the
+        // version below. I'll come back and figure out why (and in the process, probably figure
+        // out how to configure CMake to create a profile build). Parking this here for now, to
+        // be removed before the v4 release.
+
+        bool hit(const ray& r, interval ray_t) const {
             for (int a = 0; a < 3; a++) {
-                auto t0 = fmin((minimum[a] - r.origin()[a]) / r.direction()[a],
-                               (maximum[a] - r.origin()[a]) / r.direction()[a]);
-                auto t1 = fmax((minimum[a] - r.origin()[a]) / r.direction()[a],
-                               (maximum[a] - r.origin()[a]) / r.direction()[a]);
-                t_min = fmax(t0, t_min);
-                t_max = fmin(t1, t_max);
-                if (t_max <= t_min)
+                auto t0 = fmin((axis(a).min - r.origin()[a]) / r.direction()[a],
+                               (axis(a).max - r.origin()[a]) / r.direction()[a]);
+                auto t1 = fmax((axis(a).min - r.origin()[a]) / r.direction()[a],
+                               (axis(a).max - r.origin()[a]) / r.direction()[a]);
+                ray_t.min = fmax(t0, ray_t.min);
+                ray_t.max = fmin(t1, ray_t.max);
+                if (ray_t.max <= ray_t.min)
                     return false;
             }
             return true;
         }
-
-        double area() const {
-            auto a = maximum.x() - minimum.x();
-            auto b = maximum.y() - minimum.y();
-            auto c = maximum.z() - minimum.z();
-            return 2*(a*b + b*c + c*a);
+    #else
+        bool hit(const ray& r, interval ray_t) const {
+            auto r_origin = r.origin();
+            auto r_dir = r.direction();
+            for (int a = 0; a < 3; a++) {
+                auto invD = 1.0f / r_dir[a];
+                auto orig = r_origin[a];
+                auto t0 = (axis(a).min - orig) * invD;
+                auto t1 = (axis(a).max - orig) * invD;
+                if (invD < 0)
+                    std::swap(t0, t1);
+                if (fmin(t1, ray_t.max) <= fmax(t0, ray_t.min))
+                    return false;
+            }
+            return true;
         }
+    #endif
 
-        int longest_axis() const {
-            auto a = maximum.x() - minimum.x();
-            auto b = maximum.y() - minimum.y();
-            auto c = maximum.z() - minimum.z();
-            if (a > b && a > c)
-                return 0;
-            else if (b > c)
-                return 1;
-            else
-                return 2;
-        }
+    const interval& axis(int n) const {
+        if (n == 1) return y;
+        if (n == 2) return z;
+        return x;
+    }
 
-    public:
-        point3 minimum;
-        point3 maximum;
+  public:
+    interval x, y, z;
 };
 
-aabb surrounding_box(aabb box0, aabb box1) {
-    vec3 small(fmin(box0.min().x(), box1.min().x()),
-               fmin(box0.min().y(), box1.min().y()),
-               fmin(box0.min().z(), box1.min().z()));
+aabb operator+(const aabb& bbox, const vec3& offset) {
+    return aabb(bbox.x + offset.x(), bbox.y + offset.y(), bbox.z + offset.z());
+}
 
-    vec3 big  (fmax(box0.max().x(), box1.max().x()),
-               fmax(box0.max().y(), box1.max().y()),
-               fmax(box0.max().z(), box1.max().z()));
-
-    return aabb(small,big);
+aabb operator+(const vec3& offset, const aabb& bbox) {
+    return bbox + offset;
 }
 
 

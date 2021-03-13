@@ -17,70 +17,59 @@
 
 
 class moving_sphere : public hittable {
-    public:
-        moving_sphere() {}
-        moving_sphere(
-            point3 cen0, point3 cen1, double _time0, double _time1, double r, shared_ptr<material> m)
-            : center0(cen0), center1(cen1), time0(_time0), time1(_time1), radius(r), mat_ptr(m)
-        {};
+  public:
+    moving_sphere() {}
+    moving_sphere(point3 c0, point3 c1, double r, shared_ptr<material> m)
+      : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat(m)
+    {
+        const auto rvec = vec3(radius, radius, radius);
+        const aabb box0(center0 - rvec, center0 + rvec);
+        const aabb box1(center1 - rvec, center1 + rvec);
+        bbox = aabb(box0, box1);
+    };
 
-        virtual bool hit(
-            const ray& r, double t_min, double t_max, hit_record& rec) const override;
+    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+        vec3 oc = r.origin() - center(r.time());
+        auto a = r.direction().length_squared();
+        auto half_b = dot(oc, r.direction());
+        auto c = oc.length_squared() - radius*radius;
 
-        virtual bool bounding_box(double _time0, double _time1, aabb& output_box) const override;
+        auto discriminant = half_b*half_b - a*c;
+        if (discriminant < 0) return false;
+        auto sqrtd = sqrt(discriminant);
 
-        point3 center(double time) const;
+        // Find the nearest root that lies in the acceptable range.
+        auto root = (-half_b - sqrtd) / a;
+        if (!ray_t.contains(root)) {
+            root = (-half_b + sqrtd) / a;
+            if (!ray_t.contains(root))
+                return false;
+        }
 
-    public:
-        point3 center0, center1;
-        double time0, time1;
-        double radius;
-        shared_ptr<material> mat_ptr;
-};
+        rec.t = root;
+        rec.p = r.at(rec.t);
+        vec3 outward_normal = (rec.p - center(r.time())) / radius;
+        rec.set_face_normal(r, outward_normal);
+        rec.mat = mat;
 
-
-point3 moving_sphere::center(double time) const{
-    return center0 + ((time - time0) / (time1 - time0))*(center1 - center0);
-}
-
-
-bool moving_sphere::bounding_box(double _time0, double _time1, aabb& output_box) const {
-    aabb box0(
-        center(_time0) - vec3(radius, radius, radius),
-        center(_time0) + vec3(radius, radius, radius));
-    aabb box1(
-        center(_time1) - vec3(radius, radius, radius),
-        center(_time1) + vec3(radius, radius, radius));
-    output_box = surrounding_box(box0, box1);
-    return true;
-}
-
-
-bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
-    vec3 oc = r.origin() - center(r.time());
-    auto a = r.direction().length_squared();
-    auto half_b = dot(oc, r.direction());
-    auto c = oc.length_squared() - radius*radius;
-
-    auto discriminant = half_b*half_b - a*c;
-    if (discriminant < 0) return false;
-    auto sqrtd = sqrt(discriminant);
-
-    // Find the nearest root that lies in the acceptable range.
-    auto root = (-half_b - sqrtd) / a;
-    if (root < t_min || t_max < root) {
-        root = (-half_b + sqrtd) / a;
-        if (root < t_min || t_max < root)
-            return false;
+        return true;
     }
 
-    rec.t = root;
-    rec.p = r.at(rec.t);
-    vec3 outward_normal = (rec.p - center(r.time())) / radius;
-    rec.set_face_normal(r, outward_normal);
-    rec.mat_ptr = mat_ptr;
+    aabb bounding_box() const override { return bbox; }
 
-    return true;
-}
+    point3 center(double time) const {
+        // Linearly interpolate from center0 to center1 according to time, where t=0 yields
+        // center0, and t=1 yields center1.
+        return center0 + time * center_vec;
+    }
+
+  public:
+    point3 center0, center1;
+    vec3 center_vec;
+    double radius;
+    shared_ptr<material> mat;
+    aabb bbox;
+};
+
 
 #endif

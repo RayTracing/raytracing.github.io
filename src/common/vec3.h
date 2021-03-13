@@ -18,60 +18,60 @@ using std::sqrt;
 using std::fabs;
 
 class vec3 {
-    public:
-        vec3() : e{0,0,0} {}
-        vec3(double e0, double e1, double e2) : e{e0, e1, e2} {}
+  public:
+    vec3() : e{0,0,0} {}
+    vec3(double e0, double e1, double e2) : e{e0, e1, e2} {}
 
-        double x() const { return e[0]; }
-        double y() const { return e[1]; }
-        double z() const { return e[2]; }
+    double x() const { return e[0]; }
+    double y() const { return e[1]; }
+    double z() const { return e[2]; }
 
-        vec3 operator-() const { return vec3(-e[0], -e[1], -e[2]); }
-        double operator[](int i) const { return e[i]; }
-        double& operator[](int i) { return e[i]; }
+    vec3 operator-() const { return vec3(-e[0], -e[1], -e[2]); }
+    double operator[](int i) const { return e[i]; }
+    double& operator[](int i) { return e[i]; }
 
-        vec3& operator+=(const vec3 &v) {
-            e[0] += v.e[0];
-            e[1] += v.e[1];
-            e[2] += v.e[2];
-            return *this;
-        }
+    vec3& operator+=(const vec3 &v) {
+        e[0] += v.e[0];
+        e[1] += v.e[1];
+        e[2] += v.e[2];
+        return *this;
+    }
 
-        vec3& operator*=(const double t) {
-            e[0] *= t;
-            e[1] *= t;
-            e[2] *= t;
-            return *this;
-        }
+    vec3& operator*=(const double t) {
+        e[0] *= t;
+        e[1] *= t;
+        e[2] *= t;
+        return *this;
+    }
 
-        vec3& operator/=(const double t) {
-            return *this *= 1/t;
-        }
+    vec3& operator/=(const double t) {
+        return *this *= 1/t;
+    }
 
-        double length() const {
-            return sqrt(length_squared());
-        }
+    double length() const {
+        return sqrt(length_squared());
+    }
 
-        double length_squared() const {
-            return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
-        }
+    double length_squared() const {
+        return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
+    }
 
-        bool near_zero() const {
-            // Return true if the vector is close to zero in all dimensions.
-            const auto s = 1e-8;
-            return (fabs(e[0]) < s) && (fabs(e[1]) < s) && (fabs(e[2]) < s);
-        }
+    bool near_zero() const {
+        // Return true if the vector is close to zero in all dimensions.
+        const auto s = 1e-8;
+        return (fabs(e[0]) < s) && (fabs(e[1]) < s) && (fabs(e[2]) < s);
+    }
 
-        inline static vec3 random() {
-            return vec3(random_double(), random_double(), random_double());
-        }
+    static vec3 random() {
+        return vec3(random_double(), random_double(), random_double());
+    }
 
-        inline static vec3 random(double min, double max) {
-            return vec3(random_double(min,max), random_double(min,max), random_double(min,max));
-        }
+    static vec3 random(double min, double max) {
+        return vec3(random_double(min,max), random_double(min,max), random_double(min,max));
+    }
 
-    public:
-        double e[3];
+  public:
+    double e[3];
 };
 
 
@@ -163,6 +163,18 @@ inline vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat) {
     vec3 r_out_perp =  etai_over_etat * (uv + cos_theta*n);
     vec3 r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
     return r_out_perp + r_out_parallel;
+}
+
+inline vec3 random_cosine_direction() {
+    auto r1 = random_double();
+    auto r2 = random_double();
+
+    auto phi = 2*pi*r1;
+    auto x = cos(phi)*sqrt(r2);
+    auto y = sin(phi)*sqrt(r2);
+    auto z = sqrt(1-r2);
+
+    return vec3(x, y, z);
 }
 
 

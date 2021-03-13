@@ -1,6 +1,42 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
+# v4.0.0 (pending)
+
+### Common
+  - Change: Introduce new `interval` class used throughout codebase (#777)
+  - Change: Use `class` instead of `struct` throughout for simpler C++ (#781)
+  - Change: `hittable:hit()` methods use new interval class for ray-t parameter
+  - Change: Class public/private access labels get two-space indents (#782)
+  - Change: `interval::clamp()` replaces standalone `clamp` utility function
+  - Added: `rtw_image` class for easier image data loading, better search (#807)
+  - Change: New `scene` class manages image settings, camera, geometry, and lights (#699)
+  - Change: Cleaned up multiple cases where the `inline` keyword was unnecessary, and reorganized
+    some global utility functions as either private static, or in better locations.
+  - Fix: Remove redundant `virtual` keyword for methods with `override` (#805)
+  - Change: `aabb` class constructor treats two params as extreme points in any orientation (#733)
+  - Change: `aabb` class uses intervals for each axis (#796)
+  - Change: Moved all class method definitions inside class definition (#802)
+  - Fix: CSS fix for cases where code listing overflow; change to fit content (#826)
+  - Change: `hittable` member variable `ptr` renamed to `object`
+  - Change: general rename of `mat_ptr` to `mat` (material)
+  - Change: hittable::bounding_box() signature has changed to always return a value (#859)
+  - Fix: Enabled compiler warnings for MSVC, Clang, GNU. Cleaned up warnings as fit (#865)
+
+### In One Weekend
+  - Added: More commentary about the choice between `double` and `float` (#752)
+
+### The Next Week
+  - Change: Rearranged the texture-mapping presentation. The three types (solid, spatial, image) are
+    now sequenced in that order, and the checker texture presented more explicitly as an
+    illustration of a spatial texture.
+  - Change: Broad rewrite of time management for moving objects, primarily `camera` and
+    `moving_sphere`, but also impacting the API for `hittable::bounding_box()` (#799)
+
+### The Rest of Your Life
+
+
+----------------------------------------------------------------------------------------------------
 # v3.2.3 (2020-12-07)
 
 ### Common
