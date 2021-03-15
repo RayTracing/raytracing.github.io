@@ -32,6 +32,7 @@ Change Log -- Ray Tracing in One Weekend
     illustration of a spatial texture.
   - Change: Broad rewrite of time management for moving objects, primarily `camera` and
     `moving_sphere`, but also impacting the API for `hittable::bounding_box()` (#799)
+  - Fix: Fixed `bvh_node` constructor definition signature (#872)
 
 ### The Rest of Your Life
 
