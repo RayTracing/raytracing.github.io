@@ -151,18 +151,17 @@ class isotropic : public material {
     isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
     isotropic(shared_ptr<texture> a) : albedo(a) {}
 
-    #if 0
-    // Issue #669
-    // This method doesn't match the signature in the base `material` class, so this one's
-    // never actually called. Disabling this definition until we sort this out.
-
-    bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
-    const override {
-        scattered = ray(rec.p, random_in_unit_sphere(), r_in.time());
-        attenuation = albedo->value(rec.u, rec.v, rec.p);
+    bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
+        srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
+        srec.pdf_ptr = make_shared<sphere_pdf>();
+        srec.skip_pdf = false;
         return true;
     }
-    #endif
+
+    double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
+    const override {
+        return 1 / (4 * pi);
+    }
 
   public:
     shared_ptr<texture> albedo;
