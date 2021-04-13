@@ -2143,6 +2143,7 @@ We can rewrite our Lambertian material using this to get:
     class lambertian : public material {
       public:
         ...
+
         bool scatter(
             const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
         ) const override {
@@ -2158,6 +2159,9 @@ We can rewrite our Lambertian material using this to get:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             return true;
         }
+
+        ...
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scatter-onb]: <kbd>[material.h]</kbd> Scatter function, with orthonormal basis]
 </div>
@@ -2171,6 +2175,44 @@ Which produces:
 Let’s get rid of some of that noise.
 </div>
 
+<div class='together'>
+But first, let's quickly update the `isotropic` material:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class isotropic : public material {
+      public:
+        isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
+        isotropic(shared_ptr<texture> a) : albedo(a) {}
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        bool scatter(
+            const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ) const override {
+            scattered = ray(rec.p, random_unit_vector(), r_in.time());
+            attenuation = albedo->value(rec.u, rec.v, rec.p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            pdf = 1 / (4 * pi);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            return true;
+        }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
+        const override {
+            return 1 / (4 * pi);
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        public:
+        shared_ptr<texture> albedo;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-isotropic-impsample]: <kbd>[material.h]</kbd>
+    Isotropic material, modified for importance sampling]
+</div>
 
 
 Sampling Lights Directly
@@ -2438,8 +2480,26 @@ so my approach is to be greedy and hope a minimal interface works, and for `pdf`
 </div>
 
 <div class='together'>
-We’ll see if we need to add anything else to `pdf` by fleshing out the subclasses. First, let’s try
-a cosine density:
+We’ll see if we need to add anything else to `pdf` by fleshing out the subclasses. First, we'll
+create a uniform density over the unit sphere:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class sphere_pdf : public pdf {
+        public:
+          sphere_pdf() { }
+
+          double value(const vec3& direction) const override {
+              return 1/ (4 * pi);
+          }
+
+          vec3 generate() const override {
+              return random_unit_vector();
+          }
+      };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [class-uni-pdf]: <kbd>[pdf.h]</kbd> The uniform_pdf class]
+
+Next, let’s try a cosine density:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class cosine_pdf : public pdf {
@@ -2903,13 +2963,14 @@ We can redesign `material` and stuff all the new arguments into a class like we 
 </div>
 
 <div class='together'>
-The Lambertian material becomes simpler:
+The `lambertian` material becomes simpler:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
       public:
         lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
         lambertian(shared_ptr<texture> a) : albedo(a) {}
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
@@ -2930,6 +2991,38 @@ The Lambertian material becomes simpler:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [lambertian-scatter]: <kbd>[material.h]</kbd> New lambertian scatter() method]
+</div>
+
+<div class='together'>
+As does the `isotropic` material:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class isotropic : public material {
+        public:
+        isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
+        isotropic(shared_ptr<texture> a) : albedo(a) {}
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
+            srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
+            srec.pdf_ptr = make_shared<sphere_pdf>();
+            srec.skip_pdf = false;
+            return true;
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+
+        double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
+        const override {
+            return 1 / (4 * pi);
+        }
+
+        public:
+        shared_ptr<texture> albedo;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [isotropic-scatter]: <kbd>[material.h]</kbd> New isotropic scatter() method]
 </div>
 
 <div class='together'>
