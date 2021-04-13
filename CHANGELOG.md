@@ -22,6 +22,7 @@ Change Log -- Ray Tracing in One Weekend
   - Change: general rename of `mat_ptr` to `mat` (material)
   - Change: hittable::bounding_box() signature has changed to always return a value (#859)
   - Fix: Enabled compiler warnings for MSVC, Clang, GNU. Cleaned up warnings as fit (#865)
+  - Change: replaced random vector in `isotropic` with `random_unit_vector`
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)
@@ -35,6 +36,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Fixed `bvh_node` constructor definition signature (#872)
 
 ### The Rest of Your Life
+  - Fix: Added missing functionality for `isotropic` (#664)
 
 
 ----------------------------------------------------------------------------------------------------
