@@ -37,6 +37,7 @@ Change Log -- Ray Tracing in One Weekend
 
 ### The Rest of Your Life
   - Fix: Added missing functionality for `isotropic` (#664)
+  - Fix: Variable `direction` was used without being defined in listing 11 (#831)
 
 
 ----------------------------------------------------------------------------------------------------
