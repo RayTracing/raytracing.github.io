@@ -1547,9 +1547,18 @@ samples) when writing out the color. In addition, we'll add a handy utility func
 <div class='together'>
 Main is also changed:
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "camera.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "color.h"
+    #include "hittable_list.h"
+    #include "sphere.h"
+
+    #include <iostream>
 
     ...
 
@@ -2292,12 +2301,17 @@ A Scene with Metal Spheres
 Now let’s add some metal spheres to our scene:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
+    #include "rtweekend.h"
 
-
+    #include "camera.h"
+    #include "color.h"
+    #include "hittable_list.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "material.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "sphere.h"
+
+    #include <iostream>
 
     ...
 
@@ -2860,19 +2874,26 @@ With the new scene class, we trim a lot of code from main.cc. This is what's lef
     #include "color.h"
     #include "hittable_list.h"
     #include "material.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "scene.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "sphere.h"
 
     int main() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         scene scene_desc;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         const double aspect_ratio = 16.0 / 9.0;
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         scene_desc.image_width = 400;
         scene_desc.image_height = static_cast<int>(scene_desc.image_width / aspect_ratio);
         scene_desc.samples_per_pixel = 100;
 
         hittable_list& world = scene_desc.world;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
         auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
@@ -2885,7 +2906,10 @@ With the new scene class, we trim a lot of code from main.cc. This is what's lef
         world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),  -0.4, material_left));
         world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         scene_desc.render();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-with-scene]: <kdb>[main.cc]</kbd> main.cc using the new scene class]
