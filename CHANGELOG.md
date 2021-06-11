@@ -34,6 +34,7 @@ Change Log -- Ray Tracing in One Weekend
   - Change: Broad rewrite of time management for moving objects, primarily `camera` and
     `moving_sphere`, but also impacting the API for `hittable::bounding_box()` (#799)
   - Fix: Fixed `bvh_node` constructor definition signature (#872)
+  - Fix: Fixed scaling for final Perlin noise texture (#896). 
 
 ### The Rest of Your Life
   - Fix: Added missing functionality for `isotropic` (#664)
