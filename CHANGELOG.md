@@ -26,6 +26,7 @@ Change Log -- Ray Tracing in One Weekend
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)
+  - Added: Software context around the shadow acne listing
 
 ### The Next Week
   - Change: Rearranged the texture-mapping presentation. The three types (solid, spatial, image) are
