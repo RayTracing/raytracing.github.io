@@ -328,13 +328,14 @@ int main() {
     switch (0) {
         case 1:  random_spheres(scene_desc);     break;
         case 2:  two_spheres(scene_desc);        break;
-        case 3:  two_perlin_spheres(scene_desc); break;
-        case 4:  earth(scene_desc);              break;
+        case 3:  earth(scene_desc);              break;
+        case 4:  two_perlin_spheres(scene_desc); break;
         case 5:  simple_light(scene_desc);       break;
         case 6:  cornell_box(scene_desc);        break;
         case 7:  cornell_smoke(scene_desc);      break;
         case 8:  final_scene(scene_desc);        break;
-        default: default_scene(scene_desc);      break;
+        default:
+        case 9:  default_scene(scene_desc);      break;
     }
 
     scene_desc.render();
