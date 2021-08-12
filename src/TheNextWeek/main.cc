@@ -325,16 +325,38 @@ void quad_test(scene& scene_desc) {
     scene_desc.max_depth         = 4;
 
     scene_desc.cam.aperture = 0.0;
-    scene_desc.cam.vfov     = 30.0;
+    scene_desc.cam.vfov     = 20.0;
     scene_desc.cam.lookfrom = point3(0,0,12);
     scene_desc.cam.lookat   = point3(0,0,0);
 
-    scene_desc.background   = color(0.80, 0.80, 0.80);
+    scene_desc.background   = color(0.90, 0.90, 0.90);
 
     auto earth_texture = make_shared<image_texture>("earthmap.jpg");
     auto mat = make_shared<lambertian>(earth_texture);
 
-    scene_desc.world.add(make_shared<quad>(point3(-2,-1,0), vec3(4,0,0), vec3(0,2,0), mat));
+    shared_ptr<hittable> thing;
+    switch (0) {
+        default:
+        case 0:
+            thing = make_shared<quad>(point3(-2,-1,0), vec3(4,0,0), vec3(0,2,0), mat);
+            break;
+        case 1:
+            scene_desc.cam.vfov = 30.0;
+            scene_desc.cam.lookat = point3(1,0,0);
+            thing = make_shared<quad>(point3(-2,-1,0), vec3(4,0,0), vec3(2,2,0), mat);
+            break;
+        case 2:
+            thing = make_shared<tri>(point3(-2,-1,0), vec3(4,0,0), vec3(0,2,0), mat);
+            break;
+        case 3:
+            thing = make_shared<ellipse>(point3(0,0,0), vec3(2,0,0), vec3(0,1,0), mat);
+            break;
+        case 4:
+            thing = make_shared<annulus>(point3(0,0,0), vec3(2,0,0), vec3(0,1,0), 0.60, mat);
+            break;
+    }
+
+    scene_desc.world.add(thing);
 }
 
 
