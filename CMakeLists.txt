@@ -48,6 +48,7 @@ set ( SOURCE_NEXT_WEEK
   src/TheNextWeek/hittable_list.h
   src/TheNextWeek/material.h
   src/TheNextWeek/moving_sphere.h
+  src/TheNextWeek/quad.h
   src/TheNextWeek/scene.h
   src/TheNextWeek/sphere.h
   src/TheNextWeek/main.cc
@@ -68,6 +69,7 @@ set ( SOURCE_REST_OF_YOUR_LIFE
   src/TheRestOfYourLife/material.h
   src/TheRestOfYourLife/onb.h
   src/TheRestOfYourLife/pdf.h
+  src/TheRestOfYourLife/quad.h
   src/TheRestOfYourLife/scene.h
   src/TheRestOfYourLife/sphere.h
   src/TheRestOfYourLife/main.cc

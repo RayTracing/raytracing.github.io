@@ -19,6 +19,7 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "moving_sphere.h"
+#include "quad.h"
 #include "scene.h"
 #include "sphere.h"
 #include "texture.h"
@@ -318,6 +319,26 @@ void default_scene(scene& scene_desc) {
 }
 
 
+void quad_test(scene& scene_desc) {
+    scene_desc.image_width       = 400;
+    scene_desc.aspect_ratio      = 1.0;
+    scene_desc.samples_per_pixel = 4;
+    scene_desc.max_depth         = 4;
+
+    scene_desc.cam.aperture = 0.0;
+    scene_desc.cam.vfov     = 30.0;
+    scene_desc.cam.lookfrom = point3(0,0,12);
+    scene_desc.cam.lookat   = point3(0,0,0);
+
+    scene_desc.background   = color(0.80, 0.80, 0.80);
+
+    auto earth_texture = make_shared<image_texture>("earthmap.jpg");
+    auto mat = make_shared<lambertian>(earth_texture);
+
+    scene_desc.world.add(make_shared<quad>(point3(-2,-1,0), vec3(4,0,0), vec3(0,2,0), mat));
+}
+
+
 int main() {
     scene scene_desc;
 
@@ -325,7 +346,7 @@ int main() {
     scene_desc.cam.vup = vec3(0,1,0);
     scene_desc.cam.focus_dist = 10.0;
 
-    switch (0) {
+    switch (100) {
         case 1:  random_spheres(scene_desc);     break;
         case 2:  two_spheres(scene_desc);        break;
         case 3:  earth(scene_desc);              break;
@@ -336,6 +357,8 @@ int main() {
         case 8:  final_scene(scene_desc);        break;
         default:
         case 9:  default_scene(scene_desc);      break;
+
+        case 100: quad_test(scene_desc); break;
     }
 
     scene_desc.render();

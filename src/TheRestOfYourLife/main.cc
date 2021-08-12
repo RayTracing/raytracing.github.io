@@ -18,6 +18,7 @@
 #include "constant_medium.h"
 #include "hittable_list.h"
 #include "material.h"
+#include "quad.h"
 #include "scene.h"
 #include "sphere.h"
 

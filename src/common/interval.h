@@ -18,6 +18,14 @@ class interval {
     interval(const interval& a, const interval& b)
       : min(fmin(a.min, b.min)), max(fmax(a.max, b.max)) {}
 
+    double size() const {
+        return max - min;
+    }
+
+    interval expand(double delta) const {
+        return interval(min - delta/2, max + delta/2);
+    }
+
     bool contains(double x) const {
         return min <= x && x <= max;
     }
