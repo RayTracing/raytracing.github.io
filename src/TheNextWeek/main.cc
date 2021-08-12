@@ -318,48 +318,6 @@ void default_scene(scene& scene_desc) {
 }
 
 
-void quad_test(scene& scene_desc) {
-    scene_desc.image_width       = 400;
-    scene_desc.aspect_ratio      = 1.0;
-    scene_desc.samples_per_pixel = 4;
-    scene_desc.max_depth         = 4;
-
-    scene_desc.cam.aperture = 0.0;
-    scene_desc.cam.vfov     = 20.0;
-    scene_desc.cam.lookfrom = point3(0,0,12);
-    scene_desc.cam.lookat   = point3(0,0,0);
-
-    scene_desc.background   = color(0.90, 0.90, 0.90);
-
-    auto earth_texture = make_shared<image_texture>("earthmap.jpg");
-    auto mat = make_shared<lambertian>(earth_texture);
-
-    shared_ptr<hittable> thing;
-    switch (0) {
-        default:
-        case 0:
-            thing = make_shared<quad>(point3(-2,-1,0), vec3(4,0,0), vec3(0,2,0), mat);
-            break;
-        case 1:
-            scene_desc.cam.vfov = 30.0;
-            scene_desc.cam.lookat = point3(1,0,0);
-            thing = make_shared<quad>(point3(-2,-1,0), vec3(4,0,0), vec3(2,2,0), mat);
-            break;
-        case 2:
-            thing = make_shared<tri>(point3(-2,-1,0), vec3(4,0,0), vec3(0,2,0), mat);
-            break;
-        case 3:
-            thing = make_shared<ellipse>(point3(0,0,0), vec3(2,0,0), vec3(0,1,0), mat);
-            break;
-        case 4:
-            thing = make_shared<annulus>(point3(0,0,0), vec3(2,0,0), vec3(0,1,0), 0.60, mat);
-            break;
-    }
-
-    scene_desc.world.add(thing);
-}
-
-
 int main() {
     scene scene_desc;
 
@@ -367,7 +325,7 @@ int main() {
     scene_desc.cam.vup = vec3(0,1,0);
     scene_desc.cam.focus_dist = 10.0;
 
-    switch (100) {
+    switch (0) {
         case 1:  random_spheres(scene_desc);     break;
         case 2:  two_spheres(scene_desc);        break;
         case 3:  earth(scene_desc);              break;
@@ -378,8 +336,6 @@ int main() {
         case 8:  final_scene(scene_desc);        break;
         default:
         case 9:  default_scene(scene_desc);      break;
-
-        case 100: quad_test(scene_desc); break;
     }
 
     scene_desc.render();

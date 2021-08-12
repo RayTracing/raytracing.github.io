@@ -23,6 +23,11 @@ Change Log -- Ray Tracing in One Weekend
   - Change: hittable::bounding_box() signature has changed to always return a value (#859)
   - Fix: Enabled compiler warnings for MSVC, Clang, GNU. Cleaned up warnings as fit (#865)
   - Change: replaced random vector in `isotropic` with `random_unit_vector`
+  - Delete: `box`, `xy_rect`, `yz_rect`, `xz_rect` classes. Now replaced with new `quad` primitive
+    (#292, #780, #681)
+  - Fix: rect hit returning NaNs and infinities. Superseded with new `quad` primitive (#681)
+  - Added: New 2D `quad` primitive of arbitrary orientation (#756)
+  - Added: New `box()` utility function returns `hittable_list` of new `quad` primitives (#780)
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)
@@ -35,7 +40,7 @@ Change Log -- Ray Tracing in One Weekend
   - Change: Broad rewrite of time management for moving objects, primarily `camera` and
     `moving_sphere`, but also impacting the API for `hittable::bounding_box()` (#799)
   - Fix: Fixed `bvh_node` constructor definition signature (#872)
-  - Fix: Fixed scaling for final Perlin noise texture (#896). 
+  - Fix: Fixed scaling for final Perlin noise texture (#896).
 
 ### The Rest of Your Life
   - Fix: Added missing functionality for `isotropic` (#664)
