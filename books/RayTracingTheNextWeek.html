@@ -2256,7 +2256,319 @@ Which yields:
 
 
 
-Rectangles and Lights
+Quadrilaterals
+====================================================================================================
+We've managed to get more than half way through this three-book series using spheres as our only
+geometric primitive. Time to add our second primitive: the quadrilateral.
+
+
+Ray-Plane Intersection
+-----------------------
+Spheres are generally the first ray tracing primitive because their implicit formula makes it so
+easy to solve for ray intersection. Like spheres, planes also have an implicit formula, and
+ray-plane intersection is even _easier_ to solve.
+
+You may already know this implicit formula for a plane:
+
+  $$ Ax + By + Cz + D = 0 $$
+
+That is, a plane is the set of all points $\mathbf{P} = (x,y,z)$ that satisfy the formula above. It
+makes things slightly easier to use the alternate formulation:
+
+  $$ Ax + By + Cz = D $$
+
+(We didn't flip the sign of D because it's just some constant that we'll figure out later.)
+
+Here's another way to think of this formula: given the plane perpendicular to the normal vector
+$\mathbf{n} = (A,B,C)$, and the position vector $\mathbf{v} = (x,y,z)$ (that is, the vector from the
+origin to any point on the plane), then
+
+  $$ \mathbf{n} \cdot \mathbf{v} = D $$
+
+Now to find the intersection with some ray $\mathbf{R}(t) = \mathbf{P} + t\mathbf{d}$. Plugging in
+the ray equation, we get
+
+  $$ \mathbf{n} \cdot ( \mathbf{P} + t \mathbf{d} ) = D $$
+
+Solving for $t$:
+
+  $$ \mathbf{n} \cdot \mathbf{P} + \mathbf{n} \cdot t \mathbf{d}  = D $$
+
+  $$ \mathbf{n} \cdot \mathbf{P} + t(\mathbf{n} \cdot \mathbf{d}) = D $$
+
+  $$ t = \frac{D - \mathbf{n} \cdot \mathbf{P}}{\mathbf{n} \cdot \mathbf{d}} $$
+
+This gives us $t$, which we can plug into the ray equation to find the point of intersection.
+
+Ok, we can find the point of intersection between a ray and a plane. This will help us determine
+whether a ray hits a given quadrilateral, using the plane that contains the (planar) quadrilateral.
+In fact, we can use this approach to define any planar primitive, like triangles and disks (more
+later).
+
+We now have three questions we must answer:
+
+1. How do we define the quadrilateral in three dimensional space?
+2. How do we find the plane that contains that quadrilateral?
+3. How do we orient the ray-plane intersection point within the quadrilateral?
+
+
+Defining the Quadrilateral
+---------------------------
+For our purposes, we'll use three geometric entities to define a quadrilateral. Remember that when
+we say "quadrilateral" here, we're really talking about parallelograms, a specific kind of
+quadrilateral where opposite sides are parallel. These three entities are
+
+1. $\mathbf{O}$, the lower-left corner of the quadrilateral.
+2. $\mathbf{u}$, a vector representing the first side of the quadrilateral.
+   $\mathbf{O} + \mathbf{u}$ gives the lower right corner.
+3. $\mathbf{v}$, a vector representing the second side of the quadrilateral.
+   $\mathbf{O} + \mathbf{v}$ gives the upper left corner.
+
+These values are three-dimensional, even though a quad itself is a two-dimensional object.
+
+The following figure illustrates the quadrilateral components.
+
+  ![Figure [quad-def]: Quadrilateral Components](../images/fig-2.05-quad-def.jpg)
+
+
+Finding the Plane That Contains a Given Quadrilateral
+------------------------------------------------------
+We have $O$, $u$, and $v$, and want the corresponding equation of the plane containing all three of
+these values (and thus the quad itself).
+
+Fortunately, this is very simple. Recall that in $Ax + By + Cz = D$, $(A,B,C)$ represents the
+normal vector. To get this, we just use the cross product of the two side vectors $u$ and $v$:
+
+  $$ \mathbf{n} = \text{unit_vector}(\mathbf{u} \times \mathbf{v}) $$
+
+The plane is defined as all points $(x,y,z)$ that satisfy the equation $Ax + By + Cz = D$. Well, we
+know that $\mathbf{O}$ lies on the plane, so we can use that to find $D$:
+
+  $$ D = \mathbf{n}_x\mathbf{O}_x + \mathbf{n}_y\mathbf{O}_y + \mathbf{n}_z\mathbf{O}_z $$
+
+We can now use these two values $\mathbf{n}$ and $D$ to find the point of intersection with a given
+ray and the plane containing the quadrilateral.
+
+
+Orienting Points on The Plane
+------------------------------
+At this stage, the intersection point is on the plane that contains the quadrilateral, but it could
+be _anywhere_ on the plane, and may lie inside or outside the quadrilateral. We need to determine if
+the intersection lies inside (hits) the quadrilateral, and reject points that lie outside (miss) the
+quad. To determine where a point lies relative to the quad, and to assign texture coordinates to the
+point of intersection, we need to somehow orient the intersection point on the plane.
+
+To do this, we'll construct a _coordinate frame_ for the plane -- a way of orienting points located
+on the plane. We've already been using a coordinate frame for our 3D space -- this is defined by an
+origin point $\mathbf{O}$ and three basis vectors $\mathbf{x}$, $\mathbf{y}$, and $\mathbf{z}$.
+
+Since a plane is a 2D construct, we just need a plane origin point $\mathbf{O}$ and _two_ basis
+vectors: $\mathbf{u}$ and $\mathbf{v}$. Now normally, you see axes that are perpendicular to each
+other, so they all meet at 90° angles. However, this doesn't need to be the case in order to span
+the entire space -- you just can't have two axes that are parallel to each other.
+
+  ![Figure [ray-plane]: Ray-plane intersection](../images/fig-2.06-ray-plane.jpg)
+
+Consider figure [ray-plane] as an example. Ray $\mathbf{R}$ intersects the plane, yielding
+intersection point $\mathbf{P}$. Measuring against plane vectors $\mathbf{u}$ and $\mathbf{v}$, the
+intersection point $\mathbf{P}$ is at $\mathbf{O} + (1)\mathbf{u} + (\frac{1}{2})\mathbf{v}$. In
+other words, the plane coordinates of intersection point $\mathbf{P}$ is $(1,\frac{1}{2})$.
+
+Generally, given some arbitrary point $\mathbf{P}$, we seek two scalar values $\alpha$ and $\beta$,
+so that
+
+  $$ \mathbf{P} = \mathbf{O} + \alpha \mathbf{u} + \beta \mathbf{v} $$
+
+If $\mathbf{u}$ and $\mathbf{v}$ were guaranteed to be orthogonal to each other (forming a 90°
+angle between them), then this would be a simple matter of projecting $\mathbf{P}$ onto the two
+basis vectors $\mathbf{u}$ and $\mathbf{v}$. However, since they can form any angle (other than
+zero), the math's a little bit tricker.
+
+$$ \mathbf{P} = \mathbf{O} + \alpha \mathbf{u} + \beta \mathbf{v}$$
+
+$$ \mathbf{p} = \mathbf{P} - \mathbf{O} = \alpha \mathbf{u} + \beta \mathbf{v} $$
+
+Here, $\mathbf{P}$ is the _point_ of intersection, and $\mathbf{p}$ is the _vector_ from
+$\mathbf{O}$ to $\mathbf{P}$.
+
+Cross the above equation with $\mathbf{u}$ and $\mathbf{v}$, respectively:
+
+$$ \begin{align*}
+   \mathbf{u} \times \mathbf{p} &= \mathbf{u} \times (\alpha \mathbf{u} + \beta \mathbf{v}) \\
+   &= \mathbf{u} \times \alpha \mathbf{u} + \mathbf{u} \times \beta \mathbf{v} \\
+   &= \alpha(\mathbf{u} \times \mathbf{u}) + \beta(\mathbf{u} \times \mathbf{v})
+   \end{align*} $$
+
+$$ \begin{align*}
+   \mathbf{v} \times \mathbf{p} &= \mathbf{v} \times (\alpha \mathbf{u} + \beta \mathbf{v}) \\
+   &= \mathbf{v} \times \alpha \mathbf{u} + \mathbf{v} \times \beta \mathbf{v} \\
+   &= \alpha(\mathbf{v} \times \mathbf{u}) + \beta(\mathbf{v} \times \mathbf{v})
+   \end{align*} $$
+
+Since any vector crossed with itself yields zero, these equations simplify to
+
+$$ \mathbf{u} \times \mathbf{p} = \beta(\mathbf{u} \times \mathbf{v}) $$
+$$ \mathbf{v} \times \mathbf{p} = \alpha(\mathbf{v} \times \mathbf{u}) $$
+
+To solve for the coefficients $\alpha$ and $\beta$, we can take the dot product of both sides of the
+above equations with the plane normal $\mathbf{n} = \mathbf{u} \times \mathbf{v}$, reducing both
+sides to scalars.
+
+$$ \mathbf{n} \cdot (\mathbf{u} \times \mathbf{p})
+   = \mathbf{n} \cdot \beta(\mathbf{u} \times \mathbf{v}) $$
+
+$$ \mathbf{n} \cdot (\mathbf{v} \times \mathbf{p})
+   = \mathbf{n} \cdot \alpha(\mathbf{v} \times \mathbf{u}) $$
+
+Now isolating the coefficients is a simple matter of division:
+
+$$ \alpha = \frac{\mathbf{n} \cdot (\mathbf{v} \times \mathbf{p})}
+                 {\mathbf{n} \cdot (\mathbf{v} \times \mathbf{u})} $$
+
+$$ \beta  = \frac{\mathbf{n} \cdot (\mathbf{u} \times \mathbf{p})}
+                 {\mathbf{n} \cdot (\mathbf{u} \times \mathbf{v})} $$
+
+Reversing the cross products for both the numerator and denominator of $\alpha$ (recall that
+$\mathbf{a} \times \mathbf{b} = - \mathbf{b} \times \mathbf{a}$) gives us a common denominator for
+both coefficients:
+
+$$ \alpha = \frac{\mathbf{n} \cdot (\mathbf{p} \times \mathbf{v})}
+                 {\mathbf{n} \cdot (\mathbf{u} \times \mathbf{v})} $$
+
+$$ \beta  = \frac{\mathbf{n} \cdot (\mathbf{u} \times \mathbf{p})}
+                 {\mathbf{n} \cdot (\mathbf{u} \times \mathbf{v})} $$
+
+Now we can perform one final simplification, computing a vector $\mathbf{w}$ that will be constant
+for the plane's basis frame, for any planar point $\mathbf{P}$:
+
+$$ \mathbf{w} = \frac{\mathbf{n}}{\mathbf{n} \cdot (\mathbf{u} \times \mathbf{v})}
+              = \frac{\mathbf{n}}{\mathbf{n} \cdot \mathbf{n}}$$
+
+$$ \alpha = \mathbf{w} \cdot (\mathbf{p} \times \mathbf{v}) $$
+$$ \beta  = \mathbf{w} \cdot (\mathbf{u} \times \mathbf{p}) $$
+
+
+Implementing Quadrilateral Primitives
+--------------------------------------
+Now that we have the intersection point's planar coordinates $\alpha$ and $\beta$, we can easily
+use these to determine if the intersection point is inside the quadrilateral -- that is, if the ray
+actually hit the quadrilateral.
+
+The plane is divided into coordinate regions like so:
+
+  ![Figure [quad-coords]: Quadrilateral coordinates](../images/fig-2.07-quad-coords.jpg)
+
+
+Thus, to see if a point with planar coordinates $(\alpha,\beta)$ lies inside the quadrilateral, it
+needs to meet the following criteria:
+
+  1. $ 0 \leq \alpha \leq 1 $
+  2. $ 0 \leq \beta \leq 1 $
+
+That's the last piece needed to implement quadrilateral primitives.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef QUAD_H
+    #define QUAD_H
+
+    #include "rtweekend.h"
+
+    #include "hittable.h"
+
+    #include <cmath>
+
+    class quad : public hittable {
+      public:
+        quad(const point3& _corner, const vec3& _sideA, const vec3& _sideB, shared_ptr<material> m)
+          : corner(_corner), side_A(_sideA), side_B(_sideB), mat(m)
+        {
+            auto n = cross(side_A, side_B);
+            normal = unit_vector(n);
+            D = -dot(normal, corner);
+            w = n / dot(n,n);
+
+            set_bounding_box();
+        }
+
+        virtual void set_bounding_box() {
+            bbox = aabb(corner, corner + side_A + side_B).pad();
+        }
+
+        aabb bounding_box() const override { return bbox; }
+
+        virtual bool hit_ab(double a, double b, hit_record& rec) const {
+            // Given the hit point in plane coordinates, return false if it is outside the
+            // primitive, otherwise set the hit record UV coordinates and return true.
+
+            if ((a < 0) || (1 < a) || (b < 0) || (1 < b))
+                return false;
+
+            rec.u = a;
+            rec.v = b;
+            return true;
+        }
+
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            auto denom = dot(normal, r.direction());
+
+            // No hit if the ray is parallel to the plane.
+            if (fabs(denom) < 1e-8)
+                return false;
+
+            // Return false if the hit point parameter t is outside the ray interval.
+            auto t = (-D - dot(normal, r.origin())) / denom;
+            if (!ray_t.contains(t))
+                return false;
+
+            // Determine the hit point lies within the planar shape using its plane coordinates.
+            auto intersection = r.at(t);
+            vec3 planar_hitpt_vector = intersection - corner;
+            auto a = dot(w, cross(planar_hitpt_vector, side_B));
+            auto b = dot(w, cross(side_A, planar_hitpt_vector));
+
+            if (!hit_ab(a, b, rec))
+                return false;
+
+            // Ray hits the 2D shape; set the rest of the hit record and return true.
+            rec.t = t;
+            rec.p = intersection;
+            rec.mat = mat;
+            rec.set_face_normal(r, normal);
+
+            return true;
+        }
+
+      protected:
+        point3 corner;
+        vec3 side_A, side_B;
+        shared_ptr<material> mat;
+        vec3 normal;
+        double D;
+        vec3 w;
+        aabb bbox;
+    };
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [quad]: <kbd>[quad.h]</kbd> 2D Quadrilateral (Parallelogram) Primitives]
+</div>
+
+
+More Planar Primitives
+-----------------------
+You may have noticed that if you have the 2D planar coordinates of a hit point, you can implement
+arbitrary 2D shapes -- not just parallelograms. In fact, you'd only need to change the `hit_ab`
+method above to determine if the (a,b) coordinates lie inside your 2D primitive, and set the texture
+UV coordinates if so.
+
+We'll leave these additional 2D primitives as an exercise to the reader, depending on your desire to
+explore. Consider triangles, disks, and rings. You could even create cut-out stencils based on the
+texture map! We've included the solution for triangle, ellipse, and annulus in the commit history
+(search the history for "annulus"), so you can take a peek if you'd like to see our solution.
+
+
+
+Lights
 ====================================================================================================
 Lighting is a key component of raytracing. Early simple raytracers used abstract light sources, like
 points in space, or directions. Modern approaches have more physically based lights, which have
@@ -2396,97 +2708,6 @@ skybox code versus the new solid color background. We're keeping it simple here.
 </div>
 
 
-Creating Rectangle Objects
----------------------------
-Now, let’s make some rectangles. Rectangles are often convenient for modeling man-made environments.
-I’m a fan of doing axis-aligned rectangles because they are easy. (We’ll get to instancing so we can
-rotate them later.)
-
-<div class='together'>
-First, here is a rectangle in an xy plane. Such a plane is defined by its z value. For example, $z =
-k$. An axis-aligned rectangle is defined by the lines $x=x_0$, $x=x_1$, $y=y_0$, and $y=y_1$.
-
-  ![Figure [ray-rect]: Ray-rectangle intersection](../images/fig-2.05-ray-rect.jpg)
-
-</div>
-
-<div class='together'>
-To determine whether a ray hits such a rectangle, we first determine where the ray hits the plane.
-Recall that a ray $\mathbf{P}(t) = \mathbf{A} + t \mathbf{b}$ has its z component defined by $P_z(t)
-= A_z + t b_z$. Rearranging those terms we can solve for what the t is where $z=k$.
-
-  $$ t = \frac{k-A_z}{b_z} $$
-</div>
-
-<div class='together'>
-Once we have $t$, we can plug that into the equations for $x$ and $y$:
-
-  $$ x = A_x + t b_x $$
-  $$ y = A_y + t b_y $$
-</div>
-
-It is a hit if $x_0 < x < x_1$ and $y_0 < y < y_1$.
-
-Because our rectangles are axis-aligned, their bounding boxes will have an infinitely-thin side.
-This can be a problem when dividing them up with our axis-aligned bounding volume hierarchy. To
-counter this, all hittable objects should get a bounding box that has finite width along every
-dimension. For our rectangles, we'll just pad the box a bit on the infnitely-thin side.
-
-<div class='together'>
-The actual `xy_rect` class is thus:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef AARECT_H
-    #define AARECT_H
-
-    #include "rtweekend.h"
-
-    #include "hittable.h"
-
-    class xy_rect : public hittable {
-      public:
-        xy_rect() {}
-
-        xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, shared_ptr<material> _m)
-          : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mat(_m),
-            bbox(point3(x0, y0, k-0.0001), point3(x1, y1, k+0.0001))
-        {}
-
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-            auto t = (k-r.origin().z()) / r.direction().z();
-            if (!ray_t.contains(t))
-                return false;
-
-            auto x = r.origin().x() + t*r.direction().x();
-            auto y = r.origin().y() + t*r.direction().y();
-            if (x < x0 || x1 < x || y < y0 || y1 < y)
-                return false;
-
-            rec.u = (x-x0)/(x1-x0);
-            rec.v = (y-y0)/(y1-y0);
-            rec.t = t;
-            auto outward_normal = vec3(0, 0, 1);
-            rec.set_face_normal(r, outward_normal);
-            rec.mat = mat;
-            rec.p = r.at(t);
-
-            return true;
-        }
-
-        aabb bounding_box() const override { return bbox; }
-
-      public:
-        double x0, x1, y0, y1, k;
-        shared_ptr<material> mat;
-        aabb bbox;
-    };
-
-    #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [xy-rect]: <kbd>[aarect.h]</kbd> XY-plane rectangle objects]
-</div>
-
-
 Turning Objects into Lights
 ----------------------------
 <div class='together'>
@@ -2511,7 +2732,7 @@ If we set up a rectangle as a light:
         world.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(pertext)));
 
         auto difflight = make_shared<diffuse_light>(color(4,4,4));
-        world.add(make_shared<xy_rect>(3, 5, 1, 3, -2, difflight));
+        world.add(make_shared<quad>(point3(3,1,-2), vec3(2,0,0), vec3(0,2,0), difflight));
     }
 
     int main() {
@@ -2551,98 +2772,13 @@ Fool around with making some spheres lights too.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         world.add(make_shared<sphere>(point3(0,7,0), 2, difflight));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        world.add(make_shared<xy_rect>(3, 5, 1, 3, -2, difflight));
+        world.add(make_shared<quad>(point3(3,1,-2), vec3(2,0,0), vec3(0,2,0), difflight));
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [rect-light]: <kbd>[main.cc]</kbd> A simple rectangle light plus illuminating ball]
 
   ![Image 17: Scene with rectangle and sphere light sources
   ](../images/img-2.17-rect-sphere-light.png class=pixel)
-
-
-More Axis-Aligned Rectangles
------------------------------
-Now let’s add the other two axes and the famous Cornell Box.
-
-<div class='together'>
-This is xz and yz:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class xz_rect : public hittable {
-      public:
-        xz_rect() {}
-
-        xz_rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<material> _m)
-          : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mat(_m),
-            bbox(point3(x0, k-0.0001, z0), point3(x1, k+0.0001, z1))
-        {}
-
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-            auto t = (k-r.origin().y()) / r.direction().y();
-            if (!ray_t.contains(t))
-                return false;
-
-            auto x = r.origin().x() + t*r.direction().x();
-            auto z = r.origin().z() + t*r.direction().z();
-            if (x < x0 || x1 < x || z < z0 || z1 < z)
-                return false;
-
-            rec.u = (x-x0)/(x1-x0);
-            rec.v = (z-z0)/(z1-z0);
-            rec.t = t;
-            auto outward_normal = vec3(0, 1, 0);
-            rec.set_face_normal(r, outward_normal);
-            rec.mat = mat;
-            rec.p = r.at(t);
-
-            return true;
-        }
-
-        aabb bounding_box() const override { return bbox; }
-
-      public:
-        double x0, x1, z0, z1, k;
-        shared_ptr<material> mat;
-        aabb bbox;
-    };
-
-    class yz_rect : public hittable {
-      public:
-        yz_rect() {}
-
-        yz_rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<material> _m)
-          : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mat(_m),
-            bbox(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1))
-        {}
-
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-            auto t = (k-r.origin().x()) / r.direction().x();
-            if (!ray_t.contains(t))
-                return false;
-            auto y = r.origin().y() + t*r.direction().y();
-            auto z = r.origin().z() + t*r.direction().z();
-            if (y < y0 || y1 < y || z < z0 || z1 < z)
-                return false;
-            rec.u = (y-y0)/(y1-y0);
-            rec.v = (z-z0)/(z1-z0);
-            rec.t = t;
-            auto outward_normal = vec3(1, 0, 0);
-            rec.set_face_normal(r, outward_normal);
-            rec.mat = mat;
-            rec.p = r.at(t);
-            return true;
-        }
-
-        aabb bounding_box() const override { return bbox; }
-
-      public:
-        double y0, y1, z0, z1, k;
-        shared_ptr<material> mat;
-        aabb bbox;
-    };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [xz-yz-rects]: <kbd>[aarect.h]</kbd> XZ and YZ rectangle objects]
-</div>
 
 
 Creating an Empty “Cornell Box”
@@ -2670,12 +2806,12 @@ Let’s make the 5 walls and the light of the box:
         auto green = make_shared<lambertian>(color(.12, .45, .15));
         auto light = make_shared<diffuse_light>(color(15, 15, 15));
 
-        world.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
-        world.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
-        world.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
-        world.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-        world.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
-        world.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+        world.add(make_shared<quad>(point3(555,0,0), vec3(0,555,0), vec3(0,0,555), green));
+        world.add(make_shared<quad>(point3(0,0,0), vec3(0,555,0), vec3(0,0,555), red));
+        world.add(make_shared<quad>(point3(343, 554, 332), vec3(-130,0,0), vec3(0,0,-105), light));
+        world.add(make_shared<quad>(point3(0,0,0), vec3(555,0,0), vec3(0,0,555), white));
+        world.add(make_shared<quad>(point3(555,555,555), vec3(-555,0,0), vec3(0,0,-555), white));
+        world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white));
     }
 
     int main() {
@@ -2714,56 +2850,54 @@ The Cornell Box usually has two blocks in it. These are rotated relative to the 
 make an axis-aligned block primitive that holds 6 rectangles:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef BOX_H
-    #define BOX_H
-
-    #include "rtweekend.h"
-
-    #include "aarect.h"
+    ...
     #include "hittable_list.h"
+    ...
+    inline shared_ptr<hittable_list> box(const point3& a, const point3& b, shared_ptr<material> mat)
+    {
+        // Returns the 3D box (six sides) that contains the two opposite vertices a & b.
 
-    class box : public hittable {
-      public:
-        box() {}
+        auto sides = make_shared<hittable_list>();
 
-        box(const point3& p0, const point3& p1, shared_ptr<material> mat)
-          : box_min(p0), box_max(p1), bbox(p0, p1)
-        {
-            sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), mat));
-            sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), mat));
+        // Construct the two opposite vertices with the minimum and maximum coordinates.
+        auto min = point3(fmin(a.x(), b.x()), fmin(a.y(), b.y()), fmin(a.z(), b.z()));
+        auto max = point3(fmax(a.x(), b.x()), fmax(a.y(), b.y()), fmax(a.z(), b.z()));
 
-            sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), mat));
-            sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), mat));
+        auto dx = vec3(max.x() - min.x(), 0, 0);
+        auto dy = vec3(0, max.y() - min.y(), 0);
+        auto dz = vec3(0, 0, max.z() - min.z());
 
-            sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), mat));
-            sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), mat));
-        }
+        sides->add(make_shared<quad>(point3(min.x(), min.y(), max.z()),  dx,  dy, mat)); // front
+        sides->add(make_shared<quad>(point3(max.x(), min.y(), max.z()), -dz,  dy, mat)); // right
+        sides->add(make_shared<quad>(point3(max.x(), min.y(), min.z()), -dx,  dy, mat)); // back
+        sides->add(make_shared<quad>(point3(min.x(), min.y(), min.z()),  dz,  dy, mat)); // left
+        sides->add(make_shared<quad>(point3(min.x(), max.y(), max.z()),  dx, -dz, mat)); // top
+        sides->add(make_shared<quad>(point3(min.x(), min.y(), min.z()),  dx,  dz, mat)); // bottom
 
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-            return sides.hit(r, ray_t, rec);
-        }
-
-        aabb bounding_box() const override { return bbox; }
-
-      public:
-        point3 box_min;
-        point3 box_max;
-        hittable_list sides;
-        aabb bbox;
-    };
-
-    #endif
+        return sides;
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [box-class]: <kbd>[box.h]</kbd> A box object]
+    [Listing [box-class]: <kbd>[quad.h]</kbd> A box object]
 
 <div class='together'>
 Now we can add two blocks (but not rotated)
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "box.h"
-    ...
-    objects.add(make_shared<box>(point3(130, 0, 65), point3(295, 165, 230), white));
-    objects.add(make_shared<box>(point3(265, 0, 295), point3(430, 330, 460), white));
+    void cornell_box(scene& scene_desc) {
+        ...
+        world.add(make_shared<quad>(point3(555,0,0), vec3(0,555,0), vec3(0,0,555), green));
+        world.add(make_shared<quad>(point3(0,0,0), vec3(0,555,0), vec3(0,0,555), red));
+        world.add(make_shared<quad>(point3(343, 554, 332), vec3(-130,0,0), vec3(0,0,-105), light));
+        world.add(make_shared<quad>(point3(0,0,0), vec3(555,0,0), vec3(0,0,555), white));
+        world.add(make_shared<quad>(point3(555,555,555), vec3(-555,0,0), vec3(0,0,-555), white));
+        world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white));
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        world.add(box(point3(130, 0, 65), point3(295, 165, 230), white));
+        world.add(box(point3(265, 0, 295), point3(430, 330, 460), white));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [add-boxes]: <kbd>[main.cc]</kbd> Adding box objects]
 
@@ -2785,7 +2919,7 @@ anything; instead we move the rays in the opposite direction. For example, consi
 or (as we almost always do in ray tracing) leave the box where it is, but in its hit routine
 subtract 2 off the x-component of the ray origin.
 
-  ![Figure [ray-box]: Ray-box intersection with moved ray vs box](../images/fig-2.06-ray-box.jpg)
+  ![Figure [ray-box]: Ray-box intersection with moved ray vs box](../images/fig-2.08-ray-box.jpg)
 
 </div>
 
@@ -2880,7 +3014,7 @@ to apply all rotations about the x, y, and z axes. These rotations are in some s
 First, let’s rotate by theta about the z-axis. That will be changing only x and y, and in ways that
 don’t depend on z.
 
-  ![Figure [rot-z]: Rotation about the Z axis](../images/fig-2.07-rot-z.jpg)
+  ![Figure [rot-z]: Rotation about the Z axis](../images/fig-2.09-rot-z.jpg)
 
 </div>
 
@@ -3001,16 +3135,16 @@ And the changes to Cornell are:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     void cornell_box(scene& scene_desc) {
         ...
-        world.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+        world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white));
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        shared_ptr<hittable> box1 = make_shared<box>(point3(0, 0, 0), point3(165, 330, 165), white);
+        shared_ptr<hittable> box1 = box(point3(0,0,0), point3(165,330,165), white);
         box1 = make_shared<rotate_y>(box1, 15);
         box1 = make_shared<translate>(box1, vec3(265,0,295));
         world.add(box1);
 
-        shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
+        shared_ptr<hittable> box2 = box(point3(0,0,0), point3(165,165,165), white);
         box2 = make_shared<rotate_y>(box2, -18);
         box2 = make_shared<translate>(box2, vec3(130,0,65));
         world.add(box2);
@@ -3046,7 +3180,7 @@ thin transparent volumes, like a light fog, are more likely to have rays like th
 far the ray has to travel through the volume also determines how likely it is for the ray to make it
 through.
 
-  ![Figure [ray-vol]: Ray-volume interaction](../images/fig-2.08-ray-vol.jpg)
+  ![Figure [ray-vol]: Ray-volume interaction](../images/fig-2.10-ray-vol.jpg)
 
 <div class='together'>
 As the ray passes through the volume, it may scatter at any point. The denser the volume, the more
@@ -3204,18 +3338,18 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
         auto green = make_shared<lambertian>(color(.12, .45, .15));
         auto light = make_shared<diffuse_light>(color(7, 7, 7));
 
-        world.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
-        world.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
-        world.add(make_shared<xz_rect>(113, 443, 127, 432, 554, light));
-        world.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
-        world.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-        world.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+        world.add(make_shared<quad>(point3(555,0,0), vec3(0,555,0), vec3(0,0,555), green));
+        world.add(make_shared<quad>(point3(0,0,0), vec3(0,555,0), vec3(0,0,555), red));
+        world.add(make_shared<quad>(point3(113,554,127), vec3(330,0,0), vec3(0,0,305), light));
+        world.add(make_shared<quad>(point3(0,555,0), vec3(555,0,0), vec3(0,0,555), white));
+        world.add(make_shared<quad>(point3(0,0,0), vec3(555,0,0), vec3(0,0,555), white));
+        world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white));
 
-        shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
+        shared_ptr<hittable> box1 = box(point3(0,0,0), point3(165,330,165), white);
         box1 = make_shared<rotate_y>(box1, 15);
         box1 = make_shared<translate>(box1, vec3(265,0,295));
 
-        shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
+        shared_ptr<hittable> box2 = box(point3(0,0,0), point3(165,165,165), white);
         box2 = make_shared<rotate_y>(box2, -18);
         box2 = make_shared<translate>(box2, vec3(130,0,65));
 
@@ -3293,7 +3427,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
                 auto y1 = random_double(1,101);
                 auto z1 = z0 + w;
 
-                boxes1.add(make_shared<box>(point3(x0,y0,z0), point3(x1,y1,z1), ground));
+                boxes1.add(box(point3(x0,y0,z0), point3(x1,y1,z1), ground));
             }
         }
 
@@ -3302,7 +3436,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         world.add(make_shared<bvh_node>(boxes1));
 
         auto light = make_shared<diffuse_light>(color(7, 7, 7));
-        world.add(make_shared<xz_rect>(123, 423, 147, 412, 554, light));
+        world.add(make_shared<quad>(point3(123,554,147), vec3(300,0,0), vec3(0,0,265), light));
 
         auto center1 = point3(400, 400, 200);
         auto center2 = center1 + vec3(30,0,0);
@@ -3340,10 +3474,12 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         );
     }
 
+
     void default_scene(scene& scene_desc) {
         final_scene(scene_desc);
         scene_desc.image_width       = 400;
-        scene_desc.samples_per_pixel = 100;
+        scene_desc.samples_per_pixel = 250;
+        scene_desc.max_depth         = 4;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
