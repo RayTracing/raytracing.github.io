@@ -2266,7 +2266,8 @@ Ray-Plane Intersection
 -----------------------
 Spheres are generally the first ray tracing primitive because their implicit formula makes it so
 easy to solve for ray intersection. Like spheres, planes also have an implicit formula, and
-ray-plane intersection is even _easier_ to solve.
+we can use their implicit formula to produce an algorithm that solves for ray-plane intersection.
+Indeed, ray-plane intersection is even _easier_ to solve than ray-sphere intersection.
 
 You may already know this implicit formula for a plane:
 
@@ -2279,11 +2280,14 @@ makes things slightly easier to use the alternate formulation:
 
 (We didn't flip the sign of D because it's just some constant that we'll figure out later.)
 
-Here's another way to think of this formula: given the plane perpendicular to the normal vector
+Here's a good way to think of this formula: given the plane perpendicular to the normal vector
 $\mathbf{n} = (A,B,C)$, and the position vector $\mathbf{v} = (x,y,z)$ (that is, the vector from the
-origin to any point on the plane), then
+origin to any point on the plane), then we can use the dot product to solve for $D$:
 
   $$ \mathbf{n} \cdot \mathbf{v} = D $$
+
+for any position on the plane. This is an equivalent formulation of the $Ax + By + Cz = D$ formula
+given above, only now in terms of our 3D values.
 
 Now to find the intersection with some ray $\mathbf{R}(t) = \mathbf{P} + t\mathbf{d}$. Plugging in
 the ray equation, we get
@@ -2298,12 +2302,16 @@ Solving for $t$:
 
   $$ t = \frac{D - \mathbf{n} \cdot \mathbf{P}}{\mathbf{n} \cdot \mathbf{d}} $$
 
-This gives us $t$, which we can plug into the ray equation to find the point of intersection.
+This gives us $t$, which we can plug into the ray equation to find the point of intersection. Note
+that the denominator $\mathbf{n} \cdot \mathbf{d}$ will be zero if the ray is parallel to the plane.
+In this case, we can immediately record a miss between the ray and the plane. As for other
+primitives, if the ray $t$ parameter is less than the minimum acceptable value, we also record a
+miss.
 
-Ok, we can find the point of intersection between a ray and a plane. This will help us determine
-whether a ray hits a given quadrilateral, using the plane that contains the (planar) quadrilateral.
-In fact, we can use this approach to define any planar primitive, like triangles and disks (more
-later).
+All right, we can find the point of intersection between a ray and a plane. This will help us
+determine whether a ray hits a given quadrilateral, using the plane that contains the (planar)
+quadrilateral. In fact, we can use this approach to define any planar primitive, like triangles and
+disks (more later).
 
 We now have three questions we must answer:
 
@@ -2333,8 +2341,8 @@ The following figure illustrates the quadrilateral components.
 
 Finding the Plane That Contains a Given Quadrilateral
 ------------------------------------------------------
-We have $O$, $u$, and $v$, and want the corresponding equation of the plane containing all three of
-these values (and thus the quad itself).
+We have $\mathbf{O}$, $u$, and $v$, and want the corresponding equation of the plane containing all
+three of these values (and thus the quad itself).
 
 Fortunately, this is very simple. Recall that in $Ax + By + Cz = D$, $(A,B,C)$ represents the
 normal vector. To get this, we just use the cross product of the two side vectors $u$ and $v$:
@@ -2365,7 +2373,7 @@ origin point $\mathbf{O}$ and three basis vectors $\mathbf{x}$, $\mathbf{y}$, an
 Since a plane is a 2D construct, we just need a plane origin point $\mathbf{O}$ and _two_ basis
 vectors: $\mathbf{u}$ and $\mathbf{v}$. Now normally, you see axes that are perpendicular to each
 other, so they all meet at 90° angles. However, this doesn't need to be the case in order to span
-the entire space -- you just can't have two axes that are parallel to each other.
+the entire space -- you just need two axes that are not parallel to each other.
 
   ![Figure [ray-plane]: Ray-plane intersection](../images/fig-2.06-ray-plane.jpg)
 
@@ -2381,8 +2389,9 @@ so that
 
 If $\mathbf{u}$ and $\mathbf{v}$ were guaranteed to be orthogonal to each other (forming a 90°
 angle between them), then this would be a simple matter of projecting $\mathbf{P}$ onto the two
-basis vectors $\mathbf{u}$ and $\mathbf{v}$. However, since they can form any angle (other than
-zero), the math's a little bit tricker.
+basis vectors $\mathbf{u}$ and $\mathbf{v}$. However, since we are not restricting $u$ and $v$ to be
+perpendicular, and allowing them to form any angle (other than zero), the math's a little bit
+trickier.
 
 $$ \mathbf{P} = \mathbf{O} + \alpha \mathbf{u} + \beta \mathbf{v}$$
 
@@ -2563,8 +2572,7 @@ UV coordinates if so.
 
 We'll leave these additional 2D primitives as an exercise to the reader, depending on your desire to
 explore. Consider triangles, disks, and rings. You could even create cut-out stencils based on the
-texture map! We've included the solution for triangle, ellipse, and annulus in the commit history
-(search the history for "annulus"), so you can take a peek if you'd like to see our solution.
+texture map!
 
 
 
@@ -2847,7 +2855,7 @@ This image is very noisy because the light is small.
 Instances
 ====================================================================================================
 The Cornell Box usually has two blocks in it. These are rotated relative to the walls. First, let’s
-make an axis-aligned block primitive that holds 6 rectangles:
+create a function that returns a box, by creating a `hittable_list` of six rectangles:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
