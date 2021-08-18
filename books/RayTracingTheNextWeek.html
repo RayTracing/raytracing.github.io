@@ -2273,6 +2273,7 @@ You may already know this implicit formula for a plane:
 
   $$ Ax + By + Cz + D = 0 $$
 
+where $A,B,C,D$ are just numbers, and $x,y,z$ are the values of a point $\mathbf{P} = (x,y,z)$.
 That is, a plane is the set of all points $\mathbf{P} = (x,y,z)$ that satisfy the formula above. It
 makes things slightly easier to use the alternate formulation:
 
@@ -2315,9 +2316,9 @@ disks (more later).
 
 We now have three questions we must answer:
 
-1. How do we define the quadrilateral in three dimensional space?
-2. How do we find the plane that contains that quadrilateral?
-3. How do we orient the ray-plane intersection point within the quadrilateral?
+  1. How do we define the quadrilateral in three dimensional space?
+  2. How do we find the plane that contains that quadrilateral?
+  3. How do we orient the ray-plane intersection point within the quadrilateral?
 
 
 Defining the Quadrilateral
@@ -2326,13 +2327,15 @@ For our purposes, we'll use three geometric entities to define a quadrilateral. 
 we say "quadrilateral" here, we're really talking about parallelograms, a specific kind of
 quadrilateral where opposite sides are parallel. These three entities are
 
-1. $\mathbf{Q}$, the lower-left corner of the quadrilateral.
-2. $\mathbf{u}$, a vector representing the first side of the quadrilateral.
-   $\mathbf{Q} + \mathbf{u}$ gives the lower right corner.
-3. $\mathbf{v}$, a vector representing the second side of the quadrilateral.
-   $\mathbf{Q} + \mathbf{v}$ gives the upper left corner.
+  1. $\mathbf{Q}$, the lower-left corner of the quadrilateral.
+  2. $\mathbf{u}$, a vector representing the first side of the quadrilateral.
+     $\mathbf{Q} + \mathbf{u}$ gives the lower right corner.
+  3. $\mathbf{v}$, a vector representing the second side of the quadrilateral.
+     $\mathbf{Q} + \mathbf{v}$ gives the upper left corner.
 
-These values are three-dimensional, even though a quad itself is a two-dimensional object.
+These values are three-dimensional, even though a quad itself is a two-dimensional object. For
+example, a quad with corner at the origin and extending two units in the Z direction and one unit in
+the Y direction would have $Q = (0,0,0), u = (0,0,2), \text{and } v = (0,1,0)$.
 
 The following figure illustrates the quadrilateral components.
 
@@ -2352,7 +2355,11 @@ normal vector. To get this, we just use the cross product of the two side vector
 The plane is defined as all points $(x,y,z)$ that satisfy the equation $Ax + By + Cz = D$. Well, we
 know that $\mathbf{Q}$ lies on the plane, so we can use that to find $D$:
 
-  $$ D = \mathbf{n}_x\mathbf{Q}_x + \mathbf{n}_y\mathbf{Q}_y + \mathbf{n}_z\mathbf{Q}_z $$
+  $$ \begin{align*}
+     D &= \mathbf{n}_x\mathbf{Q}_x + \mathbf{n}_y\mathbf{Q}_y + \mathbf{n}_z\mathbf{Q}_z \\
+       &= n \cdot \mathbf{Q} \\
+     \end{align*}
+  $$
 
 We can now use these two values $\mathbf{n}$ and $D$ to find the point of intersection with a given
 ray and the plane containing the quadrilateral.
@@ -2361,8 +2368,9 @@ ray and the plane containing the quadrilateral.
 Orienting Points on The Plane
 ------------------------------
 At this stage, the intersection point is on the plane that contains the quadrilateral, but it could
-be _anywhere_ on the plane, and may lie inside or outside the quadrilateral. We need to determine if
-the intersection lies inside (hits) the quadrilateral, and reject points that lie outside (miss) the
+be _anywhere_ on the plane, and since the quadrilateral may be a small little section of the plane,
+the intersection may lie _inside_ or _outside_ the quadrilateral. We need to determine if the
+intersection lies inside (hits) the quadrilateral, and reject points that lie outside (miss) the
 quad. To determine where a point lies relative to the quad, and to assign texture coordinates to the
 point of intersection, we need to somehow orient the intersection point on the plane.
 
@@ -2393,68 +2401,68 @@ basis vectors $\mathbf{u}$ and $\mathbf{v}$. However, since we are not restricti
 perpendicular, and allowing them to form any angle (other than zero), the math's a little bit
 trickier.
 
-$$ \mathbf{P} = \mathbf{Q} + \alpha \mathbf{u} + \beta \mathbf{v}$$
+  $$ \mathbf{P} = \mathbf{Q} + \alpha \mathbf{u} + \beta \mathbf{v}$$
 
-$$ \mathbf{p} = \mathbf{P} - \mathbf{Q} = \alpha \mathbf{u} + \beta \mathbf{v} $$
+  $$ \mathbf{p} = \mathbf{P} - \mathbf{Q} = \alpha \mathbf{u} + \beta \mathbf{v} $$
 
 Here, $\mathbf{P}$ is the _point_ of intersection, and $\mathbf{p}$ is the _vector_ from
 $\mathbf{Q}$ to $\mathbf{P}$.
 
 Cross the above equation with $\mathbf{u}$ and $\mathbf{v}$, respectively:
 
-$$ \begin{align*}
-   \mathbf{u} \times \mathbf{p} &= \mathbf{u} \times (\alpha \mathbf{u} + \beta \mathbf{v}) \\
-   &= \mathbf{u} \times \alpha \mathbf{u} + \mathbf{u} \times \beta \mathbf{v} \\
-   &= \alpha(\mathbf{u} \times \mathbf{u}) + \beta(\mathbf{u} \times \mathbf{v})
-   \end{align*} $$
+  $$ \begin{align*}
+     \mathbf{u} \times \mathbf{p} &= \mathbf{u} \times (\alpha \mathbf{u} + \beta \mathbf{v}) \\
+     &= \mathbf{u} \times \alpha \mathbf{u} + \mathbf{u} \times \beta \mathbf{v} \\
+     &= \alpha(\mathbf{u} \times \mathbf{u}) + \beta(\mathbf{u} \times \mathbf{v})
+     \end{align*} $$
 
-$$ \begin{align*}
-   \mathbf{v} \times \mathbf{p} &= \mathbf{v} \times (\alpha \mathbf{u} + \beta \mathbf{v}) \\
-   &= \mathbf{v} \times \alpha \mathbf{u} + \mathbf{v} \times \beta \mathbf{v} \\
-   &= \alpha(\mathbf{v} \times \mathbf{u}) + \beta(\mathbf{v} \times \mathbf{v})
-   \end{align*} $$
+  $$ \begin{align*}
+     \mathbf{v} \times \mathbf{p} &= \mathbf{v} \times (\alpha \mathbf{u} + \beta \mathbf{v}) \\
+     &= \mathbf{v} \times \alpha \mathbf{u} + \mathbf{v} \times \beta \mathbf{v} \\
+     &= \alpha(\mathbf{v} \times \mathbf{u}) + \beta(\mathbf{v} \times \mathbf{v})
+     \end{align*} $$
 
 Since any vector crossed with itself yields zero, these equations simplify to
 
-$$ \mathbf{u} \times \mathbf{p} = \beta(\mathbf{u} \times \mathbf{v}) $$
-$$ \mathbf{v} \times \mathbf{p} = \alpha(\mathbf{v} \times \mathbf{u}) $$
+  $$ \mathbf{u} \times \mathbf{p} = \beta(\mathbf{u} \times \mathbf{v}) $$
+  $$ \mathbf{v} \times \mathbf{p} = \alpha(\mathbf{v} \times \mathbf{u}) $$
 
 To solve for the coefficients $\alpha$ and $\beta$, we can take the dot product of both sides of the
 above equations with the plane normal $\mathbf{n} = \mathbf{u} \times \mathbf{v}$, reducing both
 sides to scalars.
 
-$$ \mathbf{n} \cdot (\mathbf{u} \times \mathbf{p})
-   = \mathbf{n} \cdot \beta(\mathbf{u} \times \mathbf{v}) $$
+  $$ \mathbf{n} \cdot (\mathbf{u} \times \mathbf{p})
+     = \mathbf{n} \cdot \beta(\mathbf{u} \times \mathbf{v}) $$
 
-$$ \mathbf{n} \cdot (\mathbf{v} \times \mathbf{p})
-   = \mathbf{n} \cdot \alpha(\mathbf{v} \times \mathbf{u}) $$
+  $$ \mathbf{n} \cdot (\mathbf{v} \times \mathbf{p})
+     = \mathbf{n} \cdot \alpha(\mathbf{v} \times \mathbf{u}) $$
 
 Now isolating the coefficients is a simple matter of division:
 
-$$ \alpha = \frac{\mathbf{n} \cdot (\mathbf{v} \times \mathbf{p})}
-                 {\mathbf{n} \cdot (\mathbf{v} \times \mathbf{u})} $$
+  $$ \alpha = \frac{\mathbf{n} \cdot (\mathbf{v} \times \mathbf{p})}
+                   {\mathbf{n} \cdot (\mathbf{v} \times \mathbf{u})} $$
 
-$$ \beta  = \frac{\mathbf{n} \cdot (\mathbf{u} \times \mathbf{p})}
-                 {\mathbf{n} \cdot (\mathbf{u} \times \mathbf{v})} $$
+  $$ \beta  = \frac{\mathbf{n} \cdot (\mathbf{u} \times \mathbf{p})}
+                   {\mathbf{n} \cdot (\mathbf{u} \times \mathbf{v})} $$
 
 Reversing the cross products for both the numerator and denominator of $\alpha$ (recall that
 $\mathbf{a} \times \mathbf{b} = - \mathbf{b} \times \mathbf{a}$) gives us a common denominator for
 both coefficients:
 
-$$ \alpha = \frac{\mathbf{n} \cdot (\mathbf{p} \times \mathbf{v})}
-                 {\mathbf{n} \cdot (\mathbf{u} \times \mathbf{v})} $$
+  $$ \alpha = \frac{\mathbf{n} \cdot (\mathbf{p} \times \mathbf{v})}
+                   {\mathbf{n} \cdot (\mathbf{u} \times \mathbf{v})} $$
 
-$$ \beta  = \frac{\mathbf{n} \cdot (\mathbf{u} \times \mathbf{p})}
-                 {\mathbf{n} \cdot (\mathbf{u} \times \mathbf{v})} $$
+  $$ \beta  = \frac{\mathbf{n} \cdot (\mathbf{u} \times \mathbf{p})}
+                   {\mathbf{n} \cdot (\mathbf{u} \times \mathbf{v})} $$
 
 Now we can perform one final simplification, computing a vector $\mathbf{w}$ that will be constant
 for the plane's basis frame, for any planar point $\mathbf{P}$:
 
-$$ \mathbf{w} = \frac{\mathbf{n}}{\mathbf{n} \cdot (\mathbf{u} \times \mathbf{v})}
-              = \frac{\mathbf{n}}{\mathbf{n} \cdot \mathbf{n}}$$
+  $$ \mathbf{w} = \frac{\mathbf{n}}{\mathbf{n} \cdot (\mathbf{u} \times \mathbf{v})}
+                = \frac{\mathbf{n}}{\mathbf{n} \cdot \mathbf{n}}$$
 
-$$ \alpha = \mathbf{w} \cdot (\mathbf{p} \times \mathbf{v}) $$
-$$ \beta  = \mathbf{w} \cdot (\mathbf{u} \times \mathbf{p}) $$
+  $$ \alpha = \mathbf{w} \cdot (\mathbf{p} \times \mathbf{v}) $$
+  $$ \beta  = \mathbf{w} \cdot (\mathbf{u} \times \mathbf{p}) $$
 
 
 Implementing Quadrilateral Primitives
