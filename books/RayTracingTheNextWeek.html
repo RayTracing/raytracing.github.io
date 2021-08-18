@@ -2326,11 +2326,11 @@ For our purposes, we'll use three geometric entities to define a quadrilateral. 
 we say "quadrilateral" here, we're really talking about parallelograms, a specific kind of
 quadrilateral where opposite sides are parallel. These three entities are
 
-1. $\mathbf{O}$, the lower-left corner of the quadrilateral.
+1. $\mathbf{Q}$, the lower-left corner of the quadrilateral.
 2. $\mathbf{u}$, a vector representing the first side of the quadrilateral.
-   $\mathbf{O} + \mathbf{u}$ gives the lower right corner.
+   $\mathbf{Q} + \mathbf{u}$ gives the lower right corner.
 3. $\mathbf{v}$, a vector representing the second side of the quadrilateral.
-   $\mathbf{O} + \mathbf{v}$ gives the upper left corner.
+   $\mathbf{Q} + \mathbf{v}$ gives the upper left corner.
 
 These values are three-dimensional, even though a quad itself is a two-dimensional object.
 
@@ -2341,7 +2341,7 @@ The following figure illustrates the quadrilateral components.
 
 Finding the Plane That Contains a Given Quadrilateral
 ------------------------------------------------------
-We have $\mathbf{O}$, $u$, and $v$, and want the corresponding equation of the plane containing all
+We have $\mathbf{Q}$, $u$, and $v$, and want the corresponding equation of the plane containing all
 three of these values (and thus the quad itself).
 
 Fortunately, this is very simple. Recall that in $Ax + By + Cz = D$, $(A,B,C)$ represents the
@@ -2350,9 +2350,9 @@ normal vector. To get this, we just use the cross product of the two side vector
   $$ \mathbf{n} = \text{unit_vector}(\mathbf{u} \times \mathbf{v}) $$
 
 The plane is defined as all points $(x,y,z)$ that satisfy the equation $Ax + By + Cz = D$. Well, we
-know that $\mathbf{O}$ lies on the plane, so we can use that to find $D$:
+know that $\mathbf{Q}$ lies on the plane, so we can use that to find $D$:
 
-  $$ D = \mathbf{n}_x\mathbf{O}_x + \mathbf{n}_y\mathbf{O}_y + \mathbf{n}_z\mathbf{O}_z $$
+  $$ D = \mathbf{n}_x\mathbf{Q}_x + \mathbf{n}_y\mathbf{Q}_y + \mathbf{n}_z\mathbf{Q}_z $$
 
 We can now use these two values $\mathbf{n}$ and $D$ to find the point of intersection with a given
 ray and the plane containing the quadrilateral.
@@ -2370,7 +2370,7 @@ To do this, we'll construct a _coordinate frame_ for the plane -- a way of orien
 on the plane. We've already been using a coordinate frame for our 3D space -- this is defined by an
 origin point $\mathbf{O}$ and three basis vectors $\mathbf{x}$, $\mathbf{y}$, and $\mathbf{z}$.
 
-Since a plane is a 2D construct, we just need a plane origin point $\mathbf{O}$ and _two_ basis
+Since a plane is a 2D construct, we just need a plane origin point $\mathbf{Q}$ and _two_ basis
 vectors: $\mathbf{u}$ and $\mathbf{v}$. Now normally, you see axes that are perpendicular to each
 other, so they all meet at 90° angles. However, this doesn't need to be the case in order to span
 the entire space -- you just need two axes that are not parallel to each other.
@@ -2379,13 +2379,13 @@ the entire space -- you just need two axes that are not parallel to each other.
 
 Consider figure [ray-plane] as an example. Ray $\mathbf{R}$ intersects the plane, yielding
 intersection point $\mathbf{P}$. Measuring against plane vectors $\mathbf{u}$ and $\mathbf{v}$, the
-intersection point $\mathbf{P}$ is at $\mathbf{O} + (1)\mathbf{u} + (\frac{1}{2})\mathbf{v}$. In
+intersection point $\mathbf{P}$ is at $\mathbf{Q} + (1)\mathbf{u} + (\frac{1}{2})\mathbf{v}$. In
 other words, the plane coordinates of intersection point $\mathbf{P}$ is $(1,\frac{1}{2})$.
 
 Generally, given some arbitrary point $\mathbf{P}$, we seek two scalar values $\alpha$ and $\beta$,
 so that
 
-  $$ \mathbf{P} = \mathbf{O} + \alpha \mathbf{u} + \beta \mathbf{v} $$
+  $$ \mathbf{P} = \mathbf{Q} + \alpha \mathbf{u} + \beta \mathbf{v} $$
 
 If $\mathbf{u}$ and $\mathbf{v}$ were guaranteed to be orthogonal to each other (forming a 90°
 angle between them), then this would be a simple matter of projecting $\mathbf{P}$ onto the two
@@ -2393,12 +2393,12 @@ basis vectors $\mathbf{u}$ and $\mathbf{v}$. However, since we are not restricti
 perpendicular, and allowing them to form any angle (other than zero), the math's a little bit
 trickier.
 
-$$ \mathbf{P} = \mathbf{O} + \alpha \mathbf{u} + \beta \mathbf{v}$$
+$$ \mathbf{P} = \mathbf{Q} + \alpha \mathbf{u} + \beta \mathbf{v}$$
 
-$$ \mathbf{p} = \mathbf{P} - \mathbf{O} = \alpha \mathbf{u} + \beta \mathbf{v} $$
+$$ \mathbf{p} = \mathbf{P} - \mathbf{Q} = \alpha \mathbf{u} + \beta \mathbf{v} $$
 
 Here, $\mathbf{P}$ is the _point_ of intersection, and $\mathbf{p}$ is the _vector_ from
-$\mathbf{O}$ to $\mathbf{P}$.
+$\mathbf{Q}$ to $\mathbf{P}$.
 
 Cross the above equation with $\mathbf{u}$ and $\mathbf{v}$, respectively:
 
