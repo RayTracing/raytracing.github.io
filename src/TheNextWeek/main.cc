@@ -11,7 +11,6 @@
 
 #include "rtweekend.h"
 
-#include "box.h"
 #include "bvh.h"
 #include "camera.h"
 #include "color.h"
@@ -19,6 +18,7 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "moving_sphere.h"
+#include "quad.h"
 #include "scene.h"
 #include "sphere.h"
 #include "texture.h"
@@ -158,7 +158,7 @@ void simple_light(scene& scene_desc) {
 
     auto difflight = make_shared<diffuse_light>(color(4,4,4));
     world.add(make_shared<sphere>(point3(0,7,0), 2, difflight));
-    world.add(make_shared<xy_rect>(3, 5, 1, 3, -2, difflight));
+    world.add(make_shared<quad>(point3(3,1,-2), vec3(2,0,0), vec3(0,2,0), difflight));
 }
 
 
@@ -180,19 +180,19 @@ void cornell_box(scene& scene_desc) {
     auto green = make_shared<lambertian>(color(.12, .45, .15));
     auto light = make_shared<diffuse_light>(color(15, 15, 15));
 
-    world.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
-    world.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
-    world.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
-    world.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-    world.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
-    world.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+    world.add(make_shared<quad>(point3(555,0,0), vec3(0,555,0), vec3(0,0,555), green));
+    world.add(make_shared<quad>(point3(0,0,0), vec3(0,555,0), vec3(0,0,555), red));
+    world.add(make_shared<quad>(point3(343, 554, 332), vec3(-130,0,0), vec3(0,0,-105), light));
+    world.add(make_shared<quad>(point3(0,0,0), vec3(555,0,0), vec3(0,0,555), white));
+    world.add(make_shared<quad>(point3(555,555,555), vec3(-555,0,0), vec3(0,0,-555), white));
+    world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white));
 
-    shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
+    shared_ptr<hittable> box1 = box(point3(0,0,0), point3(165,330,165), white);
     box1 = make_shared<rotate_y>(box1, 15);
     box1 = make_shared<translate>(box1, vec3(265,0,295));
     world.add(box1);
 
-    shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
+    shared_ptr<hittable> box2 = box(point3(0,0,0), point3(165,165,165), white);
     box2 = make_shared<rotate_y>(box2, -18);
     box2 = make_shared<translate>(box2, vec3(130,0,65));
     world.add(box2);
@@ -217,18 +217,18 @@ void cornell_smoke(scene& scene_desc) {
     auto green = make_shared<lambertian>(color(.12, .45, .15));
     auto light = make_shared<diffuse_light>(color(7, 7, 7));
 
-    world.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
-    world.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
-    world.add(make_shared<xz_rect>(113, 443, 127, 432, 554, light));
-    world.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
-    world.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-    world.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+    world.add(make_shared<quad>(point3(555,0,0), vec3(0,555,0), vec3(0,0,555), green));
+    world.add(make_shared<quad>(point3(0,0,0), vec3(0,555,0), vec3(0,0,555), red));
+    world.add(make_shared<quad>(point3(113,554,127), vec3(330,0,0), vec3(0,0,305), light));
+    world.add(make_shared<quad>(point3(0,555,0), vec3(555,0,0), vec3(0,0,555), white));
+    world.add(make_shared<quad>(point3(0,0,0), vec3(555,0,0), vec3(0,0,555), white));
+    world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white));
 
-    shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
+    shared_ptr<hittable> box1 = box(point3(0,0,0), point3(165,330,165), white);
     box1 = make_shared<rotate_y>(box1, 15);
     box1 = make_shared<translate>(box1, vec3(265,0,295));
 
-    shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
+    shared_ptr<hittable> box2 = box(point3(0,0,0), point3(165,165,165), white);
     box2 = make_shared<rotate_y>(box2, -18);
     box2 = make_shared<translate>(box2, vec3(130,0,65));
 
@@ -262,7 +262,7 @@ void final_scene(scene& scene_desc) {
             auto y1 = random_double(1,101);
             auto z1 = z0 + w;
 
-            boxes1.add(make_shared<box>(point3(x0,y0,z0), point3(x1,y1,z1), ground));
+            boxes1.add(box(point3(x0,y0,z0), point3(x1,y1,z1), ground));
         }
     }
 
@@ -271,7 +271,7 @@ void final_scene(scene& scene_desc) {
     world.add(make_shared<bvh_node>(boxes1));
 
     auto light = make_shared<diffuse_light>(color(7, 7, 7));
-    world.add(make_shared<xz_rect>(123, 423, 147, 412, 554, light));
+    world.add(make_shared<quad>(point3(123,554,147), vec3(300,0,0), vec3(0,0,265), light));
 
     auto center1 = point3(400, 400, 200);
     auto center2 = center1 + vec3(30,0,0);

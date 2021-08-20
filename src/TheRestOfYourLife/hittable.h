@@ -54,25 +54,6 @@ class hittable {
 };
 
 
-class flip_face : public hittable {
-  public:
-    flip_face(shared_ptr<hittable> p) : object(p) {}
-
-    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-        if (!object->hit(r, ray_t, rec))
-            return false;
-
-        rec.front_face = !rec.front_face;
-        return true;
-    }
-
-    aabb bounding_box() const override { return object->bounding_box(); }
-
-  public:
-    shared_ptr<hittable> object;
-};
-
-
 class translate : public hittable {
   public:
     translate(shared_ptr<hittable> p, const vec3& displacement)

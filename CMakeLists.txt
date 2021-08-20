@@ -40,14 +40,13 @@ set ( SOURCE_NEXT_WEEK
   src/common/perlin.h
   src/common/rtw_stb_image.h
   src/common/texture.h
-  src/TheNextWeek/aarect.h
-  src/TheNextWeek/box.h
   src/TheNextWeek/bvh.h
   src/TheNextWeek/constant_medium.h
   src/TheNextWeek/hittable.h
   src/TheNextWeek/hittable_list.h
   src/TheNextWeek/material.h
   src/TheNextWeek/moving_sphere.h
+  src/TheNextWeek/quad.h
   src/TheNextWeek/scene.h
   src/TheNextWeek/sphere.h
   src/TheNextWeek/main.cc
@@ -60,14 +59,13 @@ set ( SOURCE_REST_OF_YOUR_LIFE
   src/common/perlin.h
   src/common/rtw_stb_image.h
   src/common/texture.h
-  src/TheRestOfYourLife/aarect.h
-  src/TheRestOfYourLife/box.h
   src/TheRestOfYourLife/bvh.h
   src/TheRestOfYourLife/hittable.h
   src/TheRestOfYourLife/hittable_list.h
   src/TheRestOfYourLife/material.h
   src/TheRestOfYourLife/onb.h
   src/TheRestOfYourLife/pdf.h
+  src/TheRestOfYourLife/quad.h
   src/TheRestOfYourLife/scene.h
   src/TheRestOfYourLife/sphere.h
   src/TheRestOfYourLife/main.cc

@@ -256,12 +256,11 @@ location.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
 
-    #include "aarect.h"
-    #include "box.h"
     #include "camera.h"
     #include "color.h"
     #include "hittable_list.h"
     #include "material.h"
+    #include "quad.h"
     #include "scene.h"
     #include "sphere.h"
 
@@ -292,19 +291,24 @@ location.
         auto green = make_shared<lambertian>(color(.12, .45, .15));
         auto light = make_shared<diffuse_light>(color(15, 15, 15));
 
-        world.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
-        world.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
-        world.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
-        world.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-        world.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
-        world.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+        // Cornell box sides
+        world.add(make_shared<quad>(point3(555,0,0), vec3(0,0,555), vec3(0,555,0), green));
+        world.add(make_shared<quad>(point3(0,0,555), vec3(0,0,-555), vec3(0,555,0), red));
+        world.add(make_shared<quad>(point3(0,555,0), vec3(555,0,0), vec3(0,0,555), white));
+        world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,0,-555), white));
+        world.add(make_shared<quad>(point3(555,0,555), vec3(-555,0,0), vec3(0,555,0), white));
 
-        shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
+        // Light
+        world.add(make_shared<quad>(point3(213,554,227), vec3(130,0,0), vec3(0,0,105), light));
+
+        // Box 1
+        shared_ptr<hittable> box1 = box(point3(0,0,0), point3(165,330,165), white);
         box1 = make_shared<rotate_y>(box1, 15);
         box1 = make_shared<translate>(box1, vec3(265,0,295));
         world.add(box1);
 
-        shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
+        // Box 2
+        shared_ptr<hittable> box2 = box(point3(0,0,0), point3(165,165,165), white);
         box2 = make_shared<rotate_y>(box2, -18);
         box2 = make_shared<translate>(box2, vec3(130,0,65));
         world.add(box2);
@@ -2377,47 +2381,6 @@ down. We can do that by letting the emitted member function of hittable take ext
     [Listing [emitted-directional]: <kbd>[material.h]</kbd> Material emission, directional]
 </div>
 
-<div class='together'>
-We also need to flip the light so its normals point in the $-y$ direction:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class flip_face : public hittable {
-      public:
-        flip_face(shared_ptr<hittable> p) : object(p) {}
-
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-            if (!object->hit(r, ray_t, rec))
-                return false;
-
-            rec.front_face = !rec.front_face;
-            return true;
-        }
-
-        aabb bounding_box() const override { return object->bounding_box(); }
-
-      public:
-        shared_ptr<hittable> object;
-    };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [flip-face]: <kbd>[hittable.h]</kbd> We use a hittable object to flip the light]
-
-Making sure to call this in our world definition:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void cornell_box(scene& scene_desc) {
-        ...
-        world.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
-        world.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        world.add(make_shared<flip_face>(make_shared<xz_rect>(213, 343, 227, 332, 554, light)));
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        world.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-        world.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
-        world.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
-        ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [flipping-light]: <kbd>[main.cc]</kbd> Flip the light in our cornell box scene]
-
 This gives us:
 
   ![Image 8: Cornell box, light emitted only in the downward direction
@@ -2580,6 +2543,9 @@ Sampling Directions towards a Hittable
 Now we can try sampling directions toward a `hittable`, like the light.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+    #include "hittable_list.h"
+    ...
     class hittable_pdf : public pdf {
       public:
         hittable_pdf(const hittable_list& _objects, const point3& _origin)
@@ -2632,11 +2598,26 @@ functions through to subclasses if you want a purely abstract `hittable` interfa
 </div>
 
 <div class='together'>
-And then we change `xz_rect` to implement those functions:
+And then we change `quad` to implement those functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class xz_rect : public hittable {
+    class quad : public hittable {
       public:
+        quad(const point3& _Q, const vec3& _u, const vec3& _v, shared_ptr<material> m)
+          : Q(_Q), u(_u), v(_v), mat(m)
+        {
+            auto n = cross(u, v);
+            normal = unit_vector(n);
+            D = -dot(normal, Q);
+            w = n / dot(n,n);
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            area = n.length();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            set_bounding_box();
+        }
         ...
 
 
@@ -2646,7 +2627,6 @@ And then we change `xz_rect` to implement those functions:
             if (!this->hit(ray(origin, v), interval(0.001, infinity), rec))
                 return 0;
 
-            auto area = (x1-x0)*(z1-z0);
             auto distance_squared = rec.t * rec.t * v.length_squared();
             auto cosine = fabs(dot(v, rec.normal) / v.length());
 
@@ -2654,18 +2634,30 @@ And then we change `xz_rect` to implement those functions:
         }
 
         vec3 random(const point3& origin) const override {
-            auto random_point = point3(random_double(x0,x1), k, random_double(z0,z1));
-            return random_point - origin;
+            auto p = plane_origin + (random_double() * axis_A) + (random_double() * axis_B);
+            return p - origin;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        ...
+
+      protected:
+        point3 Q;
+        vec3 u, v;
+        shared_ptr<material> mat;
+        vec3 normal;
+        double D;
+        vec3 w;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double area;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        aabb bbox;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [xz-rect-pdf]: <kbd>[aarect.h]</kbd> XZ rect with pdf]
+    [Listing [quad-pdf]: <kbd>[quad.h]</kbd> quad with pdf]
 
-We only need to add `pdf_value()` and `random()` to `xz_rect` because we're using this to importance
-sample the light, and the only light we have in our scene is an `xz_rect`. if you want other lights,
-or use a PDF with other objects, you'll need to implement the above functions for those classes.
+We only need to add `pdf_value()` and `random()` to `quad` because we're using this to importance
+sample the light, and the only light we have in our scene is a `quad`. if you want other light
+geometries, or want to use a PDF with other objects, you'll need to implement the above functions
+for the corresponding classes.
 </div>
 
 <div class='together'>
@@ -2718,8 +2710,9 @@ Set the `light_ptr` to the light in the middle of the ceiling:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        // Light Sources
         scene_desc.light_ptr =
-            make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>());
+            make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), m);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3177,24 +3170,27 @@ that.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     void cornell_box(scene& scene_desc) {
         ...
-        world.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+        // Light
+        world.add(make_shared<quad>(point3(213,554,227), vec3(130,0,0), vec3(0,0,105), light));
 
-
+        // Box 1
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         shared_ptr<material> aluminum = make_shared<metal>(color(0.8, 0.85, 0.88), 0.0);
-        shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), aluminum);
+        shared_ptr<hittable> box1 = box(point3(0,0,0), point3(165,330,165), aluminum);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         box1 = make_shared<rotate_y>(box1, 15);
         box1 = make_shared<translate>(box1, vec3(265,0,295));
         world.add(box1);
 
-        shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
+        // Box 2
+        shared_ptr<hittable> box2 = box(point3(0,0,0), point3(165,165,165), white);
         box2 = make_shared<rotate_y>(box2, -18);
         box2 = make_shared<translate>(box2, vec3(130,0,65));
         world.add(box2);
 
+        // Light Sources
         scene_desc.light_ptr =
-            make_shared<xz_rect>(213, 343, 227, 332, 554, shared_ptr<material>());
+            make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), m);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-cornell-al]: <kbd>[main.cc]</kbd> Cornell box scene with aluminum material]
@@ -3353,21 +3349,20 @@ We can first try just sampling the sphere rather than the light:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     void cornell_box(scene& scene_desc) {
         ...
-        world.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
 
 
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        // Box
+        shared_ptr<hittable> box1 = box(point3(0,0,0), point3(165,330,165), white);
         box1 = make_shared<rotate_y>(box1, 15);
         box1 = make_shared<translate>(box1, vec3(265,0,295));
         world.add(box1);
 
+        // Glass Sphere
         auto glass = make_shared<dielectric>(1.5);
-        world.add(make_shared<sphere>(point3(190,90,190), 90 , glass));
+        world.add(make_shared<sphere>(point3(190,90,190), 90, glass));
 
-
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        // Light Sources
         scene_desc.light_ptr =
             make_shared<sphere>(point3(190, 90, 190), 90, shared_ptr<material>());
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3451,10 +3446,12 @@ We assemble a list to pass to `ray_color()` `from main()`:
         ...
 
 
+        // Light Sources
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         hittable_list& lights = scene_desc.lights;
-        lights.add(make_shared<xz_rect>(213, 343, 227, 332, 554, 0));
-        lights.add(make_shared<sphere>(point3(190, 90, 190), 90, 0));
+        auto m = shared_ptr<material>();
+        lights.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), m));
+        lights.add(make_shared<sphere>(point3(190, 90, 190), 90, m));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

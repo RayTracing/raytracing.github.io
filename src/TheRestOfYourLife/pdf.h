@@ -13,6 +13,7 @@
 
 #include "rtweekend.h"
 
+#include "hittable_list.h"
 #include "onb.h"
 
 
