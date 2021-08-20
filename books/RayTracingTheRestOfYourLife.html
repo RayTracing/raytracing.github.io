@@ -2603,6 +2603,21 @@ And then we change `quad` to implement those functions:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class quad : public hittable {
       public:
+        quad(const point3& _Q, const vec3& _u, const vec3& _v, shared_ptr<material> m)
+          : Q(_Q), u(_u), v(_v), mat(m)
+        {
+            auto n = cross(u, v);
+            normal = unit_vector(n);
+            D = -dot(normal, Q);
+            w = n / dot(n,n);
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            area = n.length();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            set_bounding_box();
+        }
         ...
 
 
@@ -2623,7 +2638,18 @@ And then we change `quad` to implement those functions:
             return p - origin;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        ...
+
+      protected:
+        point3 Q;
+        vec3 u, v;
+        shared_ptr<material> mat;
+        vec3 normal;
+        double D;
+        vec3 w;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double area;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        aabb bbox;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [quad-pdf]: <kbd>[quad.h]</kbd> quad with pdf]
