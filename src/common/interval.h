@@ -23,7 +23,8 @@ class interval {
     }
 
     interval expand(double delta) const {
-        return interval(min - delta/2, max + delta/2);
+        const auto padding = delta/2;
+        return interval(min - padding, max + padding);
     }
 
     bool contains(double x) const {

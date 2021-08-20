@@ -35,12 +35,6 @@ class aabb {
         z = interval(box0.z, box1.z);
     }
 
-    const interval& axis(int n) const {
-        if (n == 1) return y;
-        if (n == 2) return z;
-        return x;
-    }
-
     aabb pad() {
         // Return an AABB that has no side narrower than some delta, padding if necessary.
         const double delta = 0.0001;
@@ -49,6 +43,12 @@ class aabb {
         interval new_z = (z.size() >= delta) ? z : z.expand(delta);
 
         return aabb(new_x, new_y, new_z);
+    }
+
+    const interval& axis(int n) const {
+        if (n == 1) return y;
+        if (n == 2) return z;
+        return x;
     }
 
     #if 1

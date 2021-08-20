@@ -594,8 +594,25 @@ $(e, E)$ would be:
 <div class='together'>
 If there are any `NaN`s running around there, the compare will return false so we need to be sure
 our bounding boxes have a little padding if we care about grazing cases (and we probably should
-because in a ray tracer all cases come up eventually). With all three dimensions in a loop, and
-passing in the interval $[t_{min}$, $t_{max}]$, we get:
+because in a ray tracer all cases come up eventually). Here's the implementation:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class interval {
+      public:
+        ...
+        double size() const {
+            return max - min;
+        }
+
+        interval expand(double delta) const {
+            const auto padding = delta/2;
+            return interval(min - padding, max + padding);
+        }
+        ...
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [interval-contains]: <kbd>interval.h</kbd> interval::expand() method]
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef AABB_H
@@ -618,6 +635,12 @@ passing in the interval $[t_{min}$, $t_{max}]$, we get:
             z = interval(fmin(a[2],b[2]), fmax(a[2],b[2]));
         }
 
+        const interval& axis(int n) const {
+            if (n == 1) return y;
+            if (n == 2) return z;
+            return x;
+        }
+
         bool hit(const ray& r, interval ray_t) const {
             for (int a = 0; a < 3; a++) {
                 auto t0 = fmin((axis(a).min - r.origin()[a]) / r.direction()[a],
@@ -630,12 +653,6 @@ passing in the interval $[t_{min}$, $t_{max}]$, we get:
                     return false;
             }
             return true;
-        }
-
-        const interval& axis(int n) const {
-            if (n == 1) return y;
-            if (n == 2) return z;
-            return x;
         }
 
       public:
@@ -2273,7 +2290,7 @@ You may already know this implicit formula for a plane:
 
   $$ Ax + By + Cz + D = 0 $$
 
-where $A,B,C,D$ are just numbers, and $x,y,z$ are the values of a point $\mathbf{P} = (x,y,z)$.
+where $A,B,C,D$ are just constants, and $x,y,z$ are the values of a point $\mathbf{P} = (x,y,z)$.
 That is, a plane is the set of all points $\mathbf{P} = (x,y,z)$ that satisfy the formula above. It
 makes things slightly easier to use the alternate formulation:
 
@@ -2312,7 +2329,7 @@ miss.
 All right, we can find the point of intersection between a ray and a plane. This will help us
 determine whether a ray hits a given quadrilateral, using the plane that contains the (planar)
 quadrilateral. In fact, we can use this approach to define any planar primitive, like triangles and
-disks (more later).
+disks (more on that later).
 
 We now have three questions we must answer:
 
@@ -2335,7 +2352,8 @@ quadrilateral where opposite sides are parallel. These three entities are
 
 These values are three-dimensional, even though a quad itself is a two-dimensional object. For
 example, a quad with corner at the origin and extending two units in the Z direction and one unit in
-the Y direction would have $Q = (0,0,0), u = (0,0,2), \text{and } v = (0,1,0)$.
+the Y direction would have $\mathbf{Q} = (0,0,0), \mathbf{u} = (0,0,2), \text{and } \mathbf{v} =
+(0,1,0)$.
 
 The following figure illustrates the quadrilateral components.
 
@@ -2348,7 +2366,8 @@ We have $\mathbf{Q}$, $u$, and $v$, and want the corresponding equation of the p
 three of these values (and thus the quad itself).
 
 Fortunately, this is very simple. Recall that in $Ax + By + Cz = D$, $(A,B,C)$ represents the
-normal vector. To get this, we just use the cross product of the two side vectors $u$ and $v$:
+normal vector. To get this, we just use the cross product of the two side vectors $\mathbf{u}$ and
+$\mathbf{v}$:
 
   $$ \mathbf{n} = \text{unit_vector}(\mathbf{u} \times \mathbf{v}) $$
 
@@ -2356,12 +2375,12 @@ The plane is defined as all points $(x,y,z)$ that satisfy the equation $Ax + By 
 know that $\mathbf{Q}$ lies on the plane, so we can use that to find $D$:
 
   $$ \begin{align*}
-     D &= \mathbf{n}_x\mathbf{Q}_x + \mathbf{n}_y\mathbf{Q}_y + \mathbf{n}_z\mathbf{Q}_z \\
-       &= n \cdot \mathbf{Q} \\
+     D &= n_x Q_x + n_y Q_y + n_z Q_z \\
+       &= \mathbf{n} \cdot \mathbf{Q} \\
      \end{align*}
   $$
 
-We can now use these two values $\mathbf{n}$ and $D$ to find the point of intersection with a given
+We can now use the two values $\mathbf{n}$ and $D$ to find the point of intersection between a given
 ray and the plane containing the quadrilateral.
 
 
@@ -2427,9 +2446,11 @@ Since any vector crossed with itself yields zero, these equations simplify to
   $$ \mathbf{u} \times \mathbf{p} = \beta(\mathbf{u} \times \mathbf{v}) $$
   $$ \mathbf{v} \times \mathbf{p} = \alpha(\mathbf{v} \times \mathbf{u}) $$
 
-To solve for the coefficients $\alpha$ and $\beta$, we can take the dot product of both sides of the
-above equations with the plane normal $\mathbf{n} = \mathbf{u} \times \mathbf{v}$, reducing both
-sides to scalars.
+Now to solve for the coefficients $\alpha$ and $\beta$. If you're new to vector math, you might try
+to divide by $\mathbf{u} \times \mathbf{v}$ and $\mathbf{v} \times \mathbf{u}$, but you can't divide
+by vectors. Instead, we can take the dot product of both sides of the above equations with the plane
+normal $\mathbf{n} = \mathbf{u} \times \mathbf{v}$, reducing both sides to scalars, which we _can_
+divide by.
 
   $$ \mathbf{n} \cdot (\mathbf{u} \times \mathbf{p})
      = \mathbf{n} \cdot \beta(\mathbf{u} \times \mathbf{v}) $$
@@ -2483,6 +2504,32 @@ needs to meet the following criteria:
   2. $ 0 \leq \beta \leq 1 $
 
 That's the last piece needed to implement quadrilateral primitives.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+    class aabb {
+      public:
+        ...
+        aabb(const aabb& box0, const aabb& box1) {
+            x = interval(box0.x, box1.x);
+            y = interval(box0.y, box1.y);
+            z = interval(box0.z, box1.z);
+        }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        aabb pad() {
+            // Return an AABB that has no side narrower than some delta, padding if necessary.
+            const double delta = 0.0001;
+            interval new_x = (x.size() >= delta) ? x : x.expand(delta);
+            interval new_y = (y.size() >= delta) ? y : y.expand(delta);
+            interval new_z = (z.size() >= delta) ? z : z.expand(delta);
+
+            return aabb(new_x, new_y, new_z);
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [aabb]: <kbd>[aabb.h]</kbd> New aabb::pad() method]
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef QUAD_H
