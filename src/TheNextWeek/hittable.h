@@ -64,7 +64,6 @@ class translate : public hittable {
 
         // Move the intersection point forwards by the offset
         rec.p += offset;
-        rec.set_face_normal(offset_r, rec.normal);
 
         return true;
     }
@@ -140,7 +139,7 @@ class rotate_y : public hittable {
         normal[2] = -sin_theta*rec.normal[0] + cos_theta*rec.normal[2];
 
         rec.p = p;
-        rec.set_face_normal(rotated_r, normal);
+        rec.normal = normal;
 
         return true;
     }
