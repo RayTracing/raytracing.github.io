@@ -55,12 +55,16 @@ class translate : public hittable {
     }
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-        ray moved_r(r.origin() - offset, r.direction(), r.time());
-        if (!object->hit(moved_r, ray_t, rec))
+        // Move the ray backwards by the offset
+        ray offset_r(r.origin() - offset, r.direction(), r.time());
+
+        // Determine where (if any) an intersection occurs along the offset ray
+        if (!object->hit(offset_r, ray_t, rec))
             return false;
 
+        // Move the intersection point forwards by the offset
         rec.p += offset;
-        rec.set_face_normal(moved_r, rec.normal);
+        rec.set_face_normal(offset_r, rec.normal);
 
         return true;
     }
@@ -109,6 +113,7 @@ class rotate_y : public hittable {
     }
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+        // Change the ray from world space to object space
         auto origin = r.origin();
         auto direction = r.direction();
 
@@ -120,15 +125,17 @@ class rotate_y : public hittable {
 
         ray rotated_r(origin, direction, r.time());
 
+        // Determine where (if any) an intersection occurs in object space
         if (!object->hit(rotated_r, ray_t, rec))
             return false;
 
+        // Change the intersection point from object space to world space
         auto p = rec.p;
-        auto normal = rec.normal;
-
         p[0] =  cos_theta*rec.p[0] + sin_theta*rec.p[2];
         p[2] = -sin_theta*rec.p[0] + cos_theta*rec.p[2];
 
+        // Change the normal from object space to world space
+        auto normal = rec.normal;
         normal[0] =  cos_theta*rec.normal[0] + sin_theta*rec.normal[2];
         normal[2] = -sin_theta*rec.normal[0] + cos_theta*rec.normal[2];
 
