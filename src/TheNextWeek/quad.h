@@ -23,7 +23,7 @@ class quad : public hittable {
     {
         auto n = cross(u, v);
         normal = unit_vector(n);
-        D = -dot(normal, Q);
+        D = dot(normal, Q);
         w = n / dot(n,n);
 
         set_bounding_box();
@@ -43,7 +43,7 @@ class quad : public hittable {
             return false;
 
         // Return false if the hit point parameter t is outside the ray interval.
-        auto t = (-D - dot(normal, r.origin())) / denom;
+        auto t = (D - dot(normal, r.origin())) / denom;
         if (!ray_t.contains(t))
             return false;
 
@@ -53,7 +53,7 @@ class quad : public hittable {
         auto alpha = dot(w, cross(planar_hitpt_vector, v));
         auto beta = dot(w, cross(u, planar_hitpt_vector));
 
-        if (!hit_ab(alpha, beta, rec))
+        if (!is_interior(alpha, beta, rec))
             return false;
 
         // Ray hits the 2D shape; set the rest of the hit record and return true.
@@ -65,7 +65,7 @@ class quad : public hittable {
         return true;
     }
 
-    virtual bool hit_ab(double a, double b, hit_record& rec) const {
+    virtual bool is_interior(double a, double b, hit_record& rec) const {
         // Given the hit point in plane coordinates, return false if it is outside the
         // primitive, otherwise set the hit record UV coordinates and return true.
 
@@ -81,10 +81,10 @@ class quad : public hittable {
     point3 Q;
     vec3 u, v;
     shared_ptr<material> mat;
+    aabb bbox;
     vec3 normal;
     double D;
     vec3 w;
-    aabb bbox;
 };
 
 
