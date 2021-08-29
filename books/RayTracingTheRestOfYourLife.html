@@ -1340,14 +1340,14 @@ strength in the RGB color space, colors can also be represented by how excited e
 in the _LMS color space_ (long, medium, short).
 
 If the light does scatter, it will have a directional distribution that we can describe as a PDF
-over solid angle. I will refer to this as its _scattering PDF_: $\mathit{pScatter}()$. The scattering PDF
-will vary with the outgoing direction: $\mathit{pScatter}(\omega_o)$. The scattering PDF can also vary with
-_incident direction_: $\mathit{pScatter}(\omega_i, \omega_o)$. You can see this varying with incident
-direction when you look at reflections off a road -- they become mirror-like as your viewing angle
-(incident angle) approaches grazing. Lastly, the scattering PDF can also depend on the scattering
-position: $\mathit{pScatter}(\textbf{x}, \omega_i, \omega_o)$. The $\textbf{x}$ is just a vector representing
-the scattering position: $\textbf{x} = (x, y, z)$. The Albedo of an object can also depend on these
-quantities: $A(\textbf{x}, \omega_i, \omega_o)$.
+over solid angle. I will refer to this as its _scattering PDF_: $\mathit{pScatter}()$. The
+scattering PDF will vary with the outgoing direction: $\mathit{pScatter}(\omega_o)$. The scattering
+PDF can also vary with _incident direction_: $\mathit{pScatter}(\omega_i, \omega_o)$. You can see
+this varying with incident direction when you look at reflections off a road -- they become
+mirror-like as your viewing angle (incident angle) approaches grazing. Lastly, the scattering PDF
+can also depend on the scattering position: $\mathit{pScatter}(\textbf{x}, \omega_i, \omega_o)$. The
+$\textbf{x}$ is just a vector representing the scattering position: $\textbf{x} = (x, y, z)$. The
+Albedo of an object can also depend on these quantities: $A(\textbf{x}, \omega_i, \omega_o)$.
 
 <div class='together'>
 The color of a surface is found by integrating these terms over the unit hemisphere by the incident
@@ -1363,8 +1363,8 @@ are acting as filters to the light that is shining on that point. So we need to 
 that is shining on that point. This is a recursive algorithm, and is the reason our `ray_color`
 function returns the color of the current object multiplied by the color of the next ray.
 
-Note that $A()$, $\mathit{pScatter}()$, and $\text{Color}_i()$ may all depend on the wavelength of the light,
-$\lambda$, but I've left it out of the equation because it's complicated enough as it is.
+Note that $A()$, $\mathit{pScatter}()$, and $\text{Color}_i()$ may all depend on the wavelength of
+the light, $\lambda$, but I've left it out of the equation because it's complicated enough as it is.
 </div>
 
 
@@ -1385,9 +1385,9 @@ We'll simplify to just $p(\omega_o)$ because we won't be varying the PDF by $\te
 For a Lambertian surface we already implicitly implemented this formula for the special case where
 $p()$ is a cosine density. The $\mathit{pScatter}()$ of a Lambertian surface is proportional to
 $\cos(\theta_o)$, where $\theta_o$ is the angle relative to the surface normal. All two dimensional
-PDFs need to integrate to one over the whole surface (remember that $\mathit{pScatter}()$ is a PDF). We set
-$\mathit{pScatter}(\theta_o < 0) = 0$ so that we don't scatter below the horizon. The integral of
-$\cos(\theta_o)$ over the hemisphere is $\pi$.
+PDFs need to integrate to one over the whole surface (remember that $\mathit{pScatter}()$ is a
+PDF). We set $\mathit{pScatter}(\theta_o < 0) = 0$ so that we don't scatter below the horizon. The
+integral of $\cos(\theta_o)$ over the hemisphere is $\pi$.
 
 <div class='together'>
 To integrate over the hemisphere, remember that in spherical coordinates:
@@ -1446,27 +1446,29 @@ Playing with Importance Sampling
 <div class='together'>
 Our goal over the next two chapters is to instrument our program to send a bunch of extra rays
 toward light sources so that our picture is less noisy. Let’s assume we can send a bunch of rays
-toward the light source using a PDF $\mathit{pLight}(\omega_o)$. Let’s also assume we have a PDF related to
-$\mathit{pScatter}$, and let’s call that $\mathit{pSurface}(\omega_o)$. A great thing about PDFs is that you can just
-use linear mixtures of them to form mixture densities that are also PDFs. For example, the simplest
-would be:
+toward the light source using a PDF $\mathit{pLight}(\omega_o)$. Let’s also assume we have a PDF
+related to $\mathit{pScatter}$, and let’s call that $\mathit{pSurface}(\omega_o)$. A great thing
+about PDFs is that you can just use linear mixtures of them to form mixture densities that are also
+PDFs. For example, the simplest would be:
 
-  $$ p(\omega_o) = \frac{1}{2} \mathit{pSurface}(\omega_o) +  \frac{1}{2} \mathit{pLight}(\omega_o)$$
+  $$ p(\omega_o) = \frac{1}{2} \mathit{pSurface}(\omega_o) +  \frac{1}{2}
+      \mathit{pLight}(\omega_o)$$
 </div>
 
 As long as the weights are positive and add up to one, any such mixture of PDFs is a PDF. Remember,
 we can use any PDF: _all PDFs eventually converge to the correct answer_. So, the game is to figure
 out how to make the PDF larger where the product
 
-    $$ \mathit{pScatter}(\textbf{x}, \omega_i, \omega_o) \cdot \text{Color}_i(\textbf{x}, \omega_i) $$
+    $$ \mathit{pScatter}(\textbf{x}, \omega_i, \omega_o) \cdot
+        \text{Color}_i(\textbf{x}, \omega_i) $$
 
 is largest. For diffuse surfaces, this is mainly a matter of guessing where
 $\text{Color}_i(\textbf{x}, \omega_i)$ is largest. Which is equivalent to guessing where the most
 light is coming from.
 
-For a mirror, $\mathit{pScatter}()$ is huge only near one direction, so $\mathit{pScatter}()$ matters a lot more. In
-fact, most renderers just make mirrors a special case, and make the $\mathit{pScatter}()/p()$ implicit -- our
-code currently does that.
+For a mirror, $\mathit{pScatter}()$ is huge only near one direction, so $\mathit{pScatter}()$
+matters a lot more. In fact, most renderers just make mirrors a special case, and make the
+$\mathit{pScatter}()/p()$ implicit -- our code currently does that.
 
 
 Returning to the Cornell Box
@@ -2416,9 +2418,10 @@ PDF. From all of this, any `pdf` class should be responsible for,
 </div>
 
 <div class='together'>
-The details of how this is done under the hood varies for $\mathit{pSurface}$ and $\mathit{pLight}$, but that is
-exactly what class hierarchies were invented for! It’s never obvious what goes in an abstract class,
-so my approach is to be greedy and hope a minimal interface works, and for `pdf` this implies:
+The details of how this is done under the hood varies for $\mathit{pSurface}$ and $\mathit{pLight}$,
+but that is exactly what class hierarchies were invented for! It’s never obvious what goes in an
+abstract class, so my approach is to be greedy and hope a minimal interface works, and for `pdf`
+this implies:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef PDF_H
@@ -2741,7 +2744,8 @@ also a PDF. As long as the weights are positive and add up to any one, we have a
 
 For example, we could just average the two densities:
 
-  $$ \mathit{pMixture}(\omega_o) = \frac{1}{2} \mathit{pSurface}(\omega_o) +  \frac{1}{2} \mathit{pLight}(\omega_o)$$
+  $$ \mathit{pMixture}(\omega_o) = \frac{1}{2} \mathit{pSurface}(\omega_o) +  \frac{1}{2}
+      \mathit{pLight}(\omega_o)$$
 
 <div class='together'>
 How would we instrument our code to do that? There is a very important detail that makes this not
@@ -2769,10 +2773,10 @@ can't trivially say which PDF the random direction comes from. If we thought tha
 correct, we would have to solve backwards to figure which PDF the direction could come from. Which
 honestly sounds like a nightmare, but fortunately we don't need to do that. There are some
 directions that both PDFs could have generated. For example, a direction toward the light could have
-been generated by either $\mathit{pLight}$ _or_ $\mathit{pSurface}$. It is sufficient for us to solve for the pdf
-value of $\mathit{pSurface}$ and of $\mathit{pLight}$ for a random direction and then take the PDF mixture weights to
-solve for the total PDF value for that direction. The mixture density class is actually pretty
-straightforward:
+been generated by either $\mathit{pLight}$ _or_ $\mathit{pSurface}$. It is sufficient for us to
+solve for the pdf value of $\mathit{pSurface}$ and of $\mathit{pLight}$ for a random direction and
+then take the PDF mixture weights to solve for the total PDF value for that direction. The mixture
+density class is actually pretty straightforward:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class mixture_pdf : public pdf {
