@@ -28,6 +28,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: rect hit returning NaNs and infinities. Superseded with new `quad` primitive (#681)
   - Added: New 2D `quad` primitive of arbitrary orientation (#756)
   - Added: New `box()` utility function returns `hittable_list` of new `quad` primitives (#780)
+  - Fix: Add `\mathit` to italic math variables to fix slight kerning issues (#839)
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)
