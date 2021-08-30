@@ -1345,18 +1345,18 @@ scattering PDF will vary with the outgoing direction: $\mathit{pScatter}(\omega_
 PDF can also vary with _incident direction_: $\mathit{pScatter}(\omega_i, \omega_o)$. You can see
 this varying with incident direction when you look at reflections off a road -- they become
 mirror-like as your viewing angle (incident angle) approaches grazing. Lastly, the scattering PDF
-can also depend on the scattering position: $\mathit{pScatter}(\textbf{x}, \omega_i, \omega_o)$. The
-$\textbf{x}$ is just a vector representing the scattering position: $\textbf{x} = (x, y, z)$. The
-Albedo of an object can also depend on these quantities: $A(\textbf{x}, \omega_i, \omega_o)$.
+can also depend on the scattering position: $\mathit{pScatter}(\mathbf{x}, \omega_i, \omega_o)$. The
+$\mathbf{x}$ is just a vector representing the scattering position: $\mathbf{x} = (x, y, z)$. The
+Albedo of an object can also depend on these quantities: $A(\mathbf{x}, \omega_i, \omega_o)$.
 
 <div class='together'>
 The color of a surface is found by integrating these terms over the unit hemisphere by the incident
 direction:
 
-    $$ \text{Color}_o(\textbf{x}, \omega_o) = \int_{\omega_i}
-        A(\textbf{x}, \omega_i, \omega_o) \cdot
-        \mathit{pScatter}(\textbf{x}, \omega_i, \omega_o) \cdot
-        \text{Color}_i(\textbf{x}, \omega_i) $$
+    $$ \text{Color}_o(\mathbf{x}, \omega_o) = \int_{\omega_i}
+        A(\mathbf{x}, \omega_i, \omega_o) \cdot
+        \mathit{pScatter}(\mathbf{x}, \omega_i, \omega_o) \cdot
+        \text{Color}_i(\mathbf{x}, \omega_i) $$
 
 We've added a $\text{Color}_i$ term. The scattering PDF and the albedo at the surface of an object
 are acting as filters to the light that is shining on that point. So we need to solve for the light
@@ -1373,13 +1373,13 @@ The Scattering PDF
 <div class='together'>
 If we apply the Monte Carlo basic formula we get the following statistical estimate:
 
-    $$ \text{Color}_o = \frac{A(\textbf{x}, \omega_i, \omega_o) \cdot
-        \mathit{pScatter}(\textbf{x}, \omega_i, \omega_o) \cdot
-        \text{Color}_i(\textbf{x}, \omega_i)}
-        {p(\textbf{x}, \omega_o)} $$
+    $$ \text{Color}_o = \frac{A(\mathbf{x}, \omega_i, \omega_o) \cdot
+        \mathit{pScatter}(\mathbf{x}, \omega_i, \omega_o) \cdot
+        \text{Color}_i(\mathbf{x}, \omega_i)}
+        {p(\mathbf{x}, \omega_o)} $$
 
-where $p(\textbf{x}, \omega_o)$ is the PDF of whatever outgoing direction we randomly generate.
-We'll simplify to just $p(\omega_o)$ because we won't be varying the PDF by $\textbf{x}$.
+where $p(\mathbf{x}, \omega_o)$ is the PDF of whatever outgoing direction we randomly generate.
+We'll simplify to just $p(\omega_o)$ because we won't be varying the PDF by $\mathbf{x}$.
 </div>
 
 For a Lambertian surface we already implicitly implemented this formula for the special case where
@@ -1414,8 +1414,8 @@ We'll assume that the PDF is equal to the scattering PDF:
 
 The numerator and denominator cancel out, and we get:
 
-    $$ \text{Color}_o = A(\textbf{x}, \omega_i, \omega_o) \cdot
-        \text{Color}_i(\textbf{x}, \omega_i) $$
+    $$ \text{Color}_o = A(\mathbf{x}, \omega_i, \omega_o) \cdot
+        \text{Color}_i(\mathbf{x}, \omega_i) $$
 
 This is exactly what we had in our original `ray_color()` function!
 
@@ -1427,8 +1427,8 @@ The treatment above is slightly non-standard because I want the same math to wor
 volumes. If you read the literature, you’ll see reflection defined by the
 _Bidirectional Reflectance Distribution Function_ (BRDF). It relates pretty simply to our terms:
 
-    $$ BRDF(\omega_i, \omega_o) = \frac{A(\textbf{x}, \omega_i, \omega_o) \cdot
-        \mathit{pScatter}(\textbf{x}, \omega_i, \omega_o)}{\cos(\theta_o)} $$
+    $$ BRDF(\omega_i, \omega_o) = \frac{A(\mathbf{x}, \omega_i, \omega_o) \cdot
+        \mathit{pScatter}(\mathbf{x}, \omega_i, \omega_o)}{\cos(\theta_o)} $$
 
 So for a Lambertian surface for example, $BRDF = A / \pi$. Translation between our terms and BRDF is
 easy. For participating media (volumes), our albedo is usually called the _scattering albedo_, and
@@ -1459,11 +1459,11 @@ As long as the weights are positive and add up to one, any such mixture of PDFs 
 we can use any PDF: _all PDFs eventually converge to the correct answer_. So, the game is to figure
 out how to make the PDF larger where the product
 
-    $$ \mathit{pScatter}(\textbf{x}, \omega_i, \omega_o) \cdot
-        \text{Color}_i(\textbf{x}, \omega_i) $$
+    $$ \mathit{pScatter}(\mathbf{x}, \omega_i, \omega_o) \cdot
+        \text{Color}_i(\mathbf{x}, \omega_i) $$
 
 is largest. For diffuse surfaces, this is mainly a matter of guessing where
-$\text{Color}_i(\textbf{x}, \omega_i)$ is largest. Which is equivalent to guessing where the most
+$\text{Color}_i(\mathbf{x}, \omega_i)$ is largest. Which is equivalent to guessing where the most
 light is coming from.
 
 For a mirror, $\mathit{pScatter}()$ is huge only near one direction, so $\mathit{pScatter}()$
