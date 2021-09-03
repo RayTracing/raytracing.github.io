@@ -2975,14 +2975,14 @@ This gives:
 
 <div class='together'>
 Now that we have boxes, we need to rotate them a bit to have them match the _real_ Cornell box. In
-ray tracing, this is usually done with an _instance_. An instance is a copy of a  geometric
+ray tracing, this is usually done with an _instance_. An instance is a copy of a geometric
 primitive that has been placed into the scene. This instance is entirely independent of the other
-copies of the primitive and can be moved or rotated around. In this case our geometric primitive is
-our box hittable, and we want to rotate it somehow. This is especially easy in ray tracing because
-we don’t move anything; instead we move the rays in the opposite direction. For example, consider a
-_translation_ (often called a _move_). We could take the pink box at the origin and add 2 to all its
-x components, or (as we almost always do in ray tracing) leave the box where it is, but in its hit
-routine subtract 2 off the x-component of the ray origin.
+copies of the primitive and can be moved or rotated. In this case, our geometric primitive is our
+hittable `box` object, and we want to rotate it. This is especially easy in ray tracing because we
+don’t actually need to move objects in the scene; instead we move the rays in the opposite
+direction. For example, consider a _translation_ (often called a _move_). We could take the pink box
+at the origin and add two to all its x components, or (as we almost always do in ray tracing) leave
+the box where it is, but in its hit routine subtract two off the x-component of the ray origin.
 
   ![Figure [ray-box]: Ray-box intersection with moved ray vs box](../images/fig-2.08-ray-box.jpg)
 
@@ -2996,11 +2996,10 @@ Whether you think of this as a move or a change of coordinates is up to you. The
 this is to think of moving the incident ray backwards the offset amount, determining if an
 intersection occurs, and then moving that intersection point forward the offset amount.
 
-If we have an intersection along the offset ray, then we know that the incident ray will hit the
-translated object. However, our offset ray is not the original ray, so if we just take the
-intersection we found along the offset ray then our intersection will actually be wrong by the
-offset amount, so we have to shift the intersection point back onto the original ray by the offset
-amount. Let's add the code to make this happen.
+We need to move the intersection point forward the offset amount so that the intersection is
+actually in the path of the incident ray. If we forgot to move the intersection point forward then
+the intersection would be in the path of the offset ray, which isn't correct. Let's add the code to
+make this happen.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class translate : public hittable {
@@ -3067,9 +3066,9 @@ amount. Let's add the code to make this happen.
     [Listing [translate-class]: <kbd>[hittable.h]</kbd> Hittable translation class]
 </div>
 
-We need to remember to offset the bounding box, otherwise the incident ray might be looking in the
-wrong place and trivially reject the intersection. The expression `object->bounding_box() + offset`
-above requires some additional support.
+We also need to remember to offset the bounding box, otherwise the incident ray might be looking in
+the wrong place and trivially reject the intersection. The expression
+`object->bounding_box() + offset` above requires some additional support.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class aabb {
@@ -3152,43 +3151,40 @@ And if we want to rotate about the x-axis:
   $$ z' = \sin(\theta) \cdot y + \cos(\theta) \cdot z $$
 </div>
 
-For a simple operation like a translation, thinking of the operation as a simple movement of the
-initial ray is a fine way to reason about what's going on. But, for a more complex operation like a
-rotation, it can be easy to accidentally get your terms crossed (or forget a negative sign), so it's
-better to consider a rotation as a change of coordinates. The pseudocode for the `translate::hit`
-function above describes the function in terms of _moving_:
+Thinking of translation as a simple movement of the initial ray is a fine way to reason about what's
+going on. But, for a more complex operation like a rotation, it can be easy to accidentally get your
+terms crossed (or forget a negative sign), so it's better to consider a rotation as a change of
+coordinates.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-        // Move the ray backwards by the offset
+The pseudocode for the `translate::hit` function above describes the function in terms of _moving_:
 
-        // Determine where (if any) an intersection occurs along the offset ray
-
-        // Move the intersection point forwards by the offset
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [translate-hit-move]: <kbd>[hittable.h]</kbd> The moving translate hit code]
+1. Move the ray backwards by the offset
+2. Determine where (if any) an intersection occurs along the offset ray
+3. Move the intersection point forwards by
 
 But this can also be thought of in terms of a _changing of coordinates_:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-        // Change the ray from world space to object space
+1. Change the ray from world space to object space
+2. Determine where (if any) an intersection occurs in object space
+3. Change the intersection point from object space to world space
 
-        // Determine where (if any) an intersection occurs in object space
-
-        // Change the intersection point from object space to world space
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [translate-hit-coord]: <kbd>[hittable.h]</kbd> The change of coordinates translate hit code]
 
 <div class='together'>
 Rotating an object will not only change the point of intersection, but will also change the surface
-normal vector, which will change the direction of reflections and refractions. So we need to change the
-normal as well. Fortuneatly, we can just treat the normal like a vector, and so use the same
-formulas as above.
+normal vector, which will change the direction of reflections and refractions. So we need to change
+the normal as well. Fortunately, the normal will rotate similarly to a vector, so we can use the
+same formulas as above.  While normals and vectors may appear identical for an object undergoing
+rotation and translation, an object undergoing scaling requires special attention to keep the
+normals orthogonal to the surface. We won't cover that here, but you should research surface normal
+transformations if you implement scaling.
 
-For a y-rotation class we have:
+We need to start by changing the ray from world space to object space, which for rotation means
+rotating by $-\theta$.
+
+  $$ x' = \cos(\theta) \cdot x - \sin(\theta) \cdot z $$
+  $$ z' = \sin(\theta) \cdot x + \cos(\theta) \cdot z $$
+
+We can now create a class for y-rotation:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class rotate_y : public hittable {
@@ -3234,17 +3230,7 @@ For a y-rotation class we have:
     [Listing [rot-y-hit]: <kbd>[hittable.h]</kbd> Hittable rotate-Y hit function]
 
 </div>
-The code for solving from world space to object space might at first appear incorrect because we are
-rotating the opposite way. The negative sign of the `sin_theta` terms are flipped. While we want to
-rotate around the y-axis by $\theta$, the formula used has our world space to object space solving
-for $-\theta$. What we have above is actually correct. It's the exact same thing that we did above
-for translation. Changing from world space to object space required us to change by
-$-\text{offset}$. Changing from world space to object space for rotation requires us to rotate by
-$-\theta$. And, just as before with translation, where the change from object space to world space
-required a change of $+\text{offset}$, the change in rotation from object space to world space
-requires $+\theta$.
-
-With all of that said, we can now flesh out the rest of the class:
+... and now for the rest of the class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class rotate_y : public hittable {
