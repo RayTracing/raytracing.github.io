@@ -60,7 +60,7 @@ Contains any headers that are common to two or more books. This is also where ex
 are stored.
 
 ### src/`<book>`/
-Contains the source specific to any one book. Their is no sharing of source outside of the common
+Contains the source specific to any one book. There is no sharing of source outside of the common
 directory.
 
 
@@ -69,7 +69,7 @@ Source Code
 ### Intent
 This repository is not meant to act as its own tutorial. The source is provided so you can compare
 your work when progressing through the book. We strongly recommend reading and following along with
-the book to understand the source. Ideally, you'll be developing your own implmentation as you go,
+the book to understand the source. Ideally, you'll be developing your own implementation as you go,
 in order to deeply understand how a raytracer works.
 
 ### Downloading The Source Code
@@ -96,7 +96,7 @@ branch.
 
 Building and Running
 ---------------------
-Copies of source are provided for you to check your work and compare against. If you wish to build
+Copies of the source are provided for you to check your work and compare against. If you wish to build
 the provided source, this project uses CMake. To build, go to the root of the project directory and
 run the following commands to create the debug version of every executable:
 
@@ -118,7 +118,7 @@ You may choose to use the CMake GUI when building on windows.
    `C:\Users\Peter\raytracing.github.io`.
 3. Add the folder "build" within the location of the copied directory. For example,
    `C:\Users\Peter\raytracing.github.io\build`.
-4. For "Where to build the binaries", set this to the newly-created build directory.
+4. For "Where to build the binaries", set this to the newly-created "build" directory.
 5. Click "Configure".
 6. For "Specify the generator for this project", set this to your version of Visual Studio.
 7. Click "Done".
