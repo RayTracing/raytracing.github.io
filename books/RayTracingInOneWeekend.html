@@ -2007,9 +2007,9 @@ Plugging the new formula into the `ray_color()` function:
 
         if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            point3 target = rec.p + random_in_hemisphere(rec.normal);
+            vec3 direction = random_in_hemisphere(rec.normal);
+            return 0.5 * ray_color(ray(rec.p, direction), world, depth-1);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
         }
 
         vec3 unit_direction = unit_vector(r.direction());
