@@ -58,7 +58,7 @@ class translate : public hittable {
         // Move the ray backwards by the offset
         ray offset_r(r.origin() - offset, r.direction(), r.time());
 
-        // Determine where (if any) an intersection occurs along the offset ray
+        // Determine whether an intersection exists along the offset ray (and if so, where)
         if (!object->hit(offset_r, ray_t, rec))
             return false;
 
@@ -124,7 +124,7 @@ class rotate_y : public hittable {
 
         ray rotated_r(origin, direction, r.time());
 
-        // Determine where (if any) an intersection occurs in object space
+        // Determine whether an intersection exists in object space (and if so, where)
         if (!object->hit(rotated_r, ray_t, rec))
             return false;
 
