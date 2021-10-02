@@ -20,7 +20,7 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: CSS fix for cases where code listing overflow; change to fit content (#826)
   - Change: `hittable` member variable `ptr` renamed to `object`
   - Change: general rename of `mat_ptr` to `mat` (material)
-  - Change: hittable::bounding_box() signature has changed to always return a value (#859)
+  - Change: `hittable::bounding_box()` signature has changed to always return a value (#859)
   - Fix: Enabled compiler warnings for MSVC, Clang, GNU. Cleaned up warnings as fit (#865)
   - Change: replaced random vector in `isotropic` with `random_unit_vector`
   - Delete: `box`, `xy_rect`, `yz_rect`, `xz_rect` classes. Now replaced with new `quad` primitive
@@ -29,6 +29,7 @@ Change Log -- Ray Tracing in One Weekend
   - Added: New 2D `quad` primitive of arbitrary orientation (#756)
   - Added: New `box()` utility function returns `hittable_list` of new `quad` primitives (#780)
   - Fix: Add `\mathit` to italic math variables to fix slight kerning issues in equations (#839)
+  - Change: Use std::clog instead of std::cerr to log scanline progress (#935)
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)
