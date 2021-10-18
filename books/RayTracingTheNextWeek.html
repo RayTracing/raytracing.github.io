@@ -544,14 +544,14 @@ slab method:
 
 <div class='together'>
 There are some caveats that make this less pretty than it first appears. First, suppose the ray is
-travelling in the negative $x$ direction. The interval $(t_{x0}, t_{x1})$ as computed above might be
-reversed, _e.g._ something like $(7, 3)$. Second, the divide in there could give us infinities. And
-if the ray origin is on one of the slab boundaries, we can get a `NaN`. There are many ways these
-issues are dealt with in various ray tracers’ AABB. (There are also vectorization issues like SIMD
-which we will not discuss here. Ingo Wald’s papers are a great place to start if you want to go the
-extra mile in vectorization for speed.) For our purposes, this is unlikely to be a major bottleneck
-as long as we make it reasonably fast, so let’s go for simplest, which is often fastest anyway!
-First let’s look at computing the intervals:
+travelling in the negative $\mathbf{x}$ direction. The interval $(t_{x0}, t_{x1})$ as computed above
+might be reversed, _e.g._ something like $(7, 3)$. Second, the divide in there could give us
+infinities. And if the ray origin is on one of the slab boundaries, we can get a `NaN`. There are
+many ways these issues are dealt with in various ray tracers’ AABB. (There are also vectorization
+issues like SIMD which we will not discuss here. Ingo Wald’s papers are a great place to start if
+you want to go the extra mile in vectorization for speed.) For our purposes, this is unlikely to be
+a major bottleneck as long as we make it reasonably fast, so let’s go for simplest, which is often
+fastest anyway! First let’s look at computing the intervals:
 
   $$ t_{x0} = \frac{x_0 - A_x}{b_x} $$
   $$ t_{x1} = \frac{x_1 - A_x}{b_x} $$
@@ -2440,8 +2440,8 @@ Finding the Plane That Contains a Given Quadrilateral
 ------------------------------------------------------
 We've solved step two above: solving the ray-plane intersection, assuming we have the plane
 equation. To do this, we need to tackle step one above: finding the equation for the plane that
-contains the quad. We have quadrilateral parameters $\mathbf{Q}$, $u$, and $v$, and want the
-corresponding equation of the plane containing the quad defined by these three values.
+contains the quad. We have quadrilateral parameters $\mathbf{Q}$, $\mathbf{u}$, and $\mathbf{v}$,
+and want the corresponding equation of the plane containing the quad defined by these three values.
 
 Fortunately, this is very simple. Recall that in the equation $Ax + By + Cz = D$, $(A,B,C)$
 represents the normal vector. To get this, we just use the cross product of the two side vectors
