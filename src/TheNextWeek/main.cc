@@ -139,6 +139,34 @@ void earth(scene& scene_desc) {
 }
 
 
+void quads(scene& scene_desc) {
+    scene_desc.image_width       = 400;
+    scene_desc.aspect_ratio      = 1.0;
+    scene_desc.samples_per_pixel = 100;
+
+    scene_desc.cam.aperture = 0.0;
+    scene_desc.cam.vfov     = 80.0;
+    scene_desc.cam.lookfrom = point3(0,0,9);
+    scene_desc.cam.lookat   = point3(0,0,0);
+
+    hittable_list& world = scene_desc.world;
+
+    // Materials
+    auto left_red = make_shared<lambertian>(color(1,.2,.2));
+    auto back_green = make_shared<lambertian>(color(.2,1,.2));
+    auto right_blue = make_shared<lambertian>(color(.2,.2,1));
+    auto upper_orange = make_shared<lambertian>(color(1,.5,0));
+    auto lower_teal = make_shared<lambertian>(color(.2,.8,.8));
+
+    // Quads
+    world.add(make_shared<quad>(point3(-3,-2,5), vec3(0,0,-4), vec3(0,4,0), left_red));
+    world.add(make_shared<quad>(point3(-2,-2,0), vec3(4,0,0), vec3(0,4,0), back_green));
+    world.add(make_shared<quad>(point3(3,-2,1), vec3(0,0,4), vec3(0,4,0), right_blue));
+    world.add(make_shared<quad>(point3(-2,3,1), vec3(4,0,0), vec3(0,0,4), upper_orange));
+    world.add(make_shared<quad>(point3(-2,-3,5), vec3(4,0,0), vec3(0,0,-4), lower_teal));
+}
+
+
 void simple_light(scene& scene_desc) {
     scene_desc.image_width       = 400;
     scene_desc.aspect_ratio      = 16.0 / 9.0;
@@ -330,12 +358,12 @@ int main() {
         case 2:  two_spheres(scene_desc);        break;
         case 3:  earth(scene_desc);              break;
         case 4:  two_perlin_spheres(scene_desc); break;
-        case 5:  simple_light(scene_desc);       break;
-        case 6:  cornell_box(scene_desc);        break;
-        case 7:  cornell_smoke(scene_desc);      break;
-        case 8:  final_scene(scene_desc);        break;
-        default:
-        case 9:  default_scene(scene_desc);      break;
+        case 5:  quads(scene_desc);              break;
+        case 6:  simple_light(scene_desc);       break;
+        case 7:  cornell_box(scene_desc);        break;
+        case 8:  cornell_smoke(scene_desc);      break;
+        case 9:  final_scene(scene_desc);        break;
+        default: default_scene(scene_desc);      break;
     }
 
     scene_desc.render();

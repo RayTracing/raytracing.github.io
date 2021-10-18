@@ -2756,9 +2756,57 @@ test method from the hit method.
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [quad-final]: <kbd>[quad.h]</kbd> Final quad class]
-</div>
 
+And now we add a new scene to demonstrate our new `quad` primitive:
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    void quads(scene& scene_desc) {
+        scene_desc.image_width       = 400;
+        scene_desc.aspect_ratio      = 1.0;
+        scene_desc.samples_per_pixel = 100;
+
+        scene_desc.cam.aperture = 0.0;
+        scene_desc.cam.vfov     = 80.0;
+        scene_desc.cam.lookfrom = point3(0,0,9);
+        scene_desc.cam.lookat   = point3(0,0,0);
+
+        hittable_list& world = scene_desc.world;
+
+        // Materials
+        auto left_red = make_shared<lambertian>(color(1,.2,.2));
+        auto back_green = make_shared<lambertian>(color(.2,1,.2));
+        auto right_blue = make_shared<lambertian>(color(.2,.2,1));
+        auto upper_orange = make_shared<lambertian>(color(1,.5,0));
+        auto lower_teal = make_shared<lambertian>(color(.2,.8,.8));
+
+        // Quads
+        world.add(make_shared<quad>(point3(-3,-2,5), vec3(0,0,-4), vec3(0,4,0), left_red));
+        world.add(make_shared<quad>(point3(-2,-2,0), vec3(4,0,0), vec3(0,4,0), back_green));
+        world.add(make_shared<quad>(point3(3,-2,1), vec3(0,0,4), vec3(0,4,0), right_blue));
+        world.add(make_shared<quad>(point3(-2,3,1), vec3(4,0,0), vec3(0,0,4), upper_orange));
+        world.add(make_shared<quad>(point3(-2,-3,5), vec3(4,0,0), vec3(0,0,-4), lower_teal));
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    int main() {
+        ...
+        switch (0) {
+            case 1:  random_spheres(scene_desc);     break;
+            case 2:  two_spheres(scene_desc);        break;
+            case 3:  earth(scene_desc);              break;
+            case 4:  two_perlin_spheres(scene_desc); break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            default:
+            case 5:  quads(scene_desc);              break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+
+        scene_desc.render();
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [quad-scene]: <kbd>[main.cc]</kbd> A new scene with quads]
+
+  ![Image 16: Quads](../images/img-2.16-quads.png class=pixel)
 
 
 Lights
@@ -2935,9 +2983,10 @@ If we set up a rectangle as a light:
             case 2:  two_spheres(scene_desc);        break;
             case 3:  earth(scene_desc);              break;
             case 4:  two_perlin_spheres(scene_desc); break;
+            case 5:  quads(scene_desc);              break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             default:
-            case 5:  simple_light(scene_desc);       break;
+            case 6:  simple_light(scene_desc);       break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
@@ -2950,7 +2999,7 @@ If we set up a rectangle as a light:
 <div class='together'>
 We get:
 
-  ![Image 16: Scene with rectangle light source](../images/img-2.16-rect-light.png class=pixel)
+  ![Image 17: Scene with rectangle light source](../images/img-2.17-rect-light.png class=pixel)
 
 </div>
 
@@ -2970,8 +3019,8 @@ Fool around with making some spheres lights too.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [rect-light]: <kbd>[main.cc]</kbd> A simple rectangle light plus illuminating ball]
 
-  ![Image 17: Scene with rectangle and sphere light sources
-  ](../images/img-2.17-rect-sphere-light.png class=pixel)
+  ![Image 18: Scene with rectangle and sphere light sources
+  ](../images/img-2.18-rect-sphere-light.png class=pixel)
 
 
 Creating an Empty “Cornell Box”
@@ -3014,10 +3063,11 @@ Let’s make the 5 walls and the light of the box:
             case 2:  two_spheres(scene_desc);        break;
             case 3:  earth(scene_desc);              break;
             case 4:  two_perlin_spheres(scene_desc); break;
-            case 5:  simple_light(scene_desc);       break;
+            case 5:  quads(scene_desc);              break;
+            case 6:  simple_light(scene_desc);       break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             default:
-            case 6:  cornell_box(scene_desc);        break;
+            case 7:  cornell_box(scene_desc);        break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
@@ -3030,7 +3080,7 @@ Let’s make the 5 walls and the light of the box:
 <div class='together'>
 We get:
 
-  ![Image 18: Empty Cornell box](../images/img-2.18-cornell-empty.png class=pixel)
+  ![Image 19: Empty Cornell box](../images/img-2.19-cornell-empty.png class=pixel)
 
 This image is very noisy because the light is small.
 </div>
@@ -3099,7 +3149,7 @@ Now we can add two blocks (but not rotated)
 <div class='together'>
 This gives:
 
-  ![Image 19: Cornell box with two blocks](../images/img-2.19-cornell-blocks.png class=pixel)
+  ![Image 20: Cornell box with two blocks](../images/img-2.20-cornell-blocks.png class=pixel)
 
 </div>
 
@@ -3445,7 +3495,7 @@ And the changes to Cornell are:
 <div class='together'>
 Which yields:
 
-  ![Image 20: Standard Cornell box scene](../images/img-2.20-cornell-standard.png class=pixel)
+  ![Image 21: Standard Cornell box scene](../images/img-2.21-cornell-standard.png class=pixel)
 
 </div>
 
@@ -3654,11 +3704,12 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
             case 2:  two_spheres(scene_desc);        break;
             case 3:  earth(scene_desc);              break;
             case 4:  two_perlin_spheres(scene_desc); break;
-            case 5:  simple_light(scene_desc);       break;
-            case 6:  cornell_box(scene_desc);        break;
+            case 5:  quads(scene_desc);              break;
+            case 6:  simple_light(scene_desc);       break;
+            case 7:  cornell_box(scene_desc);        break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             default:
-            case 7:  cornell_smoke(scene_desc);      break;
+            case 8:  cornell_smoke(scene_desc);      break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
@@ -3671,7 +3722,7 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
 <div class='together'>
 We get:
 
-  ![Image 21: Cornell box with blocks of smoke](../images/img-2.21-cornell-smoke.png class=pixel)
+  ![Image 22: Cornell box with blocks of smoke](../images/img-2.22-cornell-smoke.png class=pixel)
 
 </div>
 
@@ -3779,13 +3830,13 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
             case 2:  two_spheres(scene_desc);        break;
             case 3:  earth(scene_desc);              break;
             case 4:  two_perlin_spheres(scene_desc); break;
-            case 5:  simple_light(scene_desc);       break;
-            case 6:  cornell_box(scene_desc);        break;
-            case 7:  cornell_smoke(scene_desc);      break;
+            case 5:  quads(scene_desc);              break;
+            case 6:  simple_light(scene_desc);       break;
+            case 7:  cornell_box(scene_desc);        break;
+            case 8:  cornell_smoke(scene_desc);      break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            case 8:  final_scene(scene_desc);        break;
-            default:
-            case 9:  default_scene(scene_desc);      break;
+            case 9:  final_scene(scene_desc);        break;
+            default: default_scene(scene_desc);      break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
@@ -3797,7 +3848,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 <div class='together'>
 Running it with 10,000 rays per pixel (sweet dreams) yields:
 
-  ![Image 22: Final scene](../images/img-2.22-book2-final.jpg)
+  ![Image 23: Final scene](../images/img-2.23-book2-final.jpg)
 
 </div>
 
