@@ -186,12 +186,12 @@ loop or other problem.
 
 <div class='together'>
 Our program outputs the image to the standard output stream (`std::cout`), so leave that alone and
-instead write to the error output stream (`std::cerr`):
+instead write to the logging output stream (`std::clog`):
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         for (int j = image_height-1; j >= 0; --j) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             for (int i = 0; i < image_width; ++i) {
                 auto r = double(i) / (image_width-1);
@@ -208,7 +208,7 @@ instead write to the error output stream (`std::cerr`):
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        std::cerr << "\nDone.\n";
+        std::clog << "\nDone.\n";
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-progress]: <kbd>[main.cc]</kbd> Main render loop with progress reporting]
 </div>
@@ -402,7 +402,7 @@ Now we can change our main to use this:
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
         for (int j = image_height-1; j >= 0; --j) {
-            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 color pixel_color(double(i)/(image_width-1), double(j)/(image_height-1), 0.25);
@@ -411,7 +411,7 @@ Now we can change our main to use this:
             }
         }
 
-        std::cerr << "\nDone.\n";
+        std::clog << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ppm-2]: <kbd>[main.cc]</kbd> Final code for the first PPM image]
@@ -548,7 +548,7 @@ for now because we’ll add antialiasing later):
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
         for (int j = image_height-1; j >= 0; --j) {
-            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 auto u = double(i) / (image_width-1);
@@ -560,7 +560,7 @@ for now because we’ll add antialiasing later):
             }
         }
 
-        std::cerr << "\nDone.\n";
+        std::clog << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-blue-white-blend]: <kbd>[main.cc]</kbd> Rendering a blue-to-white gradient]
@@ -1254,7 +1254,7 @@ And the new main:
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
         for (int j = image_height-1; j >= 0; --j) {
-            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
                 auto u = double(i) / (image_width-1);
                 auto v = double(j) / (image_height-1);
@@ -1266,7 +1266,7 @@ And the new main:
             }
         }
 
-        std::cerr << "\nDone.\n";
+        std::clog << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-with-rtweekend-h]: <kbd>[main.cc]</kbd> The new main with hittables]
@@ -1591,7 +1591,7 @@ Main is also changed:
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
         for (int j = image_height-1; j >= 0; --j) {
-            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 color pixel_color(0, 0, 0);
@@ -1606,7 +1606,7 @@ Main is also changed:
             }
         }
 
-        std::cerr << "\nDone.\n";
+        std::clog << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-multi-sample]: <kbd>[main.cc]</kbd> Rendering with multi-sampled pixels]
@@ -1770,7 +1770,7 @@ depth, returning no light contribution at the maximum depth:
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
         for (int j = image_height-1; j >= 0; --j) {
-            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
                 color pixel_color(0, 0, 0);
                 for (int s = 0; s < samples_per_pixel; ++s) {
@@ -1785,7 +1785,7 @@ depth, returning no light contribution at the maximum depth:
             }
         }
 
-        std::cerr << "\nDone.\n";
+        std::clog << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-depth]: <kbd>[main.cc]</kbd> ray_color() with depth limiting]
@@ -2370,7 +2370,7 @@ Now let’s add some metal spheres to our scene:
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
         for (int j = image_height-1; j >= 0; --j) {
-            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
                 color pixel_color(0, 0, 0);
                 for (int s = 0; s < samples_per_pixel; ++s) {
@@ -2383,7 +2383,7 @@ Now let’s add some metal spheres to our scene:
             }
         }
 
-        std::cerr << "\nDone.\n";
+        std::clog << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-with-metal]: <kbd>[main.cc]</kbd> Scene with metal spheres]
@@ -2829,7 +2829,7 @@ Naturally, we'll name this the `scene` class.
             std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
             for (int j = image_height-1; j >= 0; --j) {
-                std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+                std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
                 for (int i = 0; i < image_width; ++i) {
                     color pixel_color(0,0,0);
                     for (int s = 0; s < samples_per_pixel; ++s) {
@@ -2842,7 +2842,7 @@ Naturally, we'll name this the `scene` class.
                 }
             }
 
-            std::cerr << "\nDone.\n";
+            std::clog << "\nDone.\n";
         }
 
       public:
