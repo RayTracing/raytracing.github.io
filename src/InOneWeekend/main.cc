@@ -45,12 +45,16 @@ hittable_list random_scene() {
     hittable_list world;
 
     auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
-    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
+    point3 world_center = point3(0,-1000,0);
+    world.add(make_shared<sphere>(world_center, 1000, ground_material));
 
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
             auto choose_mat = random_double();
             point3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
+            // Adjust sphere to sit neatly on world sphere surface.
+            vec3 to_center = center - world_center;
+            center = world_center + to_center * (1000.2 / to_center.length());
 
             if ((center - point3(4, 0.2, 0)).length() > 0.9) {
                 shared_ptr<material> sphere_material;
