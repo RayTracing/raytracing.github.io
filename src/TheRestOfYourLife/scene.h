@@ -25,7 +25,7 @@ class scene {
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
         for (int j = image_height-1; j >= 0; --j) {
-            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
                 color pixel_color(0,0,0);
                 for (int s = 0; s < samples_per_pixel; ++s) {
@@ -38,7 +38,7 @@ class scene {
             }
         }
 
-        std::cerr << "\nDone.\n";
+        std::clog << "\nDone.\n";
     }
 
   public:

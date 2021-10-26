@@ -41,7 +41,7 @@ class constant_medium : public hittable {
         if (!boundary->hit(r, interval(rec1.t+0.0001, infinity), rec2))
             return false;
 
-        if (debugging) std::cerr << "\nt_min=" << rec1.t << ", t_max=" << rec2.t << '\n';
+        if (debugging) std::clog << "\nt_min=" << rec1.t << ", t_max=" << rec2.t << '\n';
 
         if (rec1.t < ray_t.min) rec1.t = ray_t.min;
         if (rec2.t > ray_t.max) rec2.t = ray_t.max;
@@ -63,7 +63,7 @@ class constant_medium : public hittable {
         rec.p = r.at(rec.t);
 
         if (debugging) {
-            std::cerr << "hit_distance = " <<  hit_distance << '\n'
+            std::clog << "hit_distance = " <<  hit_distance << '\n'
                       << "rec.t = " <<  rec.t << '\n'
                       << "rec.p = " <<  rec.p << '\n';
         }
