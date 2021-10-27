@@ -2304,10 +2304,12 @@ The following figure illustrates the quadrilateral components.
   ![Figure [quad-def]: Quadrilateral Components](../images/fig-2.05-quad-def.jpg)
 
 <div class='together'>
-Quads are flat, which means that their axis-aligned bounding box can have zero thickness in one
-dimension (if the quad lies in one of the XY, YZ, or ZX planes). This can lead to numerical problems
-with ray intersection, but we can address this by padding any zero-sized dimensions of the bounding
-box. To this end, we add a new `aabb::pad()` method that remedies this situation:
+Quads are flat, so their axis-aligned bounding box will have zero thickness in one dimension if the
+quad lies in the XY, YZ, or ZX plane. This can lead to numerical problems with ray intersection, but
+we can address this by padding any zero-sized dimensions of the bounding box. Padding is fine
+because we aren't changing the intersection of the quad; we're only expanding its bounding box to
+remove the possibility of numerical problems, and the bounds are just a rough approximation to the
+actual shape anyway. To this end, we add a new `aabb::pad()` method that remedies this situation:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
@@ -2364,7 +2366,7 @@ Now we're ready for the first sketch of the new `quad` class:
             return false; // To be implemented
         }
 
-      protected:
+      private:
         point3 Q;
         vec3 u, v;
         shared_ptr<material> mat;
@@ -2481,7 +2483,7 @@ Add the planar values to the `quad` class:
         }
         ...
 
-      protected:
+      private:
         point3 Q;
         vec3 u, v;
         shared_ptr<material> mat;
@@ -2527,7 +2529,7 @@ our quadrilateral.
             return true;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-    };
+        ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [quad-plane2]: <kbd>[quad.h]</kbd> hit() method for the infinite plane]
 
@@ -2653,7 +2655,7 @@ The vector $\mathbf{w}$ is constant for a given quadrilateral, so we'll cache th
         }
         ...
 
-      protected:
+      private:
         point3 Q;
         vec3 u, v;
         shared_ptr<material> mat;
