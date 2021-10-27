@@ -14,8 +14,6 @@
 #include "hittable.h"
 #include "hittable_list.h"
 
-#include <cmath>
-
 class quad : public hittable {
   public:
     quad(const point3& _Q, const vec3& _u, const vec3& _v, shared_ptr<material> m)
@@ -95,7 +93,7 @@ class quad : public hittable {
         return p - origin;
     }
 
-  protected:
+  private:
     point3 Q;
     vec3 u, v;
     shared_ptr<material> mat;
