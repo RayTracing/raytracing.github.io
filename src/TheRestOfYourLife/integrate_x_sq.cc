@@ -21,7 +21,7 @@ double f(double d) {
 }
 
 double pdf(double x) {
-    return (3.0*x*x)/8.0;
+        return (3.0/8.0) * x*x;
 }
 
 int main() {
