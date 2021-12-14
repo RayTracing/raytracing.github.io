@@ -61,8 +61,8 @@ class lambertian : public material {
 
     double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
     const override {
-        auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
-        return cosine < 0 ? 0 : cosine/pi;
+        auto cos_theta = dot(rec.normal, unit_vector(scattered.direction()));
+        return cos_theta < 0 ? 0 : cos_theta/pi;
     }
 
   public:
