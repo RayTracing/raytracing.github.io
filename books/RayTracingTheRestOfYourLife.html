@@ -1554,9 +1554,9 @@ And the `lambertian` material becomes:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            scattered = ray(rec.p, unit_vector(scatter_direction), r_in.time());
+            scattered = ray(rec.p, scatter_direction, r_in.time());
             alb = albedo->value(rec.u, rec.v, rec.p);
-            pdf = dot(rec.normal, scattered.direction()) / pi;
+            pdf = dot(rec.normal, unit_vector(scattered.direction())) / pi;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             return true;
         }
@@ -1625,7 +1625,7 @@ Now, just for the experience, let's try using a different scattering PDF. We'll 
 reflected rays weighted by Lambertian, so $\cos(\theta_o)$, but we'll change the scattering PDF.
 Instead of having our scattering PDF perfectly match the Lambertian distribution  -- again --
 $\cos(\theta_o)$, we'll just use a uniform pdf about the hemisphere, $1/2\pi$. This will still
-converge on the correct answer, all we've done is change the PDF, but since the PDF is now less of a
+converge to the correct answer, all we've done is change the PDF, but since the PDF is now less of a
 perfect match for the real distribution, it will take longer to converge:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1635,13 +1635,15 @@ perfect match for the real distribution, it will take longer to converge:
         bool scatter(
             const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
         ) const override {
-            auto scatter_direction = rec.normal + random_unit_vector();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            auto scatter_direction = random_in_hemisphere(rec.normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             // Catch degenerate scatter direction
             if (scatter_direction.near_zero())
                 scatter_direction = rec.normal;
 
-            scattered = ray(rec.p, unit_vector(scatter_direction), r_in.time());
+            scattered = ray(rec.p, scatter_direction, r_in.time());
             alb = albedo->value(rec.u, rec.v, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             pdf = 0.5 / pi;
@@ -1650,9 +1652,8 @@ perfect match for the real distribution, it will take longer to converge:
         }
 
         double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            return 0.5 / pi;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
+            return cosine < 0 ? 0 : cosine/pi;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scatter-mod]: <kbd>[material.h]</kbd> Modified PDF]
@@ -1689,7 +1690,7 @@ $\mathit{pScatter}(\omega_o) = p(\omega_o) = \frac{1}{2\pi}$.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto scatter_direction = random_in_hemisphere(rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            scattered = ray(rec.p, unit_vector(scatter_direction), r_in.time());
+            scattered = ray(rec.p, scatter_direction, r_in.time());
             alb = albedo->value(rec.u, rec.v, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             pdf = 0.5 / pi;
