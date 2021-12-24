@@ -38,6 +38,6 @@ int main() {
     }
 
     std::cout << std::fixed << std::setprecision(12);
-    std::cout << "PI/2 = " << pi/2 << '\n';
-    std::cout << "Estimate = " << sum/N << '\n';
+    std::cout << "PI/2 = " << pi / 2.0 << '\n';
+    std::cout << "Estimate = " << sum / N << '\n';
 }
