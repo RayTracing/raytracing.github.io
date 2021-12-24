@@ -17,7 +17,7 @@
 #include <stdlib.h>
 
 double f(double d) {
-    return 8.0 * pow(random_double(), 1./3.);
+    return 8.0 * pow(d, 1.0/3.0);
 }
 
 double pdf(double x) {
@@ -34,5 +34,5 @@ int main() {
     }
 
     std::cout << std::fixed << std::setprecision(12);
-    std::cout << "I = " << sum/N << '\n';
+    std::cout << "I = " << sum / N << '\n';
 }

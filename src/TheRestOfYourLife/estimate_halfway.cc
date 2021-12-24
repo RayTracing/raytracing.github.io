@@ -34,9 +34,9 @@ int main() {
     std::vector<sample> samples;
     for (int i = 0; i < N; i++) {
         // Get the area under the curve
-        auto x = random_double(0,2 * pi);
+        auto x = random_double(0, 2*pi);
         auto sin_x = sin(x);
-        auto p_x = exp(-x/ (2 * pi)) * sin_x * sin_x;
+        auto p_x = exp(-x / (2*pi)) * sin_x * sin_x;
         sum += p_x;
         // store this sample
         sample this_sample = {x, p_x};

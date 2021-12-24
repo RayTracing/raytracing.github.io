@@ -26,17 +26,17 @@ increasingly complicated visual effects like subsurface scattering or nested die
 severely limited by a missing mathematical foundation. In this volume, I assume that you are either
 a highly interested student, or are someone who is pursuing a career related to ray tracing. We will
 be diving into the math of creating a very serious ray tracer. When you are done, you should be
-well equipped to use and modify the various commercial ray tracers found in many popular industries,
-such as the movie, television, product design, and architecture industry.
+well equipped to use and modify the various commercial ray tracers found in many popular domains,
+such as the movie, television, product design, and architecture industries.
 
 There are many many things I do not cover in this short volume. For example, there are many ways of
 writing Monte Carlo rendering programs--I dive into only one of them. I don’t cover shadow rays
-(instead deciding to make rays more likely to go toward lights), nor do I cover any of bidirectional
-methods, Metropolis methods, or photon mappings. You'll find many of these techniques in the
+(deciding instead to make rays more likely to go toward lights), nor do I cover bidirectional
+methods, Metropolis methods, or photon mapping. You'll find many of these techniques in the
 so-called "serious ray tracers", but they are not covered here because it is more important to cover
-the concepts, the math, and the terms of the field. I think of this book as a deep exposure that
-should be your first of many, and it will equip you with some of the concepts, math, and terms that
-you'll need to study all of these interesting techniques, and hopefully more, of course.
+the concepts, math, and terms of the field. I think of this book as a deep exposure that should be
+your first of many, and it will equip you with some of the concepts, math, and terms that you'll
+need in order to study these and other interesting techniques.
 
 I hope that you find the math as fascinating as I do.
 
@@ -484,9 +484,9 @@ perfectly represented by summing an infinite number of random points within the 
 number of points approaches $\infty$ the average of the outputs tends to the exact answer. This is a
 Monte Carlo algorithm.
 
-Taking random sample points isn't our only way to solve for the expected value over an interval.
-We can also choose where we place our sampling points. If we had $N$ samples over an interval
-$[a,b]$ then we could choose to equally space points throughout:
+Sampling random points isn't our only way to solve for the expected value over an interval. We can
+also choose where we place our sampling points. If we had $N$ samples over an interval $[a,b]$ then
+we could choose to equally space points throughout:
 
     $$ x_i = a + i \Delta x $$
     $$ \Delta x = \frac{b - a}{N} $$
@@ -509,8 +509,8 @@ This is, of course, just a regular integral:
 
     $$ E[f(x') | a \leq x' \leq b] = \frac{1}{b - a} \int_{a}^{b} f(x) dx $$
 
-If you recall back to your introductory calculus class, the integral of a function is the area under
-the curve over that interval:
+If you recall your introductory calculus class, the integral of a function is the area under the
+curve over that interval:
 
     $$ \text{area}(f(x), a, b) = \int_{a}^{b} f(x) dx$$
 
@@ -688,7 +688,7 @@ bin.
 If we combined our _probability function_ and our (continuous) _density function_, we could
 interpret that as a statistical predictor of a tree’s height:
 
-  $$ \text{Probability a random tree is between } H \text{ and } H’ =
+    $$ \text{Probability a random tree is between } H \text{ and } H’ =
         \text{Bin Density}\cdot(H-H’)$$
 </div>
 
@@ -699,12 +699,16 @@ can be  integrated over to determine how likely a result is over an integral.
 
 Constructing a PDF
 -------------------
-Let’s make a PDF and play around with it a bit to understand it more. Suppose I have a random number
-generator that produces a variable $r$ that is constrained between $0$ and $2$ and the probability
-of getting any specific value is proportional to the value of $r$ itself. If we modeled a PDF after
-this random number generator then we would expect the PDF $p(r)$ to look something like this:
+Let’s make a PDF and play around with it to build up an intuition. We'll use the following function:
 
   ![Figure [linear-pdf]: A linear PDF](../images/fig-3.04-linear-pdf.jpg)
+
+What does this function do? Well, we know that a PDF is just a continuous function that defines the
+likelihood of an arbitrary range of values. This function $p(r)$ is constrained between $0$ and $2$
+and linearly increases along that interval. So, if we used this function as a PDF to generate a
+random number then the _probability_ of getting a number near zero would be less than the
+probability of getting a number near two.
+
 
 <div class='together'>
 The PDF $p(r)$ is a linear function that starts with $0$ at $r=0$ and monotonically increases to its
@@ -811,9 +815,8 @@ Solving gives us:
     $$ x = \sqrt{2}$$
 
 As a crude approximation we could create a function `f(d)` that takes as input
-`double d = random_double()`. It checks to see if `d` is less than 0.5 or it's greater. If it is
-less than (or equal to) 0.5 it produces a uniform number between 0 and $\sqrt{2}$, if it is greater
-than 0.5 it produces a uniform number between $\sqrt{2}$ and 2.
+`double d = random_double()`. If `d` is less than (or equal to) 0.5, it produces a uniform number
+in $[0,\sqrt{2}]$, if `d` is greater than 0.5, it produces a uniform number in $[\sqrt{2}, 2]$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     double f(double d)
@@ -847,12 +850,11 @@ Which looks a little something like this:
     ](../images/fig-3.07-exp-sin2.jpg)
 
 At this point you should be familiar with how to experimentally solve for the area under a curve.
-We'll be taking our existing code and modifying it slightly to get an estimate for the 50% value. We
-want to solve for the $x$ value that gives us half of the total area under the curve. As we go along
-and solve for the sum over N samples, we're also going to store these N samples and their
-associated `p(x)` value. After we solve for the total sum we'll sort our samples and then go back
-through and count them up until we find an area that is half of the total. From $0$ to $2\pi$ for
-example:
+We'll take our existing code and modify it slightly to get an estimate for the 50% value. We want to
+solve for the $x$ value that gives us half of the total area under the curve. As we go along and
+solve for the rolling sum over N samples, we're also going to store each individual sample alongside
+its `p(x)` value. After we solve for the total sum, we'll sort our samples and add them up until we
+have an area that is half of the total. From $0$ to $2\pi$ for example:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -882,9 +884,9 @@ example:
         std::vector<sample> samples;
         for (int i = 0; i < N; i++) {
             // Get the area under the curve
-            auto x = random_double(0, 2 * pi);
+            auto x = random_double(0, 2*pi);
             auto sin_x = sin(x);
-            auto p_x = exp(-x/ (2 * pi)) * sin_x * sin_x;
+            auto p_x = exp(-x / (2*pi)) * sin_x * sin_x;
             sum += p_x;
             // store this sample
             sample this_sample = {x, p_x};
@@ -938,12 +940,12 @@ could use this to create a nested binary partition of the PDF:
     3. Recurse into upper half, repeat step 1
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Stopping at a reasonable depth, say 6 - 10. As you can imagine, this could be quite computationally
+Stopping at a reasonable depth, say 6–10. As you can imagine, this could be quite computationally
 expensive. The computational bottleneck for the code above is probably sorting the samples. A naive
 sorting algorithm can have an algorithmic complexity of $\mathcal{O}(\mathbf{n^2})$ time, which is
 tremendously expensive. Fortunately, the sorting algorithm included in the standard library is
 usually much closer to $\mathcal{O}(\mathbf{n\log{}n})$ time, but this can still be quite expensive,
-especially once samples go into the millions or billions. But this will produce decent nonuniform
+especially for millions or billions of samples. But this will produce decent nonuniform
 distributions of nonuniform numbers. This divide and conquer method of producing nonuniform
 distributions is used somewhat commonly in practice, although there are much more efficient means of
 doing so than a simple binary partition. If you have an arbitrary function that you wish to use as
@@ -951,11 +953,10 @@ the PDF for a distribution, you'll want to research the _Metropolis-Hastings Alg
 
 Approximating Distributions
 ---------------------------
-
 This was a lot of math and work to build up a couple of notions. Let's return to our initial PDF.
-For the intervals that we don't explicitly set a probability, we assume the PDF to be zero. So for
-our example from the beginning of the chapter, $p(r) = 0$, for $r \notin [0,2]$. We can rewrite our
-$p(r)$ in piecewise fashion:
+For the intervals without an explicit probability, we assume the PDF to be zero. So for our example
+from the beginning of the chapter, $p(r) = 0$, for $r \notin [0,2]$. We can rewrite our $p(r)$ in
+piecewise fashion:
 
     $$ p(r)=\begin{cases}
             0           & r < 0           \\
@@ -1094,9 +1095,9 @@ with a few different PDFs to get a better understanding:
 
     $$ I = \int_{0}^{2} x^2 dx $$
 
-The last time that we tried to solve for the integral we used a Monte Carlo approach where we
-uniformly sampled between 0 and 2. We didn't know it at the time, but we were implicitly using a
-uniform PDF between 0 and 2. This means that we're using a PDF = $1/2$ over the range [0,2], which
+The last time that we tried to solve for the integral we used a Monte Carlo approach, uniformly
+sampling from the interval $[0, 2]$. We didn't know it at the time, but we were implicitly using a
+uniform PDF between 0 and 2. This means that we're using a PDF = $1/2$ over the range $[0,2]$, which
 means the CDF is $P(x) = x/2$, so $f(d) = 2d$. Knowing this, we can make this uniform PDF explicit:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1129,7 +1130,7 @@ means the CDF is $P(x) = x/2$, so $f(d) = 2d$. Knowing this, we can make this un
         }
         std::cout << std::fixed << std::setprecision(12);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        std::cout << "I = " << sum/N << '\n';
+        std::cout << "I = " << sum / N << '\n';
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1137,25 +1138,28 @@ means the CDF is $P(x) = x/2$, so $f(d) = 2d$. Knowing this, we can make this un
 
 
 There are a couple of important things to emphasize. Every value of $x$ represents one sample of the
-function $x^2$ within the distribution [0,2]. We use a function $f$ to randomly select samples from
-within this distribution. We are no longer multiplying the output sum by $2$ to arrive at the final answer. We were previously multiplying the average over the interval (sum/N) times the length of the interval ($b - a = 2$). Here, we don't need to multiply by the interval length.
+function $x^2$ within the distribution $[0, 2]$. We use a function $f$ to randomly select samples
+from within this distribution. We were previously multiplying the average over the interval
+(`sum / N`) times the length of the interval (`b - a`) to arrive at the final answer. Here, we
+don't need to multiply by the interval length--that is, we no longer need to multiply the average
+by $2$.
 
 
 We need to account for the nonuniformity of the PDF of $x$. Failing to account for this
-nonuniformity will introduce bias in our scene, indeed this bias is the source of our inaccurately
-bright image, so if we account for nonuniformity, we will get accurate results. The PDF will "steer"
-samples toward specific parts of the distribution, which will cause us to converge faster, but this
-will introduce bias. To remove bias we need to down-weight where we sample more frequently, and
-to up-weight where we sample less frequently. For our new nonuniform random number generator the PDF
-defines how much or how little we sample a specific portion. So the weighting function should be
-proportional to $1/\text{pdf}$. In fact it is exactly $1/\text{pdf}$. This is why we divide `x*x` by
-`pdf(x)`.
+nonuniformity will introduce bias in our scene. Indeed, this bias is the source of our inaccurately
+bright image--if we account for nonuniformity, we will get accurate results. The PDF will "steer"
+samples toward specific parts of the distribution, which will cause us to converge faster, but at
+the cost of introducing bias. To remove this bias, we need to down-weight where we sample more
+frequently, and to up-weight where we sample less frequently. For our new nonuniform random number
+generator, the PDF defines how much or how little we sample a specific portion. So the weighting
+function should be proportional to $1/\text{pdf}$. In fact it is _exactly_ $1/\text{pdf}$. This is
+why we divide `x*x` by `pdf(x)`.
 </div>
 
 <div class='together'>
-We can try to solve for the integral using the linear PDF $p(r) = \frac{r}{2}$ that we were able to
-solve for both the CDF for, and the inverse of the CDF. If we do that, all we need to do is rewrite
-the function $f = \sqrt{4d}$ and the function $pdf = x/2$.
+We can try to solve for the integral using the linear PDF $p(r) = \frac{r}{2}$, for which we were
+able to solve for the CDF and its inverse. To do that, all we need to do is replace the functions
+$f = \sqrt{4d}$ and $pdf = x/2$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     double f(double d) {
@@ -1163,7 +1167,7 @@ the function $f = \sqrt{4d}$ and the function $pdf = x/2$.
     }
 
     double pdf(double x) {
-        return 0.5 * x;
+        return x / 2.0;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -1175,7 +1179,7 @@ the function $f = \sqrt{4d}$ and the function $pdf = x/2$.
             sum += x*x / pdf(x);
         }
         std::cout << std::fixed << std::setprecision(12);
-        std::cout << "I = " << sum/N << '\n';
+        std::cout << "I = " << sum / N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-xsq-3]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$ with linear PDF]
@@ -1183,11 +1187,11 @@ the function $f = \sqrt{4d}$ and the function $pdf = x/2$.
 
 
 <div class='together'>
-If you compared the runs from the uniform PDF and the linear PDF you would have probably found that
-the linear PDF was converging faster. If you think about it, a linear PDF is probably a better
+If you compared the runs from the uniform PDF and the linear PDF, you would have probably found that
+the linear PDF converged faster. If you think about it, a linear PDF is probably a better
 approximation for a quadratic function than a uniform PDF, so you would expect it to converge
-faster. But, if that's the case, then we should just try to make the PDF match the integrand by
-turning the PDF into a quadratic function:
+faster. If that's the case, then we should just try to make the PDF match the integrand by turning
+the PDF into a quadratic function:
 
     $$ p(r)=\begin{cases}
             0           & r < 0           \\
@@ -1215,19 +1219,19 @@ Which gives us:
 
 And we get the corresponding CDF:
 
-  $$ P(r) = \frac{r^3}{8} $$
+    $$ P(r) = \frac{r^3}{8} $$
 
 and
 
-  $$ P^{-1}(x) = f(d) = 8d^\frac{1}{3} $$
+    $$ P^{-1}(x) = f(d) = 8d^\frac{1}{3} $$
 </div>
 
 <div class='together'>
-For just 1 sample we get:
+For just one sample we get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     double f(double d) {
-        return 8.0 * pow(random_double(), 1./3.);
+        return 8.0 * pow(d, 1.0/3.0);
     }
 
     double pdf(double x) {
@@ -1245,7 +1249,7 @@ For just 1 sample we get:
             sum += x*x / pdf(x);
         }
         std::cout << std::fixed << std::setprecision(12);
-        std::cout << "I = " << sum/N << '\n';
+        std::cout << "I = " << sum / N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-xsq-5]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$, final version]
@@ -1263,24 +1267,24 @@ correct scene _faster_ than with a uniform PDF. In effect, we are steering our s
 parts of the distribution that are more _important_. This is why using a carefully chosen nonuniform
 PDF is usually called _importance sampling_.
 
-In all of the examples given we always converged to the correct answer of $8/3$. We got the same
+In all of the examples given, we always converged to the correct answer of $8/3$. We got the same
 answer when we used both a uniform PDF and the "correct" PDF ($i.e. f(d)=8d^{\frac{1}{3}}$). While
-they both converged to the same answer, the uniform PDF took much longer, after all, we only needed
+they both converged to the same answer, the uniform PDF took much longer. After all, we only needed
 a single sample from the PDF that perfectly matched the integral. This should make sense, as we were
 choosing to sample the important parts of the distribution more often, whereas the uniform PDF just
 sampled the whole distribution equally, without taking importance into account.
 
-Indeed, this is the case for any PDF that you create. They
-will all converge eventually. This is just another part of the power of the Monte Carlo algorithm.
-Even the naive PDF above that split the distribution into two halves: 0 to $\sqrt{2}$ and $\sqrt{2}$
-to 2. That will converge. Indeed it will converge more quickly than a pure uniform
-PDF, but slower than the linear PDF ($i.e. f(d) = \sqrt{4d}$).
+Indeed, this is the case for any PDF that you create--they will all converge eventually. This is
+just another part of the power of the Monte Carlo algorithm. Even the naive PDF where we solved for
+the 50% value and split the distribution into two halves: $[0, \sqrt{2}]$ and $[\sqrt{2}, 2]$. That
+PDF will converge. Hopefully you should have an intuition as to why that PDF will converge faster
+than a pure uniform PDF, but slower than the linear PDF ($i.e. f(d) = \sqrt{4d}$).
 
-This perfect importance sampling is only possible when we already know the answer (we got $P$ by
+The perfect importance sampling is only possible when we already know the answer (we got $P$ by
 integrating $p$ analytically), but it’s a good exercise to make sure our code works.
 
 <div class='together'>
-Those were most of the concepts that underlie Monte Carlo ray tracers. Let's review:
+Let's review the main concepts that underlie Monte Carlo ray tracers:
 
   1. You have an integral of $f(x)$ over some domain $[a,b]$
   2. You pick a PDF $p$ that is non-zero and non-negative over $[a,b]$
@@ -1346,7 +1350,7 @@ axis:
             sum += f_d / pdf(d);
         }
         std::cout << std::fixed << std::setprecision(12);
-        std::cout << "I = " << sum/N << '\n';
+        std::cout << "I = " << sum / N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-sphereimp]: <kbd>[sphere_importance.cc]</kbd>
@@ -1987,8 +1991,8 @@ $f()/p() = \cos^3(\theta) / \frac{1}{2\pi}$, and we can test this:
         }
 
         std::cout << std::fixed << std::setprecision(12);
-        std::cout << "PI/2 = " << pi/2 << '\n';
-        std::cout << "Estimate = " << sum/N << '\n';
+        std::cout << "PI/2 = " << pi / 2.0 << '\n';
+        std::cout << "Estimate = " << sum / N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [cos-cubed]: <kbd>[cos_cubed.cc]</kbd> Integration using $cos^3(x)$]
@@ -2063,8 +2067,8 @@ Here's a function that generates random vectors weighted by this PDF:
         }
 
         std::cout << std::fixed << std::setprecision(12);
-        std::cout << "PI/2 = " << pi/2 << '\n';
-        std::cout << "Estimate = " << sum/N << '\n';
+        std::cout << "PI/2 = " << pi / 2.0 << '\n';
+        std::cout << "Estimate = " << sum / N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [cos-density]: <kbd>[cos_density.cc]</kbd> Integration with cosine density function]

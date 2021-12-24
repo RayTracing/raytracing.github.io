@@ -35,5 +35,5 @@ int main() {
         sum += f_d / pdf(d);
     }
     std::cout << std::fixed << std::setprecision(12);
-    std::cout << "I = " << sum/N << '\n';
+    std::cout << "I = " << sum / N << '\n';
 }
