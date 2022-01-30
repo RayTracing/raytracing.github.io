@@ -79,11 +79,11 @@ class scene {
         ray scattered = ray(rec.p, p.generate(), r.time());
         auto pdf_val = p.value(scattered.direction());
 
-        color scattered = (srec.attenuation
+        color scattered_color = (srec.attenuation
             * rec.mat->scattering_pdf(r, rec, scattered)
             * ray_color(scattered, depth-1)) / pdf_val;
 
-        return emitted + scattered;
+        return emitted + scattered_color;
     }
 };
 

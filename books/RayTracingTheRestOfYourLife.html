@@ -1690,10 +1690,10 @@ And the `ray_color` function gets a minor modification:
             double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
             double pdf = scattering_pdf;
 
-            color scattered =
+            color scattered_color =
                 (attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf;
 
-            return emitted + scattered;
+            return emitted + scattered_color;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1744,11 +1744,11 @@ a noisier image:
             double pdf = 1 / (2*pi);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            color scattered =
+            color scattered_color =
                 (attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf;
 
 
-            return emitted + scattered;
+            return emitted + scattered_color;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-uniform]: <kbd>[scene.h]</kbd>
