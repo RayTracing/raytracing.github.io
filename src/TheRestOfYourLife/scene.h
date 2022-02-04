@@ -76,12 +76,14 @@ class scene {
 
         auto light_ptr = make_shared<hittable_pdf>(lights, rec.p);
         mixture_pdf p(light_ptr, srec.pdf_ptr);
+
         ray scattered = ray(rec.p, p.generate(), r.time());
         auto pdf_val = p.value(scattered.direction());
 
-        color color_from_scatter = (srec.attenuation
-            * rec.mat->scattering_pdf(r, rec, scattered)
-            * ray_color(scattered, depth-1)) / pdf_val;
+        double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
+
+        color color_from_scatter =
+            (srec.attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf_val;
 
         return color_from_emission + color_from_scatter;
     }
