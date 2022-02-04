@@ -65,10 +65,10 @@ class scene {
             return background;
 
         scatter_record srec;
-        color emitted = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
+        color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
 
         if (!rec.mat->scatter(r, rec, srec))
-            return emitted;
+            return color_from_emission;
 
         if (srec.skip_pdf) {
             return srec.attenuation * ray_color(srec.skip_pdf_ray, depth-1);
@@ -79,11 +79,11 @@ class scene {
         ray scattered = ray(rec.p, p.generate(), r.time());
         auto pdf_val = p.value(scattered.direction());
 
-        color scattered_color = (srec.attenuation
+        color color_from_scatter = (srec.attenuation
             * rec.mat->scattering_pdf(r, rec, scattered)
             * ray_color(scattered, depth-1)) / pdf_val;
 
-        return emitted + scattered_color;
+        return color_from_emission + color_from_scatter;
     }
 };
 
