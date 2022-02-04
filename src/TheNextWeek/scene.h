@@ -67,12 +67,14 @@ class scene {
 
         ray scattered;
         color attenuation;
-        color emitted = rec.mat->emitted(rec.u, rec.v, rec.p);
+        color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
 
         if (!rec.mat->scatter(r, rec, attenuation, scattered))
-            return emitted;
+            return color_from_emission;
 
-        return emitted + attenuation * ray_color(scattered, depth-1);
+        color color_from_scatter = attenuation * ray_color(scattered, depth-1);
+
+        return color_from_emission + color_from_scatter;
     }
 };
 
