@@ -1747,7 +1747,6 @@ a noisier image:
             color color_from_scatter =
                 (attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf;
 
-
             return color_from_emission + color_from_scatter;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2412,11 +2411,15 @@ check that we got the math and concept right:
 
             ray scattered;
             color attenuation;
-            color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             double pdf;
-            color albedo;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
 
-            if (!rec.mat->scatter(r, rec, albedo, scattered, pdf))
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf))
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return color_from_emission;
 
 
@@ -2436,11 +2439,12 @@ check that we got the math and concept right:
 
             pdf = distance_squared / (light_cosine * light_area);
             scattered = ray(rec.p, to_light, r.time());
+
+            double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             color color_from_scatter =
-                albedo * rec.mat->scattering_pdf(r, rec, scattered)
-                       * ray_color(scattered, depth-1) / pdf
+                (attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf;
 
             return color_from_emission + color_from_scatter;
         }
@@ -2628,11 +2632,10 @@ We can try this cosine PDF in the `ray_color()` function:
 
             ray scattered;
             color attenuation;
-            color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
             double pdf_val;
-            color albedo;
+            color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
 
-            if (!rec.mat->scatter(r, rec, albedo, scattered, pdf_val))
+            if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_val))
                 return color_from_emission;
 
 
@@ -2642,9 +2645,10 @@ We can try this cosine PDF in the `ray_color()` function:
             pdf_val = surface_pdf.value(scattered.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            color color_from_scatter = albedo
-                * rec.mat->scattering_pdf(r, rec, scattered)
-                * ray_color(scattered, depth-1) / pdf_val;
+            double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
+
+            color color_from_scatter =
+                (attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf_val;
 
             return color_from_emission + color_from_scatter;
         }
@@ -2806,11 +2810,10 @@ Add a `light_ptr` member variable to `scene`:
 
             ray scattered;
             color attenuation;
-            color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
             double pdf_val;
-            color albedo;
+            color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
 
-            if (!rec.mat->scatter(r, rec, albedo, scattered, pdf_val))
+            if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_val))
                 return color_from_emission;
 
 
@@ -2820,9 +2823,10 @@ Add a `light_ptr` member variable to `scene`:
             pdf_val = light_pdf.value(scattered.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            color color_from_scatter = albedo
-                * rec.mat->scattering_pdf(r, rec, scattered)
-                * ray_color(scattered, depth-1) / pdf_val;
+            double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
+
+            color color_from_scatter =
+                (attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf_val;
 
             return color_from_emission + color_from_scatter;
     }
@@ -2941,11 +2945,10 @@ plug it into `ray_color()`:
 
             ray scattered;
             color attenuation;
-            color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
             double pdf_val;
-            color albedo;
+            color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
 
-            if (!rec.mat->scatter(r, rec, albedo, scattered, pdf_val))
+            if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_val))
                 return color_from_emission;
 
 
@@ -2958,9 +2961,10 @@ plug it into `ray_color()`:
             pdf_val = mixed_pdf.value(scattered.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            color color_from_scatter = albedo
-                * rec.mat->scattering_pdf(r, rec, scattered)
-                * ray_color(scattered, depth-1) / pdf_val;
+            double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
+
+            color color_from_scatter =
+                (attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf_val;
 
             return color_from_emission + color_from_scatter;
         }
@@ -3169,23 +3173,30 @@ And `ray_color()` changes are small:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             scatter_record srec;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             if (!rec.mat->scatter(r, rec, srec))
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return color_from_emission;
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto light_ptr = make_shared<hittable_pdf>(lights, rec.p);
             mixture_pdf p(light_ptr, srec.pdf_ptr);
 
             ray scattered = ray(rec.p, p.generate(), r.time());
             auto pdf_val = p.value(scattered.direction());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            color color_from_scatter = (srec.attenuation
-                * rec.mat->scattering_pdf(r, rec, scattered)
-                * ray_color(scattered, depth-1)) / pdf_val;
+            double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
+
+            color color_from_scatter =
+                (srec.attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf_val;
 
             return color_from_emission + color_from_scatter;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-mixture]: <kbd>[scene.h]</kbd> The ray_color function, using mixture PDF]
