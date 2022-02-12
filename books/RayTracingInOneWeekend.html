@@ -221,11 +221,12 @@ Almost all graphics programs have some class(es) for storing geometric vectors a
 systems these vectors are 4D (3D plus a homogeneous coordinate for geometry, and RGB plus an alpha
 transparency channel for colors). For our purposes, three coordinates suffices. We’ll use the same
 class `vec3` for colors, locations, directions, offsets, whatever. Some people don’t like this
-because it doesn’t prevent you from doing something silly, like adding a color to a location. They
-have a good point, but we’re going to always take the “less code” route when not obviously wrong.
-In spite of this, we do declare two aliases for `vec3`: `point3` and `color`. Since these two types
-are just aliases for `vec3`, you won't get warnings if you pass a `color` to a function expecting a
-`point3`, for example. We use them only to clarify intent and use.
+because it doesn’t prevent you from doing something silly, like subtracting a position from a color.
+They have a good point, but we’re going to always take the “less code” route when not obviously
+wrong. In spite of this, we do declare two aliases for `vec3`: `point3` and `color`. Since these two
+types are just aliases for `vec3`, you won't get warnings if you pass a `color` to a function
+expecting a `point3`, and nothing is stopping you from adding a `point3` to a `color`, but it makes
+the code a little bit easier to read and understand.
 
 
 Variables and Methods
@@ -415,6 +416,8 @@ Now we can change our main to use this:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ppm-2]: <kbd>[main.cc]</kbd> Final code for the first PPM image]
+
+And you should get the exact same picture as before.
 </div>
 
 
@@ -438,7 +441,8 @@ and this is what is often called a half-line or ray.
 </div>
 
 <div class='together'>
-The function $\mathbf{P}(t)$ in more verbose code form I call `ray::at(t)`:
+We can represent the idea of a ray as a class, and represent the function $\mathbf{P}(t)$ as a
+function that I call `ray::at(t)`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef RAY_H
@@ -473,12 +477,16 @@ The function $\mathbf{P}(t)$ in more verbose code form I call `ray::at(t)`:
 
 Sending Rays Into the Scene
 ----------------------------
-Now we are ready to turn the corner and make a ray tracer. At the core, the ray tracer sends rays
+Now we are ready to turn the corner and make a ray tracer. At its core, a ray tracer sends rays
 through pixels and computes the color seen in the direction of those rays. The involved steps are
-(1) calculate the ray from the eye to the pixel, (2) determine which objects the ray intersects, and
-(3) compute a color for that intersection point. When first developing a ray tracer, I always do a
-simple camera for getting the code up and running. I also make a simple `ray_color(ray)` function
-that returns the color of the background (a simple gradient).
+
+    1. Calculate the ray from the eye to the pixel,
+    2. Determine which objects the ray intersects, and
+    3. Compute a color for that intersection point.
+
+When first developing a ray tracer, I always do a simple camera for getting the code up and running.
+I also make a simple `ray_color(ray)` function that returns the color of the background (a simple
+gradient).
 
 I’ve often gotten into trouble using square images for debugging because I transpose $x$ and $y$ too
 often, so I’ll use a non-square image. For now we'll use a 16:9 aspect ratio, since that's so
@@ -489,7 +497,7 @@ virtual viewport through which to pass our scene rays. For the standard pixel sp
 spaced in both the horizontal and vertical direction), the viewport's aspect ratio should be the
 same as our rendered image. We'll just pick a viewport two units in height. We'll also set the
 distance between the projection plane and the projection point to be one unit. This is referred to
-as the “focal length”, not to be confused with “focus distance”, which we'll present later.
+as the _focal length_, not to be confused with the _focus distance_, which we'll present later.
 
 I’ll put the “eye” (or camera center if you think of a camera) at $(0,0,0)$. I will have the y-axis
 go up, and the x-axis to the right. In order to respect the convention of a right handed coordinate
@@ -537,10 +545,10 @@ for now because we’ll add antialiasing later):
         auto viewport_width = aspect_ratio * viewport_height;
         auto focal_length = 1.0;
 
-        auto origin = point3(0, 0, 0);
-        auto horizontal = vec3(viewport_width, 0, 0);
-        auto vertical = vec3(0, viewport_height, 0);
-        auto lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
+        point3 origin = point3(0, 0, 0);
+        vec3   horizontal = vec3(viewport_width, 0, 0);
+        vec3   vertical = vec3(0, viewport_height, 0);
+        point3 lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         // Render
@@ -596,29 +604,28 @@ calculating whether a ray hits a sphere is pretty straightforward.
 Ray-Sphere Intersection
 ------------------------
 <div class='together'>
-Recall that the equation for a sphere centered at the origin of radius $R$ is $x^2 + y^2 + z^2 =
-R^2$. Put another way, if a given point $(x,y,z)$ is on the sphere, then $x^2 + y^2 + z^2 = R^2$. If
-the given point $(x,y,z)$ is _inside_ the sphere, then $x^2 + y^2 + z^2 < R^2$, and if a given point
-$(x,y,z)$ is _outside_ the sphere, then $x^2 + y^2 + z^2 > R^2$.
+Recall that the equation for a sphere with a radius of $r$ and that is centered at the origin is
+$x^2 + y^2 + z^2 = r^2$. You can also think of this as saying that if a given point $(x,y,z)$ is on
+the sphere, then $x^2 + y^2 + z^2 = r^2$. If a given point $(x,y,z)$ is _inside_ the sphere, then
+$x^2 + y^2 + z^2 < r^2$, and if a given point $(x,y,z)$ is _outside_ the sphere, then
+$x^2 + y^2 + z^2 > r^2$.
 
-It gets uglier if the sphere center is at $(C_x, C_y, C_z)$:
+It gets uglier if the sphere center isn't at the origin, _i.e._ $(c_x, c_y, c_z)$:
 
-  $$ (x - C_x)^2 + (y - C_y)^2 + (z - C_z)^2 = r^2 $$
+  $$ (x - c_x)^2 + (y - c_y)^2 + (z - c_z)^2 = r^2 $$
 </div>
 
 <div class='together'>
-In graphics, you almost always want your formulas to be in terms of vectors so all the x/y/z stuff
-is under the hood in the `vec3` class. You might note that the vector from center
-$\mathbf{C} = (C_x,C_y,C_z)$ to point $\mathbf{P} = (x,y,z)$ is $(\mathbf{P} - \mathbf{C})$, and
-therefore
+In graphics, you almost always want your formulas to be in terms of vectors so that all the
+$x$/$y$/$z$ stuff can be simply represented using a `vec3` class. You might note that the vector
+from center $\mathbf{C} = (c_x, c_y, c_z)$ to point $\mathbf{P} = (x,y,z)$ is
+$(\mathbf{P} - \mathbf{C})$. If we use the definition of the dot product:
 
   $$ (\mathbf{P} - \mathbf{C}) \cdot (\mathbf{P} - \mathbf{C})
-     = (x - C_x)^2 + (y - C_y)^2 + (z - C_z)^2
+     = (x - c_x)^2 + (y - c_y)^2 + (z - c_z)^2
   $$
-</div>
 
-<div class='together'>
-So the equation of the sphere in vector form is:
+Then we can rewrite the equation of the sphere in vector form as:
 
   $$ (\mathbf{P} - \mathbf{C}) \cdot (\mathbf{P} - \mathbf{C}) = r^2 $$
 </div>
@@ -631,15 +638,29 @@ we are looking for any $t$ where this is true:
 
   $$ (\mathbf{P}(t) - \mathbf{C}) \cdot (\mathbf{P}(t) - \mathbf{C}) = r^2 $$
 
-or expanding the full form of the ray $\mathbf{P}(t)$:
+which can be found by replacing $\mathbf{P}(t)$ with its expanded form:
 
-  $$ (\mathbf{A} + t \mathbf{b} - \mathbf{C})
-      \cdot (\mathbf{A} + t \mathbf{b} - \mathbf{C}) = r^2 $$
+  $$ ((\mathbf{A} + t \mathbf{b}) - \mathbf{C})
+      \cdot ((\mathbf{A} + t \mathbf{b}) - \mathbf{C}) = r^2 $$
 </div>
 
 <div class='together'>
-The rules of vector algebra are all that we would want here. If we expand that equation and move all
-the terms to the left hand side we get:
+We have three vectors on the left getting dot-producted by three vectors on the right. If we
+multiplied everything out we would get 9 vectors. You can definitely go through and write everything
+out, but we don't need to work that hard. If you remember, we want to solve for $t$, so we'll
+separate the terms based on whether there is a $t$ or not:
+
+  $$ (t \mathbf{b} + (\mathbf{A} - \mathbf{C}))
+      \cdot (t \mathbf{b} + (\mathbf{A} - \mathbf{C})) = r^2 $$
+
+And now we follow the rules of vector algebra to distribute the dot product:
+
+  $$ t^2 \mathbf{b} \cdot \mathbf{b}
+     + 2t \mathbf{b} \cdot (\mathbf{A}-\mathbf{C})
+     + (\mathbf{A}-\mathbf{C}) \cdot (\mathbf{A}-\mathbf{C}) = r^2
+  $$
+
+Move the radius squared over to the left hand side:
 
   $$ t^2 \mathbf{b} \cdot \mathbf{b}
      + 2t \mathbf{b} \cdot (\mathbf{A}-\mathbf{C})
@@ -648,11 +669,24 @@ the terms to the left hand side we get:
 </div>
 
 <div class='together'>
-The vectors and $r$ in that equation are all constant and known. The unknown is $t$, and the
-equation is a quadratic, like you probably saw in your high school math class. You can solve for $t$
-and there is a square root part that is either positive (meaning two real solutions), negative
-(meaning no real solutions), or zero (meaning one real solution). In graphics, the algebra almost
-always relates very directly to the geometry. What we have is:
+It's hard to make out what exactly this equation is, but the vectors and $r$ in that equation are
+all constant and known. Furthermore, the only vectors that we have are reduced to scalars by dot
+product. The only unknown is $t$, and we have a $t^2$, which means that this equation is quadratic.
+If you remember back to your high school math class, you might remember that the solution to a
+quadratic equation is:
+
+  $$ \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} $$
+
+Where for ray-sphere intersection the $a$/$b$/$c$ values are:
+
+  $$ a = \mathbf{b} \cdot \mathbf{b} $$
+  $$ b = 2 \mathbf{b} \cdot (\mathbf{A}-\mathbf{C}) $$
+  $$ c = (\mathbf{A}-\mathbf{C}) \cdot (\mathbf{A}-\mathbf{C}) - r^2 $$
+
+Using all of the above you can solve for $t$, but there is a square root part that can be either
+positive (meaning two real solutions), negative (meaning no real solutions), or zero (meaning one
+real solution). In graphics, the algebra almost always relates very directly to the geometry. What
+we have is:
 
   ![Figure [ray-sphere]: Ray-sphere intersection results](../images/fig-1.04-ray-sphere.jpg)
 
@@ -698,11 +732,13 @@ What we get is this:
 
 </div>
 
-Now this lacks all sorts of things -- like shading and reflection rays and more than one object --
+Now this lacks all sorts of things -- like shading, reflection rays, and more than one object --
 but we are closer to halfway done than we are to our start! One thing to be aware of is that we
-tested whether the ray hits the sphere at all, but $t < 0$ solutions work fine. If you change your
-sphere center to $z = +1$ you will get exactly the same picture because you see the things behind
-you. This is not a feature! We’ll fix those issues next.
+are testing to see if a ray intersects with the sphere by solving the quadratic equation and seeing
+if a solution exists, but solutions with negative values of $t$ work just fine. If you change your
+sphere center to $z = +1$ you will get exactly the same picture because this solution doesn't
+distinguish between objects _in front of the camera_ and objects _behind the camera_. This is not a
+feature! We’ll fix those issues next.
 
 
 
@@ -726,7 +762,7 @@ throw that into the code now, and shade it. We don’t have any lights or anythi
 visualize the normals with a color map. A common trick used for visualizing normals (because it’s
 easy and somewhat intuitive to assume $\mathbf{n}$ is a unit length vector -- so each
 component is between -1 and 1) is to map each component to the interval from 0 to 1, and then map
-x/y/z to r/g/b. For the normal, we need the hit point, not just whether we hit or not. We only have
+$(x, y, z)$ to rgb. For the normal, we need the hit point, not just whether we hit or not. We only have
 one sphere in the scene, and it's directly in front of the camera, so we won't worry about negative
 values of $t$ yet. We'll just assume the closest hit point (smallest $t$). These changes in the code
 let us compute and visualize $\mathbf{n}$:
@@ -758,9 +794,7 @@ let us compute and visualize $\mathbf{n}$:
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 unit_direction = unit_vector(r.direction());
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         t = 0.5*(unit_direction.y() + 1.0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -900,10 +934,11 @@ And here’s the sphere:
             auto c = oc.length_squared() - radius*radius;
 
             auto discriminant = half_b*half_b - a*c;
-            if (discriminant < 0) return false;
-            auto sqrtd = sqrt(discriminant);
+            if (discriminant < 0)
+                return false;
 
             // Find the nearest root that lies in the acceptable range.
+            auto sqrtd = sqrt(discriminant);
             auto root = (-half_b - sqrtd) / a;
             if (root < ray_tmin || ray_tmax < root) {
                 root = (-half_b + sqrtd) / a;
@@ -1216,9 +1251,7 @@ And the new main:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 unit_direction = unit_vector(r.direction());
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto t = 0.5*(unit_direction.y() + 1.0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
     }
 
@@ -1231,6 +1264,7 @@ And the new main:
         const int image_height = static_cast<int>(image_width / aspect_ratio);
 
         // World
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         hittable_list world;
@@ -1258,7 +1292,7 @@ And the new main:
             for (int i = 0; i < image_width; ++i) {
                 auto u = double(i) / (image_width-1);
                 auto v = double(j) / (image_height-1);
-                ray r(origin, lower_left_corner + u*horizontal + v*vertical);
+                ray r(origin, lower_left_corner + u*horizontal + v*vertical - origin));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 color pixel_color = ray_color(r, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1622,11 +1656,11 @@ Zooming into the image that is produced, we can see the difference in edge pixel
 Diffuse Materials
 ====================================================================================================
 Now that we have objects and multiple rays per pixel, we can make some realistic looking materials.
-We’ll start with diffuse (matte) materials. One question is whether we mix and match geometry and
-materials (so we can assign a material to multiple spheres, or vice versa) or if geometry and
-material are tightly bound (that could be useful for procedural objects where the geometry and
-material are linked). We’ll go with separate -- which is usual in most renderers -- but do be aware
-of the limitation.
+We’ll start with diffuse materials (also called matte). One question is whether we mix and match
+geometry and materials (so that we can assign a material to multiple spheres, or vice versa) or if
+geometry and materials are tightly bound (that could be useful for procedural objects where the
+geometry and material are linked). We’ll go with separate -- which is usual in most renderers -- but
+do be aware that there are alternative designs.
 
 A Simple Diffuse Material
 --------------------------
@@ -1640,34 +1674,23 @@ each have different random behavior:
 
 </div>
 
-They also might be absorbed rather than reflected. The darker the surface, the more likely
-absorption is. (That’s why it is dark!) Really any algorithm that randomizes direction will produce
-surfaces that look matte. One of the simplest ways to do this turns out to be exactly correct for
-ideal diffuse surfaces. (I used to do it as a lazy hack that approximates mathematically ideal
-Lambertian.)
-
-(Reader Vassillen Chizhov proved that the lazy hack is indeed just a lazy hack and is inaccurate.
-The correct representation of ideal Lambertian isn't much more work, and is presented at the end of
-the chapter.)
-
 <div class='together'>
-There are two unit radius spheres tangent to the hit point $p$ of a surface. These two spheres have
-a center of $(\mathbf{P} + \mathbf{n})$ and $(\mathbf{P} - \mathbf{n})$, where $\mathbf{n}$ is the
-normal of the surface. The sphere with a center at $(\mathbf{P} - \mathbf{n})$ is considered
-_inside_ the surface, whereas the sphere with center $(\mathbf{P} + \mathbf{n})$ is considered
-_outside_ the surface. Select the tangent unit radius sphere that is on the same side of the surface
-as the ray origin. Pick a random point $\mathbf{S}$ inside this unit radius sphere and send a ray
-from the hit point $\mathbf{P}$ to the random point $\mathbf{S}$ (this is the vector
-$(\mathbf{S}-\mathbf{P})$):
+They might also be absorbed rather than reflected. The darker the surface, the more likely
+the ray is absorbed (that’s why it's dark!). Really any algorithm that randomizes direction will
+produce surfaces that look matte. Let's start with the most intuitive: a surface that randomly
+bounces a ray equally in all directions. For this material any ray that hits the surface has an
+equal probability of bouncing off toward any direction above the horizon:
 
-  ![Figure [rand-vec]: Generating a random diffuse bounce ray](../images/fig-1.09-rand-vec.jpg)
 
-</div>
+  ![Figure [random-vec-hor]: Equal reflection above the horizon
+  ](../images/fig-1.09-random-vec-horizon.jpg)
 
-<div class='together'>
-We need a way to pick a random point in a unit radius sphere. We’ll use what is usually the easiest
-algorithm: a rejection method. First, pick a random point in the unit cube where x, y, and z all
-range from -1 to +1. Reject this point and try again if the point is outside the sphere.
+
+This very intuitive material is the simplest kind of diffuse and -- indeed -- many of the first
+raytracing papers used this diffuse method (before adopting a more accurate method that we'll
+implement a little bit later). We don't currently have a way to randomly reflect a ray, so we'll
+need to add a few functions to our vector utility header. The first thing we need is the ability to
+generate arbitrary random vectors:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class vec3 {
@@ -1683,8 +1706,31 @@ range from -1 to +1. Reject this point and try again if the point is outside the
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [vec-rand-util]: <kbd>[vec3.h]</kbd> vec3 random utility functions]
 
+</div>
+
+<div class='together'>
+Then we need to figure out how to manipulate a random vector so that we only get results that are on
+the surface of a hemisphere. There are analytical methods of doing this, but they are actually
+surprisingly complicated to understand, and quite a bit complicated to implement. Instead, we'll use
+what is typically the easiest algorithm: A rejection method. A rejection method works by generating
+random samples and seeing if they fall within a bounds of our choosing. If they do, then we
+end the function and return our result. If they fall outside the bounds then we just generate
+another random sample and see if this one falls into the bounds. We just keep repeating until we get
+what we want.
+
+There are many equally valid ways of generating a random vector on a hemisphere using
+the rejection method, but for our purposes we will go with the simplest, which is getting a vector
+on the surface of a sphere, and then inverting it if it falls onto the wrong hemisphere. To solve
+for a random vector on the surface of a sphere we will first pick a random point in the unit cube,
+where $x$, $y$, and $z$ all range from -1 to +1, and reject this point if it is outside the unit
+sphere.
+
+  ![Figure [sphere-vec]:
+  Two vectors rejected for being outside the unit sphere before one is accepted
+  ](../images/fig-1.10-sphere-vec.jpg)
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 random_in_unit_sphere() {
+    inline vec3 random_in_unit_sphere() {
         while (true) {
             auto p = vec3::random(-1,1);
             if (p.length_squared() >= 1) continue;
@@ -1696,7 +1742,44 @@ range from -1 to +1. Reject this point and try again if the point is outside the
 </div>
 
 <div class='together'>
-Then update the `ray_color()` function to use the new random direction generator:
+Once we have a random vector in the unit sphere we need to normalize to get a vector _on_ the unit
+sphere
+
+  ![Figure [sphere-vec]: The accepted random vector is normalized to produce a unit vector
+  ](../images/fig-1.11-sphere-unit-vec.jpg)
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline vec3 random_unit_vector() {
+        return unit_vector(random_in_unit_sphere());
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-unit-vec]: <kbd>[vec3.h]</kbd> Random vector on the unit sphere]
+
+And now that we have a random vector on the surface of the unit sphere, we can determine if it is on
+the correct hemisphere by comparing against the surface normal:
+
+  ![Figure [normal-hor]: The normal vector tells us which hemisphere we need
+  ](../images/fig-1.12-surface-normal.jpg)
+
+We can take the dot product of the normal and our random vector to determine if it's in the correct
+hemisphere: If the dot product is positive then the vector is in the correct hemisphere, if
+the dot product is negative we need to invert the vector.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline vec3 random_on_hemisphere(const vec3& normal) {
+        vec3 on_unit_sphere = random_unit_vector();
+        if (dot(on_unit_sphere, normal) > 0.0) // In the same hemisphere as the normal
+            return on_unit_sphere;
+        else
+            return -on_unit_sphere;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-in-hemisphere]: <kbd>[vec3.h]</kbd> The random_in_hemisphere() function]
+</div>
+
+<div class='together'>
+We'll set up our diffuse material to only return 50% of the color from a bounce and add it to the
+`ray_color()` function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     color ray_color(const ray& r, const hittable& world) {
@@ -1704,8 +1787,8 @@ Then update the `ray_color()` function to use the new random direction generator
 
         if (world.hit(r, interval(0, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            point3 target = rec.p + rec.normal + random_in_unit_sphere();
-            return 0.5 * ray_color(ray(rec.p, target - rec.p), world);
+            vec3 direction = random_on_hemisphere(rec.normal);
+            return 0.5 * ray_color(ray(rec.p, direction), world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
@@ -1715,6 +1798,12 @@ Then update the `ray_color()` function to use the new random direction generator
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-random-unit]: <kbd>[main.cc]</kbd> ray_color() using a random ray direction]
+
+Which gives us the following image:
+
+  ![Image 7: Rendering of diffuse spheres with hemispherical scattering
+  ](../images/img-1.10-rand-hemispherical.png class=pixel)
+
 </div>
 
 
@@ -1739,9 +1828,9 @@ depth, returning no light contribution at the maximum depth:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         if (world.hit(r, interval(0, infinity), rec)) {
-            point3 target = rec.p + rec.normal + random_in_unit_sphere();
+            vec3 direction = random_on_hemisphere(rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
+            return 0.5 * ray_color(ray(rec.p, direction), world, depth-1);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
@@ -1788,13 +1877,13 @@ depth, returning no light contribution at the maximum depth:
         std::clog << "\nDone.\n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-depth]: <kbd>[main.cc]</kbd> ray_color() with depth limiting]
+    [Listing [ray-color-depth]: <kbd>[main.cc]</kbd> ray_color() with a maximum depth limit]
 </div>
 
 <div class='together'>
-This gives us:
+For this very simple scene we should get basically the same result:
 
-  ![Image 7: First render of a diffuse sphere](../images/img-1.07-first-diffuse.png class=pixel)
+  ![Image 8: First render of a diffuse sphere](../images/img-1.07-first-diffuse.png class=pixel)
 
 </div>
 
@@ -1802,28 +1891,47 @@ This gives us:
 Using Gamma Correction for Accurate Color Intensity
 ----------------------------------------------------
 <div class='together'>
-Note the shadowing under the sphere. This picture is very dark, but our spheres only absorb half the
-energy on each bounce, so they are 50% reflectors. If you can’t see the shadow, don’t worry, we will
-fix that now. These spheres should look pretty light (in real life, a light grey). The reason for
-this is that almost all image viewers assume that the image is “gamma corrected”, meaning the 0 to 1
-values have some transform before being stored as a byte. There are many good reasons for that, but
-for our purposes we just need to be aware of it. To a first approximation, we can use “gamma 2”
-which means raising the color to the power $1/\mathit{gamma}$, or in our simple case ½, which is
-just square-root:
+Note the shadowing under the sphere. The picture is very dark, but our spheres only absorb half the
+energy of each bounce, so they are 50% reflectors. The spheres should look pretty bright (in real
+life, a light grey) but they appear to be rather dark. The reason for this is that almost all
+computer programs assume that an image is “gamma corrected” before being written into an image
+file. This means that the 0 to 1 values have some transform applied before being stored as a byte.
+Images with data that are written without being transformed are said to be in _linear space_, whereas
+images that are transformed are said to be in _gamma space_. It is likely that the image viewer you
+are using is expecting an image in gamma space, but we are giving it an image in linear space. This
+is the reason why our image appears inaccurately dark.
 
+There are many good reasons for why images should be stored in gamma space, but for our purposes we
+just need to be aware of it. We are going to transform our data into gamma space so that our image
+viewer can more accurately display our image. As a simple approximation, we can use “gamma 2” as our
+transform, which is the power that you use when going from gamma space to linear space. We need to
+go from linear space to gamma space, which means taking the inverse of "gamma 2", so the power
+$1/\mathit{gamma}$, which is just the square-root:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    inline double linear_to_gamma(const double linear_component)
+    {
+        return sqrt(linear_component);
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
         auto r = pixel_color.x();
         auto g = pixel_color.y();
         auto b = pixel_color.z();
 
+        // Divide the color by the number of samples.
+        auto scale = 1.0 / samples_per_pixel;
+        r *= scale;
+        g *= scale;
+        b *= scale;
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        // Divide the color by the number of samples and gamma-correct for gamma=2.0.
-        auto scale = 1.0 / samples_per_pixel;
-        r = sqrt(scale * r);
-        g = sqrt(scale * g);
-        b = sqrt(scale * b);
+        // Apply a linear to gamma transform for gamma 2
+        r = linear_to_gamma(r)
+        g = linear_to_gamma(g)
+        b = linear_to_gamma(b)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         // Write the translated [0,255] value of each color component.
@@ -1838,9 +1946,9 @@ just square-root:
 </div>
 
 <div class='together'>
-That yields light grey, as we desire:
+This yields light grey, which is more accurate:
 
-  ![Image 8: Diffuse sphere, with gamma correction
+  ![Image 9: Diffuse sphere, with gamma correction
   ](../images/img-1.08-gamma-correct.png class=pixel)
 
 </div>
@@ -1849,9 +1957,13 @@ That yields light grey, as we desire:
 Fixing Shadow Acne
 -------------------
 <div class='together'>
-There’s also a subtle bug in there. Some of the reflected rays hit the object they are reflecting
-off of not at exactly $t=0$, but instead at $t=-0.0000001$ or $t=0.00000001$ or whatever floating
-point approximation the sphere intersector gives us. So we need to ignore hits very near zero:
+There’s also a subtle bug that we need to address. A ray reflecting off of a surface might have a
+floating point round off error when calculating for its origin. This means that the origin of a
+reflected ray is unlikely to be perfectly flush with the surface that it is reflecting off of. It
+might be just above the surface, or it might be just below the surface. If the ray's origin is just
+below the surface then it could intersect with that surface again. Which means that it will find
+the nearest surface at $t=0.00000001$ or whatever floating point approximation the hit function
+gives us. The simplest hack to address this is just to ignore hits that very near zero:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     color ray_color(const ray& r, const hittable& world, int depth) {
@@ -1884,37 +1996,31 @@ This gets rid of the shadow acne problem. Yes it is really called that.
 True Lambertian Reflection
 ---------------------------
 <div class='together'>
-The rejection method presented here produces random points in the unit ball offset along the surface
-normal. This corresponds to picking directions on the hemisphere with high probability close to the
-normal, and a lower probability of scattering rays at grazing angles. This distribution scales by
-the $\cos^3 (\phi)$ where $\phi$ is the angle from the normal. This is useful since light arriving
-at shallow angles spreads over a larger area, and thus has a lower contribution to the final color.
+Using a diffuse model that scatters vectors evenly about the hemisphere produces a nice and soft
+diffuse model, but we can definitely do better. A more accurate representation of real diffuse
+objects is the Lambertian distribution, which has a scattering distribution that is propertional to
+$\cos (\phi)$, where $\phi$ is the angle from the normal. This means that a ray has a higher
+probability of scattering toward the normal than it does scattering toward the horizon. This
+distribution is less uniform than pure hemispherical scattering, but does a better job of modeling 
+objects in the real world. We can create this distribution by picking random points on the surface
+of the unit sphere, and then offsetting them along the surface normal.
 
-However, we are interested in a Lambertian distribution, which has a distribution of $\cos (\phi)$.
-True Lambertian has the probability higher for ray scattering close to the normal, but the
-distribution is more uniform. This is achieved by picking random points on the surface of the unit
-sphere, offset along the surface normal. Picking random points on the unit sphere can be achieved by
-picking random points _in_ the unit sphere, and then normalizing those.
+There are two unit radius spheres tangent to the hit point $p$ of a surface. These two spheres have
+a center of $(\mathbf{P} + \mathbf{n})$ and $(\mathbf{P} - \mathbf{n})$, where $\mathbf{n}$ is the
+normal of the surface. The sphere with a center at $(\mathbf{P} - \mathbf{n})$ is considered
+_inside_ the surface, whereas the sphere with center $(\mathbf{P} + \mathbf{n})$ is considered
+_outside_ the surface. Select the tangent unit radius sphere that is on the same side of the surface
+as the ray origin. Pick a random point $\mathbf{S}$ on this unit radius sphere and send a ray
+from the hit point $\mathbf{P}$ to the random point $\mathbf{S}$ (this is the vector
+$(\mathbf{S}-\mathbf{P})$):
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline vec3 random_in_unit_sphere() {
-        ...
-    }
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    vec3 random_unit_vector() {
-        return unit_vector(random_in_unit_sphere());
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-unit-vector]: <kbd>[vec3.h]</kbd> The random_unit_vector() function]
-
-  ![Figure [rand-unitvec]: Generating a random unit vector](../images/fig-1.10-rand-unitvec.jpg)
+  ![Figure [rand-unitvec]: Randomly generating a vector according to Lambertian distribution
+  ](../images/fig-1.13-rand-unitvec.jpg)
 
 </div>
 
 <div class='together'>
-This `random_unit_vector()` is a drop-in replacement for the existing `random_in_unit_sphere()`
-function.
+The change is actually fairly minimal:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     color ray_color(const ray& r, const hittable& world, int depth) {
@@ -1926,9 +2032,9 @@ function.
 
         if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            point3 target = rec.p + rec.normal + random_unit_vector();
+            vec3 direction = rec.normal + random_unit_vector();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
+            return 0.5 * ray_color(ray(rec.p, direction), world, depth-1);
         }
 
         vec3 unit_direction = unit_vector(r.direction());
@@ -1942,98 +2048,28 @@ function.
 <div class='together'>
 After rendering we get a similar image:
 
-  ![Image 9: Correct rendering of Lambertian spheres
+  ![Image 10: Correct rendering of Lambertian spheres
   ](../images/img-1.09-correct-lambertian.png class=pixel)
 
 It's hard to tell the difference between these two diffuse methods, given that our scene of two
 spheres is so simple, but you should be able to notice two important visual differences:
 
-  1. The shadows are less pronounced after the change
-  2. Both spheres are lighter in appearance after the change
+  1. The shadows are more pronounced after the change
+  2. Both spheres are darker in appearance after the change
 
-Both of these changes are due to the more uniform scattering of the light rays, fewer rays are
-scattering toward the normal. This means that for diffuse objects, they will appear _lighter_
-because more light bounces toward the camera. For the shadows, less light bounces straight-up, so
-the parts of the larger sphere directly underneath the smaller sphere are brighter.
-</div>
+Both of these changes are due to the less uniform scattering of the light rays, more rays are
+scattering toward the normal. This means that for diffuse objects, they will appear _darker_
+because fewer light bounces toward the camera. For the shadows, more light bounces straight-up, so
+the parts of the larger sphere directly underneath the smaller sphere are darker.
 
-
-An Alternative Diffuse Formulation
------------------------------------
-<div class='together'>
-The initial hack presented in this book lasted a long time before it was proven to be an incorrect
-approximation of ideal Lambertian diffuse. A big reason that the error persisted for so long is
-that it can be difficult to:
-
-  1. Mathematically prove that the probability distribution is incorrect
-  2. Intuitively explain why a $\cos (\phi)$ distribution is desirable (and what it would look like)
 
 Not a lot of common, everyday objects are perfectly diffuse, so our visual intuition of how these
-objects behave under light can be poorly formed.
+objects behave under light can be poorly formed. Scenes will become more complicated over the course
+of the book. You are encouraged to switch between the different diffuse renderers presented here.
+Most scenes of interest will contain a disproportionate amount of diffuse materials. You can gain
+valuable insight by understanding the effect of different diffuse methods on the lighting of the
+scene.
 </div>
-
-<div class='together'>
-In the interest of learning, we are including an intuitive and easy to understand diffuse method.
-For the two methods above we had a random vector, first of random length and then of unit length,
-offset from the hit point by the normal. It may not be immediately obvious why the vectors should be
-displaced by the normal.
-
-A more intuitive approach is to have a uniform scatter direction for all angles away from the hit
-point, with no dependence on the angle from the normal. Many of the first raytracing papers used
-this diffuse method (before adopting Lambertian diffuse).
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 random_in_hemisphere(const vec3& normal) {
-        vec3 in_unit_sphere = random_in_unit_sphere();
-        if (dot(in_unit_sphere, normal) > 0.0) // In the same hemisphere as the normal
-            return in_unit_sphere;
-        else
-            return -in_unit_sphere;
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-in-hemisphere]: <kbd>[vec3.h]</kbd> The random_in_hemisphere(normal) function]
-
-</div>
-
-<div class='together'>
-Plugging the new formula into the `ray_color()` function:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    color ray_color(const ray& r, const hittable& world, int depth) {
-        hit_record rec;
-
-        // If we've exceeded the ray bounce limit, no more light is gathered.
-        if (depth <= 0)
-            return color(0,0,0);
-
-        if (world.hit(r, interval(0.001, infinity), rec)) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            vec3 direction = random_in_hemisphere(rec.normal);
-            return 0.5 * ray_color(ray(rec.p, direction), world, depth-1);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        }
-
-        vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-hemisphere]: <kbd>[main.cc]</kbd> ray_color() with hemispherical scattering]
-
-Gives us the following image:
-
-  ![Image 10: Rendering of diffuse spheres with hemispherical scattering
-  ](../images/img-1.10-rand-hemispherical.png class=pixel)
-
-</div>
-
-<div class='together'>
-Scenes will become more complicated over the course of the book. You are encouraged to
-switch between the different diffuse renderers presented here. Most scenes of interest will contain
-a disproportionate amount of diffuse materials. You can gain valuable insight by understanding the
-effect of different diffuse methods on the lighting of the scene.
-</div>
-
 
 
 Metal
