@@ -31,7 +31,7 @@ If you have a change you'd like to contribute,
 [please see our contribution guidelines][CONTRIBUTING].
 
 
-GitHub Discusions
+GitHub Discussions
 ------------------
 GitHub just released GitHub Discussions — a new feature to host conversations in a project without
 requiring everything to be an issue. This is likely a much better way to post questions, ask for
