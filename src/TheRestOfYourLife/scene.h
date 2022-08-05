@@ -28,7 +28,7 @@ class scene {
             std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
                 color pixel_color(0,0,0);
-                for (int s = 0; s < samples_per_pixel; ++s) {
+                for (int sample = samples_per_pixel; sample > 0; --sample) {
                     auto u = (i + random_double()) / (image_width-1);
                     auto v = (j + random_double()) / (image_height-1);
                     ray r = cam.get_ray(u, v);
