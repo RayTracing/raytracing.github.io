@@ -90,7 +90,7 @@ Let’s make some C++ code to output such a thing:
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        for (int j = image_height-1; j >= 0; --j) {
+        for (int j = 0; j < image_height; ++j) {
             for (int i = 0; i < image_width; ++i) {
                 auto r = double(i) / (image_width-1);
                 auto g = double(j) / (image_height-1);
@@ -189,9 +189,9 @@ Our program outputs the image to the standard output stream (`std::cout`), so le
 instead write to the logging output stream (`std::clog`):
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        for (int j = image_height-1; j >= 0; --j) {
+        for (int j = 0; j < image_height; ++j) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
+            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             for (int i = 0; i < image_width; ++i) {
                 auto r = double(i) / (image_width-1);
@@ -401,8 +401,8 @@ Now we can change our main to use this:
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        for (int j = image_height-1; j >= 0; --j) {
-            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
+        for (int j = 0; j < image_height; ++j) {
+            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 color pixel_color(double(i)/(image_width-1), double(j)/(image_height-1), 0.25);
@@ -484,6 +484,7 @@ I’ve often gotten into trouble using square images for debugging because I tra
 often, so I’ll use a non-square image. For now we'll use a 16:9 aspect ratio, since that's so
 common.
 
+
 In addition to setting up the pixel dimensions for the rendered image, we also need to set up a
 virtual viewport through which to pass our scene rays. For the standard pixel spacing (equally
 spaced in both the horizontal and vertical direction), the viewport's aspect ratio should be the
@@ -547,13 +548,13 @@ for now because we’ll add antialiasing later):
 
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
-        for (int j = image_height-1; j >= 0; --j) {
-            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
+        for (int j = 0; j < image_height; ++j) {
+            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                auto u = double(i) / (image_width-1);
-                auto v = double(j) / (image_height-1);
-                ray r(origin, lower_left_corner + u*horizontal + v*vertical - origin);
+                auto s = double(i) / (image_width-1);
+                auto t = double(j) / (image_height-1);
+                ray r(origin, lower_left_corner + s*horizontal + (1-t)*vertical - origin);
                 color pixel_color = ray_color(r);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 write_color(std::cout, pixel_color);
@@ -1253,12 +1254,12 @@ And the new main:
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        for (int j = image_height-1; j >= 0; --j) {
-            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
+        for (int j = 0; j < image_height; ++j) {
+            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
-                auto u = double(i) / (image_width-1);
-                auto v = double(j) / (image_height-1);
-                ray r(origin, lower_left_corner + u*horizontal + v*vertical);
+                auto s = double(i) / (image_width-1);
+                auto t = double(j) / (image_height-1);
+                ray r(origin, lower_left_corner + s*horizontal + (1-t)*vertical);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 color pixel_color = ray_color(r, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1489,7 +1490,11 @@ before:
         }
 
         ray get_ray(double s, double t) const {
-            return ray(origin, lower_left_corner + s*horizontal + t*vertical - origin);
+            // Return the ray from the projection point to the indicated pixel. Coordinates s,t are
+            // the normalized image-based coordinates of the pixel. Image left is s=0, image right
+            // is s=1, image top is t=0, image bottom is t=1.
+
+            return ray(origin, lower_left_corner + s*horizontal + (1-t)*vertical - origin);
         }
 
       private:
@@ -1590,15 +1595,16 @@ Main is also changed:
 
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
-        for (int j = image_height-1; j >= 0; --j) {
-            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
+        for (int j = 0; j < image_height; ++j) {
+            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+            auto t = (j + random_double()) / (image_height-1);
+
             for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 color pixel_color(0, 0, 0);
                 for (int sample = 0; sample < samples_per_pixel; ++sample) {
-                    auto u = (i + random_double()) / (image_width-1);
-                    auto v = (j + random_double()) / (image_height-1);
-                    ray r = cam.get_ray(u, v);
+                    auto s = (i + random_double()) / (image_width-1);
+                    ray r = cam.get_ray(s, t);
                     pixel_color += ray_color(r, world);
                 }
                 write_color(std::cout, pixel_color, samples_per_pixel);
@@ -1769,14 +1775,15 @@ depth, returning no light contribution at the maximum depth:
 
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
-        for (int j = image_height-1; j >= 0; --j) {
-            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
+        for (int j = 0; j < image_height; ++j) {
+            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+            auto t = (j + random_double()) / (image_height-1);
+
             for (int i = 0; i < image_width; ++i) {
                 color pixel_color(0, 0, 0);
                 for (int sample = 0; sample < samples_per_pixel; ++sample) {
-                    auto u = (i + random_double()) / (image_width-1);
-                    auto v = (j + random_double()) / (image_height-1);
-                    ray r = cam.get_ray(u, v);
+                    auto s = (i + random_double()) / (image_width-1);
+                    ray r = cam.get_ray(s, t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                     pixel_color += ray_color(r, world, max_depth);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2367,21 +2374,7 @@ Now let’s add some metal spheres to our scene:
 
         // Render
 
-        std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
-
-        for (int j = image_height-1; j >= 0; --j) {
-            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
-            for (int i = 0; i < image_width; ++i) {
-                color pixel_color(0, 0, 0);
-                for (int sample = 0; sample < samples_per_pixel; ++sample) {
-                    auto u = (i + random_double()) / (image_width-1);
-                    auto v = (j + random_double()) / (image_height-1);
-                    ray r = cam.get_ray(u, v);
-                    pixel_color += ray_color(r, world, max_depth);
-                }
-                write_color(std::cout, pixel_color, samples_per_pixel);
-            }
-        }
+        ...
 
         std::clog << "\nDone.\n";
     }
@@ -2828,14 +2821,15 @@ Naturally, we'll name this the `scene` class.
         void render() {
             std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
-            for (int j = image_height-1; j >= 0; --j) {
-                std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (int j = 0; j < image_height; ++j) {
+                std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+                auto t = (j + random_double()) / (image_height-1);
+
                 for (int i = 0; i < image_width; ++i) {
                     color pixel_color(0,0,0);
                     for (int sample = 0; sample < samples_per_pixel; ++sample) {
-                        auto u = (i + random_double()) / (image_width-1);
-                        auto v = (j + random_double()) / (image_height-1);
-                        ray r = cam.get_ray(u, v);
+                        auto s = (i + random_double()) / (image_width-1);
+                        ray r = cam.get_ray(s, t);
                         pixel_color += ray_color(r, max_depth);
                     }
                     write_color(std::cout, pixel_color, samples_per_pixel);
