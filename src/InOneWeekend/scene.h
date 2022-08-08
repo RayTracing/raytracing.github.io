@@ -26,14 +26,15 @@ class scene {
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        for (int j = image_height-1; j >= 0; --j) {
-            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
+        for (int j = 0; j < image_height; ++j) {
+            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+            auto t = (j + random_double()) / (image_height-1);
+
             for (int i = 0; i < image_width; ++i) {
                 color pixel_color(0,0,0);
                 for (int sample = 0; sample < samples_per_pixel; ++sample) {
-                    auto u = (i + random_double()) / (image_width-1);
-                    auto v = (j + random_double()) / (image_height-1);
-                    ray r = cam.get_ray(u, v);
+                    auto s = (i + random_double()) / (image_width-1);
+                    ray r = cam.get_ray(s, t);
                     pixel_color += ray_color(r, max_depth);
                 }
                 write_color(std::cout, pixel_color, samples_per_pixel);
@@ -69,8 +70,8 @@ class scene {
         }
 
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
 };
 

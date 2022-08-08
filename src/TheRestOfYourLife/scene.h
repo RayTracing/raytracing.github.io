@@ -25,15 +25,16 @@ class scene {
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
         int sqrt_spp = int(sqrt(samples_per_pixel));
-        for (int j = image_height-1; j >= 0; --j) {
-            std::clog << "\rScanlines remaining: " << j << ' ' << std::flush;
+        for (int j = 0; j < image_height; ++j) {
+            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+
             for (int i = 0; i < image_width; ++i) {
                 color pixel_color(0,0,0);
                 for (int s_j = 0; s_j < sqrt_spp; ++s_j) {
+                    auto t = (j + (s_j + random_double()) / sqrt_spp) / (image_height-1);
                     for (int s_i = 0; s_i < sqrt_spp; ++s_i) {
-                        auto u = (i + (s_i + random_double()) / sqrt_spp) / (image_width-1);
-                        auto v = (j + (s_j + random_double()) / sqrt_spp) / (image_height-1);
-                        ray r = cam.get_ray(u, v);
+                        auto s = (i + (s_i + random_double()) / sqrt_spp) / (image_width-1);
+                        ray r = cam.get_ray(s, t);
                         pixel_color += ray_color(r, max_depth);
                     }
                 }
