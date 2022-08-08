@@ -35,13 +35,17 @@ class camera {
     }
 
     ray get_ray(double s, double t) const {
+        // Return the ray from the projection point to the indicated pixel. Coordinates s,t are
+        // the normalized image-based coordinates of the pixel. Image left is s=0, image right
+        // is s=1, image top is t=0, image bottom is t=1.
+
         vec3 rd = lens_radius * random_in_unit_disk();
         vec3 offset = u * rd.x() + v * rd.y();
         const auto ray_time = random_double(0.0, 1.0);
 
         return ray(
             origin + offset,
-            lower_left_corner + s*horizontal + t*vertical - origin - offset,
+            lower_left_corner + s*horizontal + (1-t)*vertical - origin - offset,
             ray_time
         );
     }
