@@ -489,9 +489,8 @@ I also make a simple `ray_color(ray)` function that returns the color of the bac
 gradient).
 
 I’ve often gotten into trouble using square images for debugging because I transpose $x$ and $y$ too
-often, so I’ll use a non-square image. For now we'll use a 16:9 aspect ratio, since that's so
-common.
-
+often, so I’ll use a non-square image.
+For now we'll use a 16:9 aspect ratio, since that's so common.
 
 In addition to setting up the pixel dimensions for the rendered image, we also need to set up a
 virtual viewport through which to pass our scene rays. For the standard pixel spacing (equally
@@ -500,12 +499,14 @@ same as our rendered image. We'll just pick a viewport two units in height. We'l
 distance between the projection plane and the projection point to be one unit. This is referred to
 as the _focal length_, not to be confused with the _focus distance_, which we'll present later.
 
-I’ll put the “eye” (or camera center if you think of a camera) at $(0,0,0)$. I will have the y-axis
-go up, and the x-axis to the right. In order to respect the convention of a right handed coordinate
-system, into the screen is the negative z-axis. I will traverse the screen from the upper left hand
-corner, and use two offset vectors along the screen sides to move the ray endpoint across the
-screen. Note that I do not make the ray direction a unit length vector because I think not doing
-that makes for simpler and slightly faster code.
+I’ll put the “eye” (or camera center if you think of a camera) at $(0,0,0)$.
+I will have the y-axis go up, and the x-axis to the right.
+In order to respect the convention of a right handed coordinate system, into the screen is the
+negative z-axis.
+I will traverse the screen from the upper left hand corner, and use two offset vectors along the
+screen sides to move the ray endpoint across the screen.
+Note that I do not make the ray direction a unit length vector because I think not doing that makes
+for simpler and slightly faster code.
 
   ![Figure [cam-geom]: Camera geometry](../images/fig-1.03-cam-geom.jpg)
 
@@ -577,17 +578,22 @@ for now because we’ll add antialiasing later):
 
 <div class='together'>
 The `ray_color(ray)` function linearly blends white and blue depending on the height of the $y$
-coordinate _after_ scaling the ray direction to unit length (so $-1.0 < y < 1.0$). Because we're
-looking at the $y$ height after normalizing the vector, you'll notice a horizontal gradient to the
-color in addition to the vertical gradient.
+coordinate _after_ scaling the ray direction to unit length (so $-1.0 < y < 1.0$).
+Because we're looking at the $y$ height after normalizing the vector, you'll notice a horizontal
+gradient to the color in addition to the vertical gradient.
 
-I then did a standard graphics trick of scaling that to $0.0 ≤ t ≤ 1.0$. When $t = 1.0$ I want blue.
-When $t = 0.0$ I want white. In between, I want a blend. This forms a “linear blend”, or “linear
-interpolation”, or “lerp” for short, between two things. A lerp is always of the form
+I then did a standard graphics trick of scaling that to $0.0 ≤ t ≤ 1.0$.
+When $t = 1.0$ I want blue.
+When $t = 0.0$ I want white.
+In between, I want a blend.
+This forms a “linear blend”, or “linear interpolation”: commonly referred to as a _lerp_, between
+two things.
+A lerp is always of the form
 
   $$ \text{blendedValue} = (1-t)\cdot\text{startValue} + t\cdot\text{endValue}, $$
 
-with $t$ going from zero to one. In our case this produces:
+with $t$ going from zero to one.
+In our case this produces:
 
   ![Image 2: A blue-to-white gradient depending on ray Y coordinate
   ](../images/img-1.02-blue-to-white.png class=pixel)
