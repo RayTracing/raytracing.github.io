@@ -503,6 +503,19 @@ I’ll put the “eye” (or camera center if you think of a camera) at $(0,0,0)
 I will have the y-axis go up, and the x-axis to the right.
 In order to respect the convention of a right handed coordinate system, into the screen is the
 negative z-axis.
+
+Now the inevitable tricky part.
+While our 3D space has the conventions above, this conflicts with the standard _image_ coordinates,
+where the Y axis is inverted.
+In image coordinates, Y=0 denotes the top of the image, and Y=1 denotes the bottom.
+
+To help keep things straight, we'll compute two normalized (that is, in the range [0,1]) image
+coordinates: $s$ (horizontal) and $t$ (vertical).
+$s=0$ is image left, $s=1$ is image right, $t=0$ is image top, and $t=1$ is image bottom.
+That means that we get our vertical axis flip at the right point by computing $t = 1 - y$, where $y$
+is the vertical component of our 3D coordinate system, and $t$ is the flipped vertical component of
+our image coordinate system.
+
 I will traverse the screen from the upper left hand corner, and use two offset vectors along the
 screen sides to move the ray endpoint across the screen.
 Note that I do not make the ray direction a unit length vector because I think not doing that makes
@@ -511,8 +524,7 @@ for simpler and slightly faster code.
   ![Figure [cam-geom]: Camera geometry](../images/fig-1.03-cam-geom.jpg)
 
 <div class='together'>
-Below in code, the ray `r` goes to approximately the pixel centers (I won’t worry about exactness
-for now because we’ll add antialiasing later):
+Below in code, the ray `r` goes to the current image pixel:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "color.h"
@@ -527,8 +539,8 @@ for now because we’ll add antialiasing later):
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     color ray_color(const ray& r) {
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -582,17 +594,17 @@ coordinate _after_ scaling the ray direction to unit length (so $-1.0 < y < 1.0$
 Because we're looking at the $y$ height after normalizing the vector, you'll notice a horizontal
 gradient to the color in addition to the vertical gradient.
 
-I then did a standard graphics trick of scaling that to $0.0 ≤ t ≤ 1.0$.
-When $t = 1.0$ I want blue.
-When $t = 0.0$ I want white.
+I then did a standard graphics trick of scaling that to $0.0 ≤ a ≤ 1.0$.
+When $a = 1.0$, I want blue.
+When $a = 0.0$, I want white.
 In between, I want a blend.
-This forms a “linear blend”, or “linear interpolation”: commonly referred to as a _lerp_, between
-two things.
+This forms a “linear blend”, or “linear interpolation”.
+This is commonly referred to as a _lerp_ between two values.
 A lerp is always of the form
 
-  $$ \text{blendedValue} = (1-t)\cdot\text{startValue} + t\cdot\text{endValue}, $$
+  $$ \text{blendedValue} = (1-a)\cdot\text{startValue} + a\cdot\text{endValue}, $$
 
-with $t$ going from zero to one.
+with $a$ going from zero to one.
 In our case this produces:
 
   ![Image 2: A blue-to-white gradient depending on ray Y coordinate
@@ -725,8 +737,8 @@ that hits a small sphere we place at -1 on the z-axis:
             return color(1, 0, 0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-red-sphere]: <kbd>[main.cc]</kbd> Rendering a red sphere]
@@ -1590,8 +1602,9 @@ samples) when writing out the color. In addition, we'll add a handy utility func
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-clamped]: <kbd>[color.h]</kbd> The multi-sample write_color() function]
 
-<div class='together'>
-Main is also changed:
+Main is also changed.
+Note that in the image scanning loops, we take the opportunity to hoist the computation of the image
+$t$ coordinate out of the inner loop, since it is the same value for the entire scanline.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -1658,7 +1671,6 @@ Main is also changed:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-multi-sample]: <kbd>[main.cc]</kbd> Rendering with multi-sampled pixels]
-</div>
 
 Zooming into the image that is produced, we can see the difference in edge pixels.
 
@@ -1807,8 +1819,8 @@ We'll set up our diffuse material to only return 50% of the color from a bounce 
         }
 
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-random-unit]: <kbd>[main.cc]</kbd> ray_color() using a random ray direction]
@@ -1849,8 +1861,8 @@ depth, returning no light contribution at the maximum depth:
         }
 
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
 
     ...
@@ -1997,8 +2009,8 @@ gives us. The simplest hack to address this is just to ignore hits that very nea
         }
 
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [reflect-tolerance]: <kbd>[main.cc]</kbd>
@@ -2053,8 +2065,8 @@ The change is actually fairly minimal:
         }
 
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-unit-sphere]: <kbd>[main.cc]</kbd> ray_color() with replacement diffuse]
@@ -2085,6 +2097,69 @@ Most scenes of interest will contain a disproportionate amount of diffuse materi
 valuable insight by understanding the effect of different diffuse methods on the lighting of the
 scene.
 </div>
+
+<div class='together'>
+In the interest of learning, we are including an intuitive and easy to understand diffuse method.
+For the two methods above we had a random vector, first of random length and then of unit length,
+offset from the hit point by the normal. It may not be immediately obvious why the vectors should be
+displaced by the normal.
+
+A more intuitive approach is to have a uniform scatter direction for all angles away from the hit
+point, with no dependence on the angle from the normal. Many of the first raytracing papers used
+this diffuse method (before adopting Lambertian diffuse).
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 random_in_hemisphere(const vec3& normal) {
+        vec3 in_unit_sphere = random_in_unit_sphere();
+        if (dot(in_unit_sphere, normal) > 0.0) // In the same hemisphere as the normal
+            return in_unit_sphere;
+        else
+            return -in_unit_sphere;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-in-hemisphere]: <kbd>[vec3.h]</kbd> The random_in_hemisphere(normal) function]
+
+</div>
+
+<div class='together'>
+Plugging the new formula into the `ray_color()` function:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    color ray_color(const ray& r, const hittable& world, int depth) {
+        hit_record rec;
+
+        // If we've exceeded the ray bounce limit, no more light is gathered.
+        if (depth <= 0)
+            return color(0,0,0);
+
+        if (world.hit(r, interval(0.001, infinity), rec)) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            vec3 direction = random_in_hemisphere(rec.normal);
+            return 0.5 * ray_color(ray(rec.p, direction), world, depth-1);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+
+        vec3 unit_direction = unit_vector(r.direction());
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-hemisphere]: <kbd>[main.cc]</kbd> ray_color() with hemispherical scattering]
+
+Gives us the following image:
+
+  ![Image 10: Rendering of diffuse spheres with hemispherical scattering
+  ](../images/img-1.10-rand-hemispherical.png class=pixel)
+
+</div>
+
+<div class='together'>
+Scenes will become more complicated over the course of the book. You are encouraged to
+switch between the different diffuse renderers presented here. Most scenes of interest will contain
+a disproportionate amount of diffuse materials. You can gain valuable insight by understanding the
+effect of different diffuse methods on the lighting of the scene.
+</div>
+
 
 
 Metal
@@ -2357,8 +2432,8 @@ We need to modify the `ray_color()` function to use this:
         }
 
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-scatter]: <kbd>[main.cc]</kbd> Ray color with scattered reflectance]
@@ -2909,8 +2984,8 @@ Naturally, we'll name this the `scene` class.
             }
 
             vec3 unit_direction = unit_vector(r.direction());
-            auto t = 0.5*(unit_direction.y() + 1.0);
-            return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+            auto a = 0.5*(unit_direction.y() + 1.0);
+            return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
         }
     };
 
