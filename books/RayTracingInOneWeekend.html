@@ -501,6 +501,25 @@ I’ll put the “eye” (or camera center if you think of a camera) at $(0,0,0)
 I will have the y-axis go up, and the x-axis to the right.
 In order to respect the convention of a right handed coordinate system, into the screen is the
 negative z-axis.
+
+Now the inevitable tricky part.
+While our 3D space has the conventions above, this conflicts with the standard _image_ coordinates,
+where the Y axis is inverted.
+In image coordinates, Y=0 denotes the top of the image, and Y=1 denotes the bottom.
+
+(This is very handy if your pixels are read out from a scanline buffer to feed an electron beam that
+scans top to bottom, left to right, exciting screen phosphors as it goes.
+Your display doesn't work like that?
+Well, modern UIs also use floppy disk icons to indicate the save operation.
+And so it goes.)
+
+To help keep things straight, we'll compute two normalized (that is, in the range [0,1]) image
+coordinates: $s$ (horizontal) and $t$ (vertical).
+$s=0$ is image left, $s=1$ is image right, $t=0$ is image top, and $t=1$ is image bottom.
+That means that we get our vertical axis flip at the right point by computing $t = 1 - y$, where $y$
+is the vertical component of our 3D coordinate system, and $t$ is the flipped vertical component of
+our image coordinate system.
+
 I will traverse the screen from the upper left hand corner, and use two offset vectors along the
 screen sides to move the ray endpoint across the screen.
 Note that I do not make the ray direction a unit length vector because I think not doing that makes
@@ -509,8 +528,8 @@ for simpler and slightly faster code.
   ![Figure [cam-geom]: Camera geometry](../images/fig-1.03-cam-geom.jpg)
 
 <div class='together'>
-Below in code, the ray `r` goes to approximately the pixel centers (I won’t worry about exactness
-for now because we’ll add antialiasing later):
+Below in code, the ray `r` goes to the current image pixel (I won’t worry about exactness for now
+because we’ll add antialiasing later):
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "color.h"
@@ -581,11 +600,12 @@ Because we're looking at the $y$ height after normalizing the vector, you'll not
 gradient to the color in addition to the vertical gradient.
 
 I then did a standard graphics trick of scaling that to $0.0 ≤ t ≤ 1.0$.
-When $t = 1.0$ I want blue.
-When $t = 0.0$ I want white.
+(In this context, the parameter $t$ is different from the image coordinate $t$ above.)
+When $t = 1.0$, I want blue.
+When $t = 0.0$, I want white.
 In between, I want a blend.
-This forms a “linear blend”, or “linear interpolation”: commonly referred to as a _lerp_, between
-two things.
+This forms a “linear blend”, or “linear interpolation”.
+This is commonly referred to as a _lerp_ between two values.
 A lerp is always of the form
 
   $$ \text{blendedValue} = (1-t)\cdot\text{startValue} + t\cdot\text{endValue}, $$
@@ -1562,8 +1582,9 @@ samples) when writing out the color. In addition, we'll add a handy utility func
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-clamped]: <kbd>[color.h]</kbd> The multi-sample write_color() function]
 
-<div class='together'>
-Main is also changed:
+Main is also changed.
+Note that in the image scanning loops, we take the opportunity to hoist the computation of the image
+$t$ coordinate out of the inner loop, since it is the same value for the entire scanline.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -1630,7 +1651,6 @@ Main is also changed:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-multi-sample]: <kbd>[main.cc]</kbd> Rendering with multi-sampled pixels]
-</div>
 
 Zooming into the image that is produced, we can see the difference in edge pixels.
 
