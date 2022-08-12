@@ -817,8 +817,23 @@ two boxes.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [moving-sphere-bbox]: <kbd>[moving_sphere.h]</kbd> Moving sphere with bounding box]
 
-<div class='together'>
-Now we need a new `aabb` constructor that takes two boxes as input:
+Now we need a new `aabb` constructor that takes two boxes as input.
+First, we'll add a new interval constructor that takes two intervals as input:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class interval {
+      public:
+        ...
+
+        interval(const interval& a, const interval& b)
+          : min(fmin(a.min, b.min)), max(fmax(a.max, b.max)) {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [interval-from-intervals]: <kbd>[interval.h]</kbd>
+        Interval constructor from two intervals
+    ]
+
+
+Now we can use this to construct an axis-aligned bounding box from two input boxes.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class aabb {
@@ -835,7 +850,6 @@ Now we need a new `aabb` constructor that takes two boxes as input:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [aabb-from-two-aabb]: <kbd>[aabb.h]</kbd> AABB constructor from two AABB inputs]
-</div>
 
 
 Creating Bounding Boxes of Lists of Objects
