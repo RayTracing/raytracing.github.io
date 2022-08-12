@@ -41,7 +41,7 @@ class scene {
             }
         }
 
-        std::clog << "\nDone.\n";
+        std::clog << "\rDone.                 \n";
     }
 
   public:
