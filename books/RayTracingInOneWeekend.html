@@ -507,12 +507,6 @@ While our 3D space has the conventions above, this conflicts with the standard _
 where the Y axis is inverted.
 In image coordinates, Y=0 denotes the top of the image, and Y=1 denotes the bottom.
 
-(This is very handy if your pixels are read out from a scanline buffer to feed an electron beam that
-scans top to bottom, left to right, exciting screen phosphors as it goes.
-Your display doesn't work like that?
-Well, modern UIs also use floppy disk icons to indicate the save operation.
-And so it goes.)
-
 To help keep things straight, we'll compute two normalized (that is, in the range [0,1]) image
 coordinates: $s$ (horizontal) and $t$ (vertical).
 $s=0$ is image left, $s=1$ is image right, $t=0$ is image top, and $t=1$ is image bottom.
@@ -528,8 +522,7 @@ for simpler and slightly faster code.
   ![Figure [cam-geom]: Camera geometry](../images/fig-1.03-cam-geom.jpg)
 
 <div class='together'>
-Below in code, the ray `r` goes to the current image pixel (I won’t worry about exactness for now
-because we’ll add antialiasing later):
+Below in code, the ray `r` goes to the current image pixel:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "color.h"
@@ -544,8 +537,8 @@ because we’ll add antialiasing later):
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     color ray_color(const ray& r) {
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -599,18 +592,17 @@ coordinate _after_ scaling the ray direction to unit length (so $-1.0 < y < 1.0$
 Because we're looking at the $y$ height after normalizing the vector, you'll notice a horizontal
 gradient to the color in addition to the vertical gradient.
 
-I then did a standard graphics trick of scaling that to $0.0 ≤ t ≤ 1.0$.
-(In this context, the parameter $t$ is different from the image coordinate $t$ above.)
-When $t = 1.0$, I want blue.
-When $t = 0.0$, I want white.
+I then did a standard graphics trick of scaling that to $0.0 ≤ a ≤ 1.0$.
+When $a = 1.0$, I want blue.
+When $a = 0.0$, I want white.
 In between, I want a blend.
 This forms a “linear blend”, or “linear interpolation”.
 This is commonly referred to as a _lerp_ between two values.
 A lerp is always of the form
 
-  $$ \text{blendedValue} = (1-t)\cdot\text{startValue} + t\cdot\text{endValue}, $$
+  $$ \text{blendedValue} = (1-a)\cdot\text{startValue} + a\cdot\text{endValue}, $$
 
-with $t$ going from zero to one.
+with $a$ going from zero to one.
 In our case this produces:
 
   ![Image 2: A blue-to-white gradient depending on ray Y coordinate
@@ -717,8 +709,8 @@ that hits a small sphere we place at -1 on the z-axis:
             return color(1, 0, 0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-red-sphere]: <kbd>[main.cc]</kbd> Rendering a red sphere]
@@ -792,9 +784,9 @@ let us compute and visualize $\mathbf{n}$:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 unit_direction = unit_vector(r.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        t = 0.5*(unit_direction.y() + 1.0);
+        a = 0.5*(unit_direction.y() + 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [render-surface-normal]: <kbd>[main.cc]</kbd> Rendering surface normals on a sphere]
@@ -1250,9 +1242,9 @@ And the new main:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 unit_direction = unit_vector(r.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        auto t = 0.5*(unit_direction.y() + 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
 
     int main() {
@@ -1750,8 +1742,8 @@ Then update the `ray_color()` function to use the new random direction generator
         }
 
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-random-unit]: <kbd>[main.cc]</kbd> ray_color() using a random ray direction]
@@ -1786,8 +1778,8 @@ depth, returning no light contribution at the maximum depth:
         }
 
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
 
     ...
@@ -1911,8 +1903,8 @@ point approximation the sphere intersector gives us. So we need to ignore hits v
         }
 
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [reflect-tolerance]: <kbd>[main.cc]</kbd>
@@ -1973,8 +1965,8 @@ function.
         }
 
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-unit-sphere]: <kbd>[main.cc]</kbd> ray_color() with replacement diffuse]
@@ -2055,8 +2047,8 @@ Plugging the new formula into the `ray_color()` function:
         }
 
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-hemisphere]: <kbd>[main.cc]</kbd> ray_color() with hemispherical scattering]
@@ -2347,8 +2339,8 @@ We need to modify the `ray_color()` function to use this:
         }
 
         vec3 unit_direction = unit_vector(r.direction());
-        auto t = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-scatter]: <kbd>[main.cc]</kbd> Ray color with scattered reflectance]
@@ -2899,8 +2891,8 @@ Naturally, we'll name this the `scene` class.
             }
 
             vec3 unit_direction = unit_vector(r.direction());
-            auto t = 0.5*(unit_direction.y() + 1.0);
-            return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
+            auto a = 0.5*(unit_direction.y() + 1.0);
+            return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
         }
     };
 
