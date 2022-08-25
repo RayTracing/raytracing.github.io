@@ -22,18 +22,18 @@ class scene {
     void render() {
         const int image_height = static_cast<int>(image_width / aspect_ratio);
 
-        cam.initialize(aspect_ratio);
+        cam.initialize(image_width, image_height);
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
         for (int j = 0; j < image_height; ++j) {
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-            auto t = (j + random_double()) / (image_height-1);
+            auto t = static_cast<double>(j) / (image_height-1);
 
             for (int i = 0; i < image_width; ++i) {
                 color pixel_color(0,0,0);
                 for (int sample = 0; sample < samples_per_pixel; ++sample) {
-                    auto s = (i + random_double()) / (image_width-1);
+                    auto s = static_cast<double>(i) / (image_width-1);
                     ray r = cam.get_ray(s, t);
                     pixel_color += ray_color(r, max_depth);
                 }

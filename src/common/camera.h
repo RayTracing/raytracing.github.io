@@ -16,11 +16,16 @@
 
 class camera {
   public:
-    void initialize(double aspect_ratio = 1.0) {
+    void initialize(double image_width, double image_height) {
+        auto aspect_ratio = image_width / image_height;
         auto theta = degrees_to_radians(vfov);
         auto h = tan(theta/2);
+
         auto viewport_height = 2.0 * h;
         auto viewport_width = aspect_ratio * viewport_height;
+
+        pixel_delta_x = 1.0 / (image_width-1);
+        pixel_delta_y = 1.0 / (image_height-1);
 
         w = unit_vector(lookfrom - lookat);
         u = unit_vector(cross(vup, w));
@@ -39,8 +44,13 @@ class camera {
         // the normalized image-based coordinates of the pixel. Image left is s=0, image right
         // is s=1, image top is t=0, image bottom is t=1.
 
+        // Jitter the sample location of the pixel.
+        s += random_double(-0.5, 0.5) * pixel_delta_x;
+        t += random_double(-0.5, 0.5) * pixel_delta_y;
+
         vec3 rd = lens_radius * random_in_unit_disk();
         vec3 offset = u * rd.x() + v * rd.y();
+
         const auto ray_time = random_double(0.0, 1.0);
 
         return ray(
@@ -60,6 +70,7 @@ class camera {
     vec3   vup      = vec3(0,1,0);
 
   private:
+    double pixel_delta_x, pixel_delta_y;
     point3 origin;
     point3 lower_left_corner;
     vec3 horizontal;
