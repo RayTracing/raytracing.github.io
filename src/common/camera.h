@@ -16,7 +16,8 @@
 
 class camera {
   public:
-    void initialize(double aspect_ratio = 1.0) {
+    void initialize(double image_width, double image_height) {
+        auto aspect_ratio = image_width / image_height;
         auto theta = degrees_to_radians(vfov);
         auto h = tan(theta/2);
         auto viewport_height = 2.0 * h;
@@ -32,6 +33,9 @@ class camera {
         lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
 
         lens_radius = aperture / 2;
+
+        jitter_x = 0.0 / image_width;
+        jitter_y = 0.0 / image_height;
     }
 
     ray get_ray(double s, double t) const {
@@ -39,8 +43,13 @@ class camera {
         // the normalized image-based coordinates of the pixel. Image left is s=0, image right
         // is s=1, image top is t=0, image bottom is t=1.
 
+        // Jitter the sample location of the pixel.
+        s += random_double(-1.0, 1.0) * jitter_x;
+        t += random_double(-1.0, 1.0) * jitter_y;
+
         vec3 rd = lens_radius * random_in_unit_disk();
         vec3 offset = u * rd.x() + v * rd.y();
+
         const auto ray_time = random_double(0.0, 1.0);
 
         return ray(
@@ -66,6 +75,7 @@ class camera {
     vec3 vertical;
     vec3 u, v, w;
     double lens_radius;
+    double jitter_x, jitter_y; // Max extent of pixel jitter
 };
 
 #endif
