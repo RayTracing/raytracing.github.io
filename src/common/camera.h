@@ -16,8 +16,8 @@
 
 class camera {
   public:
-    void initialize(double image_width, double image_height) {
-        auto aspect_ratio = image_width / image_height;
+    void initialize(int image_width, int image_height) {
+        auto aspect_ratio = static_cast<double>(image_width) / image_height;
         auto theta = degrees_to_radians(vfov);
         auto h = tan(theta/2);
 
@@ -39,14 +39,9 @@ class camera {
         lens_radius = aperture / 2;
     }
 
-    ray get_ray(double s, double t) const {
-        // Return the ray from the projection point to the indicated pixel. Coordinates s,t are
-        // the normalized image-based coordinates of the pixel. Image left is s=0, image right
-        // is s=1, image top is t=0, image bottom is t=1.
-
-        // Jitter the sample location of the pixel.
-        s += random_double(-0.5, 0.5) * pixel_delta_x;
-        t += random_double(-0.5, 0.5) * pixel_delta_y;
+    ray get_ray(int i, int j) const {
+        auto s = (i + random_double(-0.5, 0.5)) * pixel_delta_x;
+        auto t = (j + random_double(-0.5, 0.5)) * pixel_delta_y;
 
         vec3 rd = lens_radius * random_in_unit_disk();
         vec3 offset = u * rd.x() + v * rd.y();
