@@ -30,6 +30,7 @@ Change Log -- Ray Tracing in One Weekend
   - Added: New `box()` utility function returns `hittable_list` of new `quad` primitives (#780)
   - Fix: Add `\mathit` to italic math variables to fix slight kerning issues in equations (#839)
   - Change: Use std::clog instead of std::cerr to log scanline progress (#935)
+  - Fix: Added missing commas for the Bib(La)TeX entries.
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)
