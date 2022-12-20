@@ -1650,15 +1650,12 @@ $t$ coordinate out of the inner loop, since it is the same value for the entire 
 
         for (int j = 0; j < image_height; ++j) {
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            auto t = (j + random_double()) / (image_height-1);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
             for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 color pixel_color(0, 0, 0);
                 for (int sample = 0; sample < samples_per_pixel; ++sample) {
                     auto s = (i + random_double()) / (image_width-1);
+                    auto t = (j + random_double()) / (image_height-1);
                     ray r = cam.get_ray(s, t);
                     pixel_color += ray_color(r, world);
                 }
@@ -1886,12 +1883,11 @@ depth, returning no light contribution at the maximum depth:
 
         for (int j = 0; j < image_height; ++j) {
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-            auto t = (j + random_double()) / (image_height-1);
-
             for (int i = 0; i < image_width; ++i) {
                 color pixel_color(0, 0, 0);
                 for (int sample = 0; sample < samples_per_pixel; ++sample) {
                     auto s = (i + random_double()) / (image_width-1);
+                    auto t = (j + random_double()) / (image_height-1);
                     ray r = cam.get_ray(s, t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                     pixel_color += ray_color(r, world, max_depth);
@@ -2942,12 +2938,11 @@ Naturally, we'll name this the `scene` class.
 
             for (int j = 0; j < image_height; ++j) {
                 std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-                auto t = (j + random_double()) / (image_height-1);
-
                 for (int i = 0; i < image_width; ++i) {
                     color pixel_color(0,0,0);
                     for (int sample = 0; sample < samples_per_pixel; ++sample) {
                         auto s = (i + random_double()) / (image_width-1);
+                        auto t = (j + random_double()) / (image_height-1);
                         ray r = cam.get_ray(s, t);
                         pixel_color += ray_color(r, max_depth);
                     }
