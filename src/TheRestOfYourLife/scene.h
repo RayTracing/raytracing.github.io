@@ -14,6 +14,8 @@
 #include "camera.h"
 #include "hittable_list.h"
 
+#include <iostream>
+
 
 class scene {
   public:
