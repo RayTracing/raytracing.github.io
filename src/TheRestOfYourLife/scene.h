@@ -19,23 +19,22 @@
 
 class scene {
   public:
-    void render() {
-        const int image_height = static_cast<int>(image_width / aspect_ratio);
+    void render(int resolution_x, int samples_per_pixel) {
+        const int resolution_y = static_cast<int>(resolution_x / aspect_ratio);
 
         cam.initialize(aspect_ratio);
 
-        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+        std::cout << "P3\n" << resolution_x << ' ' << resolution_y << "\n255\n";
 
         int sqrt_spp = int(sqrt(samples_per_pixel));
-        for (int j = 0; j < image_height; ++j) {
-            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-
-            for (int i = 0; i < image_width; ++i) {
+        for (int j = 0; j < resolution_y; ++j) {
+            std::clog << "\rScanlines remaining: " << (resolution_y - j) << ' ' << std::flush;
+            for (int i = 0; i < resolution_x; ++i) {
                 color pixel_color(0,0,0);
                 for (int s_j = 0; s_j < sqrt_spp; ++s_j) {
                     for (int s_i = 0; s_i < sqrt_spp; ++s_i) {
-                        auto s = (i + (s_i + random_double()) / sqrt_spp) / (image_width-1);
-                        auto t = (j + (s_j + random_double()) / sqrt_spp) / (image_height-1);
+                        auto s = (i + (s_i + random_double()) / sqrt_spp) / (resolution_x - 1);
+                        auto t = (j + (s_j + random_double()) / sqrt_spp) / (resolution_y - 1);
                         ray r = cam.get_ray(s, t);
                         pixel_color += ray_color(r, max_depth);
                     }
@@ -48,15 +47,13 @@ class scene {
     }
 
   public:
+    camera cam;
     hittable_list world;
     hittable_list lights;
-    camera        cam;
 
-    double aspect_ratio      = 1.0;
-    int    image_width       = 100;
-    int    samples_per_pixel = 10;
-    int    max_depth         = 20;
-    color  background        = color(0,0,0);
+    double aspect_ratio = 1.0;
+    int max_depth = 20;
+    color background = color(0,0,0);
 
   private:
     color ray_color(const ray& r, int depth) {

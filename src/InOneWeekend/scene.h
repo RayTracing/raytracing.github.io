@@ -44,11 +44,11 @@ class scene {
     }
 
   public:
-    hittable_list world;
     camera cam;
+    hittable_list world;
 
-    int max_depth = 20;
     double aspect_ratio = 1.0;
+    int max_depth = 20;
 
   private:
     color ray_color(const ray& r, int depth) {

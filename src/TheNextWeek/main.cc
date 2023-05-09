@@ -25,10 +25,7 @@
 
 
 void random_spheres(scene& scene_desc) {
-    scene_desc.aspect_ratio      = 16.0 / 9.0;
-    scene_desc.image_width       = 400;
-    scene_desc.samples_per_pixel = 100;
-
+    scene_desc.aspect_ratio   = 16.0 / 9.0;
     scene_desc.cam.lookfrom   = point3(13,2,3);
     scene_desc.cam.lookat     = point3(0,0,0);
     scene_desc.cam.vup        = vec3(0,1,0);
@@ -85,10 +82,7 @@ void random_spheres(scene& scene_desc) {
 
 
 void two_spheres(scene& scene_desc) {
-    scene_desc.image_width       = 400;
-    scene_desc.aspect_ratio      = 16.0 / 9.0;
-    scene_desc.samples_per_pixel = 100;
-
+    scene_desc.aspect_ratio = 16.0 / 9.0;
     scene_desc.cam.aperture = 0.0;
     scene_desc.cam.vfov     = 20.0;
     scene_desc.cam.lookfrom = point3(13,2,3);
@@ -103,29 +97,8 @@ void two_spheres(scene& scene_desc) {
 }
 
 
-void two_perlin_spheres(scene& scene_desc) {
-    scene_desc.image_width       = 400;
-    scene_desc.aspect_ratio      = 16.0 / 9.0;
-    scene_desc.samples_per_pixel = 100;
-
-    scene_desc.cam.aperture = 0.0;
-    scene_desc.cam.vfov     = 20.0;
-    scene_desc.cam.lookfrom = point3(13,2,3);
-    scene_desc.cam.lookat   = point3(0,0,0);
-
-    hittable_list& world = scene_desc.world;
-
-    auto pertext = make_shared<noise_texture>(4);
-    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
-    world.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(pertext)));
-}
-
-
 void earth(scene& scene_desc) {
-    scene_desc.image_width       = 400;
-    scene_desc.aspect_ratio      = 16.0 / 9.0;
-    scene_desc.samples_per_pixel = 100;
-
+    scene_desc.aspect_ratio = 16.0 / 9.0;
     scene_desc.cam.aperture = 0.0;
     scene_desc.cam.vfov     = 20.0;
     scene_desc.cam.lookfrom = point3(0,0,12);
@@ -139,11 +112,23 @@ void earth(scene& scene_desc) {
 }
 
 
-void quads(scene& scene_desc) {
-    scene_desc.image_width       = 400;
-    scene_desc.aspect_ratio      = 1.0;
-    scene_desc.samples_per_pixel = 100;
+void two_perlin_spheres(scene& scene_desc) {
+    scene_desc.aspect_ratio = 16.0 / 9.0;
+    scene_desc.cam.aperture = 0.0;
+    scene_desc.cam.vfov     = 20.0;
+    scene_desc.cam.lookfrom = point3(13,2,3);
+    scene_desc.cam.lookat   = point3(0,0,0);
 
+    hittable_list& world = scene_desc.world;
+
+    auto pertext = make_shared<noise_texture>(4);
+    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
+    world.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(pertext)));
+}
+
+
+void quads(scene& scene_desc) {
+    scene_desc.aspect_ratio = 1.0;
     scene_desc.cam.aperture = 0.0;
     scene_desc.cam.vfov     = 80.0;
     scene_desc.cam.lookfrom = point3(0,0,9);
@@ -168,11 +153,8 @@ void quads(scene& scene_desc) {
 
 
 void simple_light(scene& scene_desc) {
-    scene_desc.image_width       = 400;
-    scene_desc.aspect_ratio      = 16.0 / 9.0;
-    scene_desc.samples_per_pixel = 100;
-    scene_desc.background        = color(0,0,0);
-
+    scene_desc.aspect_ratio = 16.0 / 9.0;
+    scene_desc.background   = color(0,0,0);
     scene_desc.cam.aperture = 0.0;
     scene_desc.cam.vfov     = 20.0;
     scene_desc.cam.lookfrom = point3(26,3,6);
@@ -191,11 +173,8 @@ void simple_light(scene& scene_desc) {
 
 
 void cornell_box(scene& scene_desc) {
-    scene_desc.image_width       = 600;
-    scene_desc.aspect_ratio      = 1.0;
-    scene_desc.samples_per_pixel = 200;
-    scene_desc.background        = color(0,0,0);
-
+    scene_desc.aspect_ratio = 1.0;
+    scene_desc.background   = color(0,0,0);
     scene_desc.cam.lookfrom = point3(278, 278, -800);
     scene_desc.cam.lookat   = point3(278, 278, 0);
     scene_desc.cam.vfov     = 40.0;
@@ -228,11 +207,8 @@ void cornell_box(scene& scene_desc) {
 
 
 void cornell_smoke(scene& scene_desc) {
-    scene_desc.image_width       = 600;
-    scene_desc.aspect_ratio      = 1.0;
-    scene_desc.samples_per_pixel = 200;
-    scene_desc.background        = color(0,0,0);
-
+    scene_desc.aspect_ratio = 1.0;
+    scene_desc.background   = color(0,0,0);
     scene_desc.cam.aperture = 0.0;
     scene_desc.cam.vfov     = 40.0;
     scene_desc.cam.lookfrom = point3(278, 278, -800);
@@ -266,11 +242,8 @@ void cornell_smoke(scene& scene_desc) {
 
 
 void final_scene(scene& scene_desc) {
-    scene_desc.image_width       = 800;
-    scene_desc.aspect_ratio      = 1.0;
-    scene_desc.samples_per_pixel = 10000;
-    scene_desc.background        = color(0,0,0);
-
+    scene_desc.aspect_ratio = 1.0;
+    scene_desc.background   = color(0,0,0);
     scene_desc.cam.aperture = 0.0;
     scene_desc.cam.vfov     = 40.0;
     scene_desc.cam.lookfrom = point3(478, 278, -600);
@@ -340,9 +313,7 @@ void final_scene(scene& scene_desc) {
 
 void default_scene(scene& scene_desc) {
     final_scene(scene_desc);
-    scene_desc.image_width       = 400;
-    scene_desc.samples_per_pixel = 250;
-    scene_desc.max_depth         = 4;
+    scene_desc.max_depth = 4;
 }
 
 
@@ -354,17 +325,55 @@ int main() {
     scene_desc.cam.focus_dist = 10.0;
 
     switch (0) {
-        case 1:  random_spheres(scene_desc);     break;
-        case 2:  two_spheres(scene_desc);        break;
-        case 3:  earth(scene_desc);              break;
-        case 4:  two_perlin_spheres(scene_desc); break;
-        case 5:  quads(scene_desc);              break;
-        case 6:  simple_light(scene_desc);       break;
-        case 7:  cornell_box(scene_desc);        break;
-        case 8:  cornell_smoke(scene_desc);      break;
-        case 9:  final_scene(scene_desc);        break;
-        default: default_scene(scene_desc);      break;
+        case 1: {
+            random_spheres(scene_desc);
+            scene_desc.render(400, 100);
+            break;
+        }
+        case 2: {
+            two_spheres(scene_desc);
+            scene_desc.render(400, 100);
+            break;
+        }
+        case 3: {
+            earth(scene_desc);
+            scene_desc.render(400, 100);
+            break;
+        }
+        case 4: {
+            two_perlin_spheres(scene_desc);
+            scene_desc.render(400, 100);
+            break;
+        }
+        case 5: {
+            quads(scene_desc);
+            scene_desc.render(400, 100);
+            break;
+        }
+        case 6: {
+            simple_light(scene_desc);
+            scene_desc.render(400, 100);
+            break;
+        }
+        case 7: {
+            cornell_box(scene_desc);
+            scene_desc.render(600, 200);
+            break;
+        }
+        case 8: {
+            cornell_smoke(scene_desc);
+            scene_desc.render(600, 200);
+            break;
+        }
+        case 9: {
+            final_scene(scene_desc);
+            scene_desc.render(800, 10000);
+            break;
+        }
+        default: {
+            default_scene(scene_desc);
+            scene_desc.render(400, 250);
+            break;
+        }
     }
-
-    scene_desc.render();
 }

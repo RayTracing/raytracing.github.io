@@ -22,18 +22,15 @@
 
 
 void cornell_box(scene& scene_desc) {
-    scene_desc.image_width       = 600;
-    scene_desc.aspect_ratio      = 1.0;
-    scene_desc.samples_per_pixel = 100;
-    scene_desc.max_depth         = 50;
-    scene_desc.background        = color(0,0,0);
-
-    scene_desc.cam.lookfrom     = point3(278, 278, -800);
-    scene_desc.cam.lookat       = point3(278, 278, 0);
-    scene_desc.cam.vup          = vec3(0, 1, 0);
-    scene_desc.cam.vfov         = 40.0;
-    scene_desc.cam.aperture     = 0.0;
-    scene_desc.cam.focus_dist   = 10.0;
+    scene_desc.aspect_ratio   = 1.0;
+    scene_desc.max_depth      = 50;
+    scene_desc.background     = color(0,0,0);
+    scene_desc.cam.lookfrom   = point3(278, 278, -800);
+    scene_desc.cam.lookat     = point3(278, 278, 0);
+    scene_desc.cam.vup        = vec3(0, 1, 0);
+    scene_desc.cam.vfov       = 40.0;
+    scene_desc.cam.aperture   = 0.0;
+    scene_desc.cam.focus_dist = 10.0;
 
     hittable_list& world = scene_desc.world;
 
@@ -74,5 +71,5 @@ void cornell_box(scene& scene_desc) {
 int main() {
     scene scene_desc;
     cornell_box(scene_desc);
-    scene_desc.render();
+    scene_desc.render(600, 100);
 }
