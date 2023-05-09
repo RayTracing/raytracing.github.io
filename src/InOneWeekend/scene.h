@@ -19,20 +19,20 @@
 
 class scene {
   public:
-    void render() {
-        const int image_height = static_cast<int>(image_width / aspect_ratio);
+    void render(int resolution_x, int samples_per_pixel) {
+        const int resolution_y = static_cast<int>(resolution_x / aspect_ratio);
 
         cam.initialize(aspect_ratio);
 
-        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+        std::cout << "P3\n" << resolution_x << ' ' << resolution_y << "\n255\n";
 
-        for (int j = 0; j < image_height; ++j) {
-            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-            for (int i = 0; i < image_width; ++i) {
+        for (int j = 0; j < resolution_y; ++j) {
+            std::clog << "\rScanlines remaining: " << (resolution_y - j) << ' ' << std::flush;
+            for (int i = 0; i < resolution_x; ++i) {
                 color pixel_color(0,0,0);
                 for (int sample = 0; sample < samples_per_pixel; ++sample) {
-                    auto s = (i + random_double()) / (image_width-1);
-                    auto t = (j + random_double()) / (image_height-1);
+                    auto s = (i + random_double()) / (resolution_x - 1);
+                    auto t = (j + random_double()) / (resolution_y - 1);
                     ray r = cam.get_ray(s, t);
                     pixel_color += ray_color(r, max_depth);
                 }
@@ -47,10 +47,8 @@ class scene {
     hittable_list world;
     camera cam;
 
-    double aspect_ratio      = 1.0;
-    int    image_width       = 100;
-    int    samples_per_pixel = 10;
-    int    max_depth         = 20;
+    int max_depth = 20;
+    double aspect_ratio = 1.0;
 
   private:
     color ray_color(const ray& r, int depth) {

@@ -20,10 +20,7 @@
 
 
 void random_spheres(scene& scene_desc) {
-    scene_desc.image_width       = 1200;
-    scene_desc.aspect_ratio      = 16.0 / 9.0;
-    scene_desc.samples_per_pixel = 10;
-
+    scene_desc.aspect_ratio   = 16.0 / 9.0;
     scene_desc.cam.vfov       = 20;
     scene_desc.cam.focus_dist = 10.0;
     scene_desc.cam.aperture   = 0.1;
@@ -78,5 +75,5 @@ void random_spheres(scene& scene_desc) {
 int main() {
     scene scene_desc;
     random_spheres(scene_desc);
-    scene_desc.render();
+    scene_desc.render(1200, 10);
 }
