@@ -21,22 +21,22 @@ versions, use the print function in your browser.
 
 Project Status
 ---------------
-We just shipped a tiny release, [v3.2.3][], to get out two quick small fixes. Mostly we're very
-heads-down right now working on our major v4 release. Lots of changes. If you'd like to check it
-out, we're developing on the `dev-major` branch. We're tackling some larger refactorings to further
-simplify the code, address some large outstanding issues, and focus on more development and
-expansion of book 3: _Ray Tracing: The Rest of Your Life_.
+Well, our work on the v4.0.0 release is plodding along. Our last release, [v3.2.3][] was in December
+2020, and v4 keeps getting bigger and bigger. Lots of changes. If you'd like to check it out, we're
+developing on the `dev-major` branch. You can also follow along with our remaining work on
+[milestone 16][] (the main body of remaining work), and [milestone 19][] (release preparation
+tasks). We're tackling some larger refactorings to further simplify the code, address some large
+outstanding issues, and focus on more development and expansion of book 3: _Ray Tracing: The Rest of
+Your Life_.
 
-If you have a change you'd like to contribute,
-[please see our contribution guidelines][CONTRIBUTING].
+Let us know if you'd like to help out. If you have a change you'd like to contribute,
+_**[please see our contribution guidelines][CONTRIBUTING]**_.
 
 
 GitHub Discussions
 ------------------
-GitHub just released GitHub Discussions — a new feature to host conversations in a project without
-requiring everything to be an issue. This is likely a much better way to post questions, ask for
-advice, or just generally talk about the project. Is it useful? Don't know, but [let's give it a
-shot!](https://github.com/RayTracing/raytracing.github.io/discussions/).
+Do you have general questions about raytracing code, issues with your own implmentation, or general
+raytracing ideas you'd like to share? Check out our [GitHub discussions][discussions] forum!
 
 
 Directory Structure
@@ -151,8 +151,8 @@ PPM file viewers online. We like [ImageMagick][].
 
 Corrections & Contributions
 ----------------------------
-If you spot errors, have suggested corrections, or would like to help out with the project, please
-review the [CONTRIBUTING][] document for the most effective way to proceed.
+If you spot errors, have suggested corrections, or would like to help out with the project,
+_**please review the [CONTRIBUTING][] document for the most effective way to proceed.**_
 
 
 
@@ -163,9 +163,12 @@ review the [CONTRIBUTING][] document for the most effective way to proceed.
 [cover1]:          images/RTOneWeekend-small.jpg
 [cover2]:          images/RTNextWeek-small.jpg
 [cover3]:          images/RTRestOfYourLife-small.jpg
+[discussions]:     https://github.com/RayTracing/raytracing.github.io/discussions/
 [GitHub home]:     https://github.com/RayTracing/raytracing.github.io/
 [ImageMagick]:     https://imagemagick.org/
 [implementations]: https://github.com/RayTracing/raytracing.github.io/wiki/Implementations
+[milestone 16]:    https://github.com/RayTracing/raytracing.github.io/milestone/16
+[milestone 19]:    https://github.com/RayTracing/raytracing.github.io/milestone/19
 [v3.2.3]:          https://github.com/RayTracing/raytracing.github.io/releases/tag/v3.2.3
 [web1]:            https://raytracing.github.io/books/RayTracingInOneWeekend.html
 [web2]:            https://raytracing.github.io/books/RayTracingTheNextWeek.html
