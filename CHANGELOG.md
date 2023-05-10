@@ -44,6 +44,7 @@ Change Log -- Ray Tracing in One Weekend
     `moving_sphere`, but also impacting the API for `hittable::bounding_box()` (#799)
   - Fix: Fixed `bvh_node` constructor definition signature (#872)
   - Fix: Fixed scaling for final Perlin noise texture (#896).
+  - Added: Add listing to use new `bvh_node` class in the `random_spheres` scene (#715).
 
 ### The Rest of Your Life
   - Fix: Added missing functionality for `isotropic` (#664)
