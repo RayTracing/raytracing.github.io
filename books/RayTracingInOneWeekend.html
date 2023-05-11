@@ -984,9 +984,9 @@ And here’s the sphere:
             // Find the nearest root that lies in the acceptable range.
             auto sqrtd = sqrt(discriminant);
             auto root = (-half_b - sqrtd) / a;
-            if (root < ray_tmin || ray_tmax < root) {
+            if (root <= ray_tmin || ray_tmax <= root) {
                 root = (-half_b + sqrtd) / a;
-                if (root < ray_tmin || ray_tmax < root)
+                if (root <= ray_tmin || ray_tmax <= root)
                     return false;
             }
 
@@ -1378,6 +1378,10 @@ and a maximum. We'll end up using this class quite often as we proceed.
             return min <= x && x <= max;
         }
 
+        bool surrounds(double x) const {
+            return min < x && x < max;
+        }
+
         static const interval empty, universe;
 
       public:
@@ -1433,6 +1437,7 @@ and a maximum. We'll end up using this class quite often as we proceed.
     [Listing [hittable-list-with-interval]: <kbd>[hittable_list.h]</kbd>
         hittable_list::hit() using interval]
 
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
       public:
@@ -1445,11 +1450,11 @@ and a maximum. We'll end up using this class quite often as we proceed.
             // Find the nearest root that lies in the acceptable range.
             auto root = (-half_b - sqrtd) / a;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            if (!ray_t.contains(root)) {
+            if (!ray_t.surrounds(root)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 root = (-half_b + sqrtd) / a;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                if (!ray_t.contains(root))
+                if (!ray_t.surrounds(root))
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                     return false;
             }
