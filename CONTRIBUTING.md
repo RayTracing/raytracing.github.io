@@ -26,7 +26,8 @@ all kinds, even better ways to present something -- just go to the [issues page]
 **Before creating a new issue**, please review existing issues to see if someone has already
 submitted the same one. Chances are you're not the first to encounter something, so a little quick
 research can save everyone some hassle. It's also a good idea to verify that problems still exist in
-the `dev-xxxxx` branch when creating new issues.
+the development branch (which will be one of `dev-patch`, `dev-minor` or `dev-major`) when creating
+new issues.
 
 When entering a new issue, please include all relevant information. For content issues, include the
 book or books this applies to, and specific locations that should be reviewed. Similarly for code:
@@ -56,7 +57,7 @@ To contribute a change to the project, *please follow these steps*:
   7. When ready, create your pull request and request a review from "rt-contributors".
 
 Note the code philosophy outlined in the first section of the first book. In short, the code is
-intended to be clear for everyone, using as little C/C++ arcania as possible. We have chosen to
+intended to be clear for everyone, using simple C/C++ idioms as much as possible. We have chosen to
 adopt _some_ modern conventions where we feel it makes the code more accessible to non-C++
 programmers. Please follow the existing coding style and simplicity when offering your suggested
 changes.
