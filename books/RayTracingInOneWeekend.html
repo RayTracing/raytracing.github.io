@@ -930,9 +930,9 @@ And here’s the sphere:
 
             // Find the nearest root that lies in the acceptable range.
             auto root = (-half_b - sqrtd) / a;
-            if (root < ray_tmin || ray_tmax < root) {
+            if (root <= ray_tmin || ray_tmax <= root) {
                 root = (-half_b + sqrtd) / a;
-                if (root < ray_tmin || ray_tmax < root)
+                if (root <= ray_tmin || ray_tmax <= root)
                     return false;
             }
 
@@ -1377,34 +1377,6 @@ and a maximum. We'll end up using this class quite often as we proceed.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hittable-list-with-interval]: <kbd>[hittable_list.h]</kbd>
         hittable_list::hit() using interval]
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class sphere : public hittable {
-      public:
-        ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            ...
-
-            // Find the nearest root that lies in the acceptable range.
-            auto root = (-half_b - sqrtd) / a;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            if (!ray_t.contains(root)) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                root = (-half_b + sqrtd) / a;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                if (!ray_t.contains(root))
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                    return false;
-            }
-            ...
-        }
-        ...
-    };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [sphere-with-interval]: <kbd>[sphere.h]</kbd> sphere using interval]
-
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
