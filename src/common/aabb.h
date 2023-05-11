@@ -51,43 +51,25 @@ class aabb {
         return x;
     }
 
-    #if 1
-        // GitHub Issue #817
-        // For some reason I haven't figured out yet, this version is 10x faster than the
-        // version below. I'll come back and figure out why (and in the process, probably figure
-        // out how to configure CMake to create a profile build). Parking this here for now, to
-        // be removed before the v4 release.
+    bool hit(const ray& r, interval ray_t) const {
+        for (int a = 0; a < 3; a++) {
+            const auto invD = 1 / r.direction()[a];
+            const auto orig = r.origin()[a];
 
-        bool hit(const ray& r, interval ray_t) const {
-            for (int a = 0; a < 3; a++) {
-                auto t0 = fmin((axis(a).min - r.origin()[a]) / r.direction()[a],
-                               (axis(a).max - r.origin()[a]) / r.direction()[a]);
-                auto t1 = fmax((axis(a).min - r.origin()[a]) / r.direction()[a],
-                               (axis(a).max - r.origin()[a]) / r.direction()[a]);
-                ray_t.min = fmax(t0, ray_t.min);
-                ray_t.max = fmin(t1, ray_t.max);
-                if (ray_t.max <= ray_t.min)
-                    return false;
-            }
-            return true;
+            auto t0 = (axis(a).min - orig) * invD;
+            auto t1 = (axis(a).max - orig) * invD;
+
+            if (invD < 0)
+                std::swap(t0, t1);
+
+            if (t0 > ray_t.min) ray_t.min = t0;
+            if (t1 < ray_t.max) ray_t.max = t1;
+
+            if (ray_t.max <= ray_t.min)
+                return false;
         }
-    #else
-        bool hit(const ray& r, interval ray_t) const {
-            auto r_origin = r.origin();
-            auto r_dir = r.direction();
-            for (int a = 0; a < 3; a++) {
-                auto invD = 1.0f / r_dir[a];
-                auto orig = r_origin[a];
-                auto t0 = (axis(a).min - orig) * invD;
-                auto t1 = (axis(a).max - orig) * invD;
-                if (invD < 0)
-                    std::swap(t0, t1);
-                if (fmin(t1, ray_t.max) <= fmax(t0, ray_t.min))
-                    return false;
-            }
-            return true;
-        }
-    #endif
+        return true;
+    }
 
   public:
     interval x, y, z;
