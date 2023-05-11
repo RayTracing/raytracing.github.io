@@ -682,14 +682,19 @@ as my go-to method:
         ...
         bool hit(const ray& r, interval ray_t) const {
             for (int a = 0; a < 3; a++) {
-                auto invD = 1.0f / r.direction()[a];
-                auto t0 = (min()[a] - r.origin()[a]) * invD;
-                auto t1 = (max()[a] - r.origin()[a]) * invD;
-                if (invD < 0.0f)
+                const auto invD = 1 / r.direction()[a];
+                const auto orig = r.origin()[a];
+
+                auto t0 = (axis(a).min - orig) * invD;
+                auto t1 = (axis(a).max - orig) * invD;
+
+                if (invD < 0)
                     std::swap(t0, t1);
-                auto ray_tmin = t0 > ray_t.min ? t0 : ray_t.min;
-                auto ray_tmax = t1 < ray_t.max ? t1 : ray_t.max;
-                if (ray_tmax <= ray_tmin)
+
+                if (t0 > ray_t.min) ray_t.min = t0;
+                if (t1 < ray_t.max) ray_t.max = t1;
+
+                if (ray_t.max <= ray_t.min)
                     return false;
             }
             return true;
