@@ -260,11 +260,9 @@ In spite of this, we do declare two aliases for `vec3`: `point3` and `color`. Si
 are just aliases for `vec3`, you won't get warnings if you pass a `color` to a function expecting a
 `point3`, for example. We use them only to clarify intent and use.
 
-
-Variables and Methods
-----------------------
 <div class='together'>
-Here’s the top part of my `vec3` class:
+We define the `vec3` class in the top half of a new `vec3.h` header file, and a set of useful vector
+utility functions in the bottom half:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef VEC3_H
@@ -318,27 +316,11 @@ Here’s the top part of my `vec3` class:
         double e[3];
     };
 
-    // Type aliases for vec3
-    using point3 = vec3;   // 3D point
-    using color = vec3;    // RGB color
-
-    #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [vec3-class]: <kbd>[vec3.h]</kbd> vec3 class]
-</div>
-
-We use `double` here, but some ray tracers use `float`. `double` has greater precision and range,
-but is twice the size compared to `float`. This increase in size may be important if you're
-programming in limited memory conditions (such as hardware shaders). Either one is fine -- follow
-your own tastes.
+    // point3 is just an alias for vec3, but useful for geometric clarity in the code.
+    using point3 = vec3;
 
 
-vec3 Utility Functions
------------------------
-The second part of the header file contains vector utility functions:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    // vec3 Utility Functions
+    // Vector Utility Functions
 
     inline std::ostream& operator<<(std::ostream &out, const vec3 &v) {
         return out << v.e[0] << ' ' << v.e[1] << ' ' << v.e[2];
@@ -383,8 +365,16 @@ The second part of the header file contains vector utility functions:
     inline vec3 unit_vector(vec3 v) {
         return v / v.length();
     }
+
+    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [vec3-utility]: <kbd>[vec3.h]</kbd> vec3 utility functions]
+    [Listing [vec3-class]: <kbd>[vec3.h]</kbd> vec3 definitions and helper functions]
+</div>
+
+We use `double` here, but some ray tracers use `float`. `double` has greater precision and range,
+but is twice the size compared to `float`. This increase in size may be important if you're
+programming in limited memory conditions (such as hardware shaders). Either one is fine -- follow
+your own tastes.
 
 
 Color Utility Functions
@@ -399,6 +389,8 @@ the standard output stream.
     #include "vec3.h"
 
     #include <iostream>
+
+    using color = vec3;
 
     void write_color(std::ostream &out, color pixel_color) {
         // Write the translated [0,255] value of each color component.
