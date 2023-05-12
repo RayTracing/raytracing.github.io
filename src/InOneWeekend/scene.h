@@ -20,9 +20,10 @@
 class scene {
   public:
     void render() {
-        const int image_height = static_cast<int>(image_width / aspect_ratio);
+        cam.initialize();
 
-        cam.initialize(aspect_ratio);
+        auto image_width = cam.image_width;
+        auto image_height = cam.get_image_height();
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
@@ -47,8 +48,7 @@ class scene {
     hittable_list world;
     camera cam;
 
-    double aspect_ratio      = 1.0;
-    int    image_width       = 100;
+    // Scene sampling parameters
     int    samples_per_pixel = 10;
     int    max_depth         = 20;
 

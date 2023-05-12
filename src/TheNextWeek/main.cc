@@ -25,16 +25,20 @@
 
 
 void random_spheres(scene& scene_desc) {
-    scene_desc.aspect_ratio      = 16.0 / 9.0;
-    scene_desc.image_width       = 400;
-    scene_desc.samples_per_pixel = 100;
+    scene_desc.cam.lookfrom = point3(13,2,3);
+    scene_desc.cam.lookat   = point3(0,0,0);
+    scene_desc.cam.vup      = vec3(0,1,0);
+    scene_desc.cam.vfov     = 20.0;
 
-    scene_desc.cam.lookfrom   = point3(13,2,3);
-    scene_desc.cam.lookat     = point3(0,0,0);
-    scene_desc.cam.vup        = vec3(0,1,0);
-    scene_desc.cam.vfov       = 20.0;
-    scene_desc.cam.aperture   = 0.1;
-    scene_desc.cam.focus_dist = 10.0;
+    scene_desc.cam.aspect_ratio = 16.0 / 9.0;
+    scene_desc.cam.image_width  = 400;
+
+    scene_desc.cam.defocus_diameter = 0.1;
+    scene_desc.cam.focus_dist       = 10;
+
+    scene_desc.samples_per_pixel = 100;
+    scene_desc.max_depth  = 20;
+    scene_desc.background = color(0.70, 0.80, 1.00);
 
     hittable_list& world = scene_desc.world;
 
@@ -85,14 +89,19 @@ void random_spheres(scene& scene_desc) {
 
 
 void two_spheres(scene& scene_desc) {
-    scene_desc.image_width       = 400;
-    scene_desc.aspect_ratio      = 16.0 / 9.0;
-    scene_desc.samples_per_pixel = 100;
-
-    scene_desc.cam.aperture = 0.0;
-    scene_desc.cam.vfov     = 20.0;
     scene_desc.cam.lookfrom = point3(13,2,3);
     scene_desc.cam.lookat   = point3(0,0,0);
+    scene_desc.cam.vup      = vec3(0,1,0);
+    scene_desc.cam.vfov     = 20.0;
+
+    scene_desc.cam.aspect_ratio = 16.0 / 9.0;
+    scene_desc.cam.image_width  = 400;
+
+    scene_desc.cam.defocus_diameter = 0.0;
+
+    scene_desc.samples_per_pixel = 100;
+    scene_desc.max_depth  = 20;
+    scene_desc.background = color(0.70, 0.80, 1.00);
 
     hittable_list& world = scene_desc.world;
 
@@ -104,14 +113,19 @@ void two_spheres(scene& scene_desc) {
 
 
 void two_perlin_spheres(scene& scene_desc) {
-    scene_desc.image_width       = 400;
-    scene_desc.aspect_ratio      = 16.0 / 9.0;
-    scene_desc.samples_per_pixel = 100;
-
-    scene_desc.cam.aperture = 0.0;
-    scene_desc.cam.vfov     = 20.0;
     scene_desc.cam.lookfrom = point3(13,2,3);
     scene_desc.cam.lookat   = point3(0,0,0);
+    scene_desc.cam.vup      = vec3(0,1,0);
+    scene_desc.cam.vfov     = 20.0;
+
+    scene_desc.cam.aspect_ratio = 16.0 / 9.0;
+    scene_desc.cam.image_width  = 400;
+
+    scene_desc.cam.defocus_diameter = 0.0;
+
+    scene_desc.samples_per_pixel = 100;
+    scene_desc.max_depth  = 20;
+    scene_desc.background = color(0.70, 0.80, 1.00);
 
     hittable_list& world = scene_desc.world;
 
@@ -122,14 +136,19 @@ void two_perlin_spheres(scene& scene_desc) {
 
 
 void earth(scene& scene_desc) {
-    scene_desc.image_width       = 400;
-    scene_desc.aspect_ratio      = 16.0 / 9.0;
-    scene_desc.samples_per_pixel = 100;
-
-    scene_desc.cam.aperture = 0.0;
-    scene_desc.cam.vfov     = 20.0;
     scene_desc.cam.lookfrom = point3(0,0,12);
     scene_desc.cam.lookat   = point3(0,0,0);
+    scene_desc.cam.vup      = vec3(0,1,0);
+    scene_desc.cam.vfov     = 20.0;
+
+    scene_desc.cam.aspect_ratio = 16.0 / 9.0;
+    scene_desc.cam.image_width  = 400;
+
+    scene_desc.cam.defocus_diameter = 0.0;
+
+    scene_desc.samples_per_pixel = 100;
+    scene_desc.max_depth  = 20;
+    scene_desc.background = color(0.70, 0.80, 1.00);
 
     auto earth_texture = make_shared<image_texture>("earthmap.jpg");
     auto earth_surface = make_shared<lambertian>(earth_texture);
@@ -140,14 +159,19 @@ void earth(scene& scene_desc) {
 
 
 void quads(scene& scene_desc) {
-    scene_desc.image_width       = 400;
-    scene_desc.aspect_ratio      = 1.0;
-    scene_desc.samples_per_pixel = 100;
-
-    scene_desc.cam.aperture = 0.0;
-    scene_desc.cam.vfov     = 80.0;
     scene_desc.cam.lookfrom = point3(0,0,9);
     scene_desc.cam.lookat   = point3(0,0,0);
+    scene_desc.cam.vup      = vec3(0,1,0);
+    scene_desc.cam.vfov     = 80.0;
+
+    scene_desc.cam.aspect_ratio = 1.0;
+    scene_desc.cam.image_width  = 400;
+
+    scene_desc.cam.defocus_diameter = 0.0;
+
+    scene_desc.samples_per_pixel = 100;
+    scene_desc.max_depth  = 20;
+    scene_desc.background = color(0.70, 0.80, 1.00);
 
     hittable_list& world = scene_desc.world;
 
@@ -168,15 +192,19 @@ void quads(scene& scene_desc) {
 
 
 void simple_light(scene& scene_desc) {
-    scene_desc.image_width       = 400;
-    scene_desc.aspect_ratio      = 16.0 / 9.0;
-    scene_desc.samples_per_pixel = 100;
-    scene_desc.background        = color(0,0,0);
-
-    scene_desc.cam.aperture = 0.0;
-    scene_desc.cam.vfov     = 20.0;
     scene_desc.cam.lookfrom = point3(26,3,6);
     scene_desc.cam.lookat   = point3(0,2,0);
+    scene_desc.cam.vup      = vec3(0,1,0);
+    scene_desc.cam.vfov     = 20.0;
+
+    scene_desc.cam.aspect_ratio = 16.0 / 9.0;
+    scene_desc.cam.image_width  = 400;
+
+    scene_desc.cam.defocus_diameter = 0.0;
+
+    scene_desc.samples_per_pixel = 100;
+    scene_desc.max_depth  = 20;
+    scene_desc.background = color(0,0,0);
 
     hittable_list& world = scene_desc.world;
 
@@ -191,15 +219,19 @@ void simple_light(scene& scene_desc) {
 
 
 void cornell_box(scene& scene_desc) {
-    scene_desc.image_width       = 600;
-    scene_desc.aspect_ratio      = 1.0;
-    scene_desc.samples_per_pixel = 200;
-    scene_desc.background        = color(0,0,0);
-
     scene_desc.cam.lookfrom = point3(278, 278, -800);
     scene_desc.cam.lookat   = point3(278, 278, 0);
+    scene_desc.cam.vup      = vec3(0,1,0);
     scene_desc.cam.vfov     = 40.0;
-    scene_desc.cam.aperture = 0.0;
+
+    scene_desc.cam.aspect_ratio = 1.0;
+    scene_desc.cam.image_width  = 600;
+
+    scene_desc.cam.defocus_diameter = 0.0;
+
+    scene_desc.samples_per_pixel = 200;
+    scene_desc.max_depth  = 20;
+    scene_desc.background = color(0,0,0);
 
     hittable_list& world = scene_desc.world;
 
@@ -228,15 +260,19 @@ void cornell_box(scene& scene_desc) {
 
 
 void cornell_smoke(scene& scene_desc) {
-    scene_desc.image_width       = 600;
-    scene_desc.aspect_ratio      = 1.0;
-    scene_desc.samples_per_pixel = 200;
-    scene_desc.background        = color(0,0,0);
-
-    scene_desc.cam.aperture = 0.0;
-    scene_desc.cam.vfov     = 40.0;
     scene_desc.cam.lookfrom = point3(278, 278, -800);
     scene_desc.cam.lookat   = point3(278, 278, 0);
+    scene_desc.cam.vup      = vec3(0,1,0);
+    scene_desc.cam.vfov     = 40.0;
+
+    scene_desc.cam.aspect_ratio = 1.0;
+    scene_desc.cam.image_width  = 600;
+
+    scene_desc.cam.defocus_diameter = 0.0;
+
+    scene_desc.samples_per_pixel = 200;
+    scene_desc.max_depth  = 20;
+    scene_desc.background = color(0,0,0);
 
     hittable_list& world = scene_desc.world;
 
@@ -266,15 +302,19 @@ void cornell_smoke(scene& scene_desc) {
 
 
 void final_scene(scene& scene_desc) {
-    scene_desc.image_width       = 800;
-    scene_desc.aspect_ratio      = 1.0;
-    scene_desc.samples_per_pixel = 10000;
-    scene_desc.background        = color(0,0,0);
-
-    scene_desc.cam.aperture = 0.0;
-    scene_desc.cam.vfov     = 40.0;
     scene_desc.cam.lookfrom = point3(478, 278, -600);
     scene_desc.cam.lookat   = point3(278, 278, 0);
+    scene_desc.cam.vup      = vec3(0,1,0);
+    scene_desc.cam.vfov     = 40.0;
+
+    scene_desc.cam.aspect_ratio = 1.0;
+    scene_desc.cam.image_width  = 800;
+
+    scene_desc.cam.defocus_diameter = 0.0;
+
+    scene_desc.samples_per_pixel = 10000;
+    scene_desc.max_depth  = 20;
+    scene_desc.background = color(0,0,0);
 
     hittable_list boxes1;
     auto ground = make_shared<lambertian>(color(0.48, 0.83, 0.53));
@@ -340,7 +380,8 @@ void final_scene(scene& scene_desc) {
 
 void default_scene(scene& scene_desc) {
     final_scene(scene_desc);
-    scene_desc.image_width       = 400;
+
+    scene_desc.cam.image_width   = 400;
     scene_desc.samples_per_pixel = 250;
     scene_desc.max_depth         = 4;
 }
@@ -348,10 +389,6 @@ void default_scene(scene& scene_desc) {
 
 int main() {
     scene scene_desc;
-
-    scene_desc.background = color(0.70, 0.80, 1.00);
-    scene_desc.cam.vup = vec3(0,1,0);
-    scene_desc.cam.focus_dist = 10.0;
 
     switch (0) {
         case 1:  random_spheres(scene_desc);     break;

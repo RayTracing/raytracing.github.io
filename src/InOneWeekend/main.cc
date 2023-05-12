@@ -20,16 +20,19 @@
 
 
 void random_spheres(scene& scene_desc) {
-    scene_desc.image_width       = 1200;
-    scene_desc.aspect_ratio      = 16.0 / 9.0;
-    scene_desc.samples_per_pixel = 10;
+    scene_desc.cam.lookfrom = vec3(13,2,3);
+    scene_desc.cam.lookat   = vec3(0,0,0);
+    scene_desc.cam.vup      = vec3(0,1,0);
+    scene_desc.cam.vfov     = 20;
 
-    scene_desc.cam.vfov       = 20;
-    scene_desc.cam.focus_dist = 10.0;
-    scene_desc.cam.aperture   = 0.1;
-    scene_desc.cam.lookfrom   = vec3(13,2,3);
-    scene_desc.cam.lookat     = vec3(0,0,0);
-    scene_desc.cam.vup        = vec3(0,1,0);
+    scene_desc.cam.aspect_ratio = 16.0 / 9.0;
+    scene_desc.cam.image_width  = 1200;
+
+    scene_desc.cam.defocus_diameter = 0.1;
+    scene_desc.cam.focus_dist       = 10;
+
+    scene_desc.samples_per_pixel = 10;
+    scene_desc.max_depth         = 20;
 
     hittable_list& world = scene_desc.world;
 

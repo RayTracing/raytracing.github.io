@@ -20,16 +20,17 @@
 class scene {
   public:
     void render() {
-        const int image_height = static_cast<int>(image_width / aspect_ratio);
+        cam.initialize();
 
-        cam.initialize(aspect_ratio);
+        auto image_width = cam.image_width;
+        auto image_height = cam.get_image_height();
+
+        int sqrt_spp = int(sqrt(samples_per_pixel));
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        int sqrt_spp = int(sqrt(samples_per_pixel));
         for (int j = 0; j < image_height; ++j) {
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-
             for (int i = 0; i < image_width; ++i) {
                 color pixel_color(0,0,0);
                 for (int s_j = 0; s_j < sqrt_spp; ++s_j) {
@@ -50,10 +51,9 @@ class scene {
   public:
     hittable_list world;
     hittable_list lights;
-    camera        cam;
+    camera cam;
 
-    double aspect_ratio      = 1.0;
-    int    image_width       = 100;
+    // Scene sampling parameters
     int    samples_per_pixel = 10;
     int    max_depth         = 20;
     color  background        = color(0,0,0);
