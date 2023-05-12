@@ -15,6 +15,7 @@
 
 #include <iostream>
 
+using color = vec3;
 
 inline double linear_to_gamma(const double linear_component)
 {
