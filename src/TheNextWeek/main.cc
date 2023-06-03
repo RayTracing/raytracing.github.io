@@ -25,18 +25,21 @@
 
 
 void random_spheres(scene& scene_desc) {
-    scene_desc.aspect_ratio      = 16.0 / 9.0;
-    scene_desc.image_width       = 400;
-    scene_desc.samples_per_pixel = 100;
+    camera cam;
 
-    scene_desc.cam.lookfrom   = point3(13,2,3);
-    scene_desc.cam.lookat     = point3(0,0,0);
-    scene_desc.cam.vup        = vec3(0,1,0);
-    scene_desc.cam.vfov       = 20.0;
-    scene_desc.cam.aperture   = 0.1;
-    scene_desc.cam.focus_dist = 10.0;
+    cam.aspect_ratio = 16.0 / 9.0;
+    cam.image_width  = 400;
 
-    hittable_list& world = scene_desc.world;
+    cam.samples_per_pixel = 100;
+
+    cam.lookfrom   = point3(13,2,3);
+    cam.lookat     = point3(0,0,0);
+    cam.vup        = vec3(0,1,0);
+    cam.vfov       = 20.0;
+    cam.aperture   = 0.1;
+    cam.focus_dist = 10.0;
+
+    hittable_list world;
 
     auto checker = make_shared<checker_texture>(0.32, color(.2, .3, .1), color(.9, .9, .9));
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
@@ -80,7 +83,9 @@ void random_spheres(scene& scene_desc) {
     auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
     world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
-    scene_desc.world = hittable_list(make_shared<bvh_node>(world));
+    world = hittable_list(make_shared<bvh_node>(world));
+
+    cam.render(world);
 }
 
 
