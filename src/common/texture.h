@@ -105,7 +105,7 @@ class image_texture : public texture {
         auto j = static_cast<int>(v * image.height());
         auto pixel = image.pixel_data(i,j);
 
-        const auto color_scale = 1.0 / 255.0;
+        auto color_scale = 1.0 / 255.0;
         return color(color_scale*pixel[0], color_scale*pixel[1], color_scale*pixel[2]);
     }
 
