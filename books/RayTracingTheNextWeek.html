@@ -138,7 +138,7 @@ a time period.
             vec3 rd = lens_radius * random_in_unit_disk();
             vec3 offset = u * rd.x() + v * rd.y();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            const auto ray_time = random_double(0.0, 1.0);
+            auto ray_time = random_double(0.0, 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return ray(
@@ -609,7 +609,7 @@ because in a ray tracer all cases come up eventually). Here's the implementation
         }
 
         interval expand(double delta) const {
-            const auto padding = delta/2;
+            auto padding = delta/2;
             return interval(min - padding, max + padding);
         }
         ...
@@ -682,8 +682,8 @@ as my go-to method:
         ...
         bool hit(const ray& r, interval ray_t) const {
             for (int a = 0; a < 3; a++) {
-                const auto invD = 1 / r.direction()[a];
-                const auto orig = r.origin()[a];
+                auto invD = 1 / r.direction()[a];
+                auto orig = r.origin()[a];
 
                 auto t0 = (axis(a).min - orig) * invD;
                 auto t1 = (axis(a).max - orig) * invD;
@@ -754,7 +754,7 @@ For a sphere, the `bounding_box` function is easy:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         sphere(point3 ctr, double r, shared_ptr<material> m) : center(ctr), radius(r), mat(m) {
-            const auto rvec = vec3(radius, radius, radius);
+            auto rvec = vec3(radius, radius, radius);
             bbox = aabb(center - rvec, center + rvec);
         };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -796,9 +796,9 @@ two boxes.
         moving_sphere(point3 c0, point3 c1, double r, shared_ptr<material> m)
           : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat(m)
         {
-            const auto rvec = vec3(radius, radius, radius);
-            const aabb box0(center0 - rvec, center0 + rvec);
-            const aabb box1(center1 - rvec, center1 + rvec);
+            auto rvec = vec3(radius, radius, radius);
+            aabb box0(center0 - rvec, center0 + rvec);
+            aabb box1(center1 - rvec, center1 + rvec);
             bbox = aabb(box0, box1);
         };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1546,7 +1546,7 @@ Adjust according to your directory structure.
             // width() and height() will return 0.
 
             auto filename = std::string(image_filename);
-            const auto imagedir = getenv("RTW_IMAGES");
+            auto imagedir = getenv("RTW_IMAGES");
 
             // Hunt for the image file in some likely locations.
             if (imagedir && load(std::string(imagedir) + "/" + image_filename)) return;
@@ -1642,7 +1642,7 @@ The `image_texture` class uses the `rtw_image` class:
             auto j = static_cast<int>(v * image.height());
             auto pixel = image.pixel_data(i,j);
 
-            const auto color_scale = 1.0 / 255.0;
+            auto color_scale = 1.0 / 255.0;
             return color(color_scale*pixel[0], color_scale*pixel[1], color_scale*pixel[2]);
         }
 
@@ -2347,7 +2347,7 @@ actual shape anyway. To this end, we add a new `aabb::pad()` method that remedie
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         aabb pad() {
             // Return an AABB that has no side narrower than some delta, padding if necessary.
-            const double delta = 0.0001;
+            double delta = 0.0001;
             interval new_x = (x.size() >= delta) ? x : x.expand(delta);
             interval new_y = (y.size() >= delta) ? y : y.expand(delta);
             interval new_z = (z.size() >= delta) ? z : z.expand(delta);
@@ -3602,9 +3602,9 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
             if (rec1.t < 0)
                 rec1.t = 0;
 
-            const auto ray_length = r.direction().length();
-            const auto distance_inside_boundary = (rec2.t - rec1.t) * ray_length;
-            const auto hit_distance = neg_inv_density * log(random_double());
+            auto ray_length = r.direction().length();
+            auto distance_inside_boundary = (rec2.t - rec1.t) * ray_length;
+            auto hit_distance = neg_inv_density * log(random_double());
 
             if (hit_distance > distance_inside_boundary)
                 return false;
@@ -3777,7 +3777,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
         hittable_list boxes1;
         auto ground = make_shared<lambertian>(color(0.48, 0.83, 0.53));
 
-        const int boxes_per_side = 20;
+        int boxes_per_side = 20;
         for (int i = 0; i < boxes_per_side; i++) {
             for (int j = 0; j < boxes_per_side; j++) {
                 auto w = 100.0;
