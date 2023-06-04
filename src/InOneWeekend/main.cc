@@ -15,23 +15,11 @@
 #include "color.h"
 #include "hittable_list.h"
 #include "material.h"
-#include "scene.h"
 #include "sphere.h"
 
 
-void random_spheres(scene& scene_desc) {
-    scene_desc.image_width       = 1200;
-    scene_desc.aspect_ratio      = 16.0 / 9.0;
-    scene_desc.samples_per_pixel = 10;
-
-    scene_desc.cam.vfov       = 20;
-    scene_desc.cam.focus_dist = 10.0;
-    scene_desc.cam.aperture   = 0.1;
-    scene_desc.cam.lookfrom   = vec3(13,2,3);
-    scene_desc.cam.lookat     = vec3(0,0,0);
-    scene_desc.cam.vup        = vec3(0,1,0);
-
-    hittable_list& world = scene_desc.world;
+int main() {
+    hittable_list world;
 
     auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
     world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
@@ -72,11 +60,19 @@ void random_spheres(scene& scene_desc) {
 
     auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
     world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
-}
 
+    camera cam;
 
-int main() {
-    scene scene_desc;
-    random_spheres(scene_desc);
-    scene_desc.render();
+    cam.image_width       = 1200;
+    cam.aspect_ratio      = 16.0 / 9.0;
+    cam.samples_per_pixel = 10;
+
+    cam.vfov       = 20;
+    cam.focus_dist = 10.0;
+    cam.aperture   = 0.1;
+    cam.lookfrom   = vec3(13,2,3);
+    cam.lookat     = vec3(0,0,0);
+    cam.vup        = vec3(0,1,0);
+
+    cam.render(world);
 }

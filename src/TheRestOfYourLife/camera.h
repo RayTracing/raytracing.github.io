@@ -11,18 +11,19 @@
 
 #include "rtweekend.h"
 
-#include "camera.h"
+#include "color.h"
 #include "hittable_list.h"
+#include "material.h"
 
 #include <iostream>
 
 
-class scene {
+class camera {
   public:
-    void render() {
+    void render(const hittable_list& world) {
         const int image_height = static_cast<int>(image_width / aspect_ratio);
 
-        cam.initialize(aspect_ratio);
+        initialize(aspect_ratio);
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
@@ -37,7 +38,7 @@ class scene {
                         auto s = (i + (s_i + random_double()) / sqrt_spp) / (image_width-1);
                         auto t = (j + (s_j + random_double()) / sqrt_spp) / (image_height-1);
                         ray r = cam.get_ray(s, t);
-                        pixel_color += ray_color(r, max_depth);
+                        pixel_color += ray_color(world, r, max_depth);
                     }
                 }
                 write_color(std::cout, pixel_color, samples_per_pixel);
@@ -47,18 +48,41 @@ class scene {
         std::clog << "\rDone.                 \n";
     }
 
-  public:
-    hittable_list world;
-    hittable_list lights;
-    camera        cam;
-
-    double aspect_ratio      = 1.0;
-    int    image_width       = 100;
-    int    samples_per_pixel = 10;
-    int    max_depth         = 20;
-    color  background        = color(0,0,0);
-
   private:
+    void initialize(double aspect_ratio = 1.0) {
+        auto theta = degrees_to_radians(vfov);
+        auto h = tan(theta/2);
+        auto viewport_height = 2.0 * h;
+        auto viewport_width = aspect_ratio * viewport_height;
+
+        w = unit_vector(lookfrom - lookat);
+        u = unit_vector(cross(vup, w));
+        v = cross(w, u);
+
+        origin = lookfrom;
+        horizontal = focus_dist * viewport_width * u;
+        vertical = focus_dist * viewport_height * v;
+        lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
+
+        lens_radius = aperture / 2;
+    }
+
+    ray get_ray(double s, double t) const {
+        // Return the ray from the projection point to the indicated pixel. Coordinates s,t are
+        // the normalized image-based coordinates of the pixel. Image left is s=0, image right
+        // is s=1, image top is t=0, image bottom is t=1.
+
+        vec3 rd = lens_radius * random_in_unit_disk();
+        vec3 offset = u * rd.x() + v * rd.y();
+        const auto ray_time = random_double(0.0, 1.0);
+
+        return ray(
+            origin + offset,
+            lower_left_corner + s*horizontal + (1-t)*vertical - origin - offset,
+            ray_time
+        );
+    }
+
     color ray_color(const ray& r, int depth) {
         hit_record rec;
 
@@ -93,6 +117,18 @@ class scene {
 
         return color_from_emission + color_from_scatter;
     }
+
+  public:
+    hittable_list world;
+    hittable_list lights;
+    camera        cam;
+
+    double aspect_ratio      = 1.0;
+    int    image_width       = 100;
+    int    samples_per_pixel = 10;
+    int    max_depth         = 20;
+    color  background        = color(0,0,0);
+
 };
 
 
