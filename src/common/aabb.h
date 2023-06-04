@@ -37,7 +37,7 @@ class aabb {
 
     aabb pad() {
         // Return an AABB that has no side narrower than some delta, padding if necessary.
-        const double delta = 0.0001;
+        double delta = 0.0001;
         interval new_x = (x.size() >= delta) ? x : x.expand(delta);
         interval new_y = (y.size() >= delta) ? y : y.expand(delta);
         interval new_z = (z.size() >= delta) ? z : z.expand(delta);
@@ -53,8 +53,8 @@ class aabb {
 
     bool hit(const ray& r, interval ray_t) const {
         for (int a = 0; a < 3; a++) {
-            const auto invD = 1 / r.direction()[a];
-            const auto orig = r.origin()[a];
+            auto invD = 1 / r.direction()[a];
+            auto orig = r.origin()[a];
 
             auto t0 = (axis(a).min - orig) * invD;
             auto t1 = (axis(a).max - orig) * invD;

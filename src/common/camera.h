@@ -41,7 +41,7 @@ class camera {
 
         vec3 rd = lens_radius * random_in_unit_disk();
         vec3 offset = u * rd.x() + v * rd.y();
-        const auto ray_time = random_double(0.0, 1.0);
+        auto ray_time = random_double(0.0, 1.0);
 
         return ray(
             origin + offset,

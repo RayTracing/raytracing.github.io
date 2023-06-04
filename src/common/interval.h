@@ -23,7 +23,7 @@ class interval {
     }
 
     interval expand(double delta) const {
-        const auto padding = delta/2;
+        auto padding = delta/2;
         return interval(min - padding, max + padding);
     }
 

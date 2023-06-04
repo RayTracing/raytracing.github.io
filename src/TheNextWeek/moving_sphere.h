@@ -22,9 +22,9 @@ class moving_sphere : public hittable {
     moving_sphere(point3 c0, point3 c1, double r, shared_ptr<material> m)
       : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat(m)
     {
-        const auto rvec = vec3(radius, radius, radius);
-        const aabb box0(center0 - rvec, center0 + rvec);
-        const aabb box1(center1 - rvec, center1 + rvec);
+        auto rvec = vec3(radius, radius, radius);
+        aabb box0(center0 - rvec, center0 + rvec);
+        aabb box1(center1 - rvec, center1 + rvec);
         bbox = aabb(box0, box1);
     };
 
