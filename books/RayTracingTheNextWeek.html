@@ -165,91 +165,77 @@ a time period.
 
 Adding Moving Spheres
 ----------------------
-Now to create a moving object. I’ll create a sphere class that has its center move linearly from
-`center0` at time=0 to `center1` at time=1. (It continues on indefinitely outside that time
-interval, so it really can be sampled at any time.)
+Now to create a moving object.
+I’ll update the sphere class so that its center moves linearly from `center1` at time=0 to `center2`
+at time=1.
+(It continues on indefinitely outside that time interval, so it really can be sampled at any time.)
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef MOVING_SPHERE_H
-    #define MOVING_SPHERE_H
-
-    #include "rtweekend.h"
-
-    #include "hittable.h"
-
-    class moving_sphere : public hittable {
+    class sphere : public hittable {
       public:
-        moving_sphere(point3 c0, point3 c1, double r, shared_ptr<material> m)
-          : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat(m)
-        { };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        // Stationary Sphere
+        sphere(point3 _center, double _radius, shared_ptr<material> _material)
+          : center1(_center), radius(_radius), mat(_material), is_moving(false) {}
 
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-            // Implementation below.
+        // Moving Sphere
+        sphere(point3 _center1, point3 _center2, double _radius, shared_ptr<material> _material)
+          : center1(_center1), radius(_radius), mat(_material), is_moving(true)
+        {
+            center_vec = _center2 - _center1;
         }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        point3 center(double time) const {
-            // Linearly interpolate from center0 to center1 according to time, where t=0 yields
-            // center0, and t=1 yields center1.
-            return center0 + time * center_vec;
-        }
+        ...
 
       private:
-        point3 center0, center1;
-        vec3 center_vec;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        point3 center1;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         double radius;
         shared_ptr<material> mat;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        bool is_moving;
+        vec3 center_vec;
+
+        point3 center(double time) const {
+            // Linearly interpolate from center1 to center2 according to time, where t=0 yields
+            // center1, and t=1 yields center2.
+            return center0 + time*center_vec;
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [moving-sphere]: <kbd>[moving_sphere.h]</kbd> A moving sphere]
+    [Listing [moving-sphere]: <kbd>[sphere.h]</kbd> A moving sphere]
 
 <div class='together'>
-An alternative to making a new moving sphere class is to just make them all move, while stationary
-spheres have the same begin and end position. I’m on the fence about that trade-off between fewer
-classes and more efficient stationary spheres, so let your design taste guide you.
+An alternative to making special stationary spheres is to just make them all move, but stationary
+spheres have the same begin and end position. I’m on the fence about that trade-off between simpler
+code and more efficient stationary spheres, so let your design taste guide you.
 
-The `moving_sphere::hit()` function is almost identical to the `sphere::hit()` function: `center`
-just needs to become a function `center(time)`:
+The updated `sphere::hit()` function is almost identical to the old `sphere::hit()` function:
+`center` just needs to query a function `sphere_center(time)`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class moving_sphere : public hittable {
+    class sphere : public hittable {
       public:
         ...
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            vec3 oc = r.origin() - center(r.time());
+            point3 center = is_moving ? sphere_center(r.time()) : center1;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            vec3 oc = r.origin() - center;
             auto a = r.direction().length_squared();
             auto half_b = dot(oc, r.direction());
             auto c = oc.length_squared() - radius*radius;
-
-            auto discriminant = half_b*half_b - a*c;
-            if (discriminant < 0) return false;
-            auto sqrtd = sqrt(discriminant);
-
-            // Find the nearest root that lies in the acceptable range.
-            auto root = (-half_b - sqrtd) / a;
-            if (!ray_t.surrounds(root)) {
-                root = (-half_b + sqrtd) / a;
-                if (!ray_t.surrounds(root))
-                    return false;
-            }
-
-            rec.t = root;
-            rec.p = r.at(rec.t);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            auto outward_normal = (rec.p - center(r.time())) / radius;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            rec.set_face_normal(r, outward_normal);
-            rec.mat = mat;
-
-            return true;
+            ...
         }
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [moving-sphere-hit]: <kbd>[moving_sphere.h]</kbd> Moving sphere hit function]
+    [Listing [moving-sphere-hit]: <kbd>[sphere.h]</kbd> Moving sphere hit function]
 </div>
 
 We need to implement the new `interval::contains()` method mentioned above:
@@ -747,16 +733,19 @@ entire range of motion, from time=0 to time=1.
 </div>
 
 <div class='together'>
-For a sphere, the `bounding_box` function is easy:
+For a stationary sphere, the `bounding_box` function is easy:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
       public:
+        // Stationary Sphere
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        sphere(point3 ctr, double r, shared_ptr<material> m) : center(ctr), radius(r), mat(m) {
+        sphere(point3 _center, double _radius, shared_ptr<material> _material)
+          : center1(_center), radius(_radius), mat(_material), is_moving(false)
+        {
             auto rvec = vec3(radius, radius, radius);
-            bbox = aabb(center - rvec, center + rvec);
-        };
+            bbox = aabb(center1 - rvec, center1 + rvec);
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -764,57 +753,42 @@ For a sphere, the `bounding_box` function is easy:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
       private:
-        point3 center;
+        point3 center1;
         double radius;
         shared_ptr<material> mat;
+        bool is_moving;
+        vec3 center_vec;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         aabb bbox;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-bbox]: <kbd>[sphere.h]</kbd> Sphere with bounding box]
 </div>
 
-For `moving sphere`, we want the bounds of its entire range of motion. To do this, we can take the
+For a moving sphere, we want the bounds of its entire range of motion. To do this, we can take the
 box of the sphere at time=0, and the box of the sphere at time=1, and compute the box around those
 two boxes.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    #include "aabb.h"
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
-
-    class moving_sphere : public hittable {
+    class sphere : public hittable {
       public:
         ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        moving_sphere(point3 c0, point3 c1, double r, shared_ptr<material> m)
-          : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat(m)
+        // Moving Sphere
+        sphere(point3 _center1, point3 _center2, double _radius, shared_ptr<material> _material)
+          : center1(_center1), radius(_radius), mat(_material), is_moving(true)
         {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto rvec = vec3(radius, radius, radius);
-            aabb box0(center0 - rvec, center0 + rvec);
-            aabb box1(center1 - rvec, center1 + rvec);
-            bbox = aabb(box0, box1);
-        };
+            aabb box1(_center1 - rvec, _center1 + rvec);
+            aabb box2(_center2 - rvec, _center2 + rvec);
+            bbox = aabb(box1, box2);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            center_vec = _center2 - _center1;
+        }
         ...
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        aabb bounding_box() const override { return bbox; }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        ...
-
-      private:
-        point3 center0, center1;
-        vec3 center_vec;
-        double radius;
-        shared_ptr<material> mat;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        aabb bbox;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [moving-sphere-bbox]: <kbd>[moving_sphere.h]</kbd> Moving sphere with bounding box]
