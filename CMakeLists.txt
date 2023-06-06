@@ -16,7 +16,6 @@ set ( CMAKE_CXX_EXTENSIONS        OFF )
 # Source
 set ( COMMON_ALL
   src/common/rtweekend.h
-  src/common/camera.h
   src/common/color.h
   src/common/interval.h
   src/common/ray.h
@@ -25,10 +24,10 @@ set ( COMMON_ALL
 
 set ( SOURCE_ONE_WEEKEND
   ${COMMON_ALL}
+  src/InOneWeekend/camera.h
   src/InOneWeekend/hittable.h
   src/InOneWeekend/hittable_list.h
   src/InOneWeekend/material.h
-  src/InOneWeekend/scene.h
   src/InOneWeekend/sphere.h
   src/InOneWeekend/main.cc
 )
@@ -41,12 +40,12 @@ set ( SOURCE_NEXT_WEEK
   src/common/rtw_stb_image.h
   src/common/texture.h
   src/TheNextWeek/bvh.h
+  src/TheNextWeek/camera.h
   src/TheNextWeek/constant_medium.h
   src/TheNextWeek/hittable.h
   src/TheNextWeek/hittable_list.h
   src/TheNextWeek/material.h
   src/TheNextWeek/quad.h
-  src/TheNextWeek/scene.h
   src/TheNextWeek/sphere.h
   src/TheNextWeek/main.cc
 )
@@ -59,13 +58,13 @@ set ( SOURCE_REST_OF_YOUR_LIFE
   src/common/rtw_stb_image.h
   src/common/texture.h
   src/TheRestOfYourLife/bvh.h
+  src/TheRestOfYourLife/camera.h
   src/TheRestOfYourLife/hittable.h
   src/TheRestOfYourLife/hittable_list.h
   src/TheRestOfYourLife/material.h
   src/TheRestOfYourLife/onb.h
   src/TheRestOfYourLife/pdf.h
   src/TheRestOfYourLife/quad.h
-  src/TheRestOfYourLife/scene.h
   src/TheRestOfYourLife/sphere.h
   src/TheRestOfYourLife/main.cc
 )
