@@ -19,7 +19,6 @@
 #include "material.h"
 #include "moving_sphere.h"
 #include "quad.h"
-#include "scene.h"
 #include "sphere.h"
 #include "texture.h"
 
