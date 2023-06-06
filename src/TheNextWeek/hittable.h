@@ -70,7 +70,7 @@ class translate : public hittable {
 
     aabb bounding_box() const override { return bbox; }
 
-  public:
+  private:
     shared_ptr<hittable> object;
     vec3 offset;
     aabb bbox;
@@ -146,7 +146,7 @@ class rotate_y : public hittable {
 
     aabb bounding_box() const override { return bbox; }
 
-  public:
+  private:
     shared_ptr<hittable> object;
     double sin_theta;
     double cos_theta;

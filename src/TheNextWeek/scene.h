@@ -19,6 +19,15 @@
 
 class scene {
   public:
+    hittable_list world;
+    camera cam;
+
+    double aspect_ratio      = 1.0;
+    int    image_width       = 100;
+    int    samples_per_pixel = 10;
+    int    max_depth         = 50;
+    color  background        = color(0,0,0);
+
     void render() {
         int image_height = static_cast<int>(image_width / aspect_ratio);
 
@@ -42,16 +51,6 @@ class scene {
 
         std::clog << "\rDone.                 \n";
     }
-
-  public:
-    hittable_list world;
-    camera cam;
-
-    double aspect_ratio      = 1.0;
-    int    image_width       = 100;
-    int    samples_per_pixel = 10;
-    int    max_depth         = 50;
-    color  background        = color(0,0,0);
 
   private:
     color ray_color(const ray& r, int depth) {

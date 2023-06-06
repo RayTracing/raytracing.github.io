@@ -16,6 +16,8 @@
 
 class aabb {
   public:
+    interval x, y, z;
+
     aabb() {} // The default AABB is empty, since intervals are empty by default.
 
     aabb(const interval& ix, const interval& iy, const interval& iz)
@@ -70,9 +72,6 @@ class aabb {
         }
         return true;
     }
-
-  public:
-    interval x, y, z;
 };
 
 aabb operator+(const aabb& bbox, const vec3& offset) {

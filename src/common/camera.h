@@ -16,6 +16,14 @@
 
 class camera {
   public:
+    double vfov       = 40;
+    double aperture   = 0;
+    double focus_dist = 10;
+
+    point3 lookfrom = point3(0,0,-1);
+    point3 lookat   = point3(0,0,0);
+    vec3   vup      = vec3(0,1,0);
+
     void initialize(double aspect_ratio = 1.0) {
         auto theta = degrees_to_radians(vfov);
         auto h = tan(theta/2);
@@ -49,15 +57,6 @@ class camera {
             ray_time
         );
     }
-
-  public:
-    double vfov       = 40;
-    double aperture   = 0;
-    double focus_dist = 10;
-
-    point3 lookfrom = point3(0,0,-1);
-    point3 lookat   = point3(0,0,0);
-    vec3   vup      = vec3(0,1,0);
 
   private:
     point3 origin;

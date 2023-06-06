@@ -77,7 +77,7 @@ class constant_medium : public hittable {
 
     aabb bounding_box() const override { return boundary->bounding_box(); }
 
-  public:
+  private:
     shared_ptr<hittable> boundary;
     double neg_inv_density;
     shared_ptr<material> phase_function;

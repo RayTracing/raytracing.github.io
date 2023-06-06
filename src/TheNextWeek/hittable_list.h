@@ -22,6 +22,8 @@
 
 class hittable_list : public hittable {
   public:
+    std::vector<shared_ptr<hittable>> objects;
+
     hittable_list() {}
     hittable_list(shared_ptr<hittable> object) { add(object); }
 
@@ -50,8 +52,7 @@ class hittable_list : public hittable {
 
     aabb bounding_box() const override { return bbox; }
 
-  public:
-    std::vector<shared_ptr<hittable>> objects;
+  private:
     aabb bbox;
 };
 
