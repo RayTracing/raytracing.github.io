@@ -940,8 +940,7 @@ And here’s the sphere:
 
     class sphere : public hittable {
       public:
-        sphere() {}
-        sphere(point3 ctr, double r) : center(ctr), radius(r) {};
+        sphere(point3 _center, double _radius) : center(_center), radius(_radius) {}
 
         bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override {
             vec3 oc = r.origin() - center;
@@ -2184,8 +2183,8 @@ within `hit_record`. See the highlighted lines below:
     class sphere : public hittable {
       public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        sphere(point3 ctr, double r, shared_ptr<material> m)
-          : center(ctr), radius(r), mat(m) {};
+        sphere(point3 _center, double _radius, shared_ptr<material> _material)
+          : center(_center), radius(_radius), mat(_material) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
