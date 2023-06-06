@@ -19,8 +19,6 @@
 
 class sphere : public hittable {
   public:
-    sphere() {}
-
     sphere(point3 ctr, double r, shared_ptr<material> m) : center(ctr), radius(r), mat(m) {
         auto rvec = vec3(radius, radius, radius);
         bbox = aabb(center - rvec, center + rvec);
@@ -76,13 +74,12 @@ class sphere : public hittable {
         return uvw.local(random_to_sphere(radius, distance_squared));
     }
 
-  public:
+  private:
     point3 center;
     double radius;
     shared_ptr<material> mat;
     aabb bbox;
 
-  private:
     static void get_sphere_uv(const point3& p, double& u, double& v) {
         // p: a given point on the sphere of radius one, centered at the origin.
         // u: returned value [0,1] of angle around the Y axis from X=-1.

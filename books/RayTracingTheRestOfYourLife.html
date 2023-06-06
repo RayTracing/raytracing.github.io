@@ -1651,7 +1651,7 @@ And the `lambertian` material becomes:
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-      public:
+      private:
         shared_ptr<texture> albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1820,6 +1820,8 @@ PDF:
             return 1 / (2*pi);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
+
+        ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scatter-mod]: <kbd>[material.h]</kbd> Modified PDF and scatter function]
 </div>
@@ -2219,8 +2221,7 @@ class because it won't really be more complicated than utility functions:
 
     #include "rtweekend.h"
 
-    class onb
-    {
+    class onb {
       public:
         onb() {}
 
@@ -2328,7 +2329,7 @@ But first, let's quickly update the `isotropic` material:
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        public:
+      private:
         shared_ptr<texture> albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2574,17 +2575,17 @@ create a uniform density over the unit sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere_pdf : public pdf {
-        public:
-          sphere_pdf() { }
+      public:
+        sphere_pdf() { }
 
-          double value(const vec3& direction) const override {
-              return 1/ (4 * pi);
-          }
+        double value(const vec3& direction) const override {
+            return 1/ (4 * pi);
+        }
 
-          vec3 generate() const override {
-              return random_unit_vector();
-          }
-      };
+        vec3 generate() const override {
+            return random_unit_vector();
+        }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [class-uni-pdf]: <kbd>[pdf.h]</kbd> The uniform_pdf class]
 
@@ -2604,7 +2605,7 @@ Next, let’s try a cosine density:
             return uvw.local(random_cosine_direction());
         }
 
-      public:
+      private:
         onb uvw;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2688,7 +2689,7 @@ Now we can try sampling directions toward a `hittable`, like the light.
             return objects.random(origin);
         }
 
-      public:
+      private:
         const hittable_list& objects;
         point3 origin;
     };
@@ -2924,7 +2925,7 @@ density class is actually pretty straightforward:
                 return p[1]->generate();
         }
 
-      public:
+      private:
         shared_ptr<pdf> p[2];
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3112,7 +3113,7 @@ The `lambertian` material becomes simpler:
             return cosine < 0 ? 0 : cosine/pi;
         }
 
-      public:
+      private:
         shared_ptr<texture> albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3124,7 +3125,7 @@ As does the `isotropic` material:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class isotropic : public material {
-        public:
+      public:
         isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
         isotropic(shared_ptr<texture> a) : albedo(a) {}
 
@@ -3144,7 +3145,7 @@ As does the `isotropic` material:
             return 1 / (4 * pi);
         }
 
-        public:
+      private:
         shared_ptr<texture> albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3227,7 +3228,7 @@ and dielectric materials are easy to fix.
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-      public:
+      private:
         color albedo;
         double fuzz;
     };
@@ -3575,7 +3576,7 @@ scene:
     class scene {
         ...
 
-    public:
+      public:
         hittable_list world;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         hittable_list lights;

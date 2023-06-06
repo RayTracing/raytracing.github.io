@@ -18,7 +18,6 @@
 
 class moving_sphere : public hittable {
   public:
-    moving_sphere() {}
     moving_sphere(point3 c0, point3 c1, double r, shared_ptr<material> m)
       : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat(m)
     {
@@ -63,7 +62,7 @@ class moving_sphere : public hittable {
         return center0 + time * center_vec;
     }
 
-  public:
+  private:
     point3 center0, center1;
     vec3 center_vec;
     double radius;

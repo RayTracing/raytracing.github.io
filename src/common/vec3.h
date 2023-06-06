@@ -19,6 +19,8 @@ using std::fabs;
 
 class vec3 {
   public:
+    double e[3];
+
     vec3() : e{0,0,0} {}
     vec3(double e0, double e1, double e2) : e{e0, e1, e2} {}
 
@@ -69,9 +71,6 @@ class vec3 {
     static vec3 random(double min, double max) {
         return vec3(random_double(min,max), random_double(min,max), random_double(min,max));
     }
-
-  public:
-    double e[3];
 };
 
 // point3 is just an alias for vec3, but useful for geometric clarity in the code.

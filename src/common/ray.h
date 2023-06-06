@@ -17,6 +17,7 @@
 class ray {
   public:
     ray() {}
+
     ray(const point3& origin, const vec3& direction) : orig(origin), dir(direction), tm(0)
     {}
 
@@ -32,7 +33,7 @@ class ray {
         return orig + t*dir;
     }
 
-  public:
+  private:
     point3 orig;
     vec3 dir;
     double tm;
