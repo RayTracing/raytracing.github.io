@@ -53,8 +53,7 @@ void random_spheres(scene& scene_desc) {
                     auto albedo = color::random() * color::random();
                     sphere_material = make_shared<lambertian>(albedo);
                     auto center2 = center + vec3(0, random_double(0,.5), 0);
-                    world.add(make_shared<moving_sphere>(
-                        center, center2, 0.2, sphere_material));
+                    world.add(make_shared<sphere>(center, center2, 0.2, sphere_material));
                 } else if (choose_mat < 0.95) {
                     // metal
                     auto albedo = color::random(0.5, 1);
@@ -302,8 +301,8 @@ void final_scene(scene& scene_desc) {
 
     auto center1 = point3(400, 400, 200);
     auto center2 = center1 + vec3(30,0,0);
-    auto moving_sphere_material = make_shared<lambertian>(color(0.7, 0.3, 0.1));
-    world.add(make_shared<moving_sphere>(center1, center2, 50, moving_sphere_material));
+    auto sphere_material = make_shared<lambertian>(color(0.7, 0.3, 0.1));
+    world.add(make_shared<sphere>(center1, center2, 50, sphere_material));
 
     world.add(make_shared<sphere>(point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
     world.add(make_shared<sphere>(
