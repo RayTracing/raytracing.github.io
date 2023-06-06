@@ -19,12 +19,28 @@
 
 class sphere : public hittable {
   public:
-    sphere(point3 ctr, double r, shared_ptr<material> m) : center(ctr), radius(r), mat(m) {
+    // Stationary Sphere
+    sphere(point3 _center, double _radius, shared_ptr<material> _material)
+      : center1(_center), radius(_radius), mat(_material), is_moving(false)
+    {
         auto rvec = vec3(radius, radius, radius);
-        bbox = aabb(center - rvec, center + rvec);
+        bbox = aabb(center1 - rvec, center1 + rvec);
+    }
+
+    // Moving Sphere
+    sphere(point3 _center1, point3 _center2, double _radius, shared_ptr<material> _material)
+      : center1(_center1), radius(_radius), mat(_material), is_moving(true)
+    {
+        auto rvec = vec3(radius, radius, radius);
+        aabb box1(_center1 - rvec, _center1 + rvec);
+        aabb box2(_center2 - rvec, _center2 + rvec);
+        bbox = aabb(box1, box2);
+
+        center_vec = _center2 - _center1;
     }
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+        point3 center = is_moving ? sphere_center(r.time()) : center1;
         vec3 oc = r.origin() - center;
         auto a = r.direction().length_squared();
         auto half_b = dot(oc, r.direction());
@@ -56,18 +72,20 @@ class sphere : public hittable {
     aabb bounding_box() const override { return bbox; }
 
     double pdf_value(const point3& o, const vec3& v) const override {
+        // This method only works for stationary spheres.
+
         hit_record rec;
         if (!this->hit(ray(o, v), interval(0.001, infinity), rec))
             return 0;
 
-        auto cos_theta_max = sqrt(1 - radius*radius/(center-o).length_squared());
+        auto cos_theta_max = sqrt(1 - radius*radius/(center1 - o).length_squared());
         auto solid_angle = 2*pi*(1-cos_theta_max);
 
         return  1 / solid_angle;
     }
 
     vec3 random(const point3& o) const override {
-        vec3 direction = center - o;
+        vec3 direction = center1 - o;
         auto distance_squared = direction.length_squared();
         onb uvw;
         uvw.build_from_w(direction);
@@ -75,10 +93,18 @@ class sphere : public hittable {
     }
 
   private:
-    point3 center;
+    point3 center1;
     double radius;
     shared_ptr<material> mat;
+    bool is_moving;
+    vec3 center_vec;
     aabb bbox;
+
+    point3 sphere_center(double time) const {
+        // Linearly interpolate from center1 to center2 according to time, where t=0 yields
+        // center1, and t=1 yields center2.
+        return center1 + time*center_vec;
+    }
 
     static void get_sphere_uv(const point3& p, double& u, double& v) {
         // p: a given point on the sphere of radius one, centered at the origin.
