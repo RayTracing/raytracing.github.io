@@ -27,7 +27,6 @@ class texture {
 
 class solid_color : public texture {
   public:
-    solid_color() {}
     solid_color(color c) : color_value(c) {}
 
     solid_color(double red, double green, double blue)
@@ -44,8 +43,6 @@ class solid_color : public texture {
 
 class checker_texture : public texture {
   public:
-    checker_texture() {}
-
     checker_texture(double _scale, shared_ptr<texture> _even, shared_ptr<texture> _odd)
       : inv_scale(1.0 / _scale), even(_even), odd(_odd) {}
 
@@ -65,7 +62,7 @@ class checker_texture : public texture {
         return isEven ? even->value(u, v, p) : odd->value(u, v, p);
     }
 
-  public:
+  private:
     double inv_scale;
     shared_ptr<texture> even;
     shared_ptr<texture> odd;
@@ -75,6 +72,7 @@ class checker_texture : public texture {
 class noise_texture : public texture {
   public:
     noise_texture() {}
+
     noise_texture(double sc) : scale(sc) {}
 
     color value(double u, double v, const point3& p) const override {
@@ -82,7 +80,7 @@ class noise_texture : public texture {
         return color(1,1,1)*0.5*(1 + sin(s.z() + 10*noise.turb(s)));
     }
 
-  public:
+  private:
     perlin noise;
     double scale;
 };
@@ -90,7 +88,6 @@ class noise_texture : public texture {
 
 class image_texture : public texture {
   public:
-    image_texture() {}
     image_texture(const char* filename) : image(filename) {}
 
     color value(double u, double v, const point3& p) const override {

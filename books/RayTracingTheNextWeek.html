@@ -67,7 +67,12 @@ time for each ray:
     class ray {
       public:
         ray() {}
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        ray(const point3& origin, const vec3& direction) : orig(origin), dir(direction), tm(0)
+        {}
+
         ray(const point3& origin, const vec3& direction, double time = 0.0)
           : orig(origin), dir(direction), tm(time)
         {}
@@ -134,6 +139,7 @@ a time period.
     class camera {
       public:
         ...
+
         ray get_ray(double s, double t) const {
             vec3 rd = lens_radius * random_in_unit_disk();
             vec3 offset = u * rd.x() + v * rd.y();
@@ -173,7 +179,6 @@ interval, so it really can be sampled at any time.)
 
     class moving_sphere : public hittable {
       public:
-        moving_sphere() {}
         moving_sphere(point3 c0, point3 c1, double r, shared_ptr<material> m)
           : center0(c0), center1(c1), center_vec(c1 - c0), radius(r), mat(m)
         { };
@@ -188,7 +193,7 @@ interval, so it really can be sampled at any time.)
             return center0 + time * center_vec;
         }
 
-      public:
+      private:
         point3 center0, center1;
         vec3 center_vec;
         double radius;
@@ -626,6 +631,8 @@ because in a ray tracer all cases come up eventually). Here's the implementation
 
     class aabb {
       public:
+        interval x, y, z;
+
         aabb() {} // The default AABB is empty, since intervals are empty by default.
 
         aabb(const interval& ix, const interval& iy, const interval& iz)
@@ -658,9 +665,6 @@ because in a ray tracer all cases come up eventually). Here's the implementation
             }
             return true;
         }
-
-      public:
-        interval x, y, z;
     };
 
     #endif
@@ -748,10 +752,6 @@ For a sphere, the `bounding_box` function is easy:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
       public:
-        ...
-        sphere() {}
-
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         sphere(point3 ctr, double r, shared_ptr<material> m) : center(ctr), radius(r), mat(m) {
             const auto rvec = vec3(radius, radius, radius);
@@ -759,14 +759,11 @@ For a sphere, the `bounding_box` function is easy:
         };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
-
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         aabb bounding_box() const override { return bbox; }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        ...
 
-      public:
+      private:
         point3 center;
         double radius;
         shared_ptr<material> mat;
@@ -810,7 +807,7 @@ two boxes.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
 
-      public:
+      private:
         point3 center0, center1;
         vec3 center_vec;
         double radius;
@@ -872,24 +869,25 @@ bounding box incrementally as each new child is added.
 
     class hittable_list : public hittable {
       public:
+        std::vector<shared_ptr<hittable>> objects;
+
         ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         void add(shared_ptr<hittable> object) {
             objects.push_back(object);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             bbox = aabb(bbox, object->bounding_box());
-        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        ...
+        }
+
+        bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override {
+            ...
+        }
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         aabb bounding_box() const override { return bbox; }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        ...
 
-      public:
-        std::vector<shared_ptr<hittable>> objects;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+      private:
         aabb bbox;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
@@ -921,8 +919,6 @@ I am a fan of the one class design when feasible. Here is such a class:
 
     class bvh_node : public hittable {
       public:
-        bvh_node();
-
         bvh_node(const hittable_list& list) : bvh_node(list.objects, 0, list.objects.size()) {}
 
         bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
@@ -941,7 +937,7 @@ I am a fan of the one class design when feasible. Here is such a class:
 
         aabb bounding_box() const override { return bbox; }
 
-      public:
+      private:
         shared_ptr<hittable> left;
         shared_ptr<hittable> right;
         aabb bbox;
@@ -1048,6 +1044,8 @@ function.
     class bvh_node : public hittable {
       ...
       private:
+        ...
+
         static bool box_compare(
             const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis_index
         ) {
@@ -1146,7 +1144,6 @@ Constant Color Texture
 
     class solid_color : public texture {
       public:
-        solid_color() {}
         solid_color(color c) : color_value(c) {}
 
         solid_color(double red, double green, double blue) : solid_color(color(red,green,blue)) {}
@@ -1213,8 +1210,6 @@ pattern in the scene.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class checker_texture : public texture {
       public:
-        checker_texture() {}
-
         checker_texture(double _scale, shared_ptr<texture> _even, shared_ptr<texture> _odd)
           : inv_scale(1.0 / _scale), even(_even), odd(_odd) {}
 
@@ -1234,7 +1229,7 @@ pattern in the scene.
             return isEven ? even->value(u, v, p) : odd->value(u, v, p);
         }
 
-      public:
+      private:
         double inv_scale;
         shared_ptr<texture> even;
         shared_ptr<texture> odd;
@@ -1404,6 +1399,8 @@ points on the unit sphere centered at the origin, and computes $u$ and $v$:
     class sphere : public hittable {
       ...
       private:
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         static void get_sphere_uv(const point3& p, double& u, double& v) {
             // p: a given point on the sphere of radius one, centered at the origin.
             // u: returned value [0,1] of angle around the Y axis from X=-1.
@@ -1418,6 +1415,7 @@ points on the unit sphere centered at the origin, and computes $u$ and $v$:
             u = phi / (2*pi);
             v = theta / pi;
         }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [get-sphere-uv]: <kbd>[sphere.h]</kbd> get_sphere_uv function]
@@ -1480,7 +1478,7 @@ Now we can make textured materials by replacing the `const color& a` with a text
             return true;
         }
 
-      public:
+      private:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         shared_ptr<texture> albedo;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1627,7 +1625,6 @@ The `image_texture` class uses the `rtw_image` class:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     class image_texture : public texture {
       public:
-        image_texture() {}
         image_texture(const char* filename) : image(filename) {}
 
         color value(double u, double v, const point3& p) const override {
@@ -1827,7 +1824,7 @@ Now if we create an actual texture that takes these floats between 0 and 1 and c
             return color(1,1,1) * noise.noise(p);
         }
 
-      public:
+      private:
         perlin noise;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1915,6 +1912,7 @@ To make it smooth, we can linearly interpolate:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
         ...
+
       private:
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1992,6 +1990,8 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
     class noise_texture : public texture {
       public:
         noise_texture() {}
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         noise_texture(double sc) : scale(sc) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2002,7 +2002,7 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
-      public:
+      private:
         perlin noise;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double scale;
@@ -2173,6 +2173,7 @@ perlin output back to between 0 and 1.
     class noise_texture : public texture {
       public:
         noise_texture() {}
+
         noise_texture(double sc) : scale(sc) {}
 
         color value(double u, double v, const point3& p) const override {
@@ -2181,7 +2182,7 @@ perlin output back to between 0 and 1.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
-      public:
+      private:
         perlin noise;
         double scale;
     };
@@ -2234,6 +2235,7 @@ Here `fabs()` is the absolute value function defined in `<cmath>`.
     class noise_texture : public texture {
       public:
         noise_texture() {}
+
         noise_texture(double sc) : scale(sc) {}
 
         color value(double u, double v, const point3& p) const override {
@@ -2243,7 +2245,7 @@ Here `fabs()` is the absolute value function defined in `<cmath>`.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
-      public:
+      private:
         perlin noise;
         double scale;
     };
@@ -2272,6 +2274,7 @@ effect is:
     class noise_texture : public texture {
       public:
         noise_texture() {}
+
         noise_texture(double sc) : scale(sc) {}
 
         color value(double u, double v, const point3& p) const override {
@@ -2281,7 +2284,7 @@ effect is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
-      public:
+      private:
         perlin noise;
         double scale;
     };
@@ -2867,7 +2870,7 @@ the ray what color it is and performs no reflection. It’s very simple:
             return emit->value(u, v, p);
         }
 
-      public:
+      private:
         shared_ptr<texture> emit;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2907,7 +2910,6 @@ the new `color_from_emission` value.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class scene {
-        ...
       public:
         hittable_list world;
         camera cam;
@@ -3211,8 +3213,6 @@ make this happen.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class translate : public hittable {
       public:
-        ...
-
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             // Move the ray backwards by the offset
             ray offset_r(r.origin() - offset, r.direction(), r.time());
@@ -3227,7 +3227,9 @@ make this happen.
             return true;
         }
 
-        ...
+      private:
+        shared_ptr<hittable> object;
+        vec3 offset;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [translate-hit]: <kbd>[hittable.h]</kbd> Hittable translation hit function]
@@ -3262,10 +3264,12 @@ make this happen.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         aabb bounding_box() const override { return bbox; }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-      public:
+      private:
         shared_ptr<hittable> object;
         vec3 offset;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         aabb bbox;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
@@ -3395,7 +3399,6 @@ We can now create a class for y-rotation:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class rotate_y : public hittable {
       public:
-        ...
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             // Change the ray from world space to object space
@@ -3429,8 +3432,6 @@ We can now create a class for y-rotation:
 
             return true;
         }
-
-        ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [rot-y-hit]: <kbd>[hittable.h]</kbd> Hittable rotate-Y hit function]
@@ -3440,9 +3441,8 @@ We can now create a class for y-rotation:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class rotate_y : public hittable {
       public:
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            rotate_y(shared_ptr<hittable> p, double angle) : object(p) {
+        rotate_y(shared_ptr<hittable> p, double angle) : object(p) {
             auto radians = degrees_to_radians(angle);
             sin_theta = sin(radians);
             cos_theta = cos(radians);
@@ -3483,7 +3483,7 @@ We can now create a class for y-rotation:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         aabb bounding_box() const override { return bbox; }
 
-      public:
+      private:
         shared_ptr<hittable> object;
         double sin_theta;
         double cos_theta;
@@ -3512,6 +3512,7 @@ And the changes to Cornell are:
         box2 = make_shared<rotate_y>(box2, -18);
         box2 = make_shared<translate>(box2, vec3(130,0,65));
         world.add(box2);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-rot-y]: <kbd>[main.cc]</kbd> Cornell scene with Y-rotated boxes]
@@ -3627,7 +3628,7 @@ density $C$ and the boundary. I’ll use another hittable for the boundary. The 
 
         aabb bounding_box() const override { return boundary->bounding_box(); }
 
-      public:
+      private:
         shared_ptr<hittable> boundary;
         double neg_inv_density;
         shared_ptr<material> phase_function;
@@ -3653,7 +3654,7 @@ The scattering function of isotropic picks a uniform random direction:
             return true;
         }
 
-      public:
+      private:
         shared_ptr<texture> albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

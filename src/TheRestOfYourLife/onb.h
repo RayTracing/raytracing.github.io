@@ -13,8 +13,7 @@
 
 #include "rtweekend.h"
 
-class onb
-{
+class onb {
   public:
     onb() {}
 
@@ -43,7 +42,7 @@ class onb
         axis[2] = unit_w;
     }
 
-  public:
+  private:
     vec3 axis[3];
 };
 

@@ -39,7 +39,7 @@ class cosine_pdf : public pdf {
         return uvw.local(random_cosine_direction());
     }
 
-  public:
+  private:
     onb uvw;
 };
 
@@ -72,7 +72,7 @@ class hittable_pdf : public pdf {
         return objects.random(origin);
     }
 
-  public:
+  private:
     const hittable_list& objects;
     point3 origin;
 };
@@ -96,7 +96,7 @@ class mixture_pdf : public pdf {
             return p[1]->generate();
     }
 
-  public:
+  private:
     shared_ptr<pdf> p[2];
 };
 

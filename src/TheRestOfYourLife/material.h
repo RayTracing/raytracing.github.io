@@ -65,7 +65,7 @@ class lambertian : public material {
         return cos_theta < 0 ? 0 : cos_theta/pi;
     }
 
-  public:
+  private:
     shared_ptr<texture> albedo;
 };
 
@@ -84,7 +84,7 @@ class metal : public material {
         return true;
     }
 
-  public:
+  private:
     color albedo;
     double fuzz;
 };
@@ -116,10 +116,9 @@ class dielectric : public material {
         return true;
     }
 
-  public:
+  private:
     double ir; // Index of Refraction
 
-  private:
     static double reflectance(double cosine, double ref_idx) {
         // Use Schlick's approximation for reflectance.
         auto r0 = (1-ref_idx) / (1+ref_idx);
@@ -141,7 +140,7 @@ class diffuse_light : public material {
         return emit->value(u, v, p);
     }
 
-  public:
+  private:
     shared_ptr<texture> emit;
 };
 
@@ -163,7 +162,7 @@ class isotropic : public material {
         return 1 / (4 * pi);
     }
 
-  public:
+  private:
     shared_ptr<texture> albedo;
 };
 

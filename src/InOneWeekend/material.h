@@ -44,7 +44,7 @@ class lambertian : public material {
         return true;
     }
 
-  public:
+  private:
     color albedo;
 };
 
@@ -61,7 +61,7 @@ class metal : public material {
         return (dot(scattered.direction(), rec.normal) > 0);
     }
 
-  public:
+  private:
     color albedo;
     double fuzz;
 };
@@ -92,10 +92,9 @@ class dielectric : public material {
         return true;
     }
 
-  public:
+  private:
     double ir; // Index of Refraction
 
-  private:
     static double reflectance(double cosine, double ref_idx) {
         // Use Schlick's approximation for reflectance.
         auto r0 = (1-ref_idx) / (1+ref_idx);

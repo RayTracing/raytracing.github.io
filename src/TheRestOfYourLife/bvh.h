@@ -21,8 +21,6 @@
 
 class bvh_node : public hittable {
   public:
-    bvh_node();
-
     bvh_node(const hittable_list& list) : bvh_node(list.objects, 0, list.objects.size()) {}
 
     bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
@@ -68,12 +66,11 @@ class bvh_node : public hittable {
 
     aabb bounding_box() const override { return bbox; }
 
-  public:
+  private:
     shared_ptr<hittable> left;
     shared_ptr<hittable> right;
     aabb bbox;
 
-  private:
     static bool box_compare(
         const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis_index
     ) {

@@ -275,6 +275,8 @@ utility functions in the bottom half:
 
     class vec3 {
       public:
+        double e[3];
+
         vec3() : e{0,0,0} {}
         vec3(double e0, double e1, double e2) : e{e0, e1, e2} {}
 
@@ -311,9 +313,6 @@ utility functions in the bottom half:
         double length_squared() const {
             return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
         }
-
-      public:
-        double e[3];
     };
 
     // point3 is just an alias for vec3, but useful for geometric clarity in the code.
@@ -474,6 +473,7 @@ The function $\mathbf{P}(t)$ in more verbose code form I call `ray::at(t)`:
     class ray {
       public:
         ray() {}
+
         ray(const point3& origin, const vec3& direction)
           : orig(origin), dir(direction)
         {}
@@ -485,7 +485,7 @@ The function $\mathbf{P}(t)$ in more verbose code form I call `ray::at(t)`:
             return orig + t*dir;
         }
 
-      public:
+      private:
         point3 orig;
         vec3 dir;
     };
@@ -968,7 +968,7 @@ And here’s the sphere:
             return true;
         }
 
-      public:
+      private:
         point3 center;
         double radius;
     };
@@ -1114,11 +1114,16 @@ that stores a list of `hittable`s:
 
     class hittable_list : public hittable {
       public:
+        std::vector<shared_ptr<hittable>> objects;
+
         hittable_list() {}
         hittable_list(shared_ptr<hittable> object) { add(object); }
 
         void clear() { objects.clear(); }
-        void add(shared_ptr<hittable> object) { objects.push_back(object); }
+
+        void add(shared_ptr<hittable> object) {
+            objects.push_back(object);
+        }
 
         bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override {
             hit_record temp_rec;
@@ -1135,9 +1140,6 @@ that stores a list of `hittable`s:
 
             return hit_anything;
         }
-
-      public:
-        std::vector<shared_ptr<hittable>> objects;
     };
 
     #endif
@@ -1340,6 +1342,8 @@ and a maximum. We'll end up using this class quite often as we proceed.
 
     class interval {
       public:
+        double min, max;
+
         interval() : min(+infinity), max(-infinity) {} // Default interval is empty
 
         interval(double _min, double _max) : min(_min), max(_max) {}
@@ -1353,9 +1357,6 @@ and a maximum. We'll end up using this class quite often as we proceed.
         }
 
         static const interval empty, universe;
-
-      public:
-        double min, max;
     };
 
     const static interval empty   (+infinity, -infinity);
@@ -1403,6 +1404,7 @@ and a maximum. We'll end up using this class quite often as we proceed.
 
             return hit_anything;
         }
+        ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hittable-list-with-interval]: <kbd>[hittable_list.h]</kbd>
         hittable_list::hit() using interval]
@@ -2181,7 +2183,6 @@ within `hit_record`. See the highlighted lines below:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
       public:
-        sphere() {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         sphere(point3 ctr, double r, shared_ptr<material> m)
           : center(ctr), radius(r), mat(m) {};
@@ -2201,7 +2202,7 @@ within `hit_record`. See the highlighted lines below:
             return true;
         }
 
-      public:
+      private:
         point3 center;
         double radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2234,7 +2235,7 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
             return true;
         }
 
-      public:
+      private:
         color albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2287,7 +2288,7 @@ the vector is very close to zero in all dimensions.
             return true;
         }
 
-      public:
+      private:
         color albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2334,7 +2335,7 @@ The metal material just reflects rays using that formula:
             return (dot(scattered.direction(), rec.normal) > 0);
         }
 
-      public:
+      private:
         color albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2473,7 +2474,7 @@ absorb those.
             return (dot(scattered.direction(), rec.normal) > 0);
         }
 
-      public:
+      private:
         color albedo;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double fuzz;
@@ -2611,7 +2612,7 @@ And the dielectric material that always refracts is:
             return true;
         }
 
-      public:
+      private:
         double ir; // Index of Refraction
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2733,7 +2734,7 @@ And the dielectric material that always refracts (when possible) is:
             return true;
         }
 
-      public:
+      private:
         double ir; // Index of Refraction
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2796,11 +2797,11 @@ material:
             return true;
         }
 
-      public:
-        double ir; // Index of Refraction
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-
       private:
+        double ir; // Index of Refraction
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         static double reflectance(double cosine, double ref_idx) {
             // Use Schlick's approximation for reflectance.
             auto r0 = (1-ref_idx) / (1+ref_idx);
@@ -2869,6 +2870,14 @@ Naturally, we'll name this the `scene` class.
 
     class scene {
       public:
+        hittable_list world;
+        camera cam;
+
+        int image_width       = 100;
+        int image_height      = 100;
+        int samples_per_pixel =  10;
+        int max_depth         =  50;
+
         void render() {
             std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
@@ -2888,15 +2897,6 @@ Naturally, we'll name this the `scene` class.
 
             std::clog << "\rDone.                 \n";
         }
-
-      public:
-        hittable_list world;
-        camera cam;
-
-        int image_width       = 100;
-        int image_height      = 100;
-        int samples_per_pixel =  10;
-        int max_depth         =  50;
 
       private:
         color ray_color(const ray& r, int depth) {
@@ -3012,6 +3012,7 @@ width, and everything else will adjust accordingly.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
+        ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         void initialize(double aspect_ratio = 1.0) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3025,11 +3026,10 @@ width, and everything else will adjust accordingly.
             lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
         }
 
-        ray get_ray(double s, double t) const {
         ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [cam-initialize]: <kbd>[camera.h]</kbd> camera.h with explicit initialization]
+    [Listing [cam-initialize]: <kbd>[camera.h]</kbd> camera class with explicit initialization]
 
 <div class='together'>
 The scene class now needs to initialize the camera before rendering. Note that any changes to camera
@@ -3039,6 +3039,16 @@ settings after the call to `initialize()` will not update camera behavior until 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class scene {
       public:
+        hittable_list world;
+        camera cam;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double aspect_ratio      = 1.0;
+        int    image_width       = 100;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        int    samples_per_pixel =  10;
+        int    max_depth         =  50;
+
         void render() {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             const int image_height = static_cast<int>(image_width / aspect_ratio);
@@ -3049,17 +3059,6 @@ settings after the call to `initialize()` will not update camera behavior until 
             std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
             ...
         }
-
-      public:
-        hittable_list world;
-        camera cam;
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double aspect_ratio      = 1.0;
-        int    image_width       = 100;
-        int    samples_per_pixel =  10;
-        int    max_depth         =  50;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         ...
     }
@@ -3114,6 +3113,10 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double vfov = 40;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         void initialize(double aspect_ratio = 1.0) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto theta = degrees_to_radians(vfov);
@@ -3129,21 +3132,7 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
             lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
         }
 
-        ray get_ray(double s, double t) const {
-            return ray(origin, lower_left_corner + s*horizontal + t*vertical - origin);
-        }
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-      public:
-        double vfov = 40;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-      private:
-        point3 origin;
-        point3 lower_left_corner;
-        vec3 horizontal;
-        vec3 vertical;
+        ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [camera-fov]: <kbd>[camera.h]</kbd> Camera with adjustable field-of-view (fov)]
@@ -3218,6 +3207,13 @@ camera horizontally level until you decide to experiment with crazy camera angle
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
+        double vfov = 40;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        point3 lookfrom = point3(0,0,-1);
+        point3 lookat   = point3(0,0,0);
+        vec3   vup      = vec3(0,1,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         void initialize(double aspect_ratio = 1.0) {
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
@@ -3235,20 +3231,6 @@ camera horizontally level until you decide to experiment with crazy camera angle
             lower_left_corner = origin - horizontal/2 - vertical/2 - w;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-
-        ray get_ray(double s, double t) const {
-            return ray(origin, lower_left_corner + s*horizontal + t*vertical - origin);
-        }
-
-      public:
-        double vfov = 40;
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        point3 lookfrom = point3(0,0,-1);
-        point3 lookat   = point3(0,0,0);
-        vec3   vup      = vec3(0,1,0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3381,6 +3363,16 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
+        double vfov       = 40;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double aperture   = 0;
+        double focus_dist = 10;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        point3 lookfrom = point3(0,0,-1);
+        point3 lookat   = point3(0,0,0);
+        vec3   vup      = vec3(0,1,0);
+
         void initialize(double aspect_ratio = 1.0) {
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
@@ -3416,17 +3408,6 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
             );
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-
-      public:
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double vfov       = 40;
-        double aperture   = 0;
-        double focus_dist = 10;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        point3 lookfrom = point3(0,0,-1);
-        point3 lookat   = point3(0,0,0);
-        vec3   vup      = vec3(0,1,0);
 
       private:
         point3 origin;
