@@ -73,8 +73,8 @@ int main() {
     cam.vup      = vec3(0,1,0);
     cam.vfov     = 20;
 
-    cam.focus_dist = 10.0;
     cam.aperture   = 0.1;
+    cam.focus_dist = 10.0;
 
     cam.render(world);
 }
