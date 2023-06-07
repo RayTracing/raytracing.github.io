@@ -22,15 +22,21 @@
 
 class camera {
   public:
-    double vfov       = 40;
-    double aperture   = 0;
-    double focus_dist = 10;
+    double aspect_ratio      = 1.0;
+    int    image_width       = 100;
+    int    samples_per_pixel = 10;
+    int    max_depth         = 20;
+    color  background        = color(0,0,0);
 
     point3 lookfrom = point3(0,0,-1);
     point3 lookat   = point3(0,0,0);
     vec3   vup      = vec3(0,1,0);
+    double vfov     = 40;
 
-    void initialize(double aspect_ratio = 1.0) {
+    double aperture   = 0;
+    double focus_dist = 10;
+
+    void initialize() {
         auto theta = degrees_to_radians(vfov);
         auto h = tan(theta/2);
         auto viewport_height = 2.0 * h;
@@ -48,6 +54,41 @@ class camera {
         lens_radius = aperture / 2;
     }
 
+    void render(const hittable_list& world, const hittable_list& lights) {
+        int image_height = static_cast<int>(image_width / aspect_ratio);
+
+        initialize();
+
+        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
+        int sqrt_spp = int(sqrt(samples_per_pixel));
+        for (int j = 0; j < image_height; ++j) {
+            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+            for (int i = 0; i < image_width; ++i) {
+                color pixel_color(0,0,0);
+                for (int s_j = 0; s_j < sqrt_spp; ++s_j) {
+                    for (int s_i = 0; s_i < sqrt_spp; ++s_i) {
+                        auto s = (i + (s_i + random_double()) / sqrt_spp) / (image_width-1);
+                        auto t = (j + (s_j + random_double()) / sqrt_spp) / (image_height-1);
+                        ray r = get_ray(s, t);
+                        pixel_color += ray_color(world, lights, r, max_depth);
+                    }
+                }
+                write_color(std::cout, pixel_color, samples_per_pixel);
+            }
+        }
+
+        std::clog << "\rDone.                 \n";
+    }
+
+  private:
+    point3 origin;
+    point3 lower_left_corner;
+    vec3 horizontal;
+    vec3 vertical;
+    vec3 u, v, w;
+    double lens_radius;
+
     ray get_ray(double s, double t) const {
         // Return the ray from the projection point to the indicated pixel. Coordinates s,t are
         // the normalized image-based coordinates of the pixel. Image left is s=0, image right
@@ -64,58 +105,9 @@ class camera {
         );
     }
 
-  private:
-    point3 origin;
-    point3 lower_left_corner;
-    vec3 horizontal;
-    vec3 vertical;
-    vec3 u, v, w;
-    double lens_radius;
-};
-
-
-class scene {
-  public:
-    hittable_list world;
-    hittable_list lights;
-    camera        cam;
-
-    double aspect_ratio      = 1.0;
-    int    image_width       = 100;
-    int    samples_per_pixel = 10;
-    int    max_depth         = 20;
-    color  background        = color(0,0,0);
-
-    void render() {
-        int image_height = static_cast<int>(image_width / aspect_ratio);
-
-        cam.initialize(aspect_ratio);
-
-        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
-
-        int sqrt_spp = int(sqrt(samples_per_pixel));
-        for (int j = 0; j < image_height; ++j) {
-            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-
-            for (int i = 0; i < image_width; ++i) {
-                color pixel_color(0,0,0);
-                for (int s_j = 0; s_j < sqrt_spp; ++s_j) {
-                    for (int s_i = 0; s_i < sqrt_spp; ++s_i) {
-                        auto s = (i + (s_i + random_double()) / sqrt_spp) / (image_width-1);
-                        auto t = (j + (s_j + random_double()) / sqrt_spp) / (image_height-1);
-                        ray r = cam.get_ray(s, t);
-                        pixel_color += ray_color(r, max_depth);
-                    }
-                }
-                write_color(std::cout, pixel_color, samples_per_pixel);
-            }
-        }
-
-        std::clog << "\rDone.                 \n";
-    }
-
-  private:
-    color ray_color(const ray& r, int depth) {
+    color ray_color(
+        const hittable_list& world, const hittable_list& lights, const ray& r, int depth)
+    {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -133,7 +125,7 @@ class scene {
             return color_from_emission;
 
         if (srec.skip_pdf) {
-            return srec.attenuation * ray_color(srec.skip_pdf_ray, depth-1);
+            return srec.attenuation * ray_color(world, lights, srec.skip_pdf_ray, depth-1);
         }
 
         auto light_ptr = make_shared<hittable_pdf>(lights, rec.p);
@@ -144,8 +136,8 @@ class scene {
 
         double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 
-        color color_from_scatter =
-            (srec.attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf_val;
+        color sample_color = ray_color(world, lights, scattered, depth-1);
+        color color_from_scatter = (srec.attenuation * scattering_pdf * sample_color) / pdf_val;
 
         return color_from_emission + color_from_scatter;
     }

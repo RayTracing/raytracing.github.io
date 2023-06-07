@@ -20,21 +20,8 @@
 #include "sphere.h"
 
 
-void cornell_box(scene& scene_desc) {
-    scene_desc.image_width       = 600;
-    scene_desc.aspect_ratio      = 1.0;
-    scene_desc.samples_per_pixel = 100;
-    scene_desc.max_depth         = 50;
-    scene_desc.background        = color(0,0,0);
-
-    scene_desc.cam.lookfrom     = point3(278, 278, -800);
-    scene_desc.cam.lookat       = point3(278, 278, 0);
-    scene_desc.cam.vup          = vec3(0, 1, 0);
-    scene_desc.cam.vfov         = 40.0;
-    scene_desc.cam.aperture     = 0.0;
-    scene_desc.cam.focus_dist   = 10.0;
-
-    hittable_list& world = scene_desc.world;
+int main() {
+    hittable_list world;
 
     auto red   = make_shared<lambertian>(color(.65, .05, .05));
     auto white = make_shared<lambertian>(color(.73, .73, .73));
@@ -63,15 +50,25 @@ void cornell_box(scene& scene_desc) {
     world.add(make_shared<sphere>(point3(190,90,190), 90, glass));
 
     // Light Sources
-    hittable_list& lights = scene_desc.lights;
+    hittable_list lights;
     auto m = shared_ptr<material>();
     lights.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), m));
     lights.add(make_shared<sphere>(point3(190, 90, 190), 90, m));
-}
 
+    camera cam;
 
-int main() {
-    scene scene_desc;
-    cornell_box(scene_desc);
-    scene_desc.render();
+    cam.aspect_ratio      = 1.0;
+    cam.image_width       = 600;
+    cam.samples_per_pixel = 100;
+    cam.max_depth         = 50;
+    cam.background        = color(0,0,0);
+
+    cam.lookfrom = point3(278, 278, -800);
+    cam.lookat   = point3(278, 278, 0);
+    cam.vup      = vec3(0, 1, 0);
+    cam.vfov     = 40.0;
+
+    cam.aperture = 0.0;
+
+    cam.render(world, lights);
 }
