@@ -126,16 +126,16 @@ inline vec3 unit_vector(vec3 v) {
 inline vec3 random_in_unit_disk() {
     while (true) {
         auto p = vec3(random_double(-1,1), random_double(-1,1), 0);
-        if (p.length_squared() >= 1) continue;
-        return p;
+        if (p.length_squared() < 1)
+            return p;
     }
 }
 
 inline vec3 random_in_unit_sphere() {
     while (true) {
         auto p = vec3::random(-1,1);
-        if (p.length_squared() >= 1) continue;
-        return p;
+        if (p.length_squared() < 1)
+            return p;
     }
 }
 
