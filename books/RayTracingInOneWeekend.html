@@ -1745,8 +1745,8 @@ range from -1 to +1. Reject this point and try again if the point is outside the
     vec3 random_in_unit_sphere() {
         while (true) {
             auto p = vec3::random(-1,1);
-            if (p.length_squared() >= 1) continue;
-            return p;
+            if (p.length_squared() < 1)
+                return p;
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3352,8 +3352,8 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
     vec3 random_in_unit_disk() {
         while (true) {
             auto p = vec3(random_double(-1,1), random_double(-1,1), 0);
-            if (p.length_squared() >= 1) continue;
-            return p;
+            if (p.length_squared() < 1)
+                return p;
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
