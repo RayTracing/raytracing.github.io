@@ -35,28 +35,10 @@ class camera {
     double aperture   = 0;
     double focus_dist = 10;
 
-    void initialize() {
-        auto theta = degrees_to_radians(vfov);
-        auto h = tan(theta/2);
-        auto viewport_height = 2.0 * h;
-        auto viewport_width = aspect_ratio * viewport_height;
-
-        w = unit_vector(lookfrom - lookat);
-        u = unit_vector(cross(vup, w));
-        v = cross(w, u);
-
-        origin = lookfrom;
-        horizontal = focus_dist * viewport_width * u;
-        vertical = focus_dist * viewport_height * v;
-        lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
-
-        lens_radius = aperture / 2;
-    }
-
     void render(const hittable& world) {
-        int image_height = static_cast<int>(image_width / aspect_ratio);
-
         initialize();
+
+        int image_height = static_cast<int>(image_width / aspect_ratio);
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
@@ -79,11 +61,29 @@ class camera {
 
   private:
     point3 origin;
-    point3 lower_left_corner;
     vec3 horizontal;
     vec3 vertical;
+    point3 lower_left_corner;
     vec3 u, v, w;
     double lens_radius;
+
+    void initialize() {
+        auto theta = degrees_to_radians(vfov);
+        auto h = tan(theta/2);
+        auto viewport_height = 2.0 * h;
+        auto viewport_width = aspect_ratio * viewport_height;
+
+        w = unit_vector(lookfrom - lookat);
+        u = unit_vector(cross(vup, w));
+        v = cross(w, u);
+
+        origin = lookfrom;
+        horizontal = focus_dist * viewport_width * u;
+        vertical = focus_dist * viewport_height * v;
+        lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
+
+        lens_radius = aperture / 2;
+    }
 
     ray get_ray(double s, double t) const {
         // Return the ray from the projection point to the indicated pixel. Coordinates s,t are
