@@ -71,7 +71,7 @@ class camera {
                         auto s = (i + (s_i + random_double()) / sqrt_spp) / (image_width-1);
                         auto t = (j + (s_j + random_double()) / sqrt_spp) / (image_height-1);
                         ray r = get_ray(s, t);
-                        pixel_color += ray_color(world, lights, r, max_depth);
+                        pixel_color += ray_color(r, max_depth, world, lights);
                     }
                 }
                 write_color(std::cout, pixel_color, samples_per_pixel);
@@ -106,7 +106,7 @@ class camera {
     }
 
     color ray_color(
-        const hittable_list& world, const hittable_list& lights, const ray& r, int depth)
+        const ray& r, int depth, const hittable_list& world, const hittable_list& lights)
     {
         hit_record rec;
 
@@ -125,7 +125,7 @@ class camera {
             return color_from_emission;
 
         if (srec.skip_pdf) {
-            return srec.attenuation * ray_color(world, lights, srec.skip_pdf_ray, depth-1);
+            return srec.attenuation * ray_color(srec.skip_pdf_ray, depth-1, world, lights);
         }
 
         auto light_ptr = make_shared<hittable_pdf>(lights, rec.p);
@@ -136,7 +136,7 @@ class camera {
 
         double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 
-        color sample_color = ray_color(world, lights, scattered, depth-1);
+        color sample_color = ray_color(scattered, depth-1, world, lights);
         color color_from_scatter = (srec.attenuation * scattering_pdf * sample_color) / pdf_val;
 
         return color_from_emission + color_from_scatter;

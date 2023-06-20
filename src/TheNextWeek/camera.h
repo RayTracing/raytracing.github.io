@@ -69,7 +69,7 @@ class camera {
                     auto s = (i + random_double()) / (image_width-1);
                     auto t = (j + random_double()) / (image_height-1);
                     ray r = get_ray(s, t);
-                    pixel_color += ray_color(world, r, max_depth);
+                    pixel_color += ray_color(r, max_depth, world);
                 }
                 write_color(std::cout, pixel_color, samples_per_pixel);
             }
@@ -102,7 +102,7 @@ class camera {
         );
     }
 
-    color ray_color(const hittable_list& world, const ray& r, int depth) const {
+    color ray_color(const ray& r, int depth, const hittable_list& world) const {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -120,7 +120,7 @@ class camera {
         if (!rec.mat->scatter(r, rec, attenuation, scattered))
             return color_from_emission;
 
-        color color_from_scatter = attenuation * ray_color(world, scattered, depth-1);
+        color color_from_scatter = attenuation * ray_color(scattered, depth-1, world);
 
         return color_from_emission + color_from_scatter;
     }
