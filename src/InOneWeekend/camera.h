@@ -14,7 +14,7 @@
 #include "rtweekend.h"
 
 #include "color.h"
-#include "hittable_list.h"
+#include "hittable.h"
 #include "material.h"
 
 #include <iostream>
@@ -53,7 +53,7 @@ class camera {
         lens_radius = aperture / 2;
     }
 
-    void render(const hittable_list& world) {
+    void render(const hittable& world) {
         int image_height = static_cast<int>(image_width / aspect_ratio);
 
         initialize();
@@ -101,7 +101,7 @@ class camera {
         );
     }
 
-    color ray_color(const ray& r, int depth, const hittable_list& world) const {
+    color ray_color(const ray& r, int depth, const hittable& world) const {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.
