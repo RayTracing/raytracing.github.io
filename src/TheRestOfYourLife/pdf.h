@@ -60,7 +60,7 @@ class sphere_pdf : public pdf {
 
 class hittable_pdf : public pdf {
   public:
-    hittable_pdf(const hittable_list& _objects, const point3& _origin)
+    hittable_pdf(const hittable& _objects, const point3& _origin)
       : objects(_objects), origin(_origin)
     {}
 
@@ -73,7 +73,7 @@ class hittable_pdf : public pdf {
     }
 
   private:
-    const hittable_list& objects;
+    const hittable& objects;
     point3 origin;
 };
 
