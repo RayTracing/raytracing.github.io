@@ -14,7 +14,7 @@
 #include "rtweekend.h"
 
 #include "color.h"
-#include "hittable_list.h"
+#include "hittable.h"
 #include "material.h"
 
 #include <iostream>
@@ -54,7 +54,7 @@ class camera {
         lens_radius = aperture / 2;
     }
 
-    void render(const hittable_list& world, const hittable_list& lights) {
+    void render(const hittable& world, const hittable& lights) {
         int image_height = static_cast<int>(image_width / aspect_ratio);
 
         initialize();
@@ -105,8 +105,7 @@ class camera {
         );
     }
 
-    color ray_color(
-        const ray& r, int depth, const hittable_list& world, const hittable_list& lights)
+    color ray_color(const ray& r, int depth, const hittable& world, const hittable& lights)
     {
         hit_record rec;
 
