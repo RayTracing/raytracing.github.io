@@ -37,9 +37,9 @@ class camera {
     double focus_dist = 10;
 
     void render(const hittable& world, const hittable& lights) {
-        int image_height = static_cast<int>(image_width / aspect_ratio);
-
         initialize();
+
+        int image_height = static_cast<int>(image_width / aspect_ratio);
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
