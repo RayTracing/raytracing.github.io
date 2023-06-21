@@ -33,7 +33,7 @@ void random_spheres() {
             auto choose_mat = random_double();
             point3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
 
-            if ((center - vec3(4, 0.2, 0)).length() > 0.9) {
+            if ((center - point3(4, 0.2, 0)).length() > 0.9) {
                 shared_ptr<material> sphere_material;
 
                 if (choose_mat < 0.8) {
@@ -76,10 +76,10 @@ void random_spheres() {
     cam.max_depth         = 50;
     cam.background        = color(0.70, 0.80, 1.00);
 
+    cam.vfov     = 20;
     cam.lookfrom = point3(13,2,3);
     cam.lookat   = point3(0,0,0);
     cam.vup      = vec3(0,1,0);
-    cam.vfov     = 20.0;
 
     cam.aperture   = 0.1;
     cam.focus_dist = 10.0;
@@ -107,36 +107,9 @@ void two_spheres() {
     cam.lookfrom = point3(13,2,3);
     cam.lookat   = point3(0,0,0);
     cam.vup      = vec3(0,1,0);
-    cam.vfov     = 20.0;
+    cam.vfov     = 20;
 
-    cam.aperture   = 0.0;
-    cam.focus_dist = 10.0;
-
-    cam.render(world);
-}
-
-
-void two_perlin_spheres() {
-    hittable_list world;
-
-    auto pertext = make_shared<noise_texture>(4);
-    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
-    world.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(pertext)));
-
-    camera cam;
-
-    cam.aspect_ratio      = 16.0 / 9.0;
-    cam.image_width       = 400;
-    cam.samples_per_pixel = 100;
-    cam.max_depth         = 50;
-    cam.background        = color(0.70, 0.80, 1.00);
-
-    cam.lookfrom = point3(13,2,3);
-    cam.lookat   = point3(0,0,0);
-    cam.vup      = vec3(0,1,0);
-    cam.vfov     = 20.0;
-
-    cam.aperture = 0.0;
+    cam.aperture = 0;
 
     cam.render(world);
 }
@@ -158,11 +131,37 @@ void earth() {
     cam.lookfrom = point3(0,0,12);
     cam.lookat   = point3(0,0,0);
     cam.vup      = vec3(0,1,0);
-    cam.vfov     = 20.0;
+    cam.vfov     = 20;
 
-    cam.aperture = 0.0;
+    cam.aperture = 0;
 
     cam.render(hittable_list(globe));
+}
+
+
+void two_perlin_spheres() {
+    hittable_list world;
+
+    auto pertext = make_shared<noise_texture>(4);
+    world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
+    world.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(pertext)));
+
+    camera cam;
+
+    cam.aspect_ratio      = 16.0 / 9.0;
+    cam.image_width       = 400;
+    cam.samples_per_pixel = 100;
+    cam.max_depth         = 50;
+    cam.background        = color(0.70, 0.80, 1.00);
+
+    cam.lookfrom = point3(13,2,3);
+    cam.lookat   = point3(0,0,0);
+    cam.vup      = vec3(0,1,0);
+    cam.vfov     = 20;
+
+    cam.aperture = 0;
+
+    cam.render(world);
 }
 
 
@@ -170,18 +169,18 @@ void quads() {
     hittable_list world;
 
     // Materials
-    auto left_red = make_shared<lambertian>(color(1,.2,.2));
-    auto back_green = make_shared<lambertian>(color(.2,1,.2));
-    auto right_blue = make_shared<lambertian>(color(.2,.2,1));
-    auto upper_orange = make_shared<lambertian>(color(1,.5,0));
-    auto lower_teal = make_shared<lambertian>(color(.2,.8,.8));
+    auto left_red     = make_shared<lambertian>(color(1.0, 0.2, 0.2));
+    auto back_green   = make_shared<lambertian>(color(0.2, 1.0, 0.2));
+    auto right_blue   = make_shared<lambertian>(color(0.2, 0.2, 1.0));
+    auto upper_orange = make_shared<lambertian>(color(1.0, 0.5, 0.0));
+    auto lower_teal   = make_shared<lambertian>(color(0.2, 0.8, 0.8));
 
     // Quads
-    world.add(make_shared<quad>(point3(-3,-2,5), vec3(0,0,-4), vec3(0,4,0), left_red));
-    world.add(make_shared<quad>(point3(-2,-2,0), vec3(4,0,0), vec3(0,4,0), back_green));
-    world.add(make_shared<quad>(point3(3,-2,1), vec3(0,0,4), vec3(0,4,0), right_blue));
-    world.add(make_shared<quad>(point3(-2,3,1), vec3(4,0,0), vec3(0,0,4), upper_orange));
-    world.add(make_shared<quad>(point3(-2,-3,5), vec3(4,0,0), vec3(0,0,-4), lower_teal));
+    world.add(make_shared<quad>(point3(-3,-2, 5), vec3(0,0,-4), vec3(0,4,0),  left_red));
+    world.add(make_shared<quad>(point3(-2,-2, 0), vec3(4,0,0),  vec3(0,4,0),  back_green));
+    world.add(make_shared<quad>(point3( 3,-2, 1), vec3(0,0,4),  vec3(0,4,0),  right_blue));
+    world.add(make_shared<quad>(point3(-2, 3, 1), vec3(4,0,0),  vec3(0,0,4),  upper_orange));
+    world.add(make_shared<quad>(point3(-2,-3, 5), vec3(4,0,0),  vec3(0,0,-4), lower_teal));
 
     camera cam;
 
@@ -194,9 +193,9 @@ void quads() {
     cam.lookfrom = point3(0,0,9);
     cam.lookat   = point3(0,0,0);
     cam.vup      = vec3(0,1,0);
-    cam.vfov     = 80.0;
+    cam.vfov     = 80;
 
-    cam.aperture = 0.0;
+    cam.aperture = 0;
 
     cam.render(world);
 }
@@ -224,9 +223,9 @@ void simple_light() {
     cam.lookfrom = point3(26,3,6);
     cam.lookat   = point3(0,2,0);
     cam.vup      = vec3(0,1,0);
-    cam.vfov     = 20.0;
+    cam.vfov     = 20;
 
-    cam.aperture = 0.0;
+    cam.aperture = 0;
 
     cam.render(world);
 }
@@ -268,9 +267,9 @@ void cornell_box() {
     cam.lookfrom = point3(278, 278, -800);
     cam.lookat   = point3(278, 278, 0);
     cam.vup      = vec3(0,1,0);
-    cam.vfov     = 40.0;
+    cam.vfov     = 40;
 
-    cam.aperture = 0.0;
+    cam.aperture = 0;
 
     cam.render(world);
 }
@@ -313,9 +312,9 @@ void cornell_smoke() {
     cam.lookfrom = point3(278, 278, -800);
     cam.lookat   = point3(278, 278, 0);
     cam.vup      = vec3(0,1,0);
-    cam.vfov     = 40.0;
+    cam.vfov     = 40;
 
-    cam.aperture = 0.0;
+    cam.aperture = 0;
 
     cam.render(world);
 }
@@ -390,9 +389,9 @@ void final_scene(bool high_quality) {
     cam.lookfrom = point3(478, 278, -600);
     cam.lookat   = point3(278, 278, 0);
     cam.vup      = vec3(0,1,0);
-    cam.vfov     = 40.0;
+    cam.vfov     = 40;
 
-    cam.aperture = 0.0;
+    cam.aperture = 0;
 
     if (high_quality) {
         cam.image_width       = 800;

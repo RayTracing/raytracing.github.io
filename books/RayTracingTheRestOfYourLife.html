@@ -262,30 +262,10 @@ location.
     #include "hittable_list.h"
     #include "material.h"
     #include "quad.h"
-    #include "scene.h"
     #include "sphere.h"
 
-    void cornell_box(scene& scene_desc) {
-        scene_desc.image_width       = 600;
-        scene_desc.aspect_ratio      = 1.0;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene_desc.samples_per_pixel = 64;
-        scene_desc.max_depth         = 50;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        scene_desc.background        = color(0,0,0);
-
-        scene_desc.cam.lookfrom   = point3(278, 278, -800);
-        scene_desc.cam.lookat     = point3(278, 278, 0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene_desc.cam.vup        = vec3(0,1,0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        scene_desc.cam.vfov       = 40.0;
-        scene_desc.cam.aperture   = 0.0;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene_desc.cam.focus_dist = 10.0;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        hittable_list& world = scene_desc.world;
+    int main() {
+        hittable_list world;
 
         auto red   = make_shared<lambertian>(color(.65, .05, .05));
         auto white = make_shared<lambertian>(color(.73, .73, .73));
@@ -313,13 +293,23 @@ location.
         box2 = make_shared<rotate_y>(box2, -18);
         box2 = make_shared<translate>(box2, vec3(130,0,65));
         world.add(box2);
-    }
 
-    int main() {
-        scene scene_desc;
-        cornell_box(scene_desc);
-        scene_desc.render();
-        return 0;
+        camera cam;
+
+        cam.aspect_ratio      = 1.0;
+        cam.image_width       = 600;
+        cam.samples_per_pixel = 64;
+        cam.max_depth         = 50;
+        cam.background        = color(0,0,0);
+
+        cam.lookfrom = point3(278, 278, -800);
+        cam.lookat   = point3(278, 278, 0);
+        cam.vup      = vec3(0, 1, 0);
+        cam.vfov     = 40;
+
+        cam.aperture = 0;
+
+        cam.render(world, lights);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estpi-3]: <kbd>[main.cc]</kbd> Stratifying the samples inside pixels]
@@ -327,10 +317,11 @@ location.
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class scene {
+    class camera {
       public:
-        void render() {
-            cam.initialize(aspect_ratio);
+        ...
+        void render(const hittable& world) {
+            initialize();
 
             int image_height = static_cast<int>(image_width / aspect_ratio);
 
@@ -348,7 +339,7 @@ location.
                             auto s = (i + (s_i + random_double()) / sqrt_spp) / (image_width-1);
                             auto t = (j + (s_j + random_double()) / sqrt_spp) / (image_height-1);
                             ray r = cam.get_ray(s, t);
-                            pixel_color += ray_color(r, max_depth);
+                            pixel_color += ray_color(r, max_depth, world);
                         }
                     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -358,9 +349,10 @@ location.
 
             std::clog << "\rDone.                 \n";
         }
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [scene-estpi-3]: <kbd>[scene.h]</kbd> Stratifying the samples inside pixels (render)]
+    [Listing [render-estpi-3]: <kbd>[camera.h]</kbd> Stratifying the samples inside pixels (render)]
 
 If we compare the results from without stratification:
 
@@ -1517,7 +1509,7 @@ The numerator and denominator cancel out, and we get:
 This is exactly what we had in our original `ray_color()` function!
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return attenuation * ray_color(scattered, depth-1);
+        return attenuation * ray_color(scattered, depth-1, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The treatment above is slightly non-standard because I want the same math to work for surfaces and
@@ -1573,15 +1565,11 @@ Returning to the Cornell Box
 Let’s adjust some parameters for the Cornell box:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void cornell_box(scene& scene_desc) {
-        scene_desc.image_width       = 600;
-        scene_desc.aspect_ratio      = 1.0;
+    int main() {
+        ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene_desc.samples_per_pixel = 100;
+        cam.samples_per_pixel = 100;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        scene_desc.max_depth         = 50;
-        scene_desc.background        = color(0,0,0);
-
         ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1660,13 +1648,14 @@ And the `lambertian` material becomes:
 </div>
 
 <div class='together'>
-And the `ray_color` function gets a minor modification:
+And the `camera::ray_color` function gets a minor modification:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class scene {
-        ...
+    class camera {
+      ...
       private:
-        color ray_color(const ray& r, int depth) {
+        ...
+        color ray_color(const ray& r, int depth, const hittable& world) const {
             hit_record rec;
 
             // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1690,13 +1679,14 @@ And the `ray_color` function gets a minor modification:
             double pdf = scattering_pdf;
 
             color color_from_scatter =
-                (attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf;
+                (attenuation * scattering_pdf * ray_color(scattered, depth-1, world)) / pdf;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return color_from_emission + color_from_scatter;
         }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-impsample]: <kbd>[scene.h]</kbd>
+    [Listing [ray-color-impsample]: <kbd>[camera.h]</kbd>
     The ray_color function, modified for importance sampling]
 </div>
 
@@ -1717,10 +1707,11 @@ the real distribution, it will take longer to converge. Which, for the same numb
 a noisier image:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class scene {
-        ...
+    class camera {
+      ...
       private:
-        color ray_color(const ray& r, int depth) {
+        ...
+        color ray_color(const ray& r, int depth, const hittable& world) const {
             hit_record rec;
 
             // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -1744,12 +1735,12 @@ a noisier image:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             color color_from_scatter =
-                (attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf;
+                (attenuation * scattering_pdf * ray_color(scattered, depth-1, world)) / pdf;
 
             return color_from_emission + color_from_scatter;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-uniform]: <kbd>[scene.h]</kbd>
+    [Listing [ray-color-uniform]: <kbd>[camera.h]</kbd>
     The ray_color function, now with a uniform PDF in the denominator]
 </div>
 
@@ -1773,7 +1764,7 @@ Make sure to return the PDF to the scattering PDF.
 
             ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-return]: <kbd>[scene.h]</kbd> Return the PDF to the same as scattering PDF]
+    [Listing [ray-color-return]: <kbd>[camera.h]</kbd> Return the PDF to the same as scattering PDF]
 
 </div>
 
@@ -2395,10 +2386,10 @@ We can hack our `ray_color()` function to sample the light in a very hard-coded 
 check that we got the math and concept right:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class scene {
-        ...
+    class camera {
+      ...
       private:
-        color ray_color(const ray& r, int depth) {
+        color ray_color(const ray& r, int depth, const hittable& world) const {
             hit_record rec;
 
             // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -2444,12 +2435,13 @@ check that we got the math and concept right:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             color color_from_scatter =
-                (attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf;
+                (attenuation * scattering_pdf * ray_color(scattered, depth-1, world)) / pdf;
 
             return color_from_emission + color_from_scatter;
         }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-lights]: <kbd>[scene.h]</kbd> Ray color with light sampling]
+    [Listing [ray-color-lights]: <kbd>[camera.h]</kbd> Ray color with light sampling]
 </div>
 
 <div class='together'>
@@ -2616,10 +2608,11 @@ Next, let’s try a cosine density:
 We can try this cosine PDF in the `ray_color()` function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class scene {
-        ...
+    class camera {
+      ...
       private:
-        color ray_color(const ray& r, int depth) {
+        ...
+        color ray_color(const ray& r, int depth, const hittable& world) const {
             hit_record rec;
 
             // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -2648,12 +2641,15 @@ We can try this cosine PDF in the `ray_color()` function:
             double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 
             color color_from_scatter =
-                (attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf_val;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                (attenuation * scattering_pdf * ray_color(scattered, depth-1, world)) / pdf_val;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return color_from_emission + color_from_scatter;
         }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-cos-pdf]: <kbd>[scene.h]</kbd> The ray_color function, using cosine pdf]
+    [Listing [ray-color-cos-pdf]: <kbd>[camera.h]</kbd> The ray_color function, using cosine pdf]
 </div>
 
 <div class='together'>
@@ -2790,22 +2786,47 @@ for the corresponding classes.
 </div>
 
 <div class='together'>
-Add a `light_ptr` member variable to `scene`:
+Add a `lights` parameter to the camera `render()` function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class scene {
-        ...
-
+    class camera {
       public:
-        hittable_list world;
+        ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        shared_ptr<hittable> light_ptr;
+        void render(const hittable& world, const hittable& lights) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        camera        cam;
+            initialize();
+
+            int image_height = static_cast<int>(image_width / aspect_ratio);
+
+            std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
+            int sqrt_spp = int(sqrt(samples_per_pixel));
+            for (int j = 0; j < image_height; ++j) {
+                std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+                for (int i = 0; i < image_width; ++i) {
+                    color pixel_color(0,0,0);
+                    for (int s_j = 0; s_j < sqrt_spp; ++s_j) {
+                        for (int s_i = 0; s_i < sqrt_spp; ++s_i) {
+                            auto s = (i + (s_i + random_double()) / sqrt_spp) / (image_width-1);
+                            auto t = (j + (s_j + random_double()) / sqrt_spp) / (image_height-1);
+                            ray r = get_ray(s, t);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                            pixel_color += ray_color(r, max_depth, world, lights);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                        }
+                    }
+                    write_color(std::cout, pixel_color, samples_per_pixel);
+                }
+            }
+
+            std::clog << "\rDone.                 \n";
+        }
 
         ...
       private:
-        color ray_color(const ray& r, int depth) {
+        color ray_color(const ray& r, int depth, const hittable& world, const hittable& lights)
+        const {
             ...
 
             ray scattered;
@@ -2825,25 +2846,43 @@ Add a `light_ptr` member variable to `scene`:
 
             double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 
-            color color_from_scatter =
-                (attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf_val;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            color sample_color = ray_color(scattered, depth-1, world, lights);
+            color color_from_scatter = (attenuation * scattering_pdf * sample_color) / pdf_val;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return color_from_emission + color_from_scatter;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-lights]: <kbd>[scene.h]</kbd> ray_color function with light PDF]
+    [Listing [ray-color-lights]: <kbd>[camera.h]</kbd> ray_color function with light PDF]
 
-Set the `light_ptr` to the light in the middle of the ceiling:
+Create a light in the middle of the ceiling:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void cornell_box(scene& scene_desc) {
+    int main() {
         ...
+
+        // Box 2
+        shared_ptr<hittable> box2 = box(point3(0,0,0), point3(165,165,165), white);
+        box2 = make_shared<rotate_y>(box2, -18);
+        box2 = make_shared<translate>(box2, vec3(130,0,65));
+        world.add(box2);
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // Light Sources
-        scene_desc.light_ptr =
-            make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), m);
+        hittable_list lights;
+        auto m = shared_ptr<material>();
+        lights.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), m));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        camera cam;
+        ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.render(world, lights);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2937,16 +2976,13 @@ Now we would like to do a mixture density of the cosine sampling and of the ligh
 plug it into `ray_color()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class scene {
-        ...
+    class camera {
+      ...
       private:
-        color ray_color(const ray& r, int depth) {
+        ...
+        color ray_color(const ray& r, int depth, const hittable& world, const hittable& lights)
+        const {
             ...
-
-            ray scattered;
-            color attenuation;
-            double pdf_val;
-            color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
 
             if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_val))
                 return color_from_emission;
@@ -2963,13 +2999,13 @@ plug it into `ray_color()`:
 
             double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 
-            color color_from_scatter =
-                (attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf_val;
+            color sample_color = ray_color(scattered, depth-1, world, lights);
+            color color_from_scatter = (attenuation * scattering_pdf * sample_color) / pdf_val;
 
             return color_from_emission + color_from_scatter;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-mixture]: <kbd>[scene.h]</kbd> The ray_color function, using mixture PDF]
+    [Listing [ray-color-mixture]: <kbd>[camera.h]</kbd> The ray_color function, using mixture PDF]
 </div>
 
 <div class='together'>
@@ -3156,10 +3192,12 @@ As does the `isotropic` material:
 And `ray_color()` changes are small:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class scene {
-        ...
+    class camera {
+      ...
       private:
-        color ray_color(const ray& r, int depth) {
+        ...
+        color ray_color(const ray& r, int depth, const hittable& world, const hittable& lights)
+        const {
             hit_record rec;
 
             // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -3193,13 +3231,14 @@ And `ray_color()` changes are small:
 
             double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 
-            color color_from_scatter =
-                (srec.attenuation * scattering_pdf * ray_color(scattered, depth-1)) / pdf_val;
+            color sample_color = ray_color(scattered, depth-1, world, lights);
+            color color_from_scatter = (attenuation * scattering_pdf * sample_color) / pdf_val;
 
             return color_from_emission + color_from_scatter;
         }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-mixture]: <kbd>[scene.h]</kbd> The ray_color function, using mixture PDF]
+    [Listing [ray-color-mixture]: <kbd>[camera.h]</kbd> The ray_color function, using mixture PDF]
 </div>
 
 
@@ -3281,14 +3320,13 @@ materials that we're treating specularly.
 `ray_color()` just needs a new case to generate an implicitly sampled ray:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class scene {
-        ...
+    class camera {
+      ...
       private:
-        color ray_color(const ray& r, int depth) {
+        ...
+        color ray_color(const ray& r, int depth, const hittable& world, const hittable& lights)
+        const {
             ...
-
-            scatter_record srec;
-            color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
 
             if (!rec.mat->scatter(r, rec, srec))
                 return color_from_emission;
@@ -3296,7 +3334,7 @@ materials that we're treating specularly.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             if (srec.skip_pdf) {
-                return srec.attenuation * ray_color(srec.skip_pdf_ray, depth-1);
+                return srec.attenuation * ray_color(srec.skip_pdf_ray, depth-1, world);
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -3305,8 +3343,9 @@ materials that we're treating specularly.
 
             ...
         }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-implicit]: <kbd>[scene.h]</kbd>
+    [Listing [ray-color-implicit]: <kbd>[camera.h]</kbd>
     Ray color function with implicitly-sampled rays]
 </div>
 
@@ -3317,7 +3356,7 @@ well, so we'd like to make a PDF for them, but we have some more work to do befo
 that.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void cornell_box(scene& scene_desc) {
+    int main() {
         ...
         // Light
         world.add(make_shared<quad>(point3(213,554,227), vec3(130,0,0), vec3(0,0,105), light));
@@ -3338,8 +3377,11 @@ that.
         world.add(box2);
 
         // Light Sources
-        scene_desc.light_ptr =
-            make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), m);
+        hittable_list lights;
+        auto m = shared_ptr<material>();
+        lights.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), m));
+
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-cornell-al]: <kbd>[main.cc]</kbd> Cornell box scene with aluminum material]
@@ -3497,8 +3539,11 @@ The sphere class needs the two PDF-related functions:
 We can first try just sampling the sphere rather than the light:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void cornell_box(scene& scene_desc) {
+    int main() {
         ...
+
+        // Light
+        world.add(make_shared<quad>(point3(213,554,227), vec3(130,0,0), vec3(0,0,105), light));
 
 
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -3511,11 +3556,12 @@ We can first try just sampling the sphere rather than the light:
         // Glass Sphere
         auto glass = make_shared<dielectric>(1.5);
         world.add(make_shared<sphere>(point3(190,90,190), 90, glass));
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         // Light Sources
-        scene_desc.light_ptr =
-            make_shared<sphere>(point3(190, 90, 190), 90, shared_ptr<material>());
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        hittable_list lights;
+        auto m = shared_ptr<material>();
+        lights.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), m));
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sampling-sphere]: <kbd>[main.cc]</kbd> Sampling just the sphere]
@@ -3569,40 +3615,21 @@ think both tactics would work fine, but I will go with instrumenting `hittable_l
     [Listing [density-mixture]: <kbd>[hittable_list.h]</kbd> Creating a mixture of densities]
 </div>
 
-<div class='together'>
-We'll replace the `light_ptr` in a scene with a list of all of the important distributions in our
-scene:
+We assemble a list to pass to `render()` from `main()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class scene {
+    int main() {
         ...
-
-      public:
-        hittable_list world;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        hittable_list lights;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        camera        cam;
-
-        ...
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [scene-light]: <kbd>[scene.h]</kbd> Add a list of the lights in our scene]
-
-We assemble a list to pass to `ray_color()` `from main()`:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void cornell_box(scene& scene_desc) {
-        ...
-
 
         // Light Sources
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        hittable_list& lights = scene_desc.lights;
+        hittable_list lights;
         auto m = shared_ptr<material>();
         lights.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), m));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         lights.add(make_shared<sphere>(point3(190, 90, 190), 90, m));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-density-mixture]: <kbd>[main.cc]</kbd> Updating the scene]

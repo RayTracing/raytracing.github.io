@@ -25,12 +25,12 @@ class camera {
     double aspect_ratio      = 1.0;
     int    image_width       = 100;
     int    samples_per_pixel = 10;
-    int    max_depth         = 20;
+    int    max_depth         = 10;
 
+    double vfov     = 40;
     point3 lookfrom = point3(0,0,-1);
     point3 lookat   = point3(0,0,0);
     vec3   vup      = vec3(0,1,0);
-    double vfov     = 40;
 
     double aperture   = 0;
     double focus_dist = 10;
@@ -92,12 +92,10 @@ class camera {
 
         vec3 rd = lens_radius * random_in_unit_disk();
         vec3 offset = u * rd.x() + v * rd.y();
-        auto ray_time = random_double(0.0, 1.0);
 
         return ray(
             origin + offset,
-            lower_left_corner + s*horizontal + (1-t)*vertical - origin - offset,
-            ray_time
+            lower_left_corner + s*horizontal + (1-t)*vertical - origin - offset
         );
     }
 

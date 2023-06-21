@@ -12,13 +12,12 @@
 #include "rtweekend.h"
 
 #include "camera.h"
-#include "color.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
 
 
-int main() {
+void main() {
     hittable_list world;
 
     auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
@@ -68,10 +67,10 @@ int main() {
     cam.samples_per_pixel = 10;
     cam.max_depth         = 20;
 
+    cam.vfov     = 20;
     cam.lookfrom = vec3(13,2,3);
     cam.lookat   = vec3(0,0,0);
     cam.vup      = vec3(0,1,0);
-    cam.vfov     = 20;
 
     cam.aperture   = 0.1;
     cam.focus_dist = 10.0;

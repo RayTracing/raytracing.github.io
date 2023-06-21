@@ -28,10 +28,10 @@ class camera {
     int    max_depth         = 20;
     color  background        = color(0,0,0);
 
+    double vfov     = 40;
     point3 lookfrom = point3(0,0,-1);
     point3 lookat   = point3(0,0,0);
     vec3   vup      = vec3(0,1,0);
-    double vfov     = 40;
 
     double aperture   = 0;
     double focus_dist = 10;
@@ -106,7 +106,7 @@ class camera {
     }
 
     color ray_color(const ray& r, int depth, const hittable& world, const hittable& lights)
-    {
+    const {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.

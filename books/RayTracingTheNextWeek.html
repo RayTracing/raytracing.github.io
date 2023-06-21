@@ -137,10 +137,14 @@ a time period.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
-      public:
+      ...
+      private:
         ...
-
         ray get_ray(double s, double t) const {
+            // Return the ray from the projection point to the indicated pixel. Coordinates s,t are
+            // the normalized image-based coordinates of the pixel. Image left is s=0, image right
+            // is s=1, image top is t=0, image bottom is t=1.
+
             vec3 rd = lens_radius * random_in_unit_disk();
             vec3 offset = u * rd.x() + v * rd.y();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -150,7 +154,7 @@ a time period.
             return ray(
                 origin + offset,
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                lower_left_corner + s*horizontal + t*vertical - origin - offset,
+                lower_left_corner + s*horizontal + (1-t)*vertical - origin - offset,
                 ray_time
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             );
@@ -321,29 +325,8 @@ makes them move during the image render. Each sphere moves from its center $\mat
 $t=0$ to $\mathbf{C} + (0, r/2, 0)$ at time $t=1$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    #include "moving_sphere.h"
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-    ...
-    void random_spheres(scene& scene_desc) {
-        scene_desc.aspect_ratio      = 16.0 / 9.0;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene_desc.image_width       = 400;
-        scene_desc.samples_per_pixel = 100;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        scene_desc.cam.lookfrom   = point3(13,2,3);
-        scene_desc.cam.lookat     = point3(0,0,0);
-        scene_desc.cam.vup        = vec3(0,1,0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene_desc.cam.vfov       = 20.0;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        scene_desc.cam.aperture   = 0.1;
-        scene_desc.cam.focus_dist = 10.0;
-
-        hittable_list& world = scene_desc.world;
+    int main() {
+        hittable_list world;
 
         auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
         world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
@@ -353,7 +336,7 @@ $t=0$ to $\mathbf{C} + (0, r/2, 0)$ at time $t=1$:
                 auto choose_mat = random_double();
                 point3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
 
-                if ((center - vec3(4, 0.2, 0)).length() > 0.9) {
+                if ((center - point3(4, 0.2, 0)).length() > 0.9) {
                     shared_ptr<material> sphere_material;
 
                     if (choose_mat < 0.8) {
@@ -362,11 +345,31 @@ $t=0$ to $\mathbf{C} + (0, r/2, 0)$ at time $t=1$:
                         sphere_material = make_shared<lambertian>(albedo);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                         auto center2 = center + vec3(0, random_double(0,.5), 0);
-                        world.add(make_shared<moving_sphere>(
-                            center, center2, 0.2, sphere_material));
+                        world.add(make_shared<sphere>(center, center2, 0.2, sphere_material));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                     } else if (choose_mat < 0.95) {
                     ...
+        }
+        ...
+
+        camera cam;
+
+        cam.aspect_ratio      = 16.0 / 9.0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.image_width       = 400;
+        cam.samples_per_pixel = 100;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        cam.max_depth         = 50;
+
+        cam.vfov     = 20;
+        cam.lookfrom = point3(13,2,3);
+        cam.lookat   = point3(0,0,0);
+        cam.vup      = vec3(0,1,0);
+
+        cam.aperture   = 0.1;
+        cam.focus_dist = 10.0;
+
+        cam.render(world);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-spheres-moving]:
@@ -791,7 +794,7 @@ two boxes.
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [moving-sphere-bbox]: <kbd>[moving_sphere.h]</kbd> Moving sphere with bounding box]
+    [Listing [moving-sphere-bbox]: <kbd>[sphere.h]</kbd> Moving sphere with bounding box]
 
 Now we need a new `aabb` constructor that takes two boxes as input.
 First, we'll add a new interval constructor that takes two intervals as input:
@@ -1042,16 +1045,12 @@ function.
     [Listing [bvh-x-comp]: <kbd>[bvh.h]</kbd> BVH comparison function, X-axis]
 </div>
 
-At this point, we're ready to use our new BVH code. Let's use it on our `random_spheres()` scene.
+At this point, we're ready to use our new BVH code. Let's use it on our random spheres scene.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
 
-    void random_spheres(scene& scene_desc) {
-        scene_desc.aspect_ratio      = 16.0 / 9.0;
-        scene_desc.image_width       = 400;
-        scene_desc.samples_per_pixel = 100;
-
+    int main() {
         ...
 
         auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
@@ -1062,8 +1061,12 @@ At this point, we're ready to use our new BVH code. Let's use it on our `random_
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene_desc.world = hittable_list(make_shared<bvh_node>(world));
+        world = hittable_list(make_shared<bvh_node>(world));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        camera cam;
+
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-spheres-bvh]: <kbd>[main.cc]</kbd> Random spheres, using BVH]
@@ -1218,9 +1221,14 @@ texture. This is in the spirit of shader networks introduced by Pat Hanrahan bac
 If we add this to our `random_scene()` function’s base sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void random_spheres(scene& scene_desc) {
-        ...
-        hittable_list& world = scene_desc.world;
+    ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "texture.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+
+    void random_spheres() {
+        hittable_list world;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1231,6 +1239,7 @@ If we add this to our `random_scene()` function’s base sphere:
         for (int a = -11; a < 11; a++) {
         ...
     }
+    ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [checker-example]: <kbd>[main.cc]</kbd> Checkered texture in use]
 
@@ -1250,44 +1259,91 @@ raytracing. You may want to use a different approach in your own raytracer, such
 command-line arguments.
 
 <div class='together'>
-Here's the scene construction function:
+Here's what our main.cc looks like after refactoring for our single random spheres scene. Rename
+`main()` to `random_spheres()`, and add a new `main()` function to call it:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void two_spheres(scene& scene_desc) {
-        scene_desc.image_width       = 400;
-        scene_desc.aspect_ratio      = 16.0 / 9.0;
-        scene_desc.samples_per_pixel = 100;
+    #include "rtweekend.h"
 
-        scene_desc.cam.aperture = 0.0;
-        scene_desc.cam.vfov     = 20.0;
-        scene_desc.cam.lookfrom = point3(13,2,3);
-        scene_desc.cam.lookat   = point3(0,0,0);
+    #include "camera.h"
+    #include "color.h"
+    #include "hittable_list.h"
+    #include "material.h"
+    #include "sphere.h"
 
-        hittable_list& world = scene_desc.world;
+
+    void random_spheres() {
+        hittable_list world;
+
+        auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
+        world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
+
+        ...
+
+        cam.render(world);
+    }
+
+    int main() {
+        random_spheres();
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-scenes]: <kbd>[main.cc]</kbd> Main dispatching to selected scene]
+</div>
+
+Now add a scene with two checkered spheres, one atop the other.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+    #include "camera.h"
+    #include "color.h"
+    #include "hittable_list.h"
+    #include "material.h"
+    #include "sphere.h"
+
+
+    void random_spheres() {
+        ...
+    }
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    void two_spheres() {
+        hittable_list world;
 
         auto checker = make_shared<checker_texture>(0.8, color(.2, .3, .1), color(.9, .9, .9));
 
         world.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker)));
         world.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker)));
+
+        camera cam;
+
+        cam.aspect_ratio      = 16.0 / 9.0;
+        cam.image_width       = 400;
+        cam.samples_per_pixel = 100;
+        cam.max_depth         = 50;
+        cam.background        = color(0.70, 0.80, 1.00);
+
+        cam.lookfrom = point3(13,2,3);
+        cam.lookat   = point3(0,0,0);
+        cam.vup      = vec3(0,1,0);
+        cam.vfov     = 20;
+
+        cam.aperture = 0;
+
+        cam.render(world);
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
-        scene scene_desc;
-
-        scene_desc.cam.vup = vec3(0,1,0);
-        scene_desc.cam.focus_dist = 10.0;
-
-        switch (0) {
-            case 1:  random_spheres(scene_desc); break;
-            default:
-            case 2:  two_spheres(scene_desc);    break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        switch (2) {
+            case 1: random_spheres(); break;
+            case 2: two_spheres();    break;
         }
-
-        scene_desc.render();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [scene-two-checker]: <kbd>[main.cc]</kbd> Scene with two checkered spheres]
-</div>
+    [Listing [main-two-spheres]: <kbd>[main.cc]</kbd> Two textured spheres]
 
 <div class='together'>
 We get this result:
@@ -1637,36 +1693,41 @@ I just grabbed a random earth map from the web -- any standard projection will d
 <div class='together'>
 Here's the code to read an image from a file and then assign it to a diffuse material:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void earth(scene& scene_desc) {
-        scene_desc.image_width       = 400;
-        scene_desc.aspect_ratio      = 16.0 / 9.0;
-        scene_desc.samples_per_pixel = 100;
-
-        scene_desc.cam.aperture = 0.0;
-        scene_desc.cam.vfov     = 20.0;
-        scene_desc.cam.lookfrom = point3(0,0,12);
-        scene_desc.cam.lookat   = point3(0,0,0);
-
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    void earth() {
         auto earth_texture = make_shared<image_texture>("earthmap.jpg");
         auto earth_surface = make_shared<lambertian>(earth_texture);
         auto globe = make_shared<sphere>(point3(0,0,0), 2, earth_surface);
 
-        scene_desc.world = hittable_list(globe);
+        camera cam;
+
+        cam.aspect_ratio      = 16.0 / 9.0;
+        cam.image_width       = 400;
+        cam.samples_per_pixel = 100;
+        cam.max_depth         = 50;
+        cam.background        = color(0.70, 0.80, 1.00);
+
+        cam.lookfrom = point3(0,0,12);
+        cam.lookat   = point3(0,0,0);
+        cam.vup      = vec3(0,1,0);
+        cam.vfov     = 20;
+
+        cam.aperture = 0;
+
+        cam.render(hittable_list(globe));
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
-        ...
-        switch (0) {
-            case 1:  random_spheres(scene_desc);     break;
-            case 2:  two_spheres(scene_desc);        break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            default:
-            case 3:  earth(scene_desc);              break;
+        switch (3) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            case 1:  random_spheres(); break;
+            case 2:  two_spheres();    break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            case 3:  earth();          break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-
-        scene_desc.render();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [stbi-load-use]: <kbd>[main.cc]</kbd> Using stbi_load() to load an image]
@@ -1808,37 +1869,44 @@ Now if we create an actual texture that takes these floats between 0 and 1 and c
 <div class='together'>
 We can use that texture on some spheres:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void two_perlin_spheres(scene& scene_desc) {
-        scene_desc.image_width       = 400;
-        scene_desc.aspect_ratio      = 16.0 / 9.0;
-        scene_desc.samples_per_pixel = 100;
-
-        scene_desc.cam.aperture = 0.0;
-        scene_desc.cam.vfov     = 20.0;
-        scene_desc.cam.lookfrom = point3(13,2,3);
-        scene_desc.cam.lookat   = point3(0,0,0);
-
-        hittable_list& world = scene_desc.world;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    void two_perlin_spheres() {
+        hittable_list world;
 
         auto pertext = make_shared<noise_texture>();
         world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
-        world.add(make_shared<sphere>(point3(0, 2, 0), 2, make_shared<lambertian>(pertext)));
+        world.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(pertext)));
+
+        camera cam;
+
+        cam.aspect_ratio      = 16.0 / 9.0;
+        cam.image_width       = 400;
+        cam.samples_per_pixel = 100;
+        cam.max_depth         = 50;
+        cam.background        = color(0.70, 0.80, 1.00);
+
+        cam.lookfrom = point3(13,2,3);
+        cam.lookat   = point3(0,0,0);
+        cam.vup      = vec3(0,1,0);
+        cam.vfov     = 20;
+
+        cam.aperture = 0;
+
+        cam.render(world);
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
-        ...
-        switch (0) {
-            case 1:  random_spheres(scene_desc);     break;
-            case 2:  two_spheres(scene_desc);        break;
-            case 3:  earth(scene_desc);              break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            default:
-            case 4:  two_perlin_spheres(scene_desc); break;
+        switch (4) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            case 1:  random_spheres();     break;
+            case 2:  two_spheres();        break;
+            case 3:  earth();              break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            case 4:  two_perlin_spheres(); break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-
-        scene_desc.render();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-perlin]: <kbd>[main.cc]</kbd> Scene with two Perlin-textured spheres]
@@ -1990,13 +2058,16 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
 We then add that scale to the `two_perlin_spheres()` scene description:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void two_perlin_spheres(scene& scene_desc) {
+    void two_perlin_spheres() {
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto pertext = make_shared<noise_texture>(4);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
         world.add(make_shared<sphere>(point3(0, 2, 0), 2, make_shared<lambertian>(pertext)));
+
+        camera cam;
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scale-perlin]: <kbd>[main.cc]</kbd> Perlin-textured spheres with a scale to the noise]
@@ -2765,48 +2836,60 @@ test method from the hit method.
 And now we add a new scene to demonstrate our new `quad` primitive:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    void quads(scene& scene_desc) {
-        scene_desc.image_width       = 400;
-        scene_desc.aspect_ratio      = 1.0;
-        scene_desc.samples_per_pixel = 100;
-
-        scene_desc.cam.aperture = 0.0;
-        scene_desc.cam.vfov     = 80.0;
-        scene_desc.cam.lookfrom = point3(0,0,9);
-        scene_desc.cam.lookat   = point3(0,0,0);
-
-        hittable_list& world = scene_desc.world;
+    ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "quad.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    void quads() {
+        hittable_list world;
 
         // Materials
-        auto left_red = make_shared<lambertian>(color(1,.2,.2));
-        auto back_green = make_shared<lambertian>(color(.2,1,.2));
-        auto right_blue = make_shared<lambertian>(color(.2,.2,1));
-        auto upper_orange = make_shared<lambertian>(color(1,.5,0));
-        auto lower_teal = make_shared<lambertian>(color(.2,.8,.8));
+        auto left_red     = make_shared<lambertian>(color(1.0, 0.2, 0.2));
+        auto back_green   = make_shared<lambertian>(color(0.2, 1.0, 0.2));
+        auto right_blue   = make_shared<lambertian>(color(0.2, 0.2, 1.0));
+        auto upper_orange = make_shared<lambertian>(color(1.0, 0.5, 0.0));
+        auto lower_teal   = make_shared<lambertian>(color(0.2, 0.8, 0.8));
 
         // Quads
-        world.add(make_shared<quad>(point3(-3,-2,5), vec3(0,0,-4), vec3(0,4,0), left_red));
-        world.add(make_shared<quad>(point3(-2,-2,0), vec3(4,0,0), vec3(0,4,0), back_green));
-        world.add(make_shared<quad>(point3(3,-2,1), vec3(0,0,4), vec3(0,4,0), right_blue));
-        world.add(make_shared<quad>(point3(-2,3,1), vec3(4,0,0), vec3(0,0,4), upper_orange));
-        world.add(make_shared<quad>(point3(-2,-3,5), vec3(4,0,0), vec3(0,0,-4), lower_teal));
+        world.add(make_shared<quad>(point3(-3,-2, 5), vec3(0,0,-4), vec3(0,4,0),  left_red));
+        world.add(make_shared<quad>(point3(-2,-2, 0), vec3(4,0,0),  vec3(0,4,0),  back_green));
+        world.add(make_shared<quad>(point3( 3,-2, 1), vec3(0,0,4),  vec3(0,4,0),  right_blue));
+        world.add(make_shared<quad>(point3(-2, 3, 1), vec3(4,0,0),  vec3(0,0,4),  upper_orange));
+        world.add(make_shared<quad>(point3(-2,-3, 5), vec3(4,0,0),  vec3(0,0,-4), lower_teal));
+
+        camera cam;
+
+        cam.aspect_ratio      = 1.0;
+        cam.image_width       = 400;
+        cam.samples_per_pixel = 100;
+        cam.max_depth         = 50;
+        cam.background        = color(0.70, 0.80, 1.00);
+
+        cam.lookfrom = point3(0,0,9);
+        cam.lookat   = point3(0,0,0);
+        cam.vup      = vec3(0,1,0);
+        cam.vfov     = 80;
+
+        cam.aperture = 0;
+
+        cam.render(world);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
-        ...
-        switch (0) {
-            case 1:  random_spheres(scene_desc);     break;
-            case 2:  two_spheres(scene_desc);        break;
-            case 3:  earth(scene_desc);              break;
-            case 4:  two_perlin_spheres(scene_desc); break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            default:
-            case 5:  quads(scene_desc);              break;
+        switch (5) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            case 1:  random_spheres();     break;
+            case 2:  two_spheres();        break;
+            case 3:  earth();              break;
+            case 4:  two_perlin_spheres(); break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            case 5:  quads();              break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-
-        scene_desc.render();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [quad-scene]: <kbd>[main.cc]</kbd> A new scene with quads]
@@ -2883,23 +2966,22 @@ do this, we’ll add a background color parameter to our `ray_color` function, a
 the new `color_from_emission` value.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class scene {
+    class camera {
       public:
-        hittable_list world;
-        camera cam;
-
         double aspect_ratio      = 1.0;
         int    image_width       = 100;
         int    samples_per_pixel = 10;
-        int    max_depth         = 50;
+        int    max_depth         = 10;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         color  background        = color(0,0,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
+        double vfov     = 40;
+        ...
+
       private:
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        color ray_color(const ray& r, int depth) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+        color ray_color(const ray& r, int depth, const hittable& world) const {
             hit_record rec;
 
             // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -2919,32 +3001,90 @@ the new `color_from_emission` value.
             if (!rec.mat->scatter(r, rec, attenuation, scattered))
                 return color_from_emission;
 
-            color color_from_scatter = attenuation * ray_color(scattered, depth-1);
+            color color_from_scatter = attenuation * ray_color(scattered, depth-1, world);
 
             return color_from_emission + color_from_scatter;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    }
+        }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-emitted]: <kbd>[scene.h]</kbd>
+    [Listing [ray-color-emitted]: <kbd>[camera.h]</kbd>
     ray_color function with background and emitting materials]
 
 `main()` is updated to set the background color for the prior scenes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    int main() {
-        scene scene_desc;
+    void random_spheres() {
+        ...
+        camera cam;
 
+        cam.aspect_ratio      = 16.0 / 9.0;
+        cam.image_width       = 400;
+        cam.samples_per_pixel = 100;
+        cam.max_depth         = 50;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene_desc.background = color(0.70, 0.80, 1.00);
+        cam.background        = color(0.70, 0.80, 1.00);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+    }
 
-        scene_desc.cam.vup = vec3(0,1,0);
-        scene_desc.cam.focus_dist = 10.0;
+    void two_spheres() {
+        ...
+        camera cam;
 
+        cam.aspect_ratio      = 16.0 / 9.0;
+        cam.image_width       = 400;
+        cam.samples_per_pixel = 100;
+        cam.max_depth         = 50;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.background        = color(0.70, 0.80, 1.00);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+    }
+
+    void earth() {
+        ...
+        camera cam;
+
+        cam.aspect_ratio      = 16.0 / 9.0;
+        cam.image_width       = 400;
+        cam.samples_per_pixel = 100;
+        cam.max_depth         = 50;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.background        = color(0.70, 0.80, 1.00);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+    }
+
+    void two_perlin_spheres() {
+        ...
+        camera cam;
+
+        cam.aspect_ratio      = 16.0 / 9.0;
+        cam.image_width       = 400;
+        cam.samples_per_pixel = 100;
+        cam.max_depth         = 50;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.background        = color(0.70, 0.80, 1.00);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+    }
+
+    void quads() {
+        ...
+        camera cam;
+
+        cam.aspect_ratio      = 1.0;
+        cam.image_width       = 400;
+        cam.samples_per_pixel = 100;
+        cam.max_depth         = 50;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.background        = color(0.70, 0.80, 1.00);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-emitted]: <kbd>[main.cc]</kbd> ray_color function for emitting materials]
+    [Listing [use-bg-color]: <kbd>[main.cc]</kbd> Specifying new background color]
 
 Since we're removing the code that we used to determine the color of the sky when a ray hit it, we
 need to pass in a new color value for our old scene renders. We've elected to stick with a flat
@@ -2957,19 +3097,9 @@ Turning Objects into Lights
 <div class='together'>
 If we set up a rectangle as a light:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void simple_light(scene& scene_desc) {
-        scene_desc.image_width       = 400;
-        scene_desc.aspect_ratio      = 16.0 / 9.0;
-        scene_desc.samples_per_pixel = 100;
-        scene_desc.background        = color(0,0,0);
-
-        scene_desc.cam.aperture = 0.0;
-        scene_desc.cam.vfov     = 20.0;
-        scene_desc.cam.lookfrom = point3(26,3,6);
-        scene_desc.cam.lookat   = point3(0,2,0);
-
-        hittable_list& world = scene_desc.world;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    void simple_light() {
+        hittable_list world;
 
         auto pertext = make_shared<noise_texture>(4);
         world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
@@ -2977,23 +3107,39 @@ If we set up a rectangle as a light:
 
         auto difflight = make_shared<diffuse_light>(color(4,4,4));
         world.add(make_shared<quad>(point3(3,1,-2), vec3(2,0,0), vec3(0,2,0), difflight));
+
+        camera cam;
+
+        cam.image_width       = 400;
+        cam.aspect_ratio      = 16.0 / 9.0;
+        cam.samples_per_pixel = 100;
+        cam.max_depth         = 50;
+        cam.background        = color(0,0,0);
+
+        cam.lookfrom = point3(26,3,6);
+        cam.lookat   = point3(0,2,0);
+        cam.vup      = vec3(0,1,0);
+        cam.vfov     = 20;
+
+        cam.aperture = 0;
+
+        cam.render(world);
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
-        ...
-        switch (0) {
-            case 1:  random_spheres(scene_desc);     break;
-            case 2:  two_spheres(scene_desc);        break;
-            case 3:  earth(scene_desc);              break;
-            case 4:  two_perlin_spheres(scene_desc); break;
-            case 5:  quads(scene_desc);              break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            default:
-            case 6:  simple_light(scene_desc);       break;
+        switch (6) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            case 1:  random_spheres();     break;
+            case 2:  two_spheres();        break;
+            case 3:  earth();              break;
+            case 4:  two_perlin_spheres(); break;
+            case 5:  quads();              break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            case 6:  simple_light();       break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-
-        scene_desc.render();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [rect-light]: <kbd>[main.cc]</kbd> A simple rectangle light]
@@ -3011,13 +3157,14 @@ Note that the light is brighter than $(1,1,1)$. This allows it to be bright enou
 Fool around with making some spheres lights too.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void simple_light(scene& scene_desc) {
+    void simple_light() {
         ...
         auto difflight = make_shared<diffuse_light>(color(4,4,4));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         world.add(make_shared<sphere>(point3(0,7,0), 2, difflight));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         world.add(make_shared<quad>(point3(3,1,-2), vec3(2,0,0), vec3(0,2,0), difflight));
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [rect-light]: <kbd>[main.cc]</kbd> A simple rectangle light plus illuminating ball]
@@ -3032,19 +3179,9 @@ Creating an Empty “Cornell Box”
 The “Cornell Box” was introduced in 1984 to model the interaction of light between diffuse surfaces.
 Let’s make the 5 walls and the light of the box:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void cornell_box(scene& scene_desc) {
-        scene_desc.image_width       = 600;
-        scene_desc.aspect_ratio      = 1.0;
-        scene_desc.samples_per_pixel = 200;
-        scene_desc.background        = color(0,0,0);
-
-        scene_desc.cam.lookfrom = point3(278, 278, -800);
-        scene_desc.cam.lookat   = point3(278, 278, 0);
-        scene_desc.cam.vfov     = 40.0;
-        scene_desc.cam.aperture = 0.0;
-
-        hittable_list& world = scene_desc.world;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    void cornell_box() {
+        hittable_list world;
 
         auto red   = make_shared<lambertian>(color(.65, .05, .05));
         auto white = make_shared<lambertian>(color(.73, .73, .73));
@@ -3057,24 +3194,40 @@ Let’s make the 5 walls and the light of the box:
         world.add(make_shared<quad>(point3(0,0,0), vec3(555,0,0), vec3(0,0,555), white));
         world.add(make_shared<quad>(point3(555,555,555), vec3(-555,0,0), vec3(0,0,-555), white));
         world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white));
+
+        camera cam;
+
+        cam.aspect_ratio      = 1.0;
+        cam.image_width       = 600;
+        cam.samples_per_pixel = 200;
+        cam.max_depth         = 50;
+        cam.background        = color(0,0,0);
+
+        cam.lookfrom = point3(278, 278, -800);
+        cam.lookat   = point3(278, 278, 0);
+        cam.vup      = vec3(0,1,0);
+        cam.vfov     = 40;
+
+        cam.aperture = 0;
+
+        cam.render(world);
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
-        ...
-        switch (0) {
-            case 1:  random_spheres(scene_desc);     break;
-            case 2:  two_spheres(scene_desc);        break;
-            case 3:  earth(scene_desc);              break;
-            case 4:  two_perlin_spheres(scene_desc); break;
-            case 5:  quads(scene_desc);              break;
-            case 6:  simple_light(scene_desc);       break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            default:
-            case 7:  cornell_box(scene_desc);        break;
+        switch (7) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            case 1:  random_spheres();     break;
+            case 2:  two_spheres();        break;
+            case 3:  earth();              break;
+            case 4:  two_perlin_spheres(); break;
+            case 5:  quads();              break;
+            case 6:  simple_light();       break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            case 7:  cornell_box();        break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-
-        scene_desc.render();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [cornell-box-empty]: <kbd>[main.cc]</kbd> Cornell box scene, empty]
@@ -3129,7 +3282,7 @@ create a function that returns a box, by creating a `hittable_list` of six recta
 Now we can add two blocks (but not rotated)
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void cornell_box(scene& scene_desc) {
+    void cornell_box() {
         ...
         world.add(make_shared<quad>(point3(555,0,0), vec3(0,555,0), vec3(0,0,555), green));
         world.add(make_shared<quad>(point3(0,0,0), vec3(0,555,0), vec3(0,0,555), red));
@@ -3143,6 +3296,9 @@ Now we can add two blocks (but not rotated)
         world.add(box(point3(130, 0, 65), point3(295, 165, 230), white));
         world.add(box(point3(265, 0, 295), point3(430, 330, 460), white));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        camera cam;
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [add-boxes]: <kbd>[main.cc]</kbd> Adding box objects]
@@ -3471,7 +3627,7 @@ We can now create a class for y-rotation:
 And the changes to Cornell are:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void cornell_box(scene& scene_desc) {
+    void cornell_box() {
         ...
         world.add(make_shared<quad>(point3(0,0,555), vec3(555,0,0), vec3(0,555,0), white));
 
@@ -3487,6 +3643,9 @@ And the changes to Cornell are:
         box2 = make_shared<translate>(box2, vec3(130,0,65));
         world.add(box2);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        camera cam;
+        ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-rot-y]: <kbd>[main.cc]</kbd> Cornell scene with Y-rotated boxes]
@@ -3656,18 +3815,8 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    void cornell_smoke(scene& scene_desc) {
-        scene_desc.image_width       = 600;
-        scene_desc.aspect_ratio      = 1.0;
-        scene_desc.samples_per_pixel = 200;
-        scene_desc.background        = color(0,0,0);
-
-        scene_desc.cam.aperture = 0.0;
-        scene_desc.cam.vfov     = 40.0;
-        scene_desc.cam.lookfrom = point3(278, 278, -800);
-        scene_desc.cam.lookat   = point3(278, 278, 0);
-
-        hittable_list& world = scene_desc.world;
+    void cornell_smoke() {
+        hittable_list world;
 
         auto red   = make_shared<lambertian>(color(.65, .05, .05));
         auto white = make_shared<lambertian>(color(.73, .73, .73));
@@ -3691,26 +3840,41 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
 
         world.add(make_shared<constant_medium>(box1, 0.01, color(0,0,0)));
         world.add(make_shared<constant_medium>(box2, 0.01, color(1,1,1)));
+
+        camera cam;
+
+        cam.aspect_ratio      = 1.0;
+        cam.image_width       = 600;
+        cam.samples_per_pixel = 200;
+        cam.max_depth         = 50;
+        cam.background        = color(0,0,0);
+
+        cam.lookfrom = point3(278, 278, -800);
+        cam.lookat   = point3(278, 278, 0);
+        cam.vup      = vec3(0,1,0);
+        cam.vfov     = 40;
+
+        cam.aperture = 0;
+
+        cam.render(world);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
-        ...
-        switch (0) {
-            case 1:  random_spheres(scene_desc);     break;
-            case 2:  two_spheres(scene_desc);        break;
-            case 3:  earth(scene_desc);              break;
-            case 4:  two_perlin_spheres(scene_desc); break;
-            case 5:  quads(scene_desc);              break;
-            case 6:  simple_light(scene_desc);       break;
-            case 7:  cornell_box(scene_desc);        break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            default:
-            case 8:  cornell_smoke(scene_desc);      break;
+        switch (8) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            case 1:  random_spheres();     break;
+            case 2:  two_spheres();        break;
+            case 3:  earth();              break;
+            case 4:  two_perlin_spheres(); break;
+            case 5:  quads();              break;
+            case 6:  simple_light();       break;
+            case 7:  cornell_box();        break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            case 8:  cornell_smoke();      break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-
-        scene_desc.render();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [cornell-smoke]: <kbd>[main.cc]</kbd> Cornell box, with smoke]
@@ -3732,23 +3896,16 @@ reflection sphere (we didn’t implement that explicitly, but a volume inside a 
 subsurface material is). The biggest limitation left in the renderer is no shadow rays, but that is
 why we get caustics and subsurface for free. It’s a double-edged design decision.
 
+Also note that we'll parameterize this final scene to support a lower quality render for quick
+testing.
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "bvh.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    void final_scene(scene& scene_desc) {
-        scene_desc.image_width       = 800;
-        scene_desc.aspect_ratio      = 1.0;
-        scene_desc.samples_per_pixel = 10000;
-        scene_desc.background        = color(0,0,0);
-
-        scene_desc.cam.aperture = 0.0;
-        scene_desc.cam.vfov     = 40.0;
-        scene_desc.cam.lookfrom = point3(478, 278, -600);
-        scene_desc.cam.lookat   = point3(278, 278, 0);
-
+    void final_scene(bool high_quality) {
         hittable_list boxes1;
         auto ground = make_shared<lambertian>(color(0.48, 0.83, 0.53));
 
@@ -3767,7 +3924,7 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
             }
         }
 
-        hittable_list& world = scene_desc.world;
+        hittable_list world;
 
         world.add(make_shared<bvh_node>(boxes1));
 
@@ -3776,8 +3933,8 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 
         auto center1 = point3(400, 400, 200);
         auto center2 = center1 + vec3(30,0,0);
-        auto moving_sphere_material = make_shared<lambertian>(color(0.7, 0.3, 0.1));
-        world.add(make_shared<moving_sphere>(center1, center2, 50, moving_sphere_material));
+        auto sphere_material = make_shared<lambertian>(color(0.7, 0.3, 0.1));
+        world.add(make_shared<sphere>(center1, center2, 50, sphere_material));
 
         world.add(make_shared<sphere>(point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
         world.add(make_shared<sphere>(
@@ -3808,35 +3965,50 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
                 vec3(-100,270,395)
             )
         );
-    }
 
+        camera cam;
 
-    void default_scene(scene& scene_desc) {
-        final_scene(scene_desc);
-        scene_desc.image_width       = 400;
-        scene_desc.samples_per_pixel = 250;
-        scene_desc.max_depth         = 4;
+        cam.aspect_ratio = 1.0;
+        cam.background   = color(0,0,0);
+
+        cam.lookfrom = point3(478, 278, -600);
+        cam.lookat   = point3(278, 278, 0);
+        cam.vup      = vec3(0,1,0);
+        cam.vfov     = 40;
+
+        cam.aperture = 0;
+
+        if (high_quality) {
+            cam.image_width       = 800;
+            cam.samples_per_pixel = 10000;
+            cam.max_depth         = 50;
+        } else {
+            cam.image_width       = 400;
+            cam.samples_per_pixel = 250;
+            cam.max_depth         = 4;
+        }
+
+        cam.render(world);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
-        ...
-        switch (0) {
-            case 1:  random_spheres(scene_desc);     break;
-            case 2:  two_spheres(scene_desc);        break;
-            case 3:  earth(scene_desc);              break;
-            case 4:  two_perlin_spheres(scene_desc); break;
-            case 5:  quads(scene_desc);              break;
-            case 6:  simple_light(scene_desc);       break;
-            case 7:  cornell_box(scene_desc);        break;
-            case 8:  cornell_smoke(scene_desc);      break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            case 9:  final_scene(scene_desc);        break;
-            default: default_scene(scene_desc);      break;
+        switch (0) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            case 1:  random_spheres();     break;
+            case 2:  two_spheres();        break;
+            case 3:  earth();              break;
+            case 4:  two_perlin_spheres(); break;
+            case 5:  quads();              break;
+            case 6:  simple_light();       break;
+            case 7:  cornell_box();        break;
+            case 8:  cornell_smoke();      break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            case 9:  final_scene(true);    break;
+            default: final_scene(false);   break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-
-        scene_desc.render();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-final]: <kbd>[main.cc]</kbd> Final scene]
