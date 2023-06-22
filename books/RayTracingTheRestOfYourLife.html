@@ -250,10 +250,6 @@ currently happening in this space.
 As an intermediary, we'll be stratifying the locations of the sampling positions around each pixel
 location.
 
-
-
-
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
 
@@ -315,7 +311,6 @@ location.
     [Listing [estpi-3]: <kbd>[main.cc]</kbd> Stratifying the samples inside pixels]
 
 
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
@@ -331,14 +326,13 @@ location.
             int sqrt_spp = int(sqrt(samples_per_pixel));
             for (int j = 0; j < image_height; ++j) {
                 std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-
                 for (int i = 0; i < image_width; ++i) {
                     color pixel_color(0,0,0);
                     for (int s_j = 0; s_j < sqrt_spp; ++s_j) {
                         for (int s_i = 0; s_i < sqrt_spp; ++s_i) {
                             auto s = (i + (s_i + random_double()) / sqrt_spp) / (image_width-1);
                             auto t = (j + (s_j + random_double()) / sqrt_spp) / (image_height-1);
-                            ray r = cam.get_ray(s, t);
+                            ray r = get_ray(s, t);
                             pixel_color += ray_color(r, max_depth, world);
                         }
                     }
@@ -2625,8 +2619,10 @@ We can try this cosine PDF in the `ray_color()` function:
 
             ray scattered;
             color attenuation;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             double pdf_val;
             color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_val))
                 return color_from_emission;
@@ -3232,7 +3228,9 @@ And `ray_color()` changes are small:
             double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 
             color sample_color = ray_color(scattered, depth-1, world, lights);
-            color color_from_scatter = (attenuation * scattering_pdf * sample_color) / pdf_val;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            color color_from_scatter = (srec.attenuation * scattering_pdf * sample_color) / pdf_val;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return color_from_emission + color_from_scatter;
         }
@@ -3334,7 +3332,7 @@ materials that we're treating specularly.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             if (srec.skip_pdf) {
-                return srec.attenuation * ray_color(srec.skip_pdf_ray, depth-1, world);
+                return srec.attenuation * ray_color(srec.skip_pdf_ray, depth-1, world, lights);
             }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
