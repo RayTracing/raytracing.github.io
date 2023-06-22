@@ -107,8 +107,8 @@ Let’s make some C++ code to output such a thing:
 
         // Image
 
-        const int image_width = 256;
-        const int image_height = 256;
+        int image_width = 256;
+        int image_height = 256;
 
         // Render
 
@@ -418,8 +418,8 @@ Now we can change our main to use this:
 
         // Image
 
-        const int image_width = 256;
-        const int image_height = 256;
+        int image_width = 256;
+        int image_height = 256;
 
         // Render
 
@@ -571,10 +571,11 @@ Below in code, the ray `r` goes to the current image pixel:
 
         // Image
 
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        const auto aspect_ratio = 16.0 / 9.0;
-        const int image_width = 400;
-        const int image_height = static_cast<int>(image_width / aspect_ratio);
+        auto aspect_ratio = 16.0 / 9.0;
+        int image_width = 400;
+        int image_height = static_cast<int>(image_width / aspect_ratio);
 
         // Camera
 
@@ -790,6 +791,7 @@ let us compute and visualize $\mathbf{n}$:
         auto c = dot(oc, oc) - radius*radius;
         auto discriminant = b*b - 4*a*c;
 
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         if (discriminant < 0) {
             return -1.0;
@@ -808,9 +810,7 @@ let us compute and visualize $\mathbf{n}$:
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         vec3 unit_direction = unit_vector(r.direction());
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto a = 0.5*(unit_direction.y() + 1.0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -828,7 +828,7 @@ And that yields this picture:
 
 Simplifying the Ray-Sphere Intersection Code
 ---------------------------------------------
-Let’s revisit the ray-sphere equation:
+Let’s revisit the ray-sphere function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     double hit_sphere(const point3& center, double radius, const ray& r) {
@@ -1073,7 +1073,7 @@ And then we add the surface side determination to the class:
     class sphere : public hittable {
       public:
         ...
-        bool here::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+        bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
             ...
 
             rec.t = root;
@@ -1252,16 +1252,25 @@ And the new main:
     #include "rtweekend.h"
 
     #include "color.h"
+    #include "hittable.h"
     #include "hittable_list.h"
     #include "sphere.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     #include <iostream>
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+    double hit_sphere(const point3& center, double radius, const ray& r) {
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     color ray_color(const ray& r, const hittable& world) {
         hit_record rec;
-        if (world.hit(r, 0, infinity, rec)) {
+        if (world.hit(r, interval(0, infinity), rec)) {
             return 0.5 * (rec.normal + color(1,1,1));
         }
 
@@ -1275,14 +1284,16 @@ And the new main:
 
         // Image
 
-        const auto aspect_ratio = 16.0 / 9.0;
-        const int image_width = 400;
-        const int image_height = static_cast<int>(image_width / aspect_ratio);
+        auto aspect_ratio = 16.0 / 9.0;
+        int image_width = 400;
+        int image_height = static_cast<int>(image_width / aspect_ratio);
 
-        // World
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        // World
+
         hittable_list world;
+
         world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
         world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1446,9 +1457,196 @@ and a maximum. We'll end up using this class quite often as we proceed.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             return 0.5 * (rec.normal + color(1,1,1));
         }
+
+        vec3 unit_direction = unit_vector(r.direction());
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+    }
     ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-with-interval]: <kbd>[main.cc]</kbd> The new main using interval]
+
+
+
+Consolodating Camera Code Into Its Own Class
+====================================================================================================
+Before continuing, now is a good time to consolidate our camera and scene-render code into a single
+  new class: the `camera` class.
+The camera class will be responsible for two important jobs.
+First, it will construct and then dispatch rays into the world.
+Second, it will use the results of dispatched rays to construct the rendered image.
+In this refactoring, we'll pull in the `ray_color()` function along with the image, camera, and
+  render sections of our main program.
+The new camera class will contain two public methods: `initialize()` and `render()`, plus two
+  private helper methods `get_ray()` and `ray_color()`.
+
+Ultimately, the camera will use a bunch of public variables as parameters instead of using a
+  constructor with a long sequence of arguments, or using a bunch of setter methods.
+It's crude, but simple.
+Given this, the usage pattern will be such that the main code will create a default camera,
+  then set different parameters (perhaps at multiple places in the code).
+When everything's been set, it will call the `render()` method.
+The `render()` method will set up the camera by calling the `initialize()` function, and then
+  running the render loop.
+
+Here's the skeleton of the new `camera` class:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef CAMERA_H
+    #define CAMERA_H
+
+    #include "rtweekend.h"
+
+    #include "color.h"
+    #include "hittable.h"
+
+    class camera {
+      public:
+        /* Public Camera Parameters Here */
+
+        void render(const hittable& world) {
+            ...
+        }
+
+      private:
+        /* Private Camera Variables Here */
+
+        void initialize() {
+            ...
+        }
+
+        color ray_color(const ray& r, const hittable& world) const {
+            ...
+        }
+    };
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [camera-skeleton]: <kbd>[camera.h]</kbd> The camera class skeleton]
+
+To begin with, let's fill in the `ray_color()` function from `main.cc`:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class camera {
+      ...
+
+      private:
+        ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        color ray_color(const ray& r, const hittable& world) const {
+            hit_record rec;
+            if (world.hit(r, interval(0, infinity), rec)) {
+                return 0.5 * (rec.normal + color(1,1,1));
+            }
+
+            vec3 unit_direction = unit_vector(r.direction());
+            auto a = 0.5*(unit_direction.y() + 1.0);
+            return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    };
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [camera-ray-color]: <kbd>[camera.h]</kbd> The camera::ray_color function]
+
+Now we move almost everything from the `main()` function into our new camera class.
+The only thing remaining in the `main()` function is the world construction.
+Here's the camera class with newly migrated code:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+    #include "rtweekend.h"
+
+    #include "color.h"
+    #include "hittable.h"
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include <iostream>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    class camera {
+      public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double aspect_ratio = 1.0;
+        int    image_width  = 100;
+
+        void render(const hittable& world) {
+            initialize();
+
+            int image_height = static_cast<int>(image_width / aspect_ratio);
+
+            std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
+            for (int j = 0; j < image_height; ++j) {
+                std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+                for (int i = 0; i < image_width; ++i) {
+                    auto s = double(i) / (image_width-1);
+                    auto t = double(j) / (image_height-1);
+                    ray r(origin, lower_left_corner + s*horizontal + (1-t)*vertical);
+                    color pixel_color = ray_color(r, world);
+                    write_color(std::cout, pixel_color);
+                }
+            }
+
+            std::clog << "\rDone.                 \n";
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+      private:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        point3 origin;
+        vec3 horizontal;
+        vec3 vertical;
+        point3 lower_left_corner;
+
+        void initialize() {
+            auto viewport_height = 2.0;
+            auto viewport_width = aspect_ratio * viewport_height;
+            auto focal_length = 1.0;
+
+            origin = point3(0, 0, 0);
+            horizontal = vec3(viewport_width, 0, 0);
+            vertical = vec3(0, viewport_height, 0);
+            lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        color ray_color(const ray& r, const hittable& world) const {
+            ...
+        }
+    };
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [camera-working]: <kbd>[camera.h]</kbd> The working camera class]
+
+And here's the much reduced main:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "rtweekend.h"
+
+    #include "camera.h"
+    #include "hittable_list.h"
+    #include "sphere.h"
+
+    int main() {
+        hittable_list world;
+
+        world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
+        world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
+
+        camera cam;
+
+        cam.aspect_ratio = 16.0 / 9.0;
+        cam.image_width  = 400;
+        cam.render(world);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-with-new-camera]: <kbd>[main.cc]</kbd> The new main, using the new camera]
 
 
 
@@ -1517,51 +1715,6 @@ samples. The colors of these rays are then averaged:
 
 </div>
 
-<div class='together'>
-Now's a good time to create a `camera` class to manage our virtual camera and the related tasks of
-scene sampling. The following class implements a simple camera using the axis-aligned camera from
-before:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef CAMERA_H
-    #define CAMERA_H
-
-    #include "rtweekend.h"
-
-    class camera {
-      public:
-        camera() {
-            auto aspect_ratio = 16.0 / 9.0;
-            auto viewport_height = 2.0;
-            auto viewport_width = aspect_ratio * viewport_height;
-            auto focal_length = 1.0;
-
-            origin = point3(0, 0, 0);
-            horizontal = vec3(viewport_width, 0.0, 0.0);
-            vertical = vec3(0.0, viewport_height, 0.0);
-            lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
-        }
-
-        ray get_ray(double s, double t) const {
-            // Return the ray from the projection point to the indicated pixel. Coordinates s,t are
-            // the normalized image-based coordinates of the pixel. Image left is s=0, image right
-            // is s=1, image top is t=0, image bottom is t=1.
-
-            return ray(origin, lower_left_corner + s*horizontal + (1-t)*vertical - origin);
-        }
-
-      private:
-        point3 origin;
-        point3 lower_left_corner;
-        vec3 horizontal;
-        vec3 vertical;
-    };
-
-    #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [camera-initial]: <kbd>[camera.h]</kbd> The camera class]
-</div>
-
 To handle the multi-sampled color computation, we'll update the `write_color()` function. Rather
 than adding in a fractional contribution each time we accumulate more light to the color, just add
 the full color each iteration, and then perform a single divide at the end (by the number of
@@ -1572,17 +1725,19 @@ samples) when writing out the color. In addition, we'll add a handy utility func
     class interval {
       public:
         ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double clamp(double x) const {
             if (x < min) return min;
             if (x > max) return max;
             return x;
         }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [clamp]: <kbd>[interval.h]</kbd> The interval::clamp() utility function]
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
         auto r = pixel_color.x();
         auto g = pixel_color.y();
@@ -1603,72 +1758,83 @@ samples) when writing out the color. In addition, we'll add a handy utility func
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-clamped]: <kbd>[color.h]</kbd> The multi-sample write_color() function]
 
-Main is also changed.
-Note that in the image scanning loops, we take the opportunity to hoist the computation of the image
-$t$ coordinate out of the inner loop, since it is the same value for the entire scanline.
+Update the camera class to incorporate multiple samples per pixel:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-
-
+    class camera {
+      public:
+        double aspect_ratio      = 1.0;
+        int    image_width       = 100;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    #include "camera.h"
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "color.h"
-    #include "hittable_list.h"
-    #include "sphere.h"
-
-    #include <iostream>
-
-    ...
-
-    int main() {
-
-        // Image
-
-        const auto aspect_ratio = 16.0 / 9.0;
-        const int image_width = 400;
-        const int image_height = static_cast<int>(image_width / aspect_ratio);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        const int samples_per_pixel = 100;
+        int    samples_per_pixel = 10;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        // World
+        void render(const hittable& world) {
+            initialize();
 
-        hittable_list world;
-        world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
-        world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
+            int image_height = static_cast<int>(image_width / aspect_ratio);
 
-        // Camera
+            std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
+            for (int j = 0; j < image_height; ++j) {
+                std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+                for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        camera cam;
+                    color pixel_color(0,0,0);
+                    for (int sample = 0; sample < samples_per_pixel; ++sample) {
+                        auto s = (i + random_double()) / (image_width-1);
+                        auto t = (j + random_double()) / (image_height-1);
+                        ray r = get_ray(s, t);
+                        pixel_color += ray_color(r, world);
+                    }
+                    write_color(std::cout, pixel_color, samples_per_pixel);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        // Render
-
-        std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
-
-        for (int j = 0; j < image_height; ++j) {
-            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-            for (int i = 0; i < image_width; ++i) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                color pixel_color(0, 0, 0);
-                for (int sample = 0; sample < samples_per_pixel; ++sample) {
-                    auto s = (i + random_double()) / (image_width-1);
-                    auto t = (j + random_double()) / (image_height-1);
-                    ray r = cam.get_ray(s, t);
-                    pixel_color += ray_color(r, world);
                 }
-                write_color(std::cout, pixel_color, samples_per_pixel);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
+
+            std::clog << "\rDone.                 \n";
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+      private:
+        ...
+        void initialize() {
+          ...
         }
 
-        std::clog << "\rDone.                 \n";
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        ray get_ray(double s, double t) const {
+            // Return the ray from the projection point to the indicated pixel. Coordinates s,t are
+            // the normalized image-based coordinates of the pixel. Image left is s=0, image right
+            // is s=1, image top is t=0, image bottom is t=1.
+
+            return ray(origin, lower_left_corner + s*horizontal + (1-t)*vertical);
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+    };
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [camera-spp]: <kbd>[camera.h]</kbd> Camera with samples-per-pixel parameter]
+
+Main is updated to set the new camera parameter.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+        ...
+        camera cam;
+
+        cam.aspect_ratio      = 16.0 / 9.0;
+        cam.image_width       = 400;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.samples_per_pixel = 100;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        cam.render(world);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [main-multi-sample]: <kbd>[main.cc]</kbd> Rendering with multi-sampled pixels]
+    [Listing [main-spp]: <kbd>[main.cc]</kbd> Setting the new samples-per-pixel parameter]
 
 Zooming into the image that is produced, we can see the difference in edge pixels.
 
@@ -1745,8 +1911,8 @@ range from -1 to +1. Reject this point and try again if the point is outside the
     vec3 random_in_unit_sphere() {
         while (true) {
             auto p = vec3::random(-1,1);
-            if (p.length_squared() < 1)
-                return p;
+            if (p.length_squared() >= 1) continue;
+            return p;
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1754,25 +1920,31 @@ range from -1 to +1. Reject this point and try again if the point is outside the
 </div>
 
 <div class='together'>
-Then update the `ray_color()` function to use the new random direction generator:
+Then update the `camera::ray_color()` function to use the new random direction generator:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    color ray_color(const ray& r, const hittable& world) {
-        hit_record rec;
+    ...
+    class camera {
+      ...
+      private:
+        ...
+        color ray_color(const ray& r, const hittable& world) const {
+            hit_record rec;
 
-        if (world.hit(r, interval(0, infinity), rec)) {
+            if (world.hit(r, interval(0, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            point3 target = rec.p + rec.normal + random_in_unit_sphere();
-            return 0.5 * ray_color(ray(rec.p, target - rec.p), world);
+                point3 target = rec.p + rec.normal + random_in_unit_sphere();
+                return 0.5 * ray_color(ray(rec.p, target - rec.p), world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        }
+            }
 
-        vec3 unit_direction = unit_vector(r.direction());
-        auto a = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
-    }
+            vec3 unit_direction = unit_vector(r.direction());
+            auto a = 0.5*(unit_direction.y() + 1.0);
+            return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+        }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-random-unit]: <kbd>[main.cc]</kbd> ray_color() using a random ray direction]
+    [Listing [ray-color-random-unit]: <kbd>[camera.h]</kbd> ray_color() using random ray direction]
 </div>
 
 
@@ -1784,69 +1956,89 @@ will it stop recursing? When it fails to hit anything. In some cases, however, t
 time — long enough to blow the stack. To guard against that, let's limit the maximum recursion
 depth, returning no light contribution at the maximum depth:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    color ray_color(const ray& r, const hittable& world, int depth) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        hit_record rec;
-
-
+    class camera {
+      public:
+        double aspect_ratio      = 1.0;
+        int    image_width       = 100;
+        int    samples_per_pixel = 10;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        // If we've exceeded the ray bounce limit, no more light is gathered.
-        if (depth <= 0)
-            return color(0,0,0);
+        int    max_depth         = 10;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        if (world.hit(r, interval(0, infinity), rec)) {
-            point3 target = rec.p + rec.normal + random_in_unit_sphere();
+        void render(const hittable& world) {
+            initialize();
+
+            int image_height = static_cast<int>(image_width / aspect_ratio);
+
+            std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
+            for (int j = 0; j < image_height; ++j) {
+                std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+                for (int i = 0; i < image_width; ++i) {
+                    color pixel_color(0,0,0);
+                    for (int sample = 0; sample < samples_per_pixel; ++sample) {
+                        auto s = (i + random_double()) / (image_width-1);
+                        auto t = (j + random_double()) / (image_height-1);
+                        ray r = get_ray(s, t);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
+                        pixel_color += ray_color(r, max_depth, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        }
-
-        vec3 unit_direction = unit_vector(r.direction());
-        auto a = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
-    }
-
-    ...
-
-    int main() {
-
-        // Image
-
-        const auto aspect_ratio = 16.0 / 9.0;
-        const int image_width = 400;
-        const int image_height = static_cast<int>(image_width / aspect_ratio);
-        const int samples_per_pixel = 100;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        const int max_depth = 50;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        ...
-
-        // Render
-
-        std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
-
-        for (int j = 0; j < image_height; ++j) {
-            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-            for (int i = 0; i < image_width; ++i) {
-                color pixel_color(0, 0, 0);
-                for (int sample = 0; sample < samples_per_pixel; ++sample) {
-                    auto s = (i + random_double()) / (image_width-1);
-                    auto t = (j + random_double()) / (image_height-1);
-                    ray r = cam.get_ray(s, t);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                    pixel_color += ray_color(r, world, max_depth);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                    }
+                    write_color(std::cout, pixel_color, samples_per_pixel);
                 }
-                write_color(std::cout, pixel_color, samples_per_pixel);
             }
-        }
 
-        std::clog << "\rDone.                 \n";
+            std::clog << "\rDone.                 \n";
+        }
+        ...
+      private:
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        color ray_color(const ray& r, int depth, const hittable& world) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            hit_record rec;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            // If we've exceeded the ray bounce limit, no more light is gathered.
+            if (depth <= 0)
+                return color(0,0,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            if (world.hit(r, interval(0, infinity), rec)) {
+                point3 target = rec.p + rec.normal + random_in_unit_sphere();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                return 0.5 * ray_color(ray(rec.p, target - rec.p), depth-1, world);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            }
+
+            vec3 unit_direction = unit_vector(r.direction());
+            auto a = 0.5*(unit_direction.y() + 1.0);
+            return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+        }
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-depth]: <kbd>[camera.h]</kbd> camera::ray_color() with depth limiting]
+</div>
+
+<div class='together'>
+Update the main() function to use this new depth limit:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+        camera cam;
+
+        cam.aspect_ratio      = 16.0 / 9.0;
+        cam.image_width       = 400;
+        cam.samples_per_pixel = 100;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.max_depth         = 50;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        cam.render(world);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-depth]: <kbd>[main.cc]</kbd> ray_color() with depth limiting]
+    [Listing [main-ray-depth]: <kbd>[main.cc]</kbd> Using the new ray depth limiting]
 </div>
 
 <div class='together'>
@@ -1912,27 +2104,32 @@ off of not at exactly $t=0$, but instead at $t=-0.0000001$ or $t=0.00000001$ or 
 point approximation the sphere intersector gives us. So we need to ignore hits very near zero:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    color ray_color(const ray& r, const hittable& world, int depth) {
-        hit_record rec;
+    class camera {
+      ...
+      private:
+        ...
+        color ray_color(const ray& r, int depth, const hittable& world) const {
+            hit_record rec;
 
-        // If we've exceeded the ray bounce limit, no more light is gathered.
-        if (depth <= 0)
-            return color(0,0,0);
+            // If we've exceeded the ray bounce limit, no more light is gathered.
+            if (depth <= 0)
+                return color(0,0,0);
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        if (world.hit(r, interval(0.001, infinity), rec)) {
+            if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            point3 target = rec.p + rec.normal + random_in_unit_sphere();
-            return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
-        }
+                point3 target = rec.p + rec.normal + random_in_unit_sphere();
+                return 0.5 * ray_color(ray(rec.p, target - rec.p), depth-1, world);
+            }
 
-        vec3 unit_direction = unit_vector(r.direction());
-        auto a = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
-    }
+            vec3 unit_direction = unit_vector(r.direction());
+            auto a = 0.5*(unit_direction.y() + 1.0);
+            return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+        }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [reflect-tolerance]: <kbd>[main.cc]</kbd>
+    [Listing [reflect-tolerance]: <kbd>[camera.h]</kbd>
     Calculating reflected ray origins with tolerance]
 
 This gets rid of the shadow acne problem. Yes it is really called that.
@@ -1975,26 +2172,29 @@ This `random_unit_vector()` is a drop-in replacement for the existing `random_in
 function.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    color ray_color(const ray& r, const hittable& world, int depth) {
-        hit_record rec;
+    class camera {
+        ...
+        color ray_color(const ray& r, int depth, const hittable& world) const {
+            hit_record rec;
 
-        // If we've exceeded the ray bounce limit, no more light is gathered.
-        if (depth <= 0)
-            return color(0,0,0);
+            // If we've exceeded the ray bounce limit, no more light is gathered.
+            if (depth <= 0)
+                return color(0,0,0);
 
-        if (world.hit(r, interval(0.001, infinity), rec)) {
+            if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            point3 target = rec.p + rec.normal + random_unit_vector();
+                point3 target = rec.p + rec.normal + random_unit_vector();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
-        }
+                return 0.5 * ray_color(ray(rec.p, target - rec.p), depth-1, world);
+            }
 
-        vec3 unit_direction = unit_vector(r.direction());
-        auto a = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
-    }
+            vec3 unit_direction = unit_vector(r.direction());
+            auto a = 0.5*(unit_direction.y() + 1.0);
+            return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+        }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-unit-sphere]: <kbd>[main.cc]</kbd> ray_color() with replacement diffuse]
+    [Listing [ray-color-unit-sphere]: <kbd>[camera.h]</kbd> ray_color() with replacement diffuse]
 </div>
 
 <div class='together'>
@@ -2057,26 +2257,30 @@ this diffuse method (before adopting Lambertian diffuse).
 Plugging the new formula into the `ray_color()` function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    color ray_color(const ray& r, const hittable& world, int depth) {
-        hit_record rec;
+    class camera {
+        ...
+        color ray_color(const ray& r, int depth, const hittable& world) const {
+            hit_record rec;
 
-        // If we've exceeded the ray bounce limit, no more light is gathered.
-        if (depth <= 0)
-            return color(0,0,0);
+            // If we've exceeded the ray bounce limit, no more light is gathered.
+            if (depth <= 0)
+                return color(0,0,0);
 
-        if (world.hit(r, interval(0.001, infinity), rec)) {
+            if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            vec3 direction = random_in_hemisphere(rec.normal);
-            return 0.5 * ray_color(ray(rec.p, direction), world, depth-1);
+                vec3 direction = random_in_hemisphere(rec.normal);
+                return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        }
+            }
 
-        vec3 unit_direction = unit_vector(r.direction());
-        auto a = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
-    }
+            vec3 unit_direction = unit_vector(r.direction());
+            auto a = 0.5*(unit_direction.y() + 1.0);
+            return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+        }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-hemisphere]: <kbd>[main.cc]</kbd> ray_color() with hemispherical scattering]
+    [Listing [ray-color-hemisphere]: <kbd>[camera.h]</kbd>
+    ray_color() with hemispherical scattering]
 
 Gives us the following image:
 
@@ -2345,29 +2549,38 @@ The metal material just reflects rays using that formula:
 We need to modify the `ray_color()` function to use this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    color ray_color(const ray& r, const hittable& world, int depth) {
-        hit_record rec;
+    ...
+    #include "material.h"
+    ...
 
-        // If we've exceeded the ray bounce limit, no more light is gathered.
-        if (depth <= 0)
-            return color(0,0,0);
+    class camera {
+      ...
+      private:
+        ...
+        color ray_color(const ray& r, int depth, const hittable& world) const {
+            hit_record rec;
 
-        if (world.hit(r, interval(0.001, infinity), rec)) {
+            // If we've exceeded the ray bounce limit, no more light is gathered.
+            if (depth <= 0)
+                return color(0,0,0);
+
+            if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            ray scattered;
-            color attenuation;
-            if (rec.mat->scatter(r, rec, attenuation, scattered))
-                return attenuation * ray_color(scattered, world, depth-1);
-            return color(0,0,0);
+                ray scattered;
+                color attenuation;
+                if (rec.mat->scatter(r, rec, attenuation, scattered))
+                    return attenuation * ray_color(scattered, depth-1, world);
+                return color(0,0,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        }
+            }
 
-        vec3 unit_direction = unit_vector(r.direction());
-        auto a = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
-    }
+            vec3 unit_direction = unit_vector(r.direction());
+            auto a = 0.5*(unit_direction.y() + 1.0);
+            return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+        }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-scatter]: <kbd>[main.cc]</kbd> Ray color with scattered reflectance]
+    [Listing [ray-color-scatter]: <kbd>[camera.h]</kbd> Ray color with scattered reflectance]
 </div>
 
 
@@ -2387,22 +2600,9 @@ Now let’s add some metal spheres to our scene:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "sphere.h"
 
-    #include <iostream>
-
     ...
 
     int main() {
-
-        // Image
-
-        const auto aspect_ratio = 16.0 / 9.0;
-        const int image_width = 400;
-        const int image_height = static_cast<int>(image_width / aspect_ratio);
-        const int samples_per_pixel = 100;
-        const int max_depth = 50;
-
-        // World
-
         hittable_list world;
 
 
@@ -2418,15 +2618,13 @@ Now let’s add some metal spheres to our scene:
         world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        // Camera
-
         camera cam;
 
-        // Render
-
-        ...
-
-        std::clog << "\rDone.                 \n";
+        cam.aspect_ratio      = 16.0 / 9.0;
+        cam.image_width       = 400;
+        cam.samples_per_pixel = 100;
+        cam.max_depth         = 50;
+        cam.render(world);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-with-metal]: <kbd>[main.cc]</kbd> Scene with metal spheres]
@@ -2489,8 +2687,6 @@ We can try that out by adding fuzziness 0.3 and 1.0 to the metals:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
         ...
-        // World
-
         auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
         auto material_center = make_shared<lambertian>(color(0.7, 0.3, 0.3));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2822,6 +3018,7 @@ the geometry is unaffected, but the surface normal points inward. This can be us
 make a hollow glass sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
     world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
     world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
     world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
@@ -2829,6 +3026,7 @@ make a hollow glass sphere:
     world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),  -0.4, material_left));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
+    ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-hollow-glass]: <kbd>[main.cc]</kbd> Scene with hollow glass sphere]
 </div>
@@ -2838,251 +3036,6 @@ This gives:
 
   ![Image 16: A hollow glass sphere](../images/img-1.16-glass-hollow.png class=pixel)
 
-</div>
-
-
-
-Creating a Scene
-====================================================================================================
-At this point, our `main.cc` has a standalone function to recursively send rays throughout the
-scene, and our `main()` function has the world we're rendering, a camera to describe the way we set
-up rays, plus an inline block of code to generate rays for the image. Things have gotten complex
-enough to warrant a refactoring.
-
-
-The scene Class
-----------------
-<div class='together'>
-Let's gather together all of the components of a scene into a single class that manages everything.
-Naturally, we'll name this the `scene` class.
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #ifndef SCENE_H
-    #define SCENE_H
-
-    #include "rtweekend.h"
-
-    #include "camera.h"
-    #include "hittable_list.h"
-
-    #include <iostream>
-
-    class scene {
-      public:
-        hittable_list world;
-        camera cam;
-
-        int image_width       = 100;
-        int image_height      = 100;
-        int samples_per_pixel =  10;
-        int max_depth         =  50;
-
-        void render() {
-            std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
-
-            for (int j = 0; j < image_height; ++j) {
-                std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-                for (int i = 0; i < image_width; ++i) {
-                    color pixel_color(0,0,0);
-                    for (int sample = 0; sample < samples_per_pixel; ++sample) {
-                        auto s = (i + random_double()) / (image_width-1);
-                        auto t = (j + random_double()) / (image_height-1);
-                        ray r = cam.get_ray(s, t);
-                        pixel_color += ray_color(r, max_depth);
-                    }
-                    write_color(std::cout, pixel_color, samples_per_pixel);
-                }
-            }
-
-            std::clog << "\rDone.                 \n";
-        }
-
-      private:
-        color ray_color(const ray& r, int depth) {
-            hit_record rec;
-
-            // If we've exceeded the ray bounce limit, no more light is gathered.
-            if (depth <= 0)
-                return color(0,0,0);
-
-            if (world.hit(r, interval(0.001, infinity), rec)) {
-                ray scattered;
-                color attenuation;
-                if (rec.mat->scatter(r, rec, attenuation, scattered))
-                    return attenuation * ray_color(scattered, depth-1);
-                return color(0,0,0);
-            }
-
-            vec3 unit_direction = unit_vector(r.direction());
-            auto a = 0.5*(unit_direction.y() + 1.0);
-            return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
-        }
-    };
-
-
-    #endif
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [scene-initial]: <kbd>[scene.h]</kbd> The new scene class]
-
-</div>
-
-</div class='together'>
-With the new scene class, we trim a lot of code from main.cc. This is what's left:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-
-    #include "camera.h"
-    #include "color.h"
-    #include "hittable_list.h"
-    #include "material.h"
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    #include "scene.h"
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "sphere.h"
-
-    int main() {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene scene_desc;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        const double aspect_ratio = 16.0 / 9.0;
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene_desc.image_width = 400;
-        scene_desc.image_height = static_cast<int>(scene_desc.image_width / aspect_ratio);
-        scene_desc.samples_per_pixel = 100;
-
-        hittable_list& world = scene_desc.world;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
-        auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
-        auto material_left   = make_shared<dielectric>(1.5);
-        auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
-
-        world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
-        world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
-        world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
-        world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),  -0.4, material_left));
-        world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene_desc.render();
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [main-with-scene]: <kdb>[main.cc]</kbd> main.cc using the new scene class]
-
-</div>
-
-Run the new program, you should get the same result as before.
-
-
-Refactoring Camera Setup
--------------------------
-Our camera class is currently a pain to use because we have a bunch of values that are either
-hard-coded into the code, or that can only be defined at camera construction. That makes things
-difficult with the scene class, particularly if we want to write scene-creating functions that also
-set up the camera. To make this easier, we'll allow camera settings to be altered at will and at
-various points in the code, and then perform the camera initialization explicitly with a call to
-`camera::initialize()`.
-
-But before we do _that_, let's revisit the image aspect ratio. When we first introduced aspect ratio
-in section [Sending Rays Into the Scene], we commented that we'd be using the standard pixel spacing
-where the distance between pixels is the same horizontally as it is vertically. There _are_
-situations where pixel spacing differs in the horizontal and vertical directions, but they're rare,
-and we needn't consider them for our purposes. It's easy enough to modify your code if you need to
-do this.
-
-Currently, we encode aspect ratio in three different locations:
-
-  1. In `main()`, as a constant used to determine the image height,
-  2. Implicitly, in the values for image width and image height, and
-  3. In the camera, to set the viewport width.
-
-Now that we have a `scene` class, we'll set the aspect ratio once and then use that to determine the
-rendered image height, and also to pass to the `camera`, for its viewport calculations. This means
-that if you want to change the render size as you develop your code, you only need to set the image
-width, and everything else will adjust accordingly.
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class camera {
-      public:
-        ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        void initialize(double aspect_ratio = 1.0) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            auto viewport_height = 2.0;
-            auto viewport_width = aspect_ratio * viewport_height;
-            auto focal_length = 1.0;
-
-            origin = point3(0, 0, 0);
-            horizontal = vec3(viewport_width, 0.0, 0.0);
-            vertical = vec3(0.0, viewport_height, 0.0);
-            lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
-        }
-
-        ...
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [cam-initialize]: <kbd>[camera.h]</kbd> camera class with explicit initialization]
-
-<div class='together'>
-The scene class now needs to initialize the camera before rendering. Note that any changes to camera
-settings after the call to `initialize()` will not update camera behavior until the next call to
-`initialize()`.
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class scene {
-      public:
-        hittable_list world;
-        camera cam;
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double aspect_ratio      = 1.0;
-        int    image_width       = 100;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        int    samples_per_pixel =  10;
-        int    max_depth         =  50;
-
-        void render() {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            cam.initialize(aspect_ratio);
-
-            const int image_height = static_cast<int>(image_width / aspect_ratio);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-            std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
-            ...
-        }
-
-        ...
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [scene-aspect]: <kbd>[scene.h]</kbd> Scene management using aspect ratio]
-</div>
-
-<div class='together'>
-And a small change to our `main()` routine defines the aspect ratio in the scene:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    int main() {
-        scene scene_desc;
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene_desc.aspect_ratio = 16.0 / 9.0;
-        scene_desc.image_width = 400;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        scene_desc.samples_per_pixel = 100;
-
-        ...
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [main-aspect]: <kbd>[main.cc]</kbd> Updating main to use the scene aspect ratio]
 </div>
 
 
@@ -3112,11 +3065,21 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
+        double aspect_ratio      = 1.0;
+        int    image_width       = 100;
+        int    samples_per_pixel = 10;
+        int    max_depth         = 10;
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double vfov = 40;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
 
-        void initialize(double aspect_ratio = 1.0) {
+      private:
+        ...
+
+        void initialize() {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
@@ -3142,19 +3105,7 @@ Now update `main()` to use a 90° field of view, looking at the point where two 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
-        scene scene_desc;
-
-        scene_desc.aspect_ratio = 16.0 / 9.0;
-        scene_desc.image_width = 400;
-        scene_desc.samples_per_pixel = 100;
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene_desc.cam.vfov = 90;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        hittable_list& world = scene_desc.world;
-
+        hittable_list world;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto R = cos(pi/4);
@@ -3166,7 +3117,19 @@ Now update `main()` to use a 90° field of view, looking at the point where two 
         world.add(make_shared<sphere>(point3( R, 0, -1), R, material_right));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        scene_desc.render();
+        camera cam;
+
+        cam.aspect_ratio      = 16.0 / 9.0;
+        cam.image_width       = 400;
+        cam.samples_per_pixel = 100;
+        cam.max_depth         = 50;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.vfov = 90;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        cam.render(world);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-wide-angle]: <kbd>[main.cc]</kbd> Scene with wide-angle camera]
@@ -3206,14 +3169,19 @@ camera horizontally level until you decide to experiment with crazy camera angle
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
-        double vfov = 40;
+        double aspect_ratio      = 1.0;
+        int    image_width       = 100;
+        int    samples_per_pixel = 10;
+        int    max_depth         = 10;
+
+        double vfov     = 40;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         point3 lookfrom = point3(0,0,-1);
         point3 lookat   = point3(0,0,0);
         vec3   vup      = vec3(0,1,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        void initialize(double aspect_ratio = 1.0) {
+        void initialize() {
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
             auto viewport_height = 2.0 * h;
@@ -3227,6 +3195,7 @@ camera horizontally level until you decide to experiment with crazy camera angle
             origin = lookfrom;
             horizontal = viewport_width * u;
             vertical = viewport_height * v;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             lower_left_corner = origin - horizontal/2 - vertical/2 - w;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
@@ -3240,21 +3209,7 @@ We'll change back to the prior scene, and use the new viewpoint:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
-        scene scene_desc;
-
-        scene_desc.aspect_ratio = 16.0 / 9.0;
-        scene_desc.image_width = 400;
-        scene_desc.samples_per_pixel = 100;
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        scene_desc.cam.lookfrom = point3(-2,2,1);
-        scene_desc.cam.lookat   = point3(0,0,-1);
-        scene_desc.cam.vup      = vec3(0,1,0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        scene_desc.cam.vfov     = 90;
-
-        hittable_list& world = scene_desc.world;
+        hittable_list world;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -3270,7 +3225,21 @@ We'll change back to the prior scene, and use the new viewpoint:
         world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        scene_desc.render();
+        camera cam;
+
+        cam.aspect_ratio      = 16.0 / 9.0;
+        cam.image_width       = 400;
+        cam.samples_per_pixel = 100;
+        cam.max_depth         = 50;
+
+        cam.vfov     = 90;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.lookfrom = point3(-2,2,1);
+        cam.lookat   = point3(0,0,-1);
+        cam.vup      = vec3(0,1,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        cam.render(world);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-free-view]: <kbd>[main.cc]</kbd> Scene with alternate viewpoint]
@@ -3281,8 +3250,8 @@ to get:
 
 And we can change field of view:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    scene_desc.cam.vfov = 20;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    cam.vfov     = 20;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [change-field-view]: <kbd>[main.cc]</kbd> Change field of view]
 
@@ -3352,8 +3321,8 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
     vec3 random_in_unit_disk() {
         while (true) {
             auto p = vec3(random_double(-1,1), random_double(-1,1), 0);
-            if (p.length_squared() < 1)
-                return p;
+            if (p.length_squared() >= 1) continue;
+            return p;
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3362,17 +3331,34 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
-        double vfov       = 40;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double aperture   = 0;
-        double focus_dist = 10;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        double aspect_ratio      = 1.0;
+        int    image_width       = 100;
+        int    samples_per_pixel = 10;
+        int    max_depth         = 10;
 
+        double vfov     = 40;
         point3 lookfrom = point3(0,0,-1);
         point3 lookat   = point3(0,0,0);
         vec3   vup      = vec3(0,1,0);
 
-        void initialize(double aspect_ratio = 1.0) {
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double aperture   = 0;
+        double focus_dist = 10;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+
+      private:
+        point3 origin;
+        vec3 horizontal;
+        vec3 vertical;
+        point3 lower_left_corner;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        vec3 u, v, w;
+        double lens_radius;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        void initialize() {
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
             auto viewport_height = 2.0 * h;
@@ -3397,26 +3383,21 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
 
 
         ray get_ray(double s, double t) const {
+            // Return the ray from the projection point to the indicated pixel. Coordinates s,t are
+            // the normalized image-based coordinates of the pixel. Image left is s=0, image right
+            // is s=1, image top is t=0, image bottom is t=1.
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 rd = lens_radius * random_in_unit_disk();
             vec3 offset = u * rd.x() + v * rd.y();
 
             return ray(
                 origin + offset,
-                lower_left_corner + s*horizontal + t*vertical - origin - offset
+                lower_left_corner + s*horizontal + (1-t)*vertical - origin - offset
             );
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-
-      private:
-        point3 origin;
-        point3 lower_left_corner;
-        vec3   horizontal;
-        vec3   vertical;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        vec3   u, v, w;
-        double lens_radius;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [camera-dof]: <kbd>[camera.h]</kbd> Camera with adjustable depth-of-field (dof)]
@@ -3425,12 +3406,28 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
 Using a big aperture:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    scene_desc.cam.lookfrom   = point3(3,3,2);
-    scene_desc.cam.lookat     = point3(0,0,-1);
-    scene_desc.cam.vup        = vec3(0,1,0);
-    scene_desc.cam.vfov       = 90;
-    scene_desc.cam.aperture   = 2.0;
-    scene_desc.cam.focus_dist = (scene_desc.cam.lookfrom - scene_desc.cam.lookat).length();
+    int main() {
+        ...
+
+        camera cam;
+
+        cam.aspect_ratio      = 16.0 / 9.0;
+        cam.image_width       = 400;
+        cam.samples_per_pixel = 100;
+        cam.max_depth         = 50;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.vfov     = 90;
+        cam.lookfrom = point3(3,3,2);
+        cam.lookat   = point3(0,0,-1);
+        cam.vup      = vec3(0,1,0);
+
+        cam.aperture   = 2.0;
+        cam.focus_dist = (cam.lookfrom - cam.lookat).length();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        cam.render(world);
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-camera-dof]: <kbd>[main.cc]</kbd> Scene camera with depth-of-field]
 
@@ -3448,23 +3445,11 @@ Where Next?
 A Final Render
 ---------------
 <div class='together'>
-First let’s make the image on the cover of this book -- lots of random spheres. We'll create the
-scene with its own helper function:
+Let’s make the image on the cover of this book -- lots of random spheres.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void random_spheres(scene& scene_desc) {
-        scene_desc.aspect_ratio      = 16.0 / 9.0;
-        scene_desc.image_width       = 1200;
-        scene_desc.samples_per_pixel = 500;
-
-        scene_desc.cam.lookfrom   = vec3(13,2,3);
-        scene_desc.cam.lookat     = vec3(0,0,0);
-        scene_desc.cam.vup        = vec3(0,1,0);
-        scene_desc.cam.vfov       = 20;
-        scene_desc.cam.aperture   = 0.1;
-        scene_desc.cam.focus_dist = 10.0;
-
-        hittable_list& world = scene_desc.world;
+    int main() {
+        hittable_list world;
 
         auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
         world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
@@ -3505,13 +3490,23 @@ scene with its own helper function:
 
         auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
         world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
-    }
 
+        camera cam;
 
-    int main() {
-        scene scene_desc;
-        random_spheres(scene_desc);
-        scene_desc.render();
+        cam.aspect_ratio      = 16.0 / 9.0;
+        cam.image_width       = 1200;
+        cam.samples_per_pixel = 500;
+        cam.max_depth         = 50;
+
+        cam.vfov     = 20;
+        cam.lookfrom = vec3(13,2,3);
+        cam.lookat   = vec3(0,0,0);
+        cam.vup      = vec3(0,1,0);
+
+        cam.aperture   = 0.1;
+        cam.focus_dist = 10.0;
+
+        cam.render(world);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-final]: <kbd>[main.cc]</kbd> Final scene]

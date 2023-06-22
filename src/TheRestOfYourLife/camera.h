@@ -25,13 +25,13 @@ class camera {
     double aspect_ratio      = 1.0;
     int    image_width       = 100;
     int    samples_per_pixel = 10;
-    int    max_depth         = 20;
+    int    max_depth         = 10;
     color  background        = color(0,0,0);
 
+    double vfov     = 40;
     point3 lookfrom = point3(0,0,-1);
     point3 lookat   = point3(0,0,0);
     vec3   vup      = vec3(0,1,0);
-    double vfov     = 40;
 
     double aperture   = 0;
     double focus_dist = 10;
@@ -65,9 +65,9 @@ class camera {
 
   private:
     point3 origin;
-    point3 lower_left_corner;
     vec3 horizontal;
     vec3 vertical;
+    point3 lower_left_corner;
     vec3 u, v, w;
     double lens_radius;
 
@@ -106,7 +106,7 @@ class camera {
     }
 
     color ray_color(const ray& r, int depth, const hittable& world, const hittable& lights)
-    {
+    const {
         hit_record rec;
 
         // If we've exceeded the ray bounce limit, no more light is gathered.

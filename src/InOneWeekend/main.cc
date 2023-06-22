@@ -68,10 +68,10 @@ int main() {
     cam.samples_per_pixel = 10;
     cam.max_depth         = 20;
 
+    cam.vfov     = 20;
     cam.lookfrom = vec3(13,2,3);
     cam.lookat   = vec3(0,0,0);
     cam.vup      = vec3(0,1,0);
-    cam.vfov     = 20;
 
     cam.aperture   = 0.1;
     cam.focus_dist = 10.0;
