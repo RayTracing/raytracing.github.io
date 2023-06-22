@@ -1073,7 +1073,7 @@ And then we add the surface side determination to the class:
     class sphere : public hittable {
       public:
         ...
-        bool here::hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
+        bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const {
             ...
 
             rec.t = root;
@@ -1468,14 +1468,14 @@ and a maximum. We'll end up using this class quite often as we proceed.
 
 
 
-A New Camera Class
+Consolodating Camera Code Into Its Own Class
 ====================================================================================================
 Before continuing, now is a good time to consolidate our camera and scene-render code into a single
-  new class: `camera`.
-The camera class will be responsible for constructing and dispatching rays into the world, and using
-  the results to construct the rendered image.
-
-In this refactoring, we'll pull in the `ray_color()` function along with the image, camera and
+  new class: the `camera` class.
+The camera class will be responsible for two important jobs.
+First, it will construct and then dispatch rays into the world.
+Second, it will use the results of dispatched rays to construct the rendered image.
+In this refactoring, we'll pull in the `ray_color()` function along with the image, camera, and
   render sections of our main program.
 The new camera class will contain two public methods: `initialize()` and `render()`, plus two
   private helper methods `get_ray()` and `ray_color()`.
@@ -1505,16 +1505,18 @@ Here's the skeleton of the new `camera` class:
         /* Public Camera Parameters Here */
 
         void render(const hittable& world) {
+            ...
         }
 
       private:
         /* Private Camera Variables Here */
 
         void initialize() {
+            ...
         }
 
         color ray_color(const ray& r, const hittable& world) const {
-            return color();
+            ...
         }
     };
 
@@ -1522,13 +1524,15 @@ Here's the skeleton of the new `camera` class:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [camera-skeleton]: <kbd>[camera.h]</kbd> The camera class skeleton]
 
-To begin with, let's fill in the `ray_color()` function from main.cc:
+To begin with, let's fill in the `ray_color()` function from `main.cc`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       ...
+
       private:
         ...
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         color ray_color(const ray& r, const hittable& world) const {
@@ -3442,7 +3446,6 @@ A Final Render
 ---------------
 <div class='together'>
 Let’s make the image on the cover of this book -- lots of random spheres.
-We'll create the scene with its own helper function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
