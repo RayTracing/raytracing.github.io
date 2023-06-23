@@ -43,16 +43,13 @@ class camera {
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        int sqrt_spp = int(sqrt(samples_per_pixel));
         for (int j = 0; j < image_height; ++j) {
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
                 color pixel_color(0,0,0);
                 for (int s_j = 0; s_j < sqrt_spp; ++s_j) {
                     for (int s_i = 0; s_i < sqrt_spp; ++s_i) {
-                        auto s = (i + (s_i + random_double()) / sqrt_spp) / (image_width-1);
-                        auto t = (j + (s_j + random_double()) / sqrt_spp) / (image_height-1);
-                        ray r = get_ray(s, t);
+                        ray r = get_ray(i, j, s_i, s_j);
                         pixel_color += ray_color(r, max_depth, world, lights);
                     }
                 }
@@ -64,6 +61,9 @@ class camera {
     }
 
   private:
+    int image_height;
+    int sqrt_spp;
+    double inv_sqrt_spp;
     point3 origin;
     vec3 horizontal;
     vec3 vertical;
@@ -72,6 +72,8 @@ class camera {
     double lens_radius;
 
     void initialize() {
+        image_height = static_cast<int>(image_width / aspect_ratio);
+
         auto theta = degrees_to_radians(vfov);
         auto h = tan(theta/2);
         auto viewport_height = 2.0 * h;
@@ -86,13 +88,15 @@ class camera {
         vertical = focus_dist * viewport_height * v;
         lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
 
+        sqrt_spp = static_cast<int>(sqrt(samples_per_pixel));
+        inv_sqrt_spp = 1.0 / sqrt_spp;
+
         lens_radius = aperture / 2;
     }
 
-    ray get_ray(double s, double t) const {
-        // Return the ray from the projection point to the indicated pixel. Coordinates s,t are
-        // the normalized image-based coordinates of the pixel. Image left is s=0, image right
-        // is s=1, image top is t=0, image bottom is t=1.
+    ray get_ray(int i, int j, int s_i, int s_j) const {
+        auto s = (i + inv_sqrt_spp * (s_i + random_double())) / (image_width - 1);
+        auto t = (j + inv_sqrt_spp * (s_j + random_double())) / (image_height - 1);
 
         vec3 rd = lens_radius * random_in_unit_disk();
         vec3 offset = u * rd.x() + v * rd.y();

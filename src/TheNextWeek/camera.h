@@ -48,9 +48,7 @@ class camera {
             for (int i = 0; i < image_width; ++i) {
                 color pixel_color(0,0,0);
                 for (int sample = 0; sample < samples_per_pixel; ++sample) {
-                    auto s = (i + random_double()) / (image_width-1);
-                    auto t = (j + random_double()) / (image_height-1);
-                    ray r = get_ray(s, t);
+                    ray r = get_ray(i, j);
                     pixel_color += ray_color(r, max_depth, world);
                 }
                 write_color(std::cout, pixel_color, samples_per_pixel);
@@ -61,14 +59,17 @@ class camera {
     }
 
   private:
+    int image_height;
     point3 origin;
-    point3 lower_left_corner;
     vec3 horizontal;
     vec3 vertical;
+    point3 lower_left_corner;
     vec3 u, v, w;
     double lens_radius;
 
     void initialize() {
+        image_height = static_cast<int>(image_width / aspect_ratio);
+
         auto theta = degrees_to_radians(vfov);
         auto h = tan(theta/2);
         auto viewport_height = 2.0 * h;
@@ -86,10 +87,9 @@ class camera {
         lens_radius = aperture / 2;
     }
 
-    ray get_ray(double s, double t) const {
-        // Return the ray from the projection point to the indicated pixel. Coordinates s,t are
-        // the normalized image-based coordinates of the pixel. Image left is s=0, image right
-        // is s=1, image top is t=0, image bottom is t=1.
+    ray get_ray(int i, int j) const {
+        auto s = (i + random_double()) / (image_width - 1);
+        auto t = (j + random_double()) / (image_height - 1);
 
         vec3 rd = lens_radius * random_in_unit_disk();
         vec3 offset = u * rd.x() + v * rd.y();
