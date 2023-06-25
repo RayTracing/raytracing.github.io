@@ -140,10 +140,9 @@ a time period.
       ...
       private:
         ...
-        ray get_ray(double s, double t) const {
-            // Return the ray from the projection point to the indicated pixel. Coordinates s,t are
-            // the normalized image-based coordinates of the pixel. Image left is s=0, image right
-            // is s=1, image top is t=0, image bottom is t=1.
+        ray get_ray(int i, int j) const {
+            auto s = (i + random_double()) / (image_width - 1);
+            auto t = (j + random_double()) / (image_height - 1);
 
             vec3 rd = lens_radius * random_in_unit_disk();
             vec3 offset = u * rd.x() + v * rd.y();
@@ -162,7 +161,6 @@ a time period.
 
         ...
     };
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [time-camera]: <kbd>[camera.h]</kbd> Camera with time information]
 
@@ -1970,7 +1968,7 @@ To make it smooth, we can linearly interpolate:
             return accum;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-trilinear]: <kbd>[perlin.h]</kbd> Perlin with trilinear interpolation]
 </div>
@@ -2128,7 +2126,7 @@ reasonable set of irregular directions, and I won't bother to make them exactly 
         int* perm_y;
         int* perm_z;
         ...
-    }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-randunit]: <kbd>[perlin.h]</kbd> Perlin with random unit translations]
 </div>
@@ -2170,7 +2168,7 @@ The Perlin class `noise()` method is now:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
         ...
-    }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-2]: <kbd>[perlin.h]</kbd> Perlin class with new noise() method]
 </div>
@@ -2204,7 +2202,7 @@ And the interpolation becomes a bit more complicated:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
         ...
-    }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-interp]: <kbd>[perlin.h]</kbd> Perlin interpolation function so far]
 </div>

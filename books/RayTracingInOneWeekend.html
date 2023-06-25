@@ -1415,6 +1415,7 @@ and a maximum. We'll end up using this class quite often as we proceed.
             return hit_anything;
         }
         ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hittable-list-with-interval]: <kbd>[hittable_list.h]</kbd>
         hittable_list::hit() using interval]
@@ -1577,8 +1578,6 @@ Here's the camera class with newly migrated code:
         void render(const hittable& world) {
             initialize();
 
-            int image_height = static_cast<int>(image_width / aspect_ratio);
-
             std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
             for (int j = 0; j < image_height; ++j) {
@@ -1598,12 +1597,15 @@ Here's the camera class with newly migrated code:
 
       private:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        int image_height;
         point3 origin;
         vec3 horizontal;
         vec3 vertical;
         point3 lower_left_corner;
 
         void initialize() {
+            image_height = static_cast<int>(image_width / aspect_ratio);
+
             auto viewport_height = 2.0;
             auto viewport_width = aspect_ratio * viewport_height;
             auto focal_length = 1.0;
@@ -1733,7 +1735,7 @@ samples) when writing out the color. In addition, we'll add a handy utility func
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
-    }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [clamp]: <kbd>[interval.h]</kbd> The interval::clamp() utility function]
 
@@ -1772,8 +1774,6 @@ Update the camera class to incorporate multiple samples per pixel:
         void render(const hittable& world) {
             initialize();
 
-            int image_height = static_cast<int>(image_width / aspect_ratio);
-
             std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
             for (int j = 0; j < image_height; ++j) {
@@ -1782,9 +1782,7 @@ Update the camera class to incorporate multiple samples per pixel:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                     color pixel_color(0,0,0);
                     for (int sample = 0; sample < samples_per_pixel; ++sample) {
-                        auto s = (i + random_double()) / (image_width-1);
-                        auto t = (j + random_double()) / (image_height-1);
-                        ray r = get_ray(s, t);
+                        ray r = get_ray(i, j);
                         pixel_color += ray_color(r, world);
                     }
                     write_color(std::cout, pixel_color, samples_per_pixel);
@@ -1804,10 +1802,9 @@ Update the camera class to incorporate multiple samples per pixel:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        ray get_ray(double s, double t) const {
-            // Return the ray from the projection point to the indicated pixel. Coordinates s,t are
-            // the normalized image-based coordinates of the pixel. Image left is s=0, image right
-            // is s=1, image top is t=0, image bottom is t=1.
+        ray get_ray(int i, int j) const {
+            auto s = (i + random_double()) / (image_width - 1);
+            auto t = (j + random_double()) / (image_height - 1);
 
             return ray(origin, lower_left_corner + s*horizontal + (1-t)*vertical - origin);
         }
@@ -1923,7 +1920,6 @@ range from -1 to +1. Reject this point and try again if the point is outside the
 Then update the `camera::ray_color()` function to use the new random direction generator:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
     class camera {
       ...
       private:
@@ -1969,8 +1965,6 @@ depth, returning no light contribution at the maximum depth:
         void render(const hittable& world) {
             initialize();
 
-            int image_height = static_cast<int>(image_width / aspect_ratio);
-
             std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
             for (int j = 0; j < image_height; ++j) {
@@ -1978,9 +1972,7 @@ depth, returning no light contribution at the maximum depth:
                 for (int i = 0; i < image_width; ++i) {
                     color pixel_color(0,0,0);
                     for (int sample = 0; sample < samples_per_pixel; ++sample) {
-                        auto s = (i + random_double()) / (image_width-1);
-                        auto t = (j + random_double()) / (image_height-1);
-                        ray r = get_ray(s, t);
+                        ray r = get_ray(i, j);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                         pixel_color += ray_color(r, max_depth, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3201,6 +3193,7 @@ camera horizontally level until you decide to experiment with crazy camera angle
         }
 
         ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [camera-orient]: <kbd>[camera.h]</kbd> Positionable and orientable camera]
 
@@ -3382,10 +3375,10 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
         }
 
 
-        ray get_ray(double s, double t) const {
-            // Return the ray from the projection point to the indicated pixel. Coordinates s,t are
-            // the normalized image-based coordinates of the pixel. Image left is s=0, image right
-            // is s=1, image top is t=0, image bottom is t=1.
+        ray get_ray(int i, int j) const {
+            auto s = (i + random_double()) / (image_width - 1);
+            auto t = (j + random_double()) / (image_height - 1);
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 rd = lens_radius * random_in_unit_disk();
