@@ -318,8 +318,6 @@ location.
         void render(const hittable& world) {
             initialize();
 
-            int image_height = static_cast<int>(image_width / aspect_ratio);
-
             std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -330,9 +328,7 @@ location.
                     color pixel_color(0,0,0);
                     for (int s_j = 0; s_j < sqrt_spp; ++s_j) {
                         for (int s_i = 0; s_i < sqrt_spp; ++s_i) {
-                            auto s = (i + (s_i + random_double()) / sqrt_spp) / (image_width-1);
-                            auto t = (j + (s_j + random_double()) / sqrt_spp) / (image_height-1);
-                            ray r = get_ray(s, t);
+                            ray r = get_ray(i, j, s_i, s_j);
                             pixel_color += ray_color(r, max_depth, world);
                         }
                     }
@@ -344,7 +340,26 @@ location.
             std::clog << "\rDone.                 \n";
         }
         ...
-    }
+      private:
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        ray get_ray(int i, int j, int s_i, int s_j) const {
+            auto s = (i + inv_sqrt_spp * (s_i + random_double())) / (image_width - 1);
+            auto t = (j + inv_sqrt_spp * (s_j + random_double())) / (image_height - 1);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            vec3 rd = lens_radius * random_in_unit_disk();
+            vec3 offset = u * rd.x() + v * rd.y();
+            auto ray_time = random_double(0.0, 1.0);
+
+            return ray(
+                origin + offset,
+                lower_left_corner + s*horizontal + (1-t)*vertical - origin - offset,
+                ray_time
+            );
+        }
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [render-estpi-3]: <kbd>[camera.h]</kbd> Stratifying the samples inside pixels (render)]
 
@@ -1243,9 +1258,10 @@ For just one sample we get:
 This always returns the exact answer. Which, honestly, feels a bit like magic.
 
 
-A nonuniform PDF "steers" more samples to where the PDF is big, and fewer samples to where the PDF is
-small. By this sampling, we would expect less noise in the places where the PDF is big and more noise
-where the PDF is small. If we choose a PDF that is higher in the parts of the scene that have higher
+A nonuniform PDF "steers" more samples to where the PDF is big, and fewer samples to where the PDF
+is small.
+By this sampling, we would expect less noise in the places where the PDF is big and more noise where
+the PDF is small. If we choose a PDF that is higher in the parts of the scene that have higher
 noise, and is smaller in the parts of the scene that have lower noise, we'll be able to reduce the
 total noise of the scene with fewer samples. This means that we will be able to converge to the
 correct scene _faster_ than with a uniform PDF. In effect, we are steering our samples toward the
@@ -2269,7 +2285,7 @@ We can rewrite our Lambertian material using this to get:
         }
 
         ...
-    }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scatter-onb]: <kbd>[material.h]</kbd> Scatter function, with orthonormal basis]
 </div>
@@ -2793,8 +2809,6 @@ Add a `lights` parameter to the camera `render()` function:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             initialize();
 
-            int image_height = static_cast<int>(image_width / aspect_ratio);
-
             std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
             int sqrt_spp = int(sqrt(samples_per_pixel));
@@ -2804,9 +2818,7 @@ Add a `lights` parameter to the camera `render()` function:
                     color pixel_color(0,0,0);
                     for (int s_j = 0; s_j < sqrt_spp; ++s_j) {
                         for (int s_i = 0; s_i < sqrt_spp; ++s_i) {
-                            auto s = (i + (s_i + random_double()) / sqrt_spp) / (image_width-1);
-                            auto t = (j + (s_j + random_double()) / sqrt_spp) / (image_height-1);
-                            ray r = get_ray(s, t);
+                            ray r = get_ray(i, j, s_i, s_j);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                             pixel_color += ray_color(r, max_depth, world, lights);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2821,6 +2833,7 @@ Add a `lights` parameter to the camera `render()` function:
 
         ...
       private:
+        ...
         color ray_color(const ray& r, int depth, const hittable& world, const hittable& lights)
         const {
             ...
@@ -2849,7 +2862,8 @@ Add a `lights` parameter to the camera `render()` function:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return color_from_emission + color_from_scatter;
-    }
+        }
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-lights]: <kbd>[camera.h]</kbd> ray_color function with light PDF]
 
