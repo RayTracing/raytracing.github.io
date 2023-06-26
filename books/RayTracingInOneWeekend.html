@@ -1046,9 +1046,10 @@ literature.
 
 We add the `front_face` bool to the `hit_record` class.
 We'll also add a function to solve this calculation for us: `set_face_normal()`.
-Note that the vector passed to the new `set_face_normal` function is expected to be of unit length.
-Of course, we could always normalize the parameter explicitly, but it's more efficient if the
-  geometry code does this, as it's usually easier when you know more about the specific geometry.
+For convenience we will assume that the vector passed to the new `set_face_normal()` function is of
+  unit length.
+We could always normalize the parameter explicitly, but it's more efficient if the geometry code
+  does this, as it's usually easier when you know more about the specific geometry.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hit_record {
@@ -1061,7 +1062,7 @@ Of course, we could always normalize the parameter explicitly, but it's more eff
 
         void set_face_normal(const ray& r, const vec3& outward_normal) {
             // Sets the hit record normal vector.
-            // NOTE: the parameter `outward_normal` must be of unit length.
+            // NOTE: the parameter `outward_normal` is assumed to have unit length.
 
             front_face = dot(r.direction(), outward_normal) < 0;
             normal = front_face ? outward_normal : -outward_normal;
