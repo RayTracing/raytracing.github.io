@@ -17,7 +17,7 @@
 
 using color = vec3;
 
-inline double linear_to_gamma(const double linear_component)
+inline double linear_to_gamma(double linear_component)
 {
     return sqrt(linear_component);
 }
