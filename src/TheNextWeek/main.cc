@@ -81,7 +81,7 @@ void random_spheres() {
     cam.lookat   = point3(0,0,0);
     cam.vup      = vec3(0,1,0);
 
-    cam.aperture   = 0.1;
+    cam.defocus_angle = 0.02;
     cam.focus_dist = 10.0;
 
     cam.render(world);
@@ -109,7 +109,7 @@ void two_spheres() {
     cam.vup      = vec3(0,1,0);
     cam.vfov     = 20;
 
-    cam.aperture = 0;
+    cam.defocus_angle = 0;
 
     cam.render(world);
 }
@@ -133,7 +133,7 @@ void earth() {
     cam.vup      = vec3(0,1,0);
     cam.vfov     = 20;
 
-    cam.aperture = 0;
+    cam.defocus_angle = 0;
 
     cam.render(hittable_list(globe));
 }
@@ -159,7 +159,7 @@ void two_perlin_spheres() {
     cam.vup      = vec3(0,1,0);
     cam.vfov     = 20;
 
-    cam.aperture = 0;
+    cam.defocus_angle = 0;
 
     cam.render(world);
 }
@@ -195,7 +195,7 @@ void quads() {
     cam.vup      = vec3(0,1,0);
     cam.vfov     = 80;
 
-    cam.aperture = 0;
+    cam.defocus_angle = 0;
 
     cam.render(world);
 }
@@ -225,7 +225,7 @@ void simple_light() {
     cam.vup      = vec3(0,1,0);
     cam.vfov     = 20;
 
-    cam.aperture = 0;
+    cam.defocus_angle = 0;
 
     cam.render(world);
 }
@@ -269,7 +269,7 @@ void cornell_box() {
     cam.vup      = vec3(0,1,0);
     cam.vfov     = 40;
 
-    cam.aperture = 0;
+    cam.defocus_angle = 0;
 
     cam.render(world);
 }
@@ -314,7 +314,7 @@ void cornell_smoke() {
     cam.vup      = vec3(0,1,0);
     cam.vfov     = 40;
 
-    cam.aperture = 0;
+    cam.defocus_angle = 0;
 
     cam.render(world);
 }
@@ -391,7 +391,7 @@ void final_scene(bool high_quality) {
     cam.vup      = vec3(0,1,0);
     cam.vfov     = 40;
 
-    cam.aperture = 0;
+    cam.defocus_angle = 0;
 
     if (high_quality) {
         cam.image_width       = 800;
