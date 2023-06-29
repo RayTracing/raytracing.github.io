@@ -70,7 +70,6 @@ class camera {
     vec3   defocus_disk_v;  // Defocus disk vertical radius
 
     void initialize() {
-        image_width  = (image_width < 1) ? 1 : image_width;
         image_height = static_cast<int>(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
 
