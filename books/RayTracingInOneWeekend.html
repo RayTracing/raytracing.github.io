@@ -421,7 +421,7 @@ Now we can change our main to use this:
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                color pixel_color(double(i)/(image_width-1), double(j)/(image_height-1), 0.25);
+                auto pixel_color = color(double(i)/(image_width-1), double(j)/(image_height-1), 0);
                 write_color(std::cout, pixel_color);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
@@ -449,13 +449,13 @@ $\mathbf{P}$ is a 3D position along a line in 3D. $\mathbf{A}$ is the ray origin
 the ray direction. The ray parameter $t$ is a real number (`double` in the code). Plug in a
 different $t$ and $\mathbf{P}(t)$ moves the point along the ray. Add in negative $t$ values and you
 can go anywhere on the 3D line. For positive $t$, you get only the parts in front of $\mathbf{A}$,
-and this is what is often called a half-line or ray.
+and this is what is often called a half-line or a ray.
 
   ![Figure [lerp]: Linear interpolation](../images/fig-1.02-lerp.jpg)
 
 <div class='together'>
 We can represent the idea of a ray as a class, and represent the function $\mathbf{P}(t)$ as a
-function that I call `ray::at(t)`:
+function that we'll call `ray::at(t)`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef RAY_H
@@ -490,54 +490,111 @@ function that I call `ray::at(t)`:
 
 Sending Rays Into the Scene
 ----------------------------
-Now we are ready to turn the corner and make a ray tracer. At its core, a ray tracer sends rays
-through pixels and computes the color seen in the direction of those rays. The involved steps are
+Now we are ready to turn the corner and make a ray tracer.
+At its core, a ray tracer sends rays through pixels and computes the color seen in the direction of
+  those rays.
+The involved steps are
 
-    1. Calculate the ray from the eye to the pixel,
+    1. Calculate the ray from the “eye” through the pixel,
     2. Determine which objects the ray intersects, and
     3. Compute a color for that intersection point.
 
 When first developing a ray tracer, I always do a simple camera for getting the code up and running.
-I also make a simple `ray_color(ray)` function that returns the color of the background (a simple
-gradient).
 
 I’ve often gotten into trouble using square images for debugging because I transpose $x$ and $y$ too
-often, so I’ll use a non-square image.
-For now we'll use a 16:9 aspect ratio, since that's so common.
+  often, so I’ll use a non-square image.
+A square image has a 1&ratio;1 aspect ratio, because its width is the same as its height.
+Since I want a non-square image, I'll choose 16&ratio;9 because it's so common.
+A 16&ratio;9 aspect ratio means that the ratio of image width to image height is 16&ratio;9.
+Put another way, given an image with a 16&ratio;9 aspect ratio,
+
+  $$\text{width} / \text{height} = 16 / 9 = 1.7778$$
+
+As another example, an image 800 pixels wide by 400 pixels high has a 2&ratio;1 aspect ratio.
+
+The image's aspect ratio can be determined from the ratio of its height to its width.
+However, since we have a given aspect ratio in mind, it's easier to set the image's width and the
+  aspect ratio, and then using this to calculate for its height.
+This way, we can scale up or down the image by changing the image width, and it won't throw off our
+  desired aspect ratio.
+We do have to make sure that when we solve for the image height the resulting height is at least 1.
 
 In addition to setting up the pixel dimensions for the rendered image, we also need to set up a
-virtual viewport through which to pass our scene rays. For the standard pixel spacing (equally
-spaced in both the horizontal and vertical direction), the viewport's aspect ratio should be the
-same as our rendered image. We'll just pick a viewport two units in height. We'll also set the
-distance between the projection plane and the projection point to be one unit. This is referred to
-as the _focal length_, not to be confused with the _focus distance_, which we'll present later.
+  virtual _viewport_ through which to pass our scene rays.
+The viewport is a virtual rectangle in the 3D world that contains the grid of image pixel locations.
+If pixels are spaced the same distance horizontally as they are vertically, the viewport that
+  bounds them will have the same aspect ratio as the rendered image.
+The distance between two adjacent pixels is called the pixel spacing, and square pixels is the
+  standard.
 
-I’ll put the “eye” (or camera center if you think of a camera) at $(0,0,0)$.
-I will have the y-axis go up, and the x-axis to the right.
-In order to respect the convention of a right handed coordinate system, into the screen is the
-negative z-axis.
+To start things off, we'll choose an arbitrary viewport height of 2.0, and scale the viewport width
+  to give us the desired aspect ratio.
+Here's a snippet of what this code will look like:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    auto aspect_ratio = 16.0 / 9.0;
+    int image_width = 400;
+
+    // Calculate the image height, and ensure that it's at least 1.
+    int image_height = static_cast<int>(image_width / aspect_ratio);
+    image_height = (image_height < 1) ? 1 : image_height;
+
+    // Viewport widths less than one are ok since they are real valued.
+    auto viewport_height = 2.0;
+    auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [image-setup]: Rendered image setup]
+
+(If you're wondering why we don't just use `aspect_ratio` when computing `viewport_width`, it's
+because the _actual_ aspect ratio is the integer-based ratio of image width over image height, which
+will yield zero for values less than one.)
+
+Note that `aspect_ratio` is an ideal ratio, which we approximate as best as possible with the
+  integer-based ratio of image width / image height.
+In order for our viewport proportions to exactly match our image proportions, we use the calculated
+  image aspect ratio to determine our final viewport width.
+
+Next we will define the camera center: a point in 3D space from which all scene rays will originate
+  (this is also commonly referred to as the _eye point_).
+The vector from the camera center to the viewport center will be orthogonal to the viewport.
+We'll initially set the distance between the viewport and the camera center point to be one unit.
+This distance is often referred to as the _focal length_.
+
+I’ll put the camera center at $(0,0,0)$.
+I will have the y-axis go up, the x-axis to the right, and the negative z-axis pointing in the
+viewing direction. (This is commonly referred to as _right-handed coordinates_.)
+
+  ![Figure [camera-geom]: Camera geometry](../images/fig-1.03-cam-geom.jpg)
 
 Now the inevitable tricky part.
-While our 3D space has the conventions above, this conflicts with the standard _image_ coordinates,
-where the Y axis is inverted.
-In image coordinates, Y=0 denotes the top of the image, and Y=1 denotes the bottom.
+While our 3D space has the conventions above, this conflicts with our image coordinates,
+  where we want to have the zeroth pixel in the top-left and work our way down to the last pixel at
+  the bottom right.
+This means that our image coordinate Y-axis is inverted: Y increases going down the image.
 
-To help keep things straight, we'll compute two normalized (that is, in the range [0,1]) image
-coordinates: $s$ (horizontal) and $t$ (vertical).
-$s=0$ is image left, $s=1$ is image right, $t=0$ is image top, and $t=1$ is image bottom.
-That means that we get our vertical axis flip at the right point by computing $t = 1 - y$, where $y$
-is the vertical component of our 3D coordinate system, and $t$ is the flipped vertical component of
-our image coordinate system.
+As we scan our image, we will start at the upper left pixel (pixel $0,0$), scan left-to-right across
+  each row, and then scan row-by-row, top-to-bottom.
+To help navigate the pixel grid, we'll use a vector from the left edge to the right edge
+  ($\mathbf{V_u}$), and a vector from the upper edge to the lower edge ($\mathbf{V_v}$).
 
-I will traverse the screen from the upper left hand corner, and use two offset vectors along the
-screen sides to move the ray endpoint across the screen.
-Note that I do not make the ray direction a unit length vector because I think not doing that makes
-for simpler and slightly faster code.
+Our pixel grid will be inset from the viewport edges by half the pixel-to-pixel distance, so each
+  pixel will gather light from the area around it.
 
-  ![Figure [cam-geom]: Camera geometry](../images/fig-1.03-cam-geom.jpg)
+Our pixel grid will be inset from the viewport edges by half the pixel-to-pixel distance.
+This way, our viewport area is evenly divided into width &times; height identical regions.
+Here's what our viewport and pixel grid look like:
+
+  ![Figure [pixel-grid]: Viewport and pixel grid](../images/fig-1.04-pixel-grid.jpg)
+
+In this figure, we have the viewport, the pixel grid for a 7&times;5 resolution image, the viewport
+  upper left corner $\mathbf{Q}$, the pixel $\mathbf{P_{0,0}}$ location, the viewport vector
+  $\mathbf{V_u}$ (`viewport_u`), the viewport vector $\mathbf{V_v}$ (`viewport_v`), and the pixel
+  delta vectors $\mathbf{\Delta_u}$ and $\mathbf{\Delta_v}$.
 
 <div class='together'>
-Below in code, the ray `r` goes to the current image pixel:
+Drawing from all of this, here's the code that implements the camera.
+We'll stub in a function `ray_color(const ray& r)` that returns the color for a given scene ray
+  -- always black for now.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "color.h"
@@ -551,9 +608,7 @@ Below in code, the ray `r` goes to the current image pixel:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     color ray_color(const ray& r) {
-        vec3 unit_direction = unit_vector(r.direction());
-        auto a = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+        return color(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -565,18 +620,29 @@ Below in code, the ray `r` goes to the current image pixel:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto aspect_ratio = 16.0 / 9.0;
         int image_width = 400;
+
+        // Calculate the image height, and ensure that it's at least 1.
         int image_height = static_cast<int>(image_width / aspect_ratio);
+        image_height = (image_height < 1) ? 1 : image_height;
 
         // Camera
 
-        auto viewport_height = 2.0;
-        auto viewport_width = aspect_ratio * viewport_height;
         auto focal_length = 1.0;
+        auto viewport_height = 2.0;
+        auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
+        auto center = point3(0, 0, 0);  // Camera center
 
-        point3 origin = point3(0, 0, 0);
-        vec3   horizontal = vec3(viewport_width, 0, 0);
-        vec3   vertical = vec3(0, viewport_height, 0);
-        point3 lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
+        // Calculate the vectors across the horizontal and down the vertical viewport edges.
+        auto viewport_u = vec3(viewport_width, 0, 0);
+        auto viewport_v = vec3(0, -viewport_height, 0);
+
+        // Calculate the horizontal and vertical delta vectors from pixel to pixel.
+        auto pixel_delta_u = viewport_u / image_width;
+        auto pixel_delta_v = viewport_v / image_height;
+
+        // Calculate the location of the upper left pixel.
+        auto viewport_upper_left = center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
+        auto pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         // Render
@@ -587,9 +653,10 @@ Below in code, the ray `r` goes to the current image pixel:
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                auto s = double(i) / (image_width-1);
-                auto t = double(j) / (image_height-1);
-                ray r(origin, lower_left_corner + s*horizontal + (1-t)*vertical - origin);
+                auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
+                auto ray_direction = pixel_center - center;
+                ray r(center, ray_direction);
+
                 color pixel_color = ray_color(r);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 write_color(std::cout, pixel_color);
@@ -599,16 +666,20 @@ Below in code, the ray `r` goes to the current image pixel:
         std::clog << "\rDone.                 \n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [main-blue-white-blend]: <kbd>[main.cc]</kbd> Rendering a blue-to-white gradient]
+    [Listing [creating-rays]: <kbd>[main.cc]</kbd> Creating scene rays]
 
 </div>
 
-The `ray_color(ray)` function linearly blends white and blue depending on the height of the $y$
-coordinate _after_ scaling the ray direction to unit length (so $-1.0 < y < 1.0$).
-Because we're looking at the $y$ height after normalizing the vector, you'll notice a horizontal
-gradient to the color in addition to the vertical gradient.
+Notice that in the code above, I didn't make `ray_direction` a unit vector, because I think not
+  doing that makes for simpler and slightly faster code.
 
-I then did a standard graphics trick of scaling that to $0.0 ≤ a ≤ 1.0$.
+Now we'll fill in the `ray_color(ray)` function to implement a simple gradient.
+This function will linearly blend white and blue depending on the height of the $y$ coordinate
+  _after_ scaling the ray direction to unit length (so $-1.0 < y < 1.0$).
+Because we're looking at the $y$ height after normalizing the vector, you'll notice a horizontal
+  gradient to the color in addition to the vertical gradient.
+
+I'll use a standard graphics trick to linearly scale $0.0 ≤ a ≤ 1.0$.
 When $a = 1.0$, I want blue.
 When $a = 0.0$, I want white.
 In between, I want a blend.
@@ -619,6 +690,31 @@ A lerp is always of the form
   $$ \mathit{blendedValue} = (1-a)\cdot\mathit{startValue} + a\cdot\mathit{endValue}, $$
 
 with $a$ going from zero to one.
+
+<div class='together'>
+Putting this all together, here's what we get:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "color.h"
+    #include "ray.h"
+    #include "vec3.h"
+
+    #include <iostream>
+
+
+    color ray_color(const ray& r) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        vec3 unit_direction = unit_vector(r.direction());
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    }
+
+    ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-blue-white-blend]: <kbd>[main.cc]</kbd> Rendering a blue-to-white gradient]
+
+</div>
 
 <div class='together'>
 In our case this produces:
@@ -715,7 +811,7 @@ positive (meaning two real solutions), negative (meaning no real solutions), or 
 real solution). In graphics, the algebra almost always relates very directly to the geometry. What
 we have is:
 
-  ![Figure [ray-sphere]: Ray-sphere intersection results](../images/fig-1.04-ray-sphere.jpg)
+  ![Figure [ray-sphere]: Ray-sphere intersection results](../images/fig-1.05-ray-sphere.jpg)
 
 
 Creating Our First Raytraced Image
@@ -778,7 +874,7 @@ yes, but I won’t enforce that in the code. This could allow subtle bugs, so be
 personal preference as are most design decisions like that. For a sphere, the outward normal is in
 the direction of the hit point minus the center:
 
-  ![Figure [sphere-normal]: Sphere surface-normal geometry](../images/fig-1.05-sphere-normal.jpg)
+  ![Figure [sphere-normal]: Sphere surface-normal geometry](../images/fig-1.06-sphere-normal.jpg)
 
 On the earth, this implies that the vector from the earth’s center to you points straight up. Let’s
 throw that into the code now, and shade it. We don’t have any lights or anything yet, so let’s just
@@ -1001,7 +1097,7 @@ the sphere, the normal will point outward, but if the ray is inside the sphere, 
 point inward.
 
   ![Figure [normal-sides]: Possible directions for sphere surface-normal geometry
-  ](../images/fig-1.06-normal-sides.jpg)
+  ](../images/fig-1.07-normal-sides.jpg)
 
 We need to choose one of these possibilities because we will eventually want to determine which
 side of the surface that the ray is coming from. This is important for objects that are rendered
@@ -1302,8 +1398,10 @@ And the new main:
 
         auto aspect_ratio = 16.0 / 9.0;
         int image_width = 400;
-        int image_height = static_cast<int>(image_width / aspect_ratio);
 
+        // Calculate the image height, and ensure that it's at least 1.
+        int image_height = static_cast<int>(image_width / aspect_ratio);
+        image_height = (image_height < 1) ? 1 : image_height;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1317,14 +1415,22 @@ And the new main:
 
         // Camera
 
-        auto viewport_height = 2.0;
-        auto viewport_width = aspect_ratio * viewport_height;
         auto focal_length = 1.0;
+        auto viewport_height = 2.0;
+        auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
+        auto center = point3(0, 0, 0);  // Camera center
 
-        auto origin = point3(0, 0, 0);
-        auto horizontal = vec3(viewport_width, 0, 0);
-        auto vertical = vec3(0, viewport_height, 0);
-        auto lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
+        // Calculate the vectors across the horizontal and down the vertical viewport edges.
+        auto viewport_u = vec3(viewport_width, 0, 0);
+        auto viewport_v = vec3(0, -viewport_height, 0);
+
+        // Calculate the horizontal and vertical delta vectors from pixel to pixel.
+        auto pixel_delta_u = viewport_u / image_width;
+        auto pixel_delta_v = viewport_v / image_height;
+
+        // Calculate the location of the upper left pixel.
+        auto viewport_upper_left = center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
+        auto pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
         // Render
 
@@ -1333,9 +1439,11 @@ And the new main:
         for (int j = 0; j < image_height; ++j) {
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
-                auto s = double(i) / (image_width-1);
-                auto t = double(j) / (image_height-1);
-                ray r(origin, lower_left_corner + s*horizontal + (1-t)*vertical - origin);
+                auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
+                auto ray_direction = pixel_center - center;
+                ray r(center, ray_direction);
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 color pixel_color = ray_color(r, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1485,29 +1593,30 @@ and a maximum. We'll end up using this class quite often as we proceed.
 
 
 
-Consolodating Camera Code Into Its Own Class
+Moving Camera Code Into Its Own Class
 ====================================================================================================
 Before continuing, now is a good time to consolidate our camera and scene-render code into a single
   new class: the `camera` class.
-The camera class will be responsible for two important jobs.
-First, it will construct and then dispatch rays into the world.
-Second, it will use the results of dispatched rays to construct the rendered image.
-In this refactoring, we'll pull in the `ray_color()` function along with the image, camera, and
+The camera class will be responsible for two important jobs:
+
+  1. Construct and dispatch rays into the world.
+  2. Use the results of these rays to construct the rendered image.
+
+In this refactoring, we'll collect the `ray_color()` function, along with the image, camera, and
   render sections of our main program.
-The new camera class will contain two public methods: `initialize()` and `render()`, plus two
+The new camera class will contain two public methods `initialize()` and `render()`, plus two
   private helper methods `get_ray()` and `ray_color()`.
 
-Ultimately, the camera will use a bunch of public variables as parameters instead of using a
+Ultimately, the camera will use a set of public variables as parameters instead of using a
   constructor with a long sequence of arguments, or using a bunch of setter methods.
 It's crude, but simple.
 Given this, the usage pattern will be such that the main code will create a default camera,
-  then set different parameters (perhaps at multiple places in the code).
-When everything's been set, it will call the `render()` method.
-The `render()` method will set up the camera by calling the `initialize()` function, and then
-  running the render loop.
+  then set various camera parameters (perhaps at multiple places in the code).
+After everything's been set, it will call the `render()` method.
+The `render()` method will prepare the camera for rendering and then execute the render loop.
 
 <div class='together'>
-Here's the skeleton of the new `camera` class:
+Here's the skeleton of our new `camera` class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef CAMERA_H
@@ -1558,6 +1667,7 @@ To begin with, let's fill in the `ray_color()` function from `main.cc`:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         color ray_color(const ray& r, const hittable& world) const {
             hit_record rec;
+
             if (world.hit(r, interval(0, infinity), rec)) {
                 return 0.5 * (rec.normal + color(1,1,1));
             }
@@ -1595,8 +1705,8 @@ Here's the camera class with newly migrated code:
     class camera {
       public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double aspect_ratio = 1.0;
-        int    image_width  = 100;
+        double aspect_ratio = 1.0;  // Ratio of image width over height
+        int    image_width  = 100;  // Rendered image width in pixel count
 
         void render(const hittable& world) {
             initialize();
@@ -1606,9 +1716,10 @@ Here's the camera class with newly migrated code:
             for (int j = 0; j < image_height; ++j) {
                 std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
                 for (int i = 0; i < image_width; ++i) {
-                    auto s = double(i) / (image_width-1);
-                    auto t = double(j) / (image_height-1);
-                    ray r(origin, lower_left_corner + s*horizontal + (1-t)*vertical - origin);
+                    auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
+                    auto ray_direction = pixel_center - center;
+                    ray r(center, ray_direction);
+
                     color pixel_color = ray_color(r, world);
                     write_color(std::cout, pixel_color);
                 }
@@ -1620,23 +1731,35 @@ Here's the camera class with newly migrated code:
 
       private:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        int image_height;
-        point3 origin;
-        vec3 horizontal;
-        vec3 vertical;
-        point3 lower_left_corner;
+        int    image_height;   // Rendered image height
+        point3 center;         // Camera center
+        point3 pixel00_loc;    // Location of pixel 0, 0
+        vec3   pixel_delta_u;  // Offset to pixel to the right
+        vec3   pixel_delta_v;  // Offset to pixel below
 
         void initialize() {
             image_height = static_cast<int>(image_width / aspect_ratio);
+            image_height = (image_height < 1) ? 1 : image_height;
 
-            auto viewport_height = 2.0;
-            auto viewport_width = aspect_ratio * viewport_height;
+            center = point3(0, 0, 0);
+
+            // Determine viewport dimensions.
             auto focal_length = 1.0;
+            auto viewport_height = 2.0;
+            auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
 
-            origin = point3(0, 0, 0);
-            horizontal = vec3(viewport_width, 0, 0);
-            vertical = vec3(0, viewport_height, 0);
-            lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
+            // Calculate the vectors across the horizontal and down the vertical viewport edges.
+            auto viewport_u = vec3(viewport_width, 0, 0);
+            auto viewport_v = vec3(0, -viewport_height, 0);
+
+            // Calculate the horizontal and vertical delta vectors from pixel to pixel.
+            pixel_delta_u = viewport_u / image_width;
+            pixel_delta_v = viewport_v / image_height;
+
+            // Calculate the location of the upper left pixel.
+            auto viewport_upper_left =
+                center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
+            pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -1671,12 +1794,15 @@ And here's the much reduced main:
 
         cam.aspect_ratio = 16.0 / 9.0;
         cam.image_width  = 400;
+
         cam.render(world);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-with-new-camera]: <kbd>[main.cc]</kbd> The new main, using the new camera]
 
 </div>
+
+Running this newly refactored program should give us the same rendered image as before.
 
 
 
@@ -1733,16 +1859,18 @@ If you want to use this, you can obtain a random number with the conditions we n
 
 Generating Pixels with Multiple Samples
 ----------------------------------------
-For a given pixel we have several samples within that pixel and send rays through each of the
-samples. The colors of these rays are then averaged:
+For a single pixel composed of multiple samples, we'll select samples from the area surrounding the
+  pixel and average the resulting light (color) values together.
 
-  ![Figure [pixel-samples]: Pixel samples](../images/fig-1.07-pixel-samples.jpg)
+  ![Figure [pixel-samples]: Pixel samples](../images/fig-1.08-pixel-samples.jpg)
 
-To handle the multi-sampled color computation, we'll update the `write_color()` function. Rather
-than adding in a fractional contribution each time we accumulate more light to the color, just add
-the full color each iteration, and then perform a single divide at the end (by the number of
-samples) when writing out the color. In addition, we'll add a handy utility function to the
-`interval` class: `clamp(x)`, which clamps the value `x` to the interval:
+First we need to update the `write_color()` function to account for the number of samples we use.
+Rather than adding a fractional contribution each time we accumulate more light to the color, we'll
+  just add the full color from each iteration, and then finish with a single division (by the number
+  of samples) at the end, before writing out the color.
+
+To ensure that the color components of the final result remain within the proper $[0,1]$ bounds,
+  we'll add and use a small helper function: `interval::clamp(x)`.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class interval {
@@ -1781,16 +1909,48 @@ samples) when writing out the color. In addition, we'll add a handy utility func
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-clamped]: <kbd>[color.h]</kbd> The multi-sample write_color() function]
 
-<div class='together'>
-Update the camera class to incorporate multiple samples per pixel:
+So now we need to gather multiple samples for each pixel.
+We'll select samples from the area around the pixel center.
+Which begs the question: _what's the area surrounding the pixel_?
+
+It is very common to think of pixels as the square region around each pixel location, such that
+  these squares perfectly tile the pixel grid.
+However, there's no real reason why this must be the case.
+In fact, there's nothing that says that pixels have to sample all of the image area, or even that
+  they cannot have their regions overlap in some way.
+
+For example, consider the human eye: our "pixels" (photoreceptor cells) are randomly scattered with
+  varying density, respond to different wavelengths, cover differently sized areas, and frequently
+  overlap each other.
+(See figure 1 of [_Cell Populations of the Retina_](https://iovs.arvojournals.org/article.aspx?articleid=2188127)
+  for an example of the different photoreceptor types in the human retina. There are many more than
+  the single rod + three cone types that most people think of.)
+There's much more to say about this, but if you want to learn more about image sampling and
+  reconstruction, see the excellent technical memo
+  [_A Pixel is Not a Little Square, A Pixel is Not a Little Square, A Pixel is Not a Little Square_](https://www.researchgate.net/publication/244986797),
+  by Alvy Ray Smith, for a fantastic introduction.
+
+In spite of all this, we will proceed with the trivial square pixel model.
+It may not be the best model, but it's the simplest.
+Still, we'll design our code in a way that makes it easy for you to play with different pixel types,
+  and throw in a circular pixel model to experiment with if you wish.
+
+Ok, let's update the camera class to define and use a new `camera::get_ray(i,j)` function, and to
+  incorporate multiple samples per pixel.
+This function will use a new helper function `pixel_sample_square()`, which generates a random
+  sample point within the square pixel centered at the origin.
+This random sample will then be transformed back to the particular pixel we're sampling.
+(In addition, we've included in our source code (but don't use) the function `pixel_sample_disk()`
+  for you to play with if you'd like to experiment with non-square pixels.
+This depends on the function `random_in_unit_disk()` defined later in this book.)
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
-        double aspect_ratio      = 1.0;
-        int    image_width       = 100;
+        double aspect_ratio      = 1.0;  // Ratio of image width over height
+        int    image_width       = 100;  // Rendered image width in pixel count
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        int    samples_per_pixel = 10;
+        int    samples_per_pixel = 10;   // Count of random samples for each pixel
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         void render(const hittable& world) {
@@ -1814,7 +1974,6 @@ Update the camera class to incorporate multiple samples per pixel:
 
             std::clog << "\rDone.                 \n";
         }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
       private:
         ...
@@ -1825,12 +1984,30 @@ Update the camera class to incorporate multiple samples per pixel:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         ray get_ray(int i, int j) const {
-            auto s = (i + random_double()) / (image_width - 1);
-            auto t = (j + random_double()) / (image_height - 1);
+            // Get a randomly sampled camera ray for the pixel at location i,j.
 
-            return ray(origin, lower_left_corner + s*horizontal + (1-t)*vertical - origin);
+            auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
+            auto pixel_sample = pixel_center + pixel_sample_square();
+
+            auto ray_origin = center;
+            auto ray_direction = pixel_sample - ray_origin;
+
+            return ray(ray_origin, ray_direction);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        vec3 pixel_sample_square() const {
+            // Returns a random point in the square surrounding a pixel at the origin.
+            auto px = -0.5 + random_double();
+            auto py = -0.5 + random_double();
+            return (px * pixel_delta_u) + (py * pixel_delta_v);
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
     };
 
@@ -1846,6 +2023,7 @@ Main is updated to set the new camera parameter.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
         ...
+
         camera cam;
 
         cam.aspect_ratio      = 16.0 / 9.0;
@@ -1853,6 +2031,7 @@ Main is updated to set the new camera parameter.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         cam.samples_per_pixel = 100;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         cam.render(world);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1886,7 +2065,7 @@ modulate that with their own intrinsic color. Light that reflects off a diffuse 
 direction randomized. So, if we send three rays into a crack between two diffuse surfaces they will
 each have different random behavior:
 
-  ![Figure [light-bounce]: Light ray bounces](../images/fig-1.08-light-bounce.jpg)
+  ![Figure [light-bounce]: Light ray bounces](../images/fig-1.09-light-bounce.jpg)
 
 They might also be absorbed rather than reflected. The darker the surface, the more likely
 the ray is absorbed (that’s why it's dark!). Really any algorithm that randomizes direction will
@@ -1895,7 +2074,7 @@ bounces a ray equally in all directions. For this material, a ray that hits the 
 equal probability of bouncing in any direction away from the surface.
 
   ![Figure [random-vec-hor]: Equal reflection above the horizon
-  ](../images/fig-1.09-random-vec-horizon.jpg)
+  ](../images/fig-1.10-random-vec-horizon.jpg)
 
 This very intuitive material is the simplest kind of diffuse and -- indeed -- many of the first
 raytracing papers used this diffuse method (before adopting a more accurate method that we'll be
@@ -1936,9 +2115,8 @@ First, we will use a rejection method to generate the random vector inside of th
 a random point in the unit cube, where $x$, $y$, and $z$ all range from -1 to +1, and reject this
 point if it is outside the unit sphere.
 
-  ![Figure [sphere-vec]:
-  Two vectors were rejected before finding a good one
-  ](../images/fig-1.10-sphere-vec.jpg)
+  ![Figure [sphere-vec]: Two vectors were rejected before finding a good one
+  ](../images/fig-1.11-sphere-vec.jpg)
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline vec3 random_in_unit_sphere() {
@@ -1958,7 +2136,7 @@ Once we have a random vector in the unit sphere we need to normalize it to get a
 unit sphere.
 
   ![Figure [sphere-vec]: The accepted random vector is normalized to produce a unit vector
-  ](../images/fig-1.11-sphere-unit-vec.jpg)
+  ](../images/fig-1.12-sphere-unit-vec.jpg)
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline vec3 random_unit_vector() {
@@ -1974,7 +2152,7 @@ And now that we have a random vector on the surface of the unit sphere, we can d
 the correct hemisphere by comparing against the surface normal:
 
   ![Figure [normal-hor]: The normal vector tells us which hemisphere we need
-  ](../images/fig-1.12-surface-normal.jpg)
+  ](../images/fig-1.13-surface-normal.jpg)
 
 </div>
 
@@ -2022,7 +2200,8 @@ function to return 50% of the color from a bounce. We should expect to get a nic
         }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-random-unit]: <kbd>[main.cc]</kbd> ray_color() using a random ray direction]
+    [Listing [ray-color-random-unit]: <kbd>[camera.h]</kbd>
+        ray_color() using a random ray direction]
 
 <div class='together'>
 ... Indeed we do get rather nice gray spheres:
@@ -2043,11 +2222,11 @@ depth, returning no light contribution at the maximum depth:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
-        double aspect_ratio      = 1.0;
-        int    image_width       = 100;
-        int    samples_per_pixel = 10;
+        double aspect_ratio      = 1.0;  // Ratio of image width over height
+        int    image_width       = 100;  // Rendered image width in pixel count
+        int    samples_per_pixel = 10;   // Count of random samples for each pixel
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        int    max_depth         = 10;
+        int    max_depth         = 10;   // Maximum number of ray bounces into scene
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         void render(const hittable& world) {
@@ -2087,8 +2266,8 @@ depth, returning no light contribution at the maximum depth:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             if (world.hit(r, interval(0, infinity), rec)) {
-                point3 target = rec.p + rec.normal + random_in_unit_sphere();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                point3 target = rec.p + rec.normal + random_in_unit_sphere();
                 return 0.5 * ray_color(ray(rec.p, target - rec.p), depth-1, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
@@ -2106,6 +2285,8 @@ Update the main() function to use this new depth limit:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
+        ...
+
         camera cam;
 
         cam.aspect_ratio      = 16.0 / 9.0;
@@ -2114,6 +2295,7 @@ Update the main() function to use this new depth limit:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         cam.max_depth         = 50;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         cam.render(world);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2147,7 +2329,7 @@ just need to be aware of it. We are going to transform our data into gamma space
 viewer can more accurately display our image. As a simple approximation, we can use “gamma 2” as our
 transform, which is the power that you use when going from gamma space to linear space. We need to
 go from linear space to gamma space, which means taking the inverse of "gamma 2", so the power
-$1/\mathit{gamma}$, which is just the square-root:
+$1/\mathit{gamma}$, which is just the square-root.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     inline double linear_to_gamma(double linear_component)
@@ -2169,7 +2351,7 @@ $1/\mathit{gamma}$, which is just the square-root:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        // Apply a linear to gamma transform for gamma 2
+        // Apply the linear to gamma transform.
         r = linear_to_gamma(r);
         g = linear_to_gamma(g);
         b = linear_to_gamma(b);
@@ -2232,7 +2414,7 @@ to address this is just to ignore hits that are very close to the calculated int
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [reflect-tolerance]: <kbd>[camera.h]</kbd>
-    Calculating reflected ray origins with tolerance]
+        Calculating reflected ray origins with tolerance]
 
 This gets rid of the shadow acne problem. Yes it is really called that.
 
@@ -2268,7 +2450,7 @@ origin. Pick a random point $\mathbf{S}$ on this unit radius sphere and send a r
 point $\mathbf{P}$ to the random point $\mathbf{S}$ (this is the vector $(\mathbf{S}-\mathbf{P})$):
 
   ![Figure [rand-unitvec]: Randomly generating a vector according to Lambertian distribution
-  ](../images/fig-1.13-rand-unitvec.jpg)
+  ](../images/fig-1.14-rand-unitvec.jpg)
 
 <div class='together'>
 The change is actually fairly minimal:
@@ -2286,8 +2468,8 @@ The change is actually fairly minimal:
             if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 direction = rec.normal + random_unit_vector();
+                return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                return 0.5 * ray_color(ray(rec.p, direction), world, depth-1);
         }
 
             vec3 unit_direction = unit_vector(r.direction());
@@ -2324,6 +2506,7 @@ objects behave under light can be poorly formed. As scenes become more complicat
 of the book, you are encouraged to switch between the different diffuse renderers presented here.
 Most scenes of interest will contain a large amount of diffuse materials. You can gain valuable
 insight by understanding the effect of different diffuse methods on the lighting of the scene.
+
 
 
 
@@ -2442,7 +2625,7 @@ within `hit_record`. See the highlighted lines below:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-material]: <kbd>[sphere.h]</kbd>
-    Ray-sphere intersection with added material information]
+        Ray-sphere intersection with added material information]
 
 </div>
 
@@ -2529,7 +2712,7 @@ Mirrored Light Reflection
 For smooth metals the ray won’t be randomly scattered. The key math is: how does a ray get
 reflected from a metal mirror? Vector math is our friend here:
 
-  ![Figure [reflection]: Ray reflection](../images/fig-1.11-reflection.jpg)
+  ![Figure [reflection]: Ray reflection](../images/fig-1.15-reflection.jpg)
 
 The reflected ray direction in red is just $\mathbf{v} + 2\mathbf{b}$. In our design, $\mathbf{n}$
 is a unit vector, but $\mathbf{v}$ may not be. The length of $\mathbf{b}$ should be $\mathbf{v}
@@ -2571,7 +2754,9 @@ We need to modify the `ray_color()` function to use this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "material.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
 
     class camera {
@@ -2614,14 +2799,14 @@ Now let’s add some metal spheres to our scene:
     #include "rtweekend.h"
 
     #include "camera.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "color.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "hittable_list.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "material.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "sphere.h"
-
-    ...
 
     int main() {
         hittable_list world;
@@ -2666,8 +2851,7 @@ We can also randomize the reflected direction by using a small sphere and choosi
 We'll use a random point from the surface of a sphere centered on the original endpoint, scaled by
   the fuzz factor.
 
-  ![Figure [reflect-fuzzy]: Generating fuzzed reflection rays
-  ](../images/fig-1.12-reflect-fuzzy.jpg)
+  ![Figure [reflect-fuzzy]: Generating fuzzed reflection rays](../images/fig-1.16-reflect-fuzzy.jpg)
 
 The bigger the sphere, the fuzzier the reflections will be. This suggests adding a fuzziness
 parameter that is just the radius of the sphere (so zero is no perturbation). The catch is that for
@@ -2723,7 +2907,6 @@ We can try that out by adding fuzziness 0.3 and 1.0 to the metals:
 </div>
 
 
-
 Dielectrics
 ====================================================================================================
 Clear materials such as water, glass, and diamonds are dielectrics. When a light ray hits them, it
@@ -2755,7 +2938,7 @@ Where $\theta$ and $\theta'$ are the angles from the normal, and $\eta$ and $\et
 "eta" and "eta prime") are the refractive indices (typically air = 1.0, glass = 1.3–1.7, diamond =
 2.4). The geometry is:
 
-  ![Figure [refraction]: Ray refraction](../images/fig-1.13-refraction.jpg)
+  ![Figure [refraction]: Ray refraction](../images/fig-1.17-refraction.jpg)
 
 In order to determine the direction of the refracted ray, we have to solve for $\sin\theta'$:
 
@@ -2886,7 +3069,6 @@ solution does not exist, the glass cannot refract, and therefore must reflect th
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [dielectric]: <kbd>[material.h]</kbd> Determining if the ray can refract]
-
 </div>
 
 Here all the light is reflected, and because in practice that is usually inside solid objects, it
@@ -3060,11 +3242,13 @@ This gives:
 
 Positionable Camera
 ====================================================================================================
-Cameras, like dielectrics, are a pain to debug. So I always develop mine incrementally. First, let’s
-allow an adjustable field of view (_fov_). This is the angle you see through the portal. Since our
-image is not square, the fov is different horizontally and vertically. I always use vertical fov. I
-also usually specify it in degrees and change to radians inside a constructor -- a matter of
-personal taste.
+Cameras, like dielectrics, are a pain to debug, so I always develop mine incrementally.
+First, let’s allow an adjustable field of view (_fov_).
+This is the visual angle from edge to edge of the rendered image.
+Since our image is not square, the fov is different horizontally and vertically.
+I always use vertical fov.
+I also usually specify it in degrees and change to radians inside a constructor -- a matter of
+  personal taste.
 
 
 Camera Viewing Geometry
@@ -3072,7 +3256,8 @@ Camera Viewing Geometry
 I first keep the rays coming from the origin and heading to the $z = -1$ plane. We could make it the
 $z = -2$ plane, or whatever, as long as we made $h$ a ratio to that distance. Here is our setup:
 
-  ![Figure [cam-view-geom]: Camera viewing geometry](../images/fig-1.14-cam-view-geom.jpg)
+  ![Figure [cam-view-geom]: Camera viewing geometry (from the side)
+  ](../images/fig-1.18-cam-view-geom.jpg)
 
 <div class='together'>
 This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
@@ -3080,33 +3265,49 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
-        double aspect_ratio      = 1.0;
-        int    image_width       = 100;
-        int    samples_per_pixel = 10;
-        int    max_depth         = 10;
+        double aspect_ratio      = 1.0;  // Ratio of image width over height
+        int    image_width       = 100;  // Rendered image width in pixel count
+        int    samples_per_pixel = 10;   // Count of random samples for each pixel
+        int    max_depth         = 10;   // Maximum number of ray bounces into scene
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double vfov = 40;
+        double vfov = 90;  // Vertical view angle (field of view)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        void render(const hittable& world) {
         ...
 
       private:
         ...
 
         void initialize() {
+            image_height = static_cast<int>(image_width / aspect_ratio);
+            image_height = (image_height < 1) ? 1 : image_height;
+
+            center = point3(0, 0, 0);
+
+            // Determine viewport dimensions.
+            auto focal_length = 1.0;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
-            auto viewport_height = 2.0 * h;
+            auto viewport_height = 2 * h * focal_length;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            auto viewport_width = aspect_ratio * viewport_height;
-            auto focal_length = 1.0;
+            auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
 
-            origin = point3(0, 0, 0);
-            horizontal = vec3(viewport_width, 0.0, 0.0);
-            vertical = vec3(0.0, viewport_height, 0.0);
-            lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
+            // Calculate the vectors across the horizontal and down the vertical viewport edges.
+            auto viewport_u = vec3(viewport_width, 0, 0);
+            auto viewport_v = vec3(0, -viewport_height, 0);
+
+            // Calculate the horizontal and vertical delta vectors from pixel to pixel.
+            pixel_delta_u = viewport_u / image_width;
+            pixel_delta_v = viewport_v / image_height;
+
+            // Calculate the location of the upper left pixel.
+            auto viewport_upper_left =
+                center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
+            pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
         }
 
         ...
@@ -3117,7 +3318,7 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
 </div>
 
 <div class='together'>
-Now update `main()` to use a 90° field of view, looking at the point where two spheres touch.
+We'll test out these changes with a simple scene of two touching spheres, using a 90° field of view.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
@@ -3168,59 +3369,102 @@ where we place the camera _lookfrom_, and the point we look at _lookat_. (Later,
 could define a direction to look in instead of a point to look at.)
 
 We also need a way to specify the roll, or sideways tilt, of the camera: the rotation around the
-lookat-lookfrom axis. Another way to think about it is that even if you keep `lookfrom` and `lookat`
-constant, you can still rotate your head around your nose. What we need is a way to specify an “up”
-vector for the camera. This up vector should lie in the plane orthogonal to the view direction.
+  lookat-lookfrom axis.
+Another way to think about it is that even if you keep `lookfrom` and `lookat` constant, you can
+  still rotate your head around your nose. What we need is a way to specify an “up” vector for the
+  camera.
 
-  ![Figure [cam-view-dir]: Camera view direction](../images/fig-1.15-cam-view-dir.jpg)
+  ![Figure [cam-view-dir]: Camera view direction](../images/fig-1.19-cam-view-dir.jpg)
 
-We can actually use any up vector we want, and simply project it onto this plane to get an up vector
-for the camera. I use the common convention of naming a “view up” (_vup_) vector. A couple of cross
-products, and we now have a complete orthonormal basis $(u,v,w)$ to describe our camera’s
-orientation.
+We can specify any up vector we want, as long as it's not parallel to the view direction.
+Project this up vector onto the plane orthogonal to the view direction to get a camera-relative up
+  vector.
+I use the common convention of naming this the “view up” (_vup_) vector.
+After a few cross products and vector normalizations, we now have a complete orthonormal basis
+  $(u,v,w)$ to describe our camera’s orientation.
+$u$ will be the unit vector pointing to camera right, $v$ is the unit vector pointing to camera up,
+  $w$ is the unit vector pointing opposite the view direction (since we use right-hand coordinates),
+  and the camera center is at the origin.
 
-  ![Figure [cam-view-up]: Camera view up direction](../images/fig-1.16-cam-view-up.jpg)
+  ![Figure [cam-view-up]: Camera view up direction](../images/fig-1.20-cam-view-up.jpg)
 
-Remember that `vup`, `v`, and `w` are all in the same plane. Note that, like before when our fixed
-camera faced -Z, our arbitrary view camera faces -w. And keep in mind that we can -- but we don’t
-have to -- use world up $(0,1,0)$ to specify vup. This is convenient and will naturally keep your
-camera horizontally level until you decide to experiment with crazy camera angles.
+Like before, when our fixed camera faced -Z, our arbitrary view camera faces -w.
+Keep in mind that we can -- but we don’t have to -- use world up $(0,1,0)$ to specify vup.
+This is convenient and will naturally keep your camera horizontally level until you decide to
+  experiment with crazy camera angles.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
-        double aspect_ratio      = 1.0;
-        int    image_width       = 100;
-        int    samples_per_pixel = 10;
-        int    max_depth         = 10;
+        double aspect_ratio      = 1.0;  // Ratio of image width over height
+        int    image_width       = 100;  // Rendered image width in pixel count
+        int    samples_per_pixel = 10;   // Count of random samples for each pixel
+        int    max_depth         = 10;   // Maximum number of ray bounces into scene
 
-        double vfov     = 40;
+        double vfov     = 90;              // Vertical view angle (field of view)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        point3 lookfrom = point3(0,0,-1);
-        point3 lookat   = point3(0,0,0);
-        vec3   vup      = vec3(0,1,0);
+        point3 lookfrom = point3(0,0,-1);  // Point camera is looking from
+        point3 lookat   = point3(0,0,0);   // Point camera is looking at
+        vec3   vup      = vec3(0,1,0);     // Camera-relative "up" direction
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        ...
+
+      private:
+        int    image_height;   // Rendered image height
+        point3 center;         // Camera center
+        point3 pixel00_loc;    // Location of pixel 0, 0
+        vec3   pixel_delta_u;  // Offset to pixel to the right
+        vec3   pixel_delta_v;  // Offset to pixel below
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        vec3   u, v, w;        // Camera frame basis vectors
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         void initialize() {
+            image_height = static_cast<int>(image_width / aspect_ratio);
+            image_height = (image_height < 1) ? 1 : image_height;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            center = lookfrom;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            // Determine viewport dimensions.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            auto focal_length = (lookfrom - lookat).length();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
-            auto viewport_height = 2.0 * h;
-            auto viewport_width = aspect_ratio * viewport_height;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            auto viewport_height = 2 * h * focal_length;
+            auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
 
-            auto w = unit_vector(lookfrom - lookat);
-            auto u = unit_vector(cross(vup, w));
-            auto v = cross(w, u);
 
-            origin = lookfrom;
-            horizontal = viewport_width * u;
-            vertical = viewport_height * v;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            lower_left_corner = origin - horizontal/2 - vertical/2 - w;
+            // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
+            w = unit_vector(lookfrom - lookat);
+            u = unit_vector(cross(vup, w));
+            v = cross(w, u);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            // Calculate the vectors across the horizontal and down the vertical viewport edges.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            vec3 viewport_u = viewport_width * u;    // Vector across viewport horizontal edge
+            vec3 viewport_v = viewport_height * -v;  // Vector down viewport vertical edge
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            // Calculate the horizontal and vertical delta vectors from pixel to pixel.
+            pixel_delta_u = viewport_u / image_width;
+            pixel_delta_v = viewport_v / image_height;
+
+            // Calculate the location of the upper left pixel.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            auto viewport_upper_left = center - (focal_length * w) - viewport_u/2 - viewport_v/2;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
         }
 
         ...
+
+      private:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [camera-orient]: <kbd>[camera.h]</kbd> Positionable and orientable camera]
@@ -3279,7 +3523,7 @@ to get:
 And we can change field of view:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    cam.vfov     = 20;
+        cam.vfov     = 20;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [change-field-view]: <kbd>[main.cc]</kbd> Change field of view]
 
@@ -3296,51 +3540,86 @@ to get:
 
 Defocus Blur
 ====================================================================================================
-Now our final feature: _defocus blur_. Note, photographers will call it _depth of field_, so be sure
-to only use the term _defocus blur_ among your raytracing friends.
+Now our final feature: _defocus blur_.
+Note, photographers call this _depth of field_, so be sure to only use the term _defocus blur_ among
+  your raytracing friends.
 
-The reason we defocus blur in real cameras is because they need a big hole (rather than just a
-pinhole) to gather light. This would defocus everything, but if we stick a lens in the hole, there
-will be a certain distance where everything is in focus. You can think of a lens this way: all light
-rays coming _from_ a specific point at the focus distance -- and that hit the lens -- will be bent
-back _to_ a single point on the image sensor.
+The reason we have defocus blur in real cameras is because they need a big hole (rather than just a
+  pinhole) through which to gather light.
+A large hole would defocus everything, but if we stick a lens in the hole, there will be a certain
+  distance where everything is in focus.
+Objects appear blurrier the further they are from that distance (either closer or further from the
+  camera).
+You can think of a lens this way: all light rays coming _from_ a specific point at the focus
+  distance -- and that hit the lens -- will be bent back _to_ a single point on the image sensor.
 
-We call the distance between the projection point and the plane where everything is in perfect focus
-the _focus distance_. Be aware that the focus distance is not the same as the focal length -- the
-_focal length_ is the distance between the projection point and the image plane.
+We call the distance between the camera center and the plane where everything is in perfect focus
+  the _focus distance_.
+Be aware that the focus distance is not usually the same as the focal length -- the _focal length_
+  is the distance between the camera center and the image plane.
+For our model, however, these two will have the same value, as we will put our pixel grid right on
+  the focus plane, which is _focus distance_ away from the camera center.
 
 In a physical camera, the focus distance is controlled by the distance between the lens and the
-film/sensor. That is why you see the lens move relative to the camera when you change what is in
-focus (that may happen in your phone camera too, but the sensor moves). The “aperture” is a hole to
-control how big the lens is effectively. For a real camera, if you need more light you make the
-aperture bigger, and will get more defocus blur. For our virtual camera, we can have a perfect
-sensor and never need more light, so we only have an aperture when we want defocus blur.
+  film/sensor.
+That is why you see the lens move relative to the camera when you change what is in focus (that may
+  happen in your phone camera too, but the sensor moves).
+The “aperture” is a hole to control how big the lens is effectively.
+For a real camera, if you need more light you make the aperture bigger, and will get more blur for
+  objects away from the focus distance.
+For our virtual camera, we can have a perfect sensor and never need more light, so we only use an
+  aperture when we want defocus blur.
 
 
 A Thin Lens Approximation
 --------------------------
-A real camera has a complicated compound lens. For our code we could simulate the order: sensor,
+A real camera has a complicated compound lens. For our code, we could simulate the order: sensor,
 then lens, then aperture. Then we could figure out where to send the rays, and flip the image after
 it's computed (the image is projected upside down on the film). Graphics people, however, usually
 use a thin lens approximation:
 
-  ![Figure [cam-lens]: Camera lens model](../images/fig-1.17-cam-lens.jpg)
+  ![Figure [cam-lens]: Camera lens model](../images/fig-1.21-cam-lens.jpg)
 
-We don’t need to simulate any of the inside of the camera. For the purposes of rendering an image
-outside the camera, that would be unnecessary complexity. Instead, I usually start rays from the
-lens, and send them toward the focus plane (`focus_dist` away from the lens), where everything on
-that plane is in perfect focus.
+We don’t need to simulate any of the inside of the camera -- for the purposes of rendering an image
+  outside the camera, that would be unnecessary complexity.
+Instead, I usually start rays from an infinitely thin circular "lens", and send them toward the
+  pixel of interest on the focus plane (`focal_length` away from the lens), where everything on that
+  plane in the 3D world is in perfect focus.
 
-  ![Figure [cam-film-plane]: Camera focus plane](../images/fig-1.18-cam-film-plane.jpg)
+In practice, we accomplish this by placing the viewport in this plane.
+Putting everything together:
+
+  1. The focus plane is orthogonal to the camera view direction.
+  2. The focus distance is the distance between the camera center and the focus plane.
+  3. The viewport lies on the focus plane, centered on the camera view direction vector.
+  4. The grid of pixel locations lies inside the viewport (located in the 3D world).
+  5. Random image sample locations are chosen from the region around the current pixel location.
+  6. The camera fires rays from random points on the lens through the current image sample location.
+
+  ![Figure [cam-film-plane]: Camera focus plane](../images/fig-1.22-cam-film-plane.jpg)
 
 
 Generating Sample Rays
 -----------------------
-Normally, all scene rays originate from the `lookfrom` point. In order to accomplish defocus blur,
-generate random scene rays originating from inside a disk centered at the `lookfrom` point. The
-larger the radius, the greater the defocus blur. You can think of our original camera as having a
-defocus disk of radius zero (no blur at all), so all rays originated at the disk center
-(`lookfrom`).
+Without defocus blur, all scene rays originate from the camera center (or `lookfrom`).
+In order to accomplish defocus blur, we construct a disk centered at the camera center.
+The larger the radius, the greater the defocus blur.
+You can think of our original camera as having a defocus disk of radius zero (no blur at all), so
+  all rays originated at the disk center (`lookfrom`).
+
+So, how large should the defocus disk be?
+Since the size of this disk controls how much defocus blur we get, that should be a parameter of the
+  camera class.
+We could just take the radius of the disk as a camera parameter, but the blur would vary depending
+  on the projection distance.
+A slightly easier parameter is to specify the angle of the cone with apex at viewport center and
+  base (defocus disk) at the camera center.
+This should give you more consistent results as you vary the focus distance for a given shot.
+
+Since we'll be choosing random points from the defocus disk, we'll need a function to do that:
+  `random_in_unit_disk()`.
+This function works using the same kind of method we use in `random_in_unit_sphere()`, just for two
+  dimensions.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     vec3 random_in_unit_disk() {
@@ -3353,82 +3632,122 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [rand-in-unit-disk]: <kbd>[vec3.h]</kbd> Generate random point inside unit disk]
 
+Now let's update the camera to originate rays from the defocus disk:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
-        double aspect_ratio      = 1.0;
-        int    image_width       = 100;
-        int    samples_per_pixel = 10;
-        int    max_depth         = 10;
+        double aspect_ratio      = 1.0;  // Ratio of image width over height
+        int    image_width       = 100;  // Rendered image width in pixel count
+        int    samples_per_pixel = 10;   // Count of random samples for each pixel
+        int    max_depth         = 10;   // Maximum number of ray bounces into scene
 
-        double vfov     = 40;
-        point3 lookfrom = point3(0,0,-1);
-        point3 lookat   = point3(0,0,0);
-        vec3   vup      = vec3(0,1,0);
+        double vfov     = 90;              // Vertical view angle (field of view)
+        point3 lookfrom = point3(0,0,-1);  // Point camera is looking from
+        point3 lookat   = point3(0,0,0);   // Point camera is looking at
+        vec3   vup      = vec3(0,1,0);     // Camera-relative "up" direction
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double aperture   = 0;
-        double focus_dist = 10;
+        double defocus_angle = 0;  // Variation angle of rays through each pixel
+        double focus_dist = 10;    // Distance from camera lookfrom point to plane of perfect focus
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
 
       private:
-        point3 origin;
-        vec3 horizontal;
-        vec3 vertical;
-        point3 lower_left_corner;
+        int    image_height;    // Rendered image height
+        point3 center;          // Camera center
+        point3 pixel00_loc;     // Location of pixel 0, 0
+        vec3   pixel_delta_u;   // Offset to pixel to the right
+        vec3   pixel_delta_v;   // Offset to pixel below
+        vec3   u, v, w;         // Camera frame basis vectors
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        vec3 u, v, w;
-        double lens_radius;
+        vec3   defocus_disk_u;  // Defocus disk horizontal radius
+        vec3   defocus_disk_v;  // Defocus disk vertical radius
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         void initialize() {
+            image_height = static_cast<int>(image_width / aspect_ratio);
+            image_height = (image_height < 1) ? 1 : image_height;
+
+            center = lookfrom;
+
+            // Determine viewport dimensions.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+            auto focal_length = (lookfrom - lookat).length();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
-            auto viewport_height = 2.0 * h;
-            auto viewport_width = aspect_ratio * viewport_height;
-
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            auto viewport_height = 2 * h * focus_dist;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
+
+            // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
             w = unit_vector(lookfrom - lookat);
             u = unit_vector(cross(vup, w));
             v = cross(w, u);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            origin = lookfrom;
+            // Calculate the vectors across the horizontal and down the vertical viewport edges.
+            vec3 viewport_u = viewport_width * u;    // Vector across viewport horizontal edge
+            vec3 viewport_v = viewport_height * -v;  // Vector down viewport vertical edge
+
+            // Calculate the horizontal and vertical delta vectors to the next pixel.
+            pixel_delta_u = viewport_u / image_width;
+            pixel_delta_v = viewport_v / image_height;
+
+            // Calculate the location of the upper left pixel.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            horizontal = focus_dist * viewport_width * u;
-            vertical = focus_dist * viewport_height * v;
-            lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
+            auto viewport_upper_left = center - (focus_dist * w) - viewport_u/2 - viewport_v/2;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
-            lens_radius = aperture / 2;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            // Calculate the camera defocus disk basis vectors.
+            auto defocus_radius = focus_dist * tan(degrees_to_radians(defocus_angle / 2));
+            defocus_disk_u = u * defocus_radius;
+            defocus_disk_v = v * defocus_radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
 
         ray get_ray(int i, int j) const {
-            auto s = (i + random_double()) / (image_width - 1);
-            auto t = (j + random_double()) / (image_height - 1);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            // Get a randomly-sampled camera ray for the pixel at location i,j, originating from
+            // the camera defocus disk.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
+            auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
+            auto pixel_sample = pixel_center + pixel_sample_square();
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            vec3 rd = lens_radius * random_in_unit_disk();
-            vec3 offset = u * rd.x() + v * rd.y();
-
-            return ray(
-                origin + offset,
-                lower_left_corner + s*horizontal + (1-t)*vertical - origin - offset
-            );
+            auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            auto ray_direction = pixel_sample - ray_origin;
+
+            return ray(ray_origin, ray_direction);
         }
+
+        ...
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        point3 defocus_disk_sample() const {
+            // Returns a random point in the camera defocus disk.
+            auto p = random_in_unit_disk();
+            return center + (p[0] * defocus_disk_u) + (p[1] * defocus_disk_v);
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        color ray_color(const ray& r, int depth, const hittable& world) const {
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [camera-dof]: <kbd>[camera.h]</kbd> Camera with adjustable depth-of-field (dof)]
 
 <div class='together'>
-Using a big aperture:
+Using a large aperture:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
@@ -3441,14 +3760,14 @@ Using a big aperture:
         cam.samples_per_pixel = 100;
         cam.max_depth         = 50;
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        cam.vfov     = 90;
-        cam.lookfrom = point3(3,3,2);
+        cam.vfov     = 20;
+        cam.lookfrom = point3(-2,2,1);
         cam.lookat   = point3(0,0,-1);
         cam.vup      = vec3(0,1,0);
 
-        cam.aperture   = 2.0;
-        cam.focus_dist = (cam.lookfrom - cam.lookat).length();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.defocus_angle = 10.0;
+        cam.focus_dist    = 3.4;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         cam.render(world);
@@ -3531,8 +3850,8 @@ Let’s make the image on the cover of this book -- lots of random spheres.
         cam.lookat   = point3(0,0,0);
         cam.vup      = vec3(0,1,0);
 
-        cam.aperture   = 0.1;
-        cam.focus_dist = 10.0;
+        cam.defocus_angle = 0.6;
+        cam.focus_dist    = 10.0;
 
         cam.render(world);
     }

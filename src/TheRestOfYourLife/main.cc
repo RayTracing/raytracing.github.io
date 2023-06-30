@@ -62,10 +62,10 @@ int main() {
     cam.max_depth         = 50;
     cam.background        = color(0,0,0);
 
+    cam.vfov     = 40.0;
     cam.lookfrom = point3(278, 278, -800);
     cam.lookat   = point3(278, 278, 0);
     cam.vup      = vec3(0, 1, 0);
-    cam.vfov     = 40.0;
 
     cam.defocus_angle = 0.0;
 
