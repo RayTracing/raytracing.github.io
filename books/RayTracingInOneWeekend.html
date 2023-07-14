@@ -130,6 +130,7 @@ Let’s make some C++ code to output such a thing:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-initial]: <kbd>[main.cc]</kbd> Creating your first image]
+
 </div>
 
 There are some things to note in that code:
@@ -149,7 +150,6 @@ There are some things to note in that code:
 
 Creating an Image File
 -----------------------
-<div class='together'>
 Because the file is written to the program output, you'll need to redirect it to an image file.
 Typically this is done from the command-line by using the `>` redirection operator, like so:
 
@@ -162,17 +162,12 @@ This is how things would look on Windows. On Mac or Linux, it would look like th
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     build/inOneWeekend > image.ppm
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</div>
 
-<div class='together'>
 Opening the output file (in `ToyViewer` on my Mac, but try it in your favorite viewer and Google
 “ppm viewer” if your viewer doesn’t support it) shows this result:
 
   ![Image 1: First PPM image](../images/img-1.01-first-ppm-image.png class=pixel)
 
-</div>
-
-<div class='together'>
 Hooray! This is the graphics “hello world”. If your image doesn’t look like that, open the output
 file in a text editor and see what it looks like. It should start something like this:
 
@@ -193,7 +188,6 @@ file in a text editor and see what it looks like. It should start something like
     ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [first-img]: First image output]
-</div>
 
 If your PPM file doesn't look like this, then double-check your formatting code.
 If it _does_ look like this, then you may have line-ending differences or something similar that is
@@ -244,6 +238,7 @@ instead write to the logging output stream (`std::clog`):
         std::clog << "\rDone.                 \n";
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-progress]: <kbd>[main.cc]</kbd> Main render loop with progress reporting]
+
 </div>
 
 
@@ -261,7 +256,6 @@ types are just aliases for `vec3`, you won't get warnings if you pass a `color` 
 expecting a `point3`, and nothing is stopping you from adding a `point3` to a `color`, but it makes
 the code a little bit easier to read and understand.
 
-<div class='together'>
 We define the `vec3` class in the top half of a new `vec3.h` header file, and a set of useful vector
 utility functions in the bottom half:
 
@@ -369,7 +363,6 @@ utility functions in the bottom half:
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [vec3-class]: <kbd>[vec3.h]</kbd> vec3 definitions and helper functions]
-</div>
 
 We use `double` here, but some ray tracers use `float`. `double` has greater precision and range,
 but is twice the size compared to `float`. This increase in size may be important if you're
@@ -402,8 +395,6 @@ the standard output stream.
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [color]: <kbd>[color.h]</kbd> color utility functions]
-
-
 
 <div class='together'>
 Now we can change our main to use this:
@@ -441,8 +432,9 @@ Now we can change our main to use this:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ppm-2]: <kbd>[main.cc]</kbd> Final code for the first PPM image]
 
-And you should get the exact same picture as before.
 </div>
+
+And you should get the exact same picture as before.
 
 
 
@@ -451,7 +443,6 @@ Rays, a Simple Camera, and Background
 
 The ray Class
 --------------
-<div class='together'>
 The one thing that all ray tracers have is a ray class and a computation of what color is seen along
 a ray. Let’s think of a ray as a function $\mathbf{P}(t) = \mathbf{A} + t \mathbf{b}$. Here
 $\mathbf{P}$ is a 3D position along a line in 3D. $\mathbf{A}$ is the ray origin and $\mathbf{b}$ is
@@ -461,8 +452,6 @@ can go anywhere on the 3D line. For positive $t$, you get only the parts in fron
 and this is what is often called a half-line or ray.
 
   ![Figure [lerp]: Linear interpolation](../images/fig-1.02-lerp.jpg)
-
-</div>
 
 <div class='together'>
 We can represent the idea of a ray as a class, and represent the function $\mathbf{P}(t)$ as a
@@ -497,6 +486,7 @@ function that I call `ray::at(t)`:
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-initial]: <kbd>[ray.h]</kbd> The ray class]
+
 </div>
 
 
@@ -612,9 +602,9 @@ Below in code, the ray `r` goes to the current image pixel:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-blue-white-blend]: <kbd>[main.cc]</kbd> Rendering a blue-to-white gradient]
+
 </div>
 
-<div class='together'>
 The `ray_color(ray)` function linearly blends white and blue depending on the height of the $y$
 coordinate _after_ scaling the ray direction to unit length (so $-1.0 < y < 1.0$).
 Because we're looking at the $y$ height after normalizing the vector, you'll notice a horizontal
@@ -631,6 +621,8 @@ A lerp is always of the form
   $$ \text{blendedValue} = (1-a)\cdot\text{startValue} + a\cdot\text{endValue}, $$
 
 with $a$ going from zero to one.
+
+<div class='together'>
 In our case this produces:
 
   ![Image 2: A blue-to-white gradient depending on ray Y coordinate
@@ -648,7 +640,6 @@ calculating whether a ray hits a sphere is pretty straightforward.
 
 Ray-Sphere Intersection
 ------------------------
-<div class='together'>
 Recall that the equation for a sphere of radius $r$ that is centered at the origin is:
 
     $$ x^2 + y^2 + z^2 = r^2 $$
@@ -660,9 +651,7 @@ $x^2 + y^2 + z^2 > r^2$. If we want to allow the sphere center to be at an arbit
 $(C_x, C_y, C_z)$, then the equation becomes a lot less nice:
 
   $$ (x - C_x)^2 + (y - C_y)^2 + (z - C_z)^2 = r^2 $$
-</div>
 
-<div class='together'>
 In graphics, you almost always want your formulas to be in terms of vectors so that all the
 $x$/$y$/$z$ stuff can be simply represented using a `vec3` class. You might note that the vector
 from center $\mathbf{C} = (C_x, C_y, C_z)$ to point $\mathbf{P} = (x,y,z)$ is
@@ -675,9 +664,7 @@ $(\mathbf{P} - \mathbf{C})$. If we use the definition of the dot product:
 Then we can rewrite the equation of the sphere in vector form as:
 
   $$ (\mathbf{P} - \mathbf{C}) \cdot (\mathbf{P} - \mathbf{C}) = r^2 $$
-</div>
 
-<div class='together'>
 We can read this as “any point $\mathbf{P}$ that satisfies this equation is on the sphere”. We want
 to know if our ray $\mathbf{P}(t) = \mathbf{A} + t\mathbf{b}$ ever hits the sphere anywhere. If it
 does hit the sphere, there is some $t$ for which $\mathbf{P}(t)$ satisfies the sphere equation. So
@@ -689,9 +676,7 @@ which can be found by replacing $\mathbf{P}(t)$ with its expanded form:
 
   $$ ((\mathbf{A} + t \mathbf{b}) - \mathbf{C})
       \cdot ((\mathbf{A} + t \mathbf{b}) - \mathbf{C}) = r^2 $$
-</div>
 
-<div class='together'>
 We have three vectors on the left dotted by three vectors on the right. If we solved for the full
 dot product we would get nine vectors. You can definitely go through and write everything out, but
 we don't need to work that hard. If you remember, we want to solve for $t$, so we'll separate the
@@ -713,9 +698,7 @@ Move the square of the radius over to the left hand side:
      + 2t \mathbf{b} \cdot (\mathbf{A}-\mathbf{C})
      + (\mathbf{A}-\mathbf{C}) \cdot (\mathbf{A}-\mathbf{C}) - r^2 = 0
   $$
-</div>
 
-<div class='together'>
 It's hard to make out what exactly this equation is, but the vectors and $r$ in that equation are
 all constant and known. Furthermore, the only vectors that we have are reduced to scalars by dot
 product. The only unknown is $t$, and we have a $t^2$, which means that this equation is quadratic.
@@ -736,12 +719,9 @@ we have is:
 
   ![Figure [ray-sphere]: Ray-sphere intersection results](../images/fig-1.04-ray-sphere.jpg)
 
-</div>
-
 
 Creating Our First Raytraced Image
 -----------------------------------
-<div class='together'>
 If we take that math and hard-code it into our program, we can test it by coloring red any pixel
 that hits a small sphere we place at -1 on the z-axis:
 
@@ -769,7 +749,6 @@ that hits a small sphere we place at -1 on the z-axis:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-red-sphere]: <kbd>[main.cc]</kbd> Rendering a red sphere]
-</div>
 
 <div class='together'>
 What we get is this:
@@ -802,7 +781,6 @@ the direction of the hit point minus the center:
 
   ![Figure [sphere-normal]: Sphere surface-normal geometry](../images/fig-1.05-sphere-normal.jpg)
 
-<div class='together'>
 On the earth, this implies that the vector from the earth’s center to you points straight up. Let’s
 throw that into the code now, and shade it. We don’t have any lights or anything yet, so let’s just
 visualize the normals with a color map. A common trick used for visualizing normals (because it’s
@@ -846,7 +824,6 @@ won't worry about negative values of $t$ yet. We'll just assume the closest hit 
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [render-surface-normal]: <kbd>[main.cc]</kbd> Rendering surface normals on a sphere]
-</div>
 
 <div class='together'>
 And that yields this picture:
@@ -891,6 +868,7 @@ quadratic equation if $b = 2h$:
 
   $$ = \frac{-h \pm \sqrt{h^2 - ac}}{a} $$
 
+<div class='together'>
 Using these observations, we can now simplify the sphere-intersection code to this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -914,6 +892,8 @@ Using these observations, we can now simplify the sphere-intersection code to th
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-sphere-after]: <kbd>[main.cc]</kbd> Ray-sphere intersection code (after)]
 
+</div>
+
 
 An Abstraction for Hittable Objects
 ------------------------------------
@@ -924,7 +904,6 @@ quandary -- calling it an “object” would be good if not for “object orient
 is often used, with the weakness being maybe we will want volumes. “hittable” emphasizes the member
 function that unites them. I don’t love any of these, but I will go with “hittable”.
 
-<div class='together'>
 This `hittable` abstract class will have a hit function that takes in a ray. Most ray tracers have
 found it convenient to add a valid interval for hits $t_{\mathit{min}}$ to $t_{\mathit{max}}$, so
 the hit only “counts” if $t_{\mathit{min}} < t < t_{\mathit{max}}$. For the initial rays this is
@@ -957,7 +936,6 @@ bundle of stuff I will store in some structure. Here’s the abstract class:
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hittable-initial]: <kbd>[hittable.h]</kbd> The hittable class]
-</div>
 
 <div class='together'>
 And here’s the sphere:
@@ -1012,7 +990,6 @@ And here’s the sphere:
 
 Front Faces Versus Back Faces
 ------------------------------
-<div class='together'>
 The second design decision for normals is whether they should always point out. At present, the
 normal found will always be in the direction of the center to the intersection point (the normal
 points out). If the ray intersects the sphere from the outside, the normal points against the ray.
@@ -1023,8 +1000,6 @@ point inward.
 
   ![Figure [normal-sides]: Possible directions for sphere surface-normal geometry
   ](../images/fig-1.06-normal-sides.jpg)
-
-</div>
 
 We need to choose one of these possibilities because we will eventually want to determine which
 side of the surface that the ray is coming from. This is important for objects that are rendered
@@ -1049,7 +1024,7 @@ sphere.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-normal-comparison]: Comparing the ray and the normal]
 
-
+<div class='together'>
 If we decide to have the normals always point against the ray, we won't be able to use the dot
 product to determine which side of the surface the ray is on. Instead, we would need to store that
 information:
@@ -1067,6 +1042,8 @@ information:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [normals-point-against]: Remembering the side of the surface]
+
+</div>
 
 We can set things up so that normals always point “outward” from the surface, or always point
 against the incident ray. This decision is determined by whether you want to determine the side of
@@ -1133,7 +1110,6 @@ And then we add the surface side determination to the class:
 
 A List of Hittable Objects
 ---------------------------
-<div class='together'>
 We have a generic object called a `hittable` that the ray can intersect with. We now add a class
 that stores a list of `hittable`s:
 
@@ -1182,7 +1158,6 @@ that stores a list of `hittable`s:
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hittable-list-initial]: <kbd>[hittable_list.h]</kbd> The hittable_list class]
-</div>
 
 
 Some New C++ Features
@@ -1205,9 +1180,12 @@ Typically, a shared pointer is first initialized with a newly-allocated object, 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [shared-ptr]: An example allocation using shared_ptr]
 
+</div>
+
 `make_shared<thing>(thing_constructor_params ...)` allocates a new instance of type `thing`, using
 the constructor parameters. It returns a `shared_ptr<thing>`.
 
+<div class='together'>
 Since the type can be automatically deduced by the return type of `make_shared<type>(...)`, the
 above lines can be more simply expressed using C++'s `auto` type specifier:
 
@@ -1240,7 +1218,6 @@ getting `shared_ptr` and `make_shared` from the `std` library, so we don't need 
 
 Common Constants and Utility Functions
 ---------------------------------------
-<div class='together'>
 We need some math constants that we conveniently define in their own header file. For now we only
 need infinity, but we will also throw our own definition of pi in there, which we will need later.
 There is no standard portable definition of pi, so we just define our own constant for it. We'll
@@ -1281,7 +1258,6 @@ file.
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [rtweekend-initial]: <kbd>[rtweekend.h]</kbd> The rtweekend.h common header]
-</div>
 
 <div class='together'>
 And the new main:
@@ -1369,16 +1345,15 @@ And the new main:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-with-rtweekend-h]: <kbd>[main.cc]</kbd> The new main with hittables]
+
 </div>
 
-<div class='together'>
 This yields a picture that is really just a visualization of where the spheres are along with their
 surface normal. This is often a great way to look at your model for flaws and characteristics.
 
   ![Image 5: Resulting render of normals-colored sphere with ground
   ](../images/img-1.05-normals-sphere-ground.png class=pixel)
 
-</div>
 
 An Interval Class
 ------------------
@@ -1529,6 +1504,7 @@ When everything's been set, it will call the `render()` method.
 The `render()` method will set up the camera by calling the `initialize()` function, and then
   running the render loop.
 
+<div class='together'>
 Here's the skeleton of the new `camera` class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1564,6 +1540,9 @@ Here's the skeleton of the new `camera` class:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [camera-skeleton]: <kbd>[camera.h]</kbd> The camera class skeleton]
 
+</div>
+
+<div class='together'>
 To begin with, let's fill in the `ray_color()` function from `main.cc`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1592,6 +1571,9 @@ To begin with, let's fill in the `ray_color()` function from `main.cc`:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [camera-ray-color]: <kbd>[camera.h]</kbd> The camera::ray_color function]
 
+</div>
+
+<div class='together'>
 Now we move almost everything from the `main()` function into our new camera class.
 The only thing remaining in the `main()` function is the world construction.
 Here's the camera class with newly migrated code:
@@ -1665,6 +1647,9 @@ Here's the camera class with newly migrated code:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [camera-working]: <kbd>[camera.h]</kbd> The working camera class]
 
+</div>
+
+<div class='together'>
 And here's the much reduced main:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1689,6 +1674,8 @@ And here's the much reduced main:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-with-new-camera]: <kbd>[main.cc]</kbd> The new main, using the new camera]
 
+</div>
+
 
 
 Antialiasing
@@ -1706,7 +1693,6 @@ One thing we need is a random number generator that returns real random numbers.
 that returns a canonical random number which by convention returns a random real in the range
 $0 ≤ r < 1$. The “less than” before the 1 is important as we will sometimes take advantage of that.
 
-<div class='together'>
 A simple approach to this is to use the `rand()` function that can be found in `<cstdlib>`. This
 function returns a random integer in the range 0 and `RAND_MAX`. Hence we can get a real random
 number as desired with the following code snippet, added to `rtweekend.h`:
@@ -1726,9 +1712,7 @@ number as desired with the following code snippet, added to `rtweekend.h`:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-double]: <kbd>[rtweekend.h]</kbd> random_double() functions]
-</div>
 
-<div class='together'>
 C++ did not traditionally have a standard random number generator, but newer versions of C++ have
 addressed this issue with the `<random>` header (if imperfectly according to some experts).
 If you want to use this, you can obtain a random number with the conditions we need as follows:
@@ -1743,18 +1727,14 @@ If you want to use this, you can obtain a random number with the conditions we n
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-double-alt]: <kbd>[rtweekend.h]</kbd> random_double(), alternate implemenation]
-</div>
 
 
 Generating Pixels with Multiple Samples
 ----------------------------------------
-<div class='together'>
 For a given pixel we have several samples within that pixel and send rays through each of the
 samples. The colors of these rays are then averaged:
 
   ![Figure [pixel-samples]: Pixel samples](../images/fig-1.07-pixel-samples.jpg)
-
-</div>
 
 To handle the multi-sampled color computation, we'll update the `write_color()` function. Rather
 than adding in a fractional contribution each time we accumulate more light to the color, just add
@@ -1799,6 +1779,7 @@ samples) when writing out the color. In addition, we'll add a handy utility func
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-clamped]: <kbd>[color.h]</kbd> The multi-sample write_color() function]
 
+<div class='together'>
 Update the camera class to incorporate multiple samples per pixel:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1855,6 +1836,9 @@ Update the camera class to incorporate multiple samples per pixel:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [camera-spp]: <kbd>[camera.h]</kbd> Camera with samples-per-pixel parameter]
 
+</div>
+
+<div class='together'>
 Main is updated to set the new camera parameter.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1872,10 +1856,15 @@ Main is updated to set the new camera parameter.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-spp]: <kbd>[main.cc]</kbd> Setting the new samples-per-pixel parameter]
 
+</div>
+
+<div class='together'>
 Zooming into the image that is produced, we can see the difference in edge pixels.
 
   ![Image 6: Before and after antialiasing
   ](../images/img-1.06-antialias-before-after.png class=pixel)
+
+</div>
 
 
 
@@ -1890,7 +1879,6 @@ do be aware that there are alternative approaches.
 
 A Simple Diffuse Material
 --------------------------
-<div class='together'>
 Diffuse objects that don’t emit light merely take on the color of their surroundings, but they
 modulate that with their own intrinsic color. Light that reflects off a diffuse surface has its
 direction randomized. So, if we send three rays into a crack between two diffuse surfaces they will
@@ -1898,19 +1886,14 @@ each have different random behavior:
 
   ![Figure [light-bounce]: Light ray bounces](../images/fig-1.08-light-bounce.jpg)
 
-</div>
-
-<div class='together'>
 They might also be absorbed rather than reflected. The darker the surface, the more likely
 the ray is absorbed (that’s why it's dark!). Really any algorithm that randomizes direction will
 produce surfaces that look matte. Let's start with the most intuitive: a surface that randomly
 bounces a ray equally in all directions. For this material, a ray that hits the surface has an
 equal probability of bouncing in any direction away from the surface.
 
-
   ![Figure [random-vec-hor]: Equal reflection above the horizon
   ](../images/fig-1.09-random-vec-horizon.jpg)
-
 
 This very intuitive material is the simplest kind of diffuse and -- indeed -- many of the first
 raytracing papers used this diffuse method (before adopting a more accurate method that we'll be
@@ -1932,9 +1915,6 @@ generate arbitrary random vectors:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [vec-rand-util]: <kbd>[vec3.h]</kbd> vec3 random utility functions]
 
-</div>
-
-<div class='together'>
 Then we need to figure out how to manipulate a random vector so that we only get results that are on
 the surface of a hemisphere. There are analytical methods of doing this, but they are actually
 surprisingly complicated to understand, and quite a bit complicated to implement. Instead, we'll use
@@ -1949,6 +1929,7 @@ method, but for our purposes we will go with the simplest, which is:
 2. Normalize this vector
 3. Invert the normalized vector if it falls onto the wrong hemisphere
 
+<div class='together'>
 First, we will use a rejection method to generate the random vector inside of the unit sphere. Pick
 a random point in the unit cube, where $x$, $y$, and $z$ all range from -1 to +1, and reject this
 point if it is outside the unit sphere.
@@ -1967,6 +1948,7 @@ point if it is outside the unit sphere.
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-in-unit-sphere]: <kbd>[vec3.h]</kbd> The random_in_unit_sphere() function]
+
 </div>
 
 <div class='together'>
@@ -1983,12 +1965,18 @@ unit sphere.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-unit-vec]: <kbd>[vec3.h]</kbd> Random vector on the unit sphere]
 
+</div>
+
+<div class='together'>
 And now that we have a random vector on the surface of the unit sphere, we can determine if it is on
 the correct hemisphere by comparing against the surface normal:
 
   ![Figure [normal-hor]: The normal vector tells us which hemisphere we need
   ](../images/fig-1.12-surface-normal.jpg)
 
+</div>
+
+<div class='together'>
 We can take the dot product of the surface normal and our random vector to determine if it's in the
 correct hemisphere. If the dot product is positive, then the vector is in the correct hemisphere. If
 the dot product is negative, then we need to invert the vector.
@@ -2003,9 +1991,9 @@ the dot product is negative, then we need to invert the vector.
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-in-hemisphere]: <kbd>[vec3.h]</kbd> The random_in_hemisphere() function]
+
 </div>
 
-<div class='together'>
 If a ray bounces off of a material and keeps 100% of its color, then we say that the material is
 _white_. If a ray bounces off of a material and keeps 0% of its color, then we say that the
 material is black. As a first demonstration of our new diffuse material we'll set the `ray_color`
@@ -2034,6 +2022,7 @@ function to return 50% of the color from a bounce. We should expect to get a nic
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-random-unit]: <kbd>[main.cc]</kbd> ray_color() using a random ray direction]
 
+<div class='together'>
 ... Indeed we do get rather nice gray spheres:
 
   ![Image 7: Rendering of diffuse spheres with hemispherical scattering
@@ -2044,7 +2033,6 @@ function to return 50% of the color from a bounce. We should expect to get a nic
 
 Limiting the Number of Child Rays
 ----------------------------------
-<div class='together'>
 There's one potential problem lurking here. Notice that the `ray_color` function is recursive. When
 will it stop recursing? When it fails to hit anything. In some cases, however, that may be a long
 time — long enough to blow the stack. To guard against that, let's limit the maximum recursion
@@ -2110,7 +2098,6 @@ depth, returning no light contribution at the maximum depth:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-depth]: <kbd>[camera.h]</kbd> camera::ray_color() with depth limiting]
-</div>
 
 <div class='together'>
 Update the main() function to use this new depth limit:
@@ -2129,6 +2116,7 @@ Update the main() function to use this new depth limit:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-ray-depth]: <kbd>[main.cc]</kbd> Using the new ray depth limiting]
+
 </div>
 
 <div class='together'>
@@ -2141,7 +2129,6 @@ For this very simple scene we should get basically the same result:
 
 Using Gamma Correction for Accurate Color Intensity
 ----------------------------------------------------
-<div class='together'>
 Note the shadowing under the sphere. The picture is very dark, but our spheres only absorb half the
 energy of each bounce, so they are 50% reflectors. The spheres should look pretty bright (in real
 life, a light grey) but they appear to be rather dark. The reason for this is that almost all
@@ -2194,8 +2181,6 @@ $1/\mathit{gamma}$, which is just the square-root:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-gamma]: <kbd>[color.h]</kbd> write_color(), with gamma correction]
 
-</div>
-
 <div class='together'>
 This yields light grey, which is more accurate:
 
@@ -2207,7 +2192,6 @@ This yields light grey, which is more accurate:
 
 Fixing Shadow Acne
 -------------------
-<div class='together'>
 There’s also a subtle bug that we need to address. A ray will attempt to accurately calculate the
 intersection point when it intersects with a surface. Unfortunately for us, this calculation is
 susceptible to floating point rounding errors which can cause the intersection point to be ever so
@@ -2248,12 +2232,10 @@ to address this is just to ignore hits that are very close to the calculated int
     Calculating reflected ray origins with tolerance]
 
 This gets rid of the shadow acne problem. Yes it is really called that.
-</div>
 
 
 True Lambertian Reflection
 ---------------------------
-<div class='together'>
 Using a diffuse model that scatters vectors evenly about the hemisphere produces a nice and soft
 diffuse model, but we can definitely do better. A more accurate representation of real diffuse
 objects is the _Lambertian_ distribution, which has a scattering distribution that is propertional
@@ -2285,8 +2267,6 @@ point $\mathbf{P}$ to the random point $\mathbf{S}$ (this is the vector $(\mathb
   ![Figure [rand-unitvec]: Randomly generating a vector according to Lambertian distribution
   ](../images/fig-1.13-rand-unitvec.jpg)
 
-</div>
-
 <div class='together'>
 The change is actually fairly minimal:
 
@@ -2314,6 +2294,7 @@ The change is actually fairly minimal:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-unit-sphere]: <kbd>[camera.h]</kbd> ray_color() with replacement diffuse]
+
 </div>
 
 <div class='together'>
@@ -2321,6 +2302,8 @@ After rendering we get a similar image:
 
   ![Image 10: Correct rendering of Lambertian spheres
   ](../images/img-1.09-correct-lambertian.png class=pixel)
+
+</div>
 
 It's hard to tell the difference between these two diffuse methods, given that our scene of two
 spheres is so simple, but you should be able to notice two important visual differences:
@@ -2338,7 +2321,7 @@ objects behave under light can be poorly formed. As scenes become more complicat
 of the book, you are encouraged to switch between the different diffuse renderers presented here.
 Most scenes of interest will contain a large amount of diffuse materials. You can gain valuable
 insight by understanding the effect of different diffuse methods on the lighting of the scene.
-</div>
+
 
 
 Metal
@@ -2377,12 +2360,12 @@ This suggests the abstract class:
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [material-initial]: <kbd>[material.h]</kbd> The material class]
+
 </div>
 
 
 A Data Structure to Describe Ray-Object Intersections
 ------------------------------------------------------
-<div class='together'>
 The `hit_record` is to avoid a bunch of arguments so we can stuff whatever info we want in there.
 You can use arguments instead; it’s a matter of taste. Hittables and materials need to know each
 other so there is some circularity of the references. In C++ you just need to alert the compiler
@@ -2413,7 +2396,6 @@ that the pointer is to a class, which the “class material” in the hittable c
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hit-with-material]: <kbd>[hittable.h]</kbd> Hit record with added material pointer]
-</div>
 
 What we have set up here is that material will tell us how rays interact with the surface.
 `hit_record` is just a way to stuff a bunch of arguments into a class so we can send them as a
@@ -2458,12 +2440,12 @@ within `hit_record`. See the highlighted lines below:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-material]: <kbd>[sphere.h]</kbd>
     Ray-sphere intersection with added material information]
+
 </div>
 
 
 Modeling Light Scatter and Reflectance
 ---------------------------------------
-<div class='together'>
 For the Lambertian (diffuse) case we already have, it can either scatter always and attenuate by its
 reflectance $R$, or it can scatter with no attenuation but absorb the fraction $1-R$ of the rays, or
 it could be a mixture of those strategies. For Lambertian materials we get this simple class:
@@ -2486,7 +2468,6 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [lambertian-initial]: <kbd>[material.h]</kbd> The lambertian material class]
-</div>
 
 Note we could just as well only scatter with some probability $p$ and have attenuation be
 $\mathit{albedo}/p$. Your choice.
@@ -2496,7 +2477,6 @@ vector we generate is exactly opposite the normal vector, the two will sum to ze
 result in a zero scatter direction vector. This leads to bad scenarios later on (infinities and
 NaNs), so we need to intercept the condition before we pass it on.
 
-<div class='together'>
 In service of this, we'll create a new vector method -- `vec3::near_zero()` -- that returns true if
 the vector is very close to zero in all dimensions.
 
@@ -2539,20 +2519,15 @@ the vector is very close to zero in all dimensions.
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [lambertian-catch-zero]: <kbd>[material.h]</kbd> Lambertian scatter, bullet-proof]
-</div>
 
 
 Mirrored Light Reflection
 --------------------------
-<div class='together'>
 For smooth metals the ray won’t be randomly scattered. The key math is: how does a ray get
 reflected from a metal mirror? Vector math is our friend here:
 
   ![Figure [reflection]: Ray reflection](../images/fig-1.11-reflection.jpg)
 
-</div>
-
-<div class='together'>
 The reflected ray direction in red is just $\mathbf{v} + 2\mathbf{b}$. In our design, $\mathbf{n}$
 is a unit vector, but $\mathbf{v}$ may not be. The length of $\mathbf{b}$ should be $\mathbf{v}
 \cdot \mathbf{n}$. Because $\mathbf{v}$ points in, we will need a minus sign, yielding:
@@ -2563,7 +2538,6 @@ is a unit vector, but $\mathbf{v}$ may not be. The length of $\mathbf{b}$ should
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [vec3-reflect]: <kbd>[vec3.h]</kbd> vec3 reflection function]
-</div>
 
 <div class='together'>
 The metal material just reflects rays using that formula:
@@ -2586,6 +2560,7 @@ The metal material just reflects rays using that formula:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [metal-material]: <kbd>[material.h]</kbd> Metal material with reflectance function]
+
 </div>
 
 <div class='together'>
@@ -2624,12 +2599,12 @@ We need to modify the `ray_color()` function to use this:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-scatter]: <kbd>[camera.h]</kbd> Ray color with scattered reflectance]
+
 </div>
 
 
 A Scene with Metal Spheres
 ---------------------------
-<div class='together'>
 Now let’s add some metal spheres to our scene:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2671,7 +2646,6 @@ Now let’s add some metal spheres to our scene:
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-with-metal]: <kbd>[main.cc]</kbd> Scene with metal spheres]
-</div>
 
 <div class='together'>
 Which gives:
@@ -2683,15 +2657,11 @@ Which gives:
 
 Fuzzy Reflection
 -----------------
-<div class='together'>
 We can also randomize the reflected direction by using a small sphere and choosing a new endpoint
 for the ray:
 
   ![Figure [reflect-fuzzy]: Generating fuzzed reflection rays](../images/fig-1.12-reflect-fuzzy.jpg)
 
-</div>
-
-<div class='together'>
 The bigger the sphere, the fuzzier the reflections will be. This suggests adding a fuzziness
 parameter that is just the radius of the sphere (so zero is no perturbation). The catch is that for
 big spheres or grazing rays, we may scatter below the surface. We can just have the surface
@@ -2723,8 +2693,7 @@ absorb those.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [metal-fuzz]: <kbd>[material.h]</kbd> Metal material fuzziness]
 
-</div>
-
+<div class='together'>
 We can try that out by adding fuzziness 0.3 and 1.0 to the metals:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2743,6 +2712,7 @@ We can try that out by adding fuzziness 0.3 and 1.0 to the metals:
 
   ![Image 12: Fuzzed metal](../images/img-1.12-metal-fuzz.png class=pixel)
 
+</div>
 
 
 
@@ -2755,14 +2725,11 @@ choosing between reflection or refraction, and only generating one scattered ray
 
 Refraction
 -----------
-<div class='together'>
 The hardest part to debug is the refracted ray. I usually first just have all the light refract if
 there is a refraction ray at all. For this project, I tried to put two glass balls in our scene, and
 I got this (I have not told you how to do this right or wrong yet, but soon!):
 
   ![Image 13: Glass first](../images/img-1.13-glass-first.png class=pixel)
-
-</div>
 
 Is that right? Glass balls look odd in real life. But no, it isn’t right. The world should be
 flipped upside down and no weird black stuff. I just printed out the ray straight through the middle
@@ -2771,7 +2738,6 @@ of the image and it was clearly wrong. That often does the job.
 
 Snell's Law
 ------------
-<div class='together'>
 The refraction is described by Snell’s law:
 
   $$ \eta \cdot \sin\theta = \eta' \cdot \sin\theta' $$
@@ -2782,9 +2748,6 @@ Where $\theta$ and $\theta'$ are the angles from the normal, and $\eta$ and $\et
 
   ![Figure [refraction]: Ray refraction](../images/fig-1.13-refraction.jpg)
 
-</div>
-
-<div class='together'>
 In order to determine the direction of the refracted ray, we have to solve for $\sin\theta'$:
 
   $$ \sin\theta' = \frac{\eta}{\eta'} \cdot \sin\theta $$
@@ -2817,6 +2780,7 @@ We can now rewrite $\mathbf{R'}_{\bot}$ in terms of known quantities:
   $$ \mathbf{R'}_{\bot} =
      \frac{\eta}{\eta'} (\mathbf{R} + (\mathbf{-R} \cdot \mathbf{n}) \mathbf{n}) $$
 
+<div class='together'>
 When we combine them back together, we can write a function to calculate $\mathbf{R'}$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2828,6 +2792,7 @@ When we combine them back together, we can write a function to calculate $\mathb
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [refract]: <kbd>[vec3.h]</kbd> Refraction function]
+
 </div>
 
 <div class='together'>
@@ -2873,10 +2838,13 @@ Now we'll update the scene to change the left and center spheres to glass:
 
 </div>
 
+<div class='together'>
 This gives us the following result:
 
   ![Image 14: Glass sphere that always refracts
   ](../images/img-1.14-glass-always-refract.png class=pixel)
+
+</div>
 
 
 Total Internal Reflection
@@ -2891,11 +2859,11 @@ If the ray is inside glass and outside is air ($\eta = 1.5$ and $\eta' = 1.0$):
 
   $$ \sin\theta' = \frac{1.5}{1.0} \cdot \sin\theta $$
 
+<div class='together'>
 The value of $\sin\theta'$ cannot be greater than 1. So, if,
 
-  $$ \frac{1.5}{1.0} \cdot \sin\theta > 1.0 $$,
+  $$ \frac{1.5}{1.0} \cdot \sin\theta > 1.0 $$
 
-<div class="together">
 the equality between the two sides of the equation is broken, and a solution cannot exist. If a
 solution does not exist, the glass cannot refract, and therefore must reflect the ray:
 
@@ -2916,7 +2884,6 @@ Here all the light is reflected, and because in practice that is usually inside 
 is called “total internal reflection”. This is why sometimes the water-air boundary acts as a
 perfect mirror when you are submerged.
 
-<div class='together'>
 We can solve for `sin_theta` using the trigonometric qualities:
 
   $$ \sin\theta  = \sqrt{1 - \cos^2\theta} $$
@@ -2938,8 +2905,6 @@ and
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [dielectric]: <kbd>[material.h]</kbd> Determining if the ray can refract]
-
-</div>
 
 <div class='together'>
 And the dielectric material that always refracts (when possible) is:
@@ -2977,6 +2942,7 @@ And the dielectric material that always refracts (when possible) is:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [dielectric]: <kbd>[material.h]</kbd> Dielectric material class with reflection]
+
 </div>
 
 <div class='together'>
@@ -2991,6 +2957,9 @@ parameters:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-dielectric]: <kbd>[main.cc]</kbd> Scene with dielectric and shiny sphere]
 
+</div>
+
+<div class='together'>
 We get:
 
   ![Image 15: Glass sphere that sometimes refracts
@@ -3001,7 +2970,6 @@ We get:
 
 Schlick Approximation
 ----------------------
-<div class='together'>
 Now real glass has reflectivity that varies with angle -- look at a window at a steep angle and it
 becomes a mirror. There is a big ugly equation for that, but almost everybody uses a cheap and
 surprisingly accurate polynomial approximation by Christophe Schlick. This yields our full glass
@@ -3050,12 +3018,10 @@ material:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [glass]: <kbd>[material.h]</kbd> Full glass material]
-</div>
 
 
 Modeling a Hollow Glass Sphere
 -------------------------------
-<div class='together'>
 An interesting and easy trick with dielectric spheres is to note that if you use a negative radius,
 the geometry is unaffected, but the surface normal points inward. This can be used as a bubble to
 make a hollow glass sphere:
@@ -3072,7 +3038,6 @@ make a hollow glass sphere:
     ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-hollow-glass]: <kbd>[main.cc]</kbd> Scene with hollow glass sphere]
-</div>
 
 <div class='together'>
 This gives:
@@ -3094,13 +3059,10 @@ personal taste.
 
 Camera Viewing Geometry
 ------------------------
-<div class='together'>
 I first keep the rays coming from the origin and heading to the $z = -1$ plane. We could make it the
 $z = -2$ plane, or whatever, as long as we made $h$ a ratio to that distance. Here is our setup:
 
   ![Figure [cam-view-geom]: Camera viewing geometry](../images/fig-1.14-cam-view-geom.jpg)
-
-</div>
 
 <div class='together'>
 This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
@@ -3141,6 +3103,7 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [camera-fov]: <kbd>[camera.h]</kbd> Camera with adjustable field-of-view (fov)]
+
 </div>
 
 <div class='together'>
@@ -3177,6 +3140,9 @@ Now update `main()` to use a 90° field of view, looking at the point where two 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-wide-angle]: <kbd>[main.cc]</kbd> Scene with wide-angle camera]
 
+</div>
+
+<div class='together'>
 This gives us the rendering:
 
   ![Image 17: A wide-angle view](../images/img-1.17-wide-view.png class=pixel)
@@ -3288,10 +3254,16 @@ We'll change back to the prior scene, and use the new viewpoint:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-free-view]: <kbd>[main.cc]</kbd> Scene with alternate viewpoint]
 
+</div>
+
+<div class='together'>
 to get:
 
   ![Image 18: A distant view](../images/img-1.18-view-distant.png class=pixel)
 
+</div>
+
+<div class='together'>
 And we can change field of view:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -3299,6 +3271,9 @@ And we can change field of view:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [change-field-view]: <kbd>[main.cc]</kbd> Change field of view]
 
+</div>
+
+<div class='together'>
 to get:
 
   ![Image 19: Zooming in](../images/img-1.19-view-zoom.png class=pixel)
@@ -3332,7 +3307,6 @@ sensor and never need more light, so we only have an aperture when we want defoc
 
 A Thin Lens Approximation
 --------------------------
-<div class="together">
 A real camera has a complicated compound lens. For our code we could simulate the order: sensor,
 then lens, then aperture. Then we could figure out where to send the rays, and flip the image after
 it's computed (the image is projected upside down on the film). Graphics people, however, usually
@@ -3340,17 +3314,12 @@ use a thin lens approximation:
 
   ![Figure [cam-lens]: Camera lens model](../images/fig-1.17-cam-lens.jpg)
 
-</div>
-
-<div class="together">
 We don’t need to simulate any of the inside of the camera. For the purposes of rendering an image
 outside the camera, that would be unnecessary complexity. Instead, I usually start rays from the
 lens, and send them toward the focus plane (`focus_dist` away from the lens), where everything on
 that plane is in perfect focus.
 
   ![Figure [cam-film-plane]: Camera focus plane](../images/fig-1.18-cam-film-plane.jpg)
-
-</div>
 
 
 Generating Sample Rays
@@ -3371,6 +3340,7 @@ defocus disk of radius zero (no blur at all), so all rays originated at the disk
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [rand-in-unit-disk]: <kbd>[vec3.h]</kbd> Generate random point inside unit disk]
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
@@ -3474,6 +3444,9 @@ Using a big aperture:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-camera-dof]: <kbd>[main.cc]</kbd> Scene camera with depth-of-field]
 
+</div>
+
+<div class='together'>
 We get:
 
   ![Image 20: Spheres with depth-of-field](../images/img-1.20-depth-of-field.png class=pixel)
@@ -3487,7 +3460,6 @@ Where Next?
 
 A Final Render
 ---------------
-<div class='together'>
 Let’s make the image on the cover of this book -- lots of random spheres.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3553,7 +3525,6 @@ Let’s make the image on the cover of this book -- lots of random spheres.
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scene-final]: <kbd>[main.cc]</kbd> Final scene]
-</div>
 
 (Note that the code above differs slightly from the project sample code: the `samples_per_pixel` is
 set to 500 above for a high-quality image that will take quite a while to render.
@@ -3606,6 +3577,7 @@ Have fun, and please send me your cool images!
 
 
                                (insert acknowledgments.md.html here)
+
 
 
 Citing This Book
