@@ -48,25 +48,26 @@ Directory Structure
 -------------------
 The organization of this repository is meant to be simple and self-evident at a glance:
 
-- `books/`
-: This folder contains the three raytracing books (in HTML), and some supporting material.
+  - `books/` --
+    This folder contains the three raytracing books (in HTML), and some supporting material.
 
-- `images/`
-: Contains all of the images and figures of the books. Can also be used to compare your results.
+  - `images/` --
+    Contains all of the images and figures of the books. Can also be used to compare your
+    results.
 
-- `style/`
-: Contains the css for the books and the site.
+  - `style/` --
+    Contains the css for the books and the site.
 
-- `src/`
-: Contains the source.
+  - `src/` --
+    Contains the source.
 
-- `src/common/`
-: Contains any headers that are common to two or more books. This is also where external headers are
-stored.
+  - `src/common/` --
+    Contains any headers that are common to two or more books. This is also where external headers
+    are stored.
 
-- `src/<book>/`
-: Contains the source specific to any one book. There is no sharing of source outside of the
-common directory.
+  - `src/<book>/` --
+    Contains the source specific to any one book. There is no sharing of source outside of the
+    common directory.
 
 
 Source Code
