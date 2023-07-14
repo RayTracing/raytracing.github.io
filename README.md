@@ -21,13 +21,18 @@ versions, use the print function in your browser.
 
 Project Status
 ---------------
-Well, our work on the v4.0.0 release is plodding along. Our last release, [v3.2.3][] was in December
-2020, and v4 keeps getting bigger and bigger. Lots of changes. If you'd like to check it out, we're
-developing on the `dev-major` branch. You can also follow along with our remaining work on
-[milestone 16][] (the main body of remaining work), and [milestone 19][] (release preparation
-tasks). We're tackling some larger refactorings to further simplify the code, address some large
-outstanding issues, and focus on more development and expansion of book 3: _Ray Tracing: The Rest of
-Your Life_.
+We are driving toward our v4.0.0 release for book 1 by SIGGRAPH 2023 (August 6). It's been a long
+journey from v3.2.3, released December 2020, but we're seeing the finish line. We hope to have books
+2 & 3 ready by the end of 2023.
+
+If you'd like to check out the latest and watch our progress, we're on the `dev-major` branch. Our
+relevant milestones are
+
+  - [v4.0.0 Book 1](https://github.com/RayTracing/raytracing.github.io/milestone/20)
+  - [v4.0.0 Book 1 Release](https://github.com/RayTracing/raytracing.github.io/milestone/21)
+  - [v4.0.0 Book 2](https://github.com/RayTracing/raytracing.github.io/milestone/24)
+  - [v4.0.0 Book 3](https://github.com/RayTracing/raytracing.github.io/milestone/22)
+  - [v4.0.0 Books 2 & 3 Release](https://github.com/RayTracing/raytracing.github.io/milestone/23)
 
 Let us know if you'd like to help out. If you have a change you'd like to contribute,
 _**[please see our contribution guidelines][CONTRIBUTING]**_.
@@ -43,25 +48,25 @@ Directory Structure
 -------------------
 The organization of this repository is meant to be simple and self-evident at a glance:
 
-### books/
-This folder contains the three raytracing books (in HTML), and some supporting material.
+- `books/`
+: This folder contains the three raytracing books (in HTML), and some supporting material.
 
-### images/
-Contains all of the images and figures of the books. Can also be used to compare your results.
+- `images/`
+: Contains all of the images and figures of the books. Can also be used to compare your results.
 
-### style/
-Contains the css for the books and the site.
+- `style/`
+: Contains the css for the books and the site.
 
-### src/
-Contains the source.
+- `src/`
+: Contains the source.
 
-### src/common/
-Contains any headers that are common to two or more books. This is also where external headers
-are stored.
+- `src/common/`
+: Contains any headers that are common to two or more books. This is also where external headers are
+stored.
 
-### src/`<book>`/
-Contains the source specific to any one book. Their is no sharing of source outside of the common
-directory.
+- `src/<book>/`
+: Contains the source specific to any one book. There is no sharing of source outside of the
+common directory.
 
 
 Source Code
@@ -69,7 +74,7 @@ Source Code
 ### Intent
 This repository is not meant to act as its own tutorial. The source is provided so you can compare
 your work when progressing through the book. We strongly recommend reading and following along with
-the book to understand the source. Ideally, you'll be developing your own implmentation as you go,
+the book to understand the source. Ideally, you'll be developing your own implementation as you go,
 in order to deeply understand how a raytracer works.
 
 ### Downloading The Source Code
@@ -96,7 +101,7 @@ branch.
 
 Building and Running
 ---------------------
-Copies of source are provided for you to check your work and compare against. If you wish to build
+Copies of the source are provided for you to check your work and compare against. If you wish to build
 the provided source, this project uses CMake. To build, go to the root of the project directory and
 run the following commands to create the debug version of every executable:
 
@@ -118,7 +123,7 @@ You may choose to use the CMake GUI when building on windows.
    `C:\Users\Peter\raytracing.github.io`.
 3. Add the folder "build" within the location of the copied directory. For example,
    `C:\Users\Peter\raytracing.github.io\build`.
-4. For "Where to build the binaries", set this to the newly-created build directory.
+4. For "Where to build the binaries", set this to the newly-created "build" directory.
 5. Click "Configure".
 6. For "Specify the generator for this project", set this to your version of Visual Studio.
 7. Click "Done".
