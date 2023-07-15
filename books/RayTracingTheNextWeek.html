@@ -1372,22 +1372,22 @@ We need to invert these equations to solve for $\theta$ and $\phi$. Because of t
 function `atan2()`, which takes any pair of numbers proportional to sine and cosine and returns the
 angle, we can pass in $x$ and $z$ (the $\sin(\theta)$ cancel) to solve for $\phi$:
 
-  $$ \phi = \text{atan2}(z, -x) $$
+  $$ \phi = \operatorname{atan2}(z, -x) $$
 
 `atan2()` returns values in the range $-\pi$ to $\pi$, but they go from 0 to $\pi$, then flip to
 $-\pi$ and proceed back to zero. While this is mathematically correct, we want $u$ to range from $0$
 to $1$, not from $0$ to $1/2$ and then from $-1/2$ to $0$. Fortunately,
 
-  $$ \text{atan2}(a,b) = \text{atan2}(-a,-b) + \pi, $$
+  $$ \operatorname{atan2}(a,b) = \operatorname{atan2}(-a,-b) + \pi, $$
 
 and the second formulation yields values from $0$ continuously to $2\pi$. Thus, we can compute
 $\phi$ as
 
-  $$ \phi = \text{atan2}(-z, x) + \pi $$
+  $$ \phi = \operatorname{atan2}(-z, x) + \pi $$
 
 The derivation for $\theta$ is more straightforward:
 
-  $$ \theta = \text{acos}(-y) $$
+  $$ \theta = \arccos(-y) $$
 
 <div class='together'>
 So for a sphere, the $(u,v)$ coord computation is accomplished by a utility function that takes
@@ -2491,7 +2491,7 @@ Fortunately, this is very simple. Recall that in the equation $Ax + By + Cz = D$
 represents the normal vector. To get this, we just use the cross product of the two side vectors
 $\mathbf{u}$ and $\mathbf{v}$:
 
-  $$ \mathbf{n} = \text{unit_vector}(\mathbf{u} \times \mathbf{v}) $$
+  $$ \mathbf{n} = \operatorname{unit\_vector}(\mathbf{u} \times \mathbf{v}) $$
 
 The plane is defined as all points $(x,y,z)$ that satisfy the equation $Ax + By + Cz = D$. Well, we
 know that $\mathbf{Q}$ lies on the plane, so that's enough to solve for $D$:
@@ -3658,7 +3658,7 @@ through.
 As the ray passes through the volume, it may scatter at any point. The denser the volume, the more
 likely that is. The probability that the ray scatters in any small distance $\Delta L$ is:
 
-  $$ \text{probability} = C \cdot \Delta L $$
+  $$ \mathit{probability} = C \cdot \Delta L $$
 
 where $C$ is proportional to the optical density of the volume. If you go through all the
 differential equations, for a random number you get a distance where the scattering occurs. If that
