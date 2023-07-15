@@ -628,7 +628,7 @@ This forms a “linear blend”, or “linear interpolation”.
 This is commonly referred to as a _lerp_ between two values.
 A lerp is always of the form
 
-  $$ \text{blendedValue} = (1-a)\cdot\text{startValue} + a\cdot\text{endValue}, $$
+  $$ \mathit{blendedValue} = (1-a)\cdot\mathit{startValue} + a\cdot\mathit{endValue}, $$
 
 with $a$ going from zero to one.
 In our case this produces:
@@ -805,13 +805,16 @@ the direction of the hit point minus the center:
 <div class='together'>
 On the earth, this implies that the vector from the earth’s center to you points straight up. Let’s
 throw that into the code now, and shade it. We don’t have any lights or anything yet, so let’s just
-visualize the normals with a color map. A common trick used for visualizing normals (because it’s
-easy and somewhat intuitive to assume $\mathbf{n}$ is a unit length vector -- so each component is
-between -1 and 1) is to map each component to the interval from 0 to 1, and then map $(x, y, z)$ to
-$(\text{red}, \text{green}, \text{blue})$. For the normal, we need the hit point, not just whether
-we hit or not. We only have one sphere in the scene, and it's directly in front of the camera, so we
-won't worry about negative values of $t$ yet. We'll just assume the closest hit point
-(smallest $t$). These changes in the code let us compute and visualize $\mathbf{n}$:
+visualize the normals with a color map.
+A common trick used for visualizing normals (because it’s easy and somewhat intuitive to assume
+  $\mathbf{n}$ is a unit length vector -- so each component is between -1 and 1) is to map each
+  component to the interval from 0 to 1, and then map $(x, y, z)$ to $(\mathit{red}, \mathit{green},
+  \mathit{blue})$.
+For the normal, we need the hit point, not just whether we hit or not.
+We only have one sphere in the scene, and it's directly in front of the camera, so we won't worry
+  about negative values of $t$ yet.
+We'll just assume the closest hit point (smallest $t$).
+These changes in the code let us compute and visualize $\mathbf{n}$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     double hit_sphere(const point3& center, double radius, const ray& r) {

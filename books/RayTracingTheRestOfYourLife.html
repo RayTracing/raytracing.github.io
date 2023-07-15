@@ -59,7 +59,7 @@ result, whereas a Monte Carlo (MC) algorithm _may_ produce a correct result--and
 wrong! But for especially complicated problems such as ray tracing, we may not place as huge a
 priority on being perfectly exact as on getting an answer in a reasonable amount of time. LV
 algorithms will eventually arrive at the correct result, but we can't make too many guarantees on
-how long it will take to get there. The classic example of an LV algorithm is the $quicksort$
+how long it will take to get there. The classic example of an LV algorithm is the _quicksort_
 sorting algorithm. The quicksort algorithm will always complete with a fully sorted list, but, the
 time it takes to complete is random. Another good example of an LV algorithm is the code that we use
 to pick a random point in a unit sphere:
@@ -389,7 +389,9 @@ One Dimensional Monte Carlo Integration
 Our Buffon Needle example is a way of calculating $\pi$ by solving for the ratio of the area of the
 circle and the area of the inscribing square:
 
-    $$ \frac{\text{area}(\mathit{circle})}{\text{area}(\mathit{square})} = \frac{\pi}{4} $$
+    $$ \frac{\operatorname{area}(\mathit{circle})}{\operatorname{area}(\mathit{square})}
+       = \frac{\pi}{4}
+    $$
 
 We picked a bunch of random points in the inscribing square and counted the fraction of them that
 were also in the unit circle. This fraction was an estimate that tended toward $\frac{\pi}{4}$ as
@@ -398,14 +400,19 @@ the above ratio. We know that the ratio of areas of the unit circle and the insc
 $\frac{\pi}{4}$, and we know that the area of a inscribing square is $4r^2$, so we could then use
 those two quantities to get the area of a circle:
 
-    $$ \frac{\text{area}(\mathit{circle})}{\text{area}(\mathit{square})} = \frac{\pi}{4} $$
-    $$ \frac{\text{area}(\mathit{circle})}{(2r)^2} = \frac{\pi}{4} $$
-    $$ \text{area}(\mathit{circle}) = \frac{\pi}{4} 4r^2 $$
-    $$ \text{area}(\mathit{circle}) = \pi r^2 $$
+    $$ \frac{\operatorname{area}(\mathit{circle})}{\operatorname{area}(\mathit{square})}
+       = \frac{\pi}{4}
+    $$
+
+    $$ \frac{\operatorname{area}(\mathit{circle})}{(2r)^2} = \frac{\pi}{4} $$
+
+    $$ \operatorname{area}(\mathit{circle}) = \frac{\pi}{4} 4r^2 $$
+
+    $$ \operatorname{area}(\mathit{circle}) = \pi r^2 $$
 
 We choose a circle with radius $r = 1$ and get:
 
-    $$ \text{area}(\mathit{circle}) = \pi $$
+    $$ \operatorname{area}(\mathit{circle}) = \pi $$
 
 Our work above is equally valid as a means to solve for $pi$ as it is a means to solve for the area
 of a circle:
@@ -459,7 +466,7 @@ If we assume that we have all of the following:
 If we assume all of the above, then we could solve for the arithmetic mean--the average--of the
 list $Y$ with the following:
 
-    $$ \text{average}(Y) = E[Y] = \frac{1}{N} \sum_{i=0}^{N-1} y_i $$
+    $$ \operatorname{average}(Y) = E[Y] = \frac{1}{N} \sum_{i=0}^{N-1} y_i $$
     $$ = \frac{1}{N} \sum_{i=0}^{N-1} f(x_i) $$
     $$ = E[F(X)] $$
 
@@ -512,12 +519,12 @@ This is, of course, just a regular integral:
 If you recall your introductory calculus class, the integral of a function is the area under the
 curve over that interval:
 
-    $$ \text{area}(f(x), a, b) = \int_{a}^{b} f(x) dx$$
+    $$ \operatorname{area}(f(x), a, b) = \int_{a}^{b} f(x) dx$$
 
 Therefore, the average over an interval is intrinsically linked with the area under the curve in
 that interval.
 
-    $$  E[f(x) | a \leq x \leq b] = \frac{1}{b - a} \cdot \text{area}(f(x), a, b) $$
+    $$  E[f(x) | a \leq x \leq b] = \frac{1}{b - a} \cdot \operatorname{area}(f(x), a, b) $$
 
 
 Both the integral of a function and a Monte Carlo sampling of that function can be used to solve for
@@ -548,14 +555,14 @@ We could solve this using integration:
 Or, we could solve the integral using a Monte Carlo approach. In computer sciency notation, we might
 write this as:
 
-    $$ I = \text{area}( x^2, 0, 2 ) $$
+    $$ I = \operatorname{area}( x^2, 0, 2 ) $$
 
 We could also write it as:
 
-    $$  E[f(x) | a \leq x \leq b] = \frac{1}{b - a} \cdot \text{area}(f(x), a, b) $$
-    $$ \text{average}(x^2, 0, 2) = \frac{1}{2 - 0} \cdot \text{area}( x^2, 0, 2 ) $$
-    $$ \text{average}(x^2, 0, 2) = \frac{1}{2 - 0} \cdot I $$
-    $$ I = 2 \cdot \text{average}(x^2, 0, 2) $$
+    $$  E[f(x) | a \leq x \leq b] = \frac{1}{b - a} \cdot \operatorname{area}(f(x), a, b) $$
+    $$ \operatorname{average}(x^2, 0, 2) = \frac{1}{2 - 0} \cdot \operatorname{area}( x^2, 0, 2 ) $$
+    $$ \operatorname{average}(x^2, 0, 2) = \frac{1}{2 - 0} \cdot I $$
+    $$ I = 2 \cdot \operatorname{average}(x^2, 0, 2) $$
 
 </div>
 
@@ -721,7 +728,7 @@ range [0,2]. The PDF represents the continuous density function for a probabilis
 that everything in that list is contained within 0 and 2, we can say that the probability of getting
 a value between 0 and 2 is 100%. Therefore, the area under the curve must sum to 1:
 
-    $$ \text{area}(p(r), 0, 2) = 1 $$
+    $$ \operatorname{area}(p(r), 0, 2) = 1 $$
 
 All linear functions can be represented as a constant term multiplied by a variable.
 
@@ -729,7 +736,7 @@ All linear functions can be represented as a constant term multiplied by a varia
 
 We need to solve for the value of $C$. We can use integration to work backwards.
 
-    $$ 1 = \text{area}(p(r), 0, 2) $$
+    $$ 1 = \operatorname{area}(p(r), 0, 2) $$
     $$ = \int_{0}^{2} C \cdot r dr $$
     $$ = C \cdot \int_{0}^{2} r dr $$
     $$ = C \cdot \frac{r^2}{2} \Big|_{0}^{2} $$
@@ -739,8 +746,11 @@ We need to solve for the value of $C$. We can use integration to work backwards.
 That gives us the PDF of $p(r) = r/2$. Just as with histograms we can sum up (integrate) the
 region to figure out the probability that $r$ is in some interval $[x_0,x_1]$:
 
-    $$ \text{Probability} (r | x_0 \leq r \leq x_1 ) = \text{area}(p(r), x_0, x_1) $$
-    $$ \text{Probability} (r | x_0 \leq r \leq x_1 ) = \int_{x_0}^{x_1}  \frac{r}{2} dr $$
+    $$ \operatorname{Probability} (r | x_0 \leq r \leq x_1 )
+       = \operatorname{area}(p(r), x_0, x_1)
+    $$
+
+    $$ \operatorname{Probability} (r | x_0 \leq r \leq x_1 ) = \int_{x_0}^{x_1}  \frac{r}{2} dr $$
 
 To confirm your understanding, you should integrate over the region $r=0$ to $r=2$, you should get a
 probability of 1.
@@ -755,15 +765,15 @@ probability that a variable will fall within a given interval. If the interval y
 against is a single value, then the PDF will always return a zero probability because its "bin" is
 infinitely thin (has zero width). Here's a simple mathematical proof of this fact:
 
-    $$ \text{Probability} (r = x) = \int_{x}^{x}  p(r) dr $$
+    $$ \operatorname{Probability} (r = x) = \int_{x}^{x}  p(r) dr $$
     $$ = P(r) \Big|_{x}^{x} $$
     $$ = P(x) - P(x) $$
     $$ = 0 $$
 
 Finding the probability of a region surrounding x may not be zero:
 
-    $$ \text{Probability} (r | x - \Delta x < r < x + \Delta x ) =
-         \text{area}(p(r), x - \Delta x, x + \Delta x) $$
+    $$ \operatorname{Probability} (r | x - \Delta x < r < x + \Delta x ) =
+         \operatorname{area}(p(r), x - \Delta x, x + \Delta x) $$
     $$ = P(x + \Delta x) - P(x - \Delta x) $$
 
 </div>
@@ -978,7 +988,7 @@ _Cumulative Distribution Function_ $P(x)$ is defined as:
 
 Or,
 
-    $$ P(x) = \text{area}(p(x'), -\infty, x) $$
+    $$ P(x) = \operatorname{area}(p(x'), -\infty, x) $$
 
 Which is the amount of _cumulative_ probability from $-\infty$. We rewrote the integral in terms of
 $x'$ instead of $x$ because of calculus rules, if you're not sure what it means, don't worry about
@@ -1059,7 +1069,7 @@ That just means that $f()$ just undoes whatever $P()$ does. So, $f()$ is the inv
 For our purposes, if we have PDF $p()$ and cumulative distribution function $P()$, we can use this
 "inverse function" with a random number to get what we want:
 
-    $$ f(d) = P^{-1} (\text{random_double}()) $$
+    $$ f(d) = P^{-1} (\operatorname{random_double}()) $$
 </div>
 
 <div class='together'>
@@ -1078,7 +1088,7 @@ Which means the inverse of our CDF is defined as
 
 Thus our random number generator with density $p(r)$ can be created with:
 
-    $$ f(d) = \sqrt{4\cdot\text{random_double}()} $$
+    $$ f(d) = \sqrt{4\cdot\operatorname{random_double}()} $$
 
 Note that this ranges from 0 to 2 as we hoped, and if we check our work, we replace
 `random_double()` with $1/4$ to get 1, and also replace with $1/2$ to get $\sqrt{2}$, just as
@@ -1151,9 +1161,10 @@ bright image--if we account for nonuniformity, we will get accurate results. The
 samples toward specific parts of the distribution, which will cause us to converge faster, but at
 the cost of introducing bias. To remove this bias, we need to down-weight where we sample more
 frequently, and to up-weight where we sample less frequently. For our new nonuniform random number
-generator, the PDF defines how much or how little we sample a specific portion. So the weighting
-function should be proportional to $1/\text{pdf}$. In fact it is _exactly_ $1/\text{pdf}$. This is
-why we divide `x*x` by `pdf(x)`.
+generator, the PDF defines how much or how little we sample a specific portion.
+So the weighting function should be proportional to $1/\mathit{pdf}$.
+In fact it is _exactly_ $1/\mathit{pdf}$.
+This is why we divide `x*x` by `pdf(x)`.
 </div>
 
 <div class='together'>
@@ -1331,9 +1342,9 @@ doesn't matter which coordinate system you choose to use. Although, however you 
 remember that a PDF must integrate to one over the whole surface and that the PDF represents the
 _relative probability_ of that direction being sampled. Recall that we have a `vec3` function to
 generate uniform random samples on the unit sphere (`random_unit_vector()`). What is the PDF of
-these uniform samples? As a uniform density on the unit sphere, it is $1/\text{area}$ of the sphere,
-which is $1/(4\pi)$. If the integrand is $\cos^2(\theta)$, and $\theta$ is the angle with the $z$
-axis:
+these uniform samples?
+As a uniform density on the unit sphere, it is $1/\mathit{area}$ of the sphere, which is $1/(4\pi)$.
+If the integrand is $\cos^2(\theta)$, and $\theta$ is the angle with the $z$ axis:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     double f(const vec3& d) {
@@ -1430,30 +1441,38 @@ in the _LMS color space_ (long, medium, short).
 Scattering
 -----------
 If the light does scatter, it will have a directional distribution that we can describe as a PDF
-over solid angle. I will refer to this as its _scattering PDF_: $\mathit{pScatter}()$. The
-scattering PDF will vary with outgoing direction: $\mathit{pScatter}(\omega_o)$. The scattering PDF
-can also vary with _incident direction_: $\mathit{pScatter}(\omega_i, \omega_o)$. You can see this
-varying with incident direction when you look at reflections off a road -- they become mirror-like
-as your viewing angle (incident angle) approaches grazing. The scattering PDF can vary with the
-wavelength of the light: $\mathit{pScatter}(\omega_i, \omega_o, \lambda)$. A good example
-of this is a prism refracting white light into a rainbow. Lastly, the scattering PDF can also depend
-on the scattering position: $\mathit{pScatter}(\mathbf{x}, \omega_i, \omega_o, \lambda)$. The
-$\mathbf{x}$ is just math notation for the scattering position: $\mathbf{x} = (x, y, z)$. The albedo
-of an object can also depend on these quantities: $A(\mathbf{x}, \omega_i, \omega_o, \lambda)$.
+over solid angle.
+I will refer to this as its _scattering PDF_: $\operatorname{pScatter}()$.
+The scattering PDF will vary with outgoing direction: $\operatorname{pScatter}(\omega_o)$.
+The scattering PDF can also vary with _incident direction_:
+  $\operatorname{pScatter}(\omega_i, \omega_o)$.
+You can see this varying with incident direction when you look at reflections off a road -- they
+  become mirror-like as your viewing angle (incident angle) approaches grazing.
+The scattering PDF can vary with the wavelength of the light:
+  $\operatorname{pScatter}(\omega_i, \omega_o, \lambda)$.
+A good example of this is a prism refracting white light into a rainbow.
+Lastly, the scattering PDF can also depend on the scattering position:
+  $\operatorname{pScatter}(\mathbf{x}, \omega_i, \omega_o, \lambda)$.
+The $\mathbf{x}$ is just math notation for the scattering position:
+  $\mathbf{x} = (x, y, z)$.
+The albedo of an object can also depend on these quantities:
+  $A(\mathbf{x}, \omega_i, \omega_o, \lambda)$.
 
 <div class='together'>
 The color of a surface is found by integrating these terms over the unit hemisphere by the incident
 direction:
 
-    $$ \text{Color}_o(\mathbf{x}, \omega_o, \lambda) = \int_{\omega_i}
+    $$ \operatorname{Color}_o(\mathbf{x}, \omega_o, \lambda) = \int_{\omega_i}
         A(\mathbf{x}, \omega_i, \omega_o, \lambda) \cdot
-        \mathit{pScatter}(\mathbf{x}, \omega_i, \omega_o, \lambda) \cdot
-        \text{Color}_i(\mathbf{x}, \omega_i, \lambda) $$
+        \operatorname{pScatter}(\mathbf{x}, \omega_i, \omega_o, \lambda) \cdot
+        \operatorname{Color}_i(\mathbf{x}, \omega_i, \lambda) $$
 
-We've added a $\text{Color}_i$ term. The scattering PDF and the albedo at the surface of an object
-are acting as filters to the light that is shining on that point. So we need to solve for the light
-that is shining on that point. This is a recursive algorithm, and is the reason our `ray_color`
-function returns the color of the current object multiplied by the color of the next ray.
+We've added a $\operatorname{Color}_i$ term.
+The scattering PDF and the albedo at the surface of an object are acting as filters to the light
+  that is shining on that point.
+So we need to solve for the light that is shining on that point.
+This is a recursive algorithm, and is the reason our `ray_color` function returns the color of the
+  current object multiplied by the color of the next ray.
 </div>
 
 
@@ -1462,10 +1481,10 @@ The Scattering PDF
 <div class='together'>
 If we apply the Monte Carlo basic formula we get the following statistical estimate:
 
-    $$ \text{Color}_o(\mathbf{x}, \omega_o, \lambda) \approx \sum
+    $$ \operatorname{Color}_o(\mathbf{x}, \omega_o, \lambda) \approx \sum
         \frac{A(\, \ldots \,) \cdot
-        \mathit{pScatter}(\, \ldots \,) \cdot
-        \text{Color}_i(\, \ldots \,)}
+        \operatorname{pScatter}(\, \ldots \,) \cdot
+        \operatorname{Color}_i(\, \ldots \,)}
         {p(\mathbf{x}, \omega_i, \omega_o, \lambda)} $$
 
 where $p(\mathbf{x}, \omega_i, \omega_o, \lambda)$ is the PDF of whatever outgoing direction we
@@ -1473,15 +1492,16 @@ randomly generate.
 </div>
 
 For a Lambertian surface we already implicitly implemented this formula for the special case where
-$pScatter(\, \ldots \,)$ is a cosine density. The $\mathit{pScatter}(\, \ldots \,)$ of a Lambertian
-surface is proportional to $\cos(\theta_o)$, where $\theta_o$ is the angle relative to the surface
-normal. Let's solve for $C$ once more:
+  $pScatter(\, \ldots \,)$ is a cosine density.
+The $\operatorname{pScatter}(\, \ldots \,)$ of a Lambertian surface is proportional to
+  $\cos(\theta_o)$, where $\theta_o$ is the angle relative to the surface normal.
+Let's solve for $C$ once more:
 
-    $$ \mathit{pScatter}(\mathbf{x}, \omega_i, \omega_o, \lambda) = C \cdot \cos(\theta_o) $$
+    $$ \operatorname{pScatter}(\mathbf{x}, \omega_i, \omega_o, \lambda) = C \cdot \cos(\theta_o) $$
 
 All two dimensional PDFs need to integrate to one over the whole surface (remember that
-$\mathit{pScatter}$ is a PDF). We set $\mathit{pScatter}(\theta_o < 0) = 0$ so that we don't
-scatter below the horizon.
+  $\operatorname{pScatter}$ is a PDF).
+We set $\operatorname{pScatter}(\theta_o < 0) = 0$ so that we don't scatter below the horizon.
 
 <div class='together'>
     $$ 1 = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} C \cdot cos(\theta) dA $$
@@ -1498,23 +1518,24 @@ So:
     $$ C = \frac{1}{\pi} $$
 
 The integral of $\cos(\theta_o)$ over the hemisphere is $\pi$, so we need to we need to normalize
-by $\frac{1}{\pi}$. The PDF $\mathit{pScatter}$ is only dependent on outgoing direction ($\omega_o$)
-so we'll simplify its representation to just $\mathit{pScatter}(\omega_o)$. Put all of this together
-and you get the scattering PDF for a Lambertian surface:
+  by $\frac{1}{\pi}$.
+The PDF $\operatorname{pScatter}$ is only dependent on outgoing direction ($\omega_o$), so we'll
+  simplify its representation to just $\operatorname{pScatter}(\omega_o)$.
+Put all of this together and you get the scattering PDF for a Lambertian surface:
 
-    $$ \mathit{pScatter}(\omega_o) = \frac{\cos(\theta_o)}{\pi} $$
+    $$ \operatorname{pScatter}(\omega_o) = \frac{\cos(\theta_o)}{\pi} $$
 </div>
 
 <div class='together'>
 We'll assume that the $p(\mathbf{x}, \omega_i, \omega_o, \lambda)$ is equal to the scattering PDF:
 
-    $$ p(\omega_o) = \mathit{pScatter}(\omega_o) = \frac{\cos(\theta_o)}{\pi} $$
+    $$ p(\omega_o) = \operatorname{pScatter}(\omega_o) = \frac{\cos(\theta_o)}{\pi} $$
 
 The numerator and denominator cancel out, and we get:
 
-    $$ \text{Color}_o(\mathbf{x}, \omega_o, \lambda) \approx \sum
+    $$ \operatorname{Color}_o(\mathbf{x}, \omega_o, \lambda) \approx \sum
         A(\, \ldots \,) \cdot
-        \text{Color}_i(\, \ldots \,) $$
+        \operatorname{Color}_i(\, \ldots \,) $$
 
 This is exactly what we had in our original `ray_color()` function!
 
@@ -1527,7 +1548,7 @@ volumes. If you read the literature, you’ll see reflection defined by the
 _Bidirectional Reflectance Distribution Function_ (BRDF). It relates pretty simply to our terms:
 
     $$ BRDF(\omega_i, \omega_o, \lambda) = \frac{A(\mathbf{x}, \omega_i, \omega_o, \lambda) \cdot
-        \mathit{pScatter}(\mathbf{x}, \omega_i, \omega_o, \lambda)}{\cos(\theta_o)} $$
+        \operatorname{pScatter}(\mathbf{x}, \omega_i, \omega_o, \lambda)}{\cos(\theta_o)} $$
 
 So for a Lambertian surface for example, $BRDF = A / \pi$. Translation between our terms and BRDF is
 easy. For participating media (volumes), our albedo is usually called the _scattering albedo_, and
@@ -1544,30 +1565,35 @@ Playing with Importance Sampling
 ====================================================================================================
 <div class='together'>
 Our goal over the next several chapters is to instrument our program to send a bunch of extra rays
-toward light sources so that our picture is less noisy. Let’s assume we can send a bunch of rays
-toward the light source using a PDF $\mathit{pLight}(\omega_o)$. Let’s also assume we have a PDF
-related to $\mathit{pScatter}$, and let’s call that $\mathit{pSurface}(\omega_o)$. A great thing
-about PDFs is that you can just use linear mixtures of them to form mixture densities that are also
-PDFs. For example, the simplest would be:
+  toward light sources so that our picture is less noisy.
+Let’s assume we can send a bunch of rays toward the light source using a PDF
+  $\operatorname{pLight}(\omega_o)$.
+Let’s also assume we have a PDF related to $operatorname{pScatter}$, and let’s call that
+  $operatorname{pSurface}(\omega_o)$.
+A great thing about PDFs is that you can just use linear mixtures of them to form mixture densities
+  that are also PDFs.
+For example, the simplest would be:
 
-  $$ p(\omega_o) = \frac{1}{2} \mathit{pSurface}(\omega_o) +  \frac{1}{2}
-      \mathit{pLight}(\omega_o)$$
+  $$ p(\omega_o) = \frac{1}{2} \operatorname{pSurface}(\omega_o) +  \frac{1}{2}
+      \operatorname{pLight}(\omega_o)$$
 </div>
 
 As long as the weights are positive and add up to one, any such mixture of PDFs is a PDF. Remember,
 we can use any PDF: _all PDFs eventually converge to the correct answer_. So, the game is to figure
 out how to make the PDF larger where the product
 
-    $$ \mathit{pScatter}(\mathbf{x}, \omega_i, \omega_o) \cdot
-        \text{Color}_i(\mathbf{x}, \omega_i) $$
+    $$ \operatorname{pScatter}(\mathbf{x}, \omega_i, \omega_o) \cdot
+        \operatorname{Color}_i(\mathbf{x}, \omega_i) $$
 
-is largest. For diffuse surfaces, this is mainly a matter of guessing where
-$\text{Color}_i(\mathbf{x}, \omega_i)$ is largest. Which is equivalent to guessing where the most
-light is coming from.
+is largest.
+For diffuse surfaces, this is mainly a matter of guessing where
+  $\operatorname{Color}_i(\mathbf{x}, \omega_i)$ is largest.
+Which is equivalent to guessing where the most light is coming from.
 
-For a mirror, $\mathit{pScatter}()$ is huge only near one direction, so $\mathit{pScatter}()$
-matters a lot more. In fact, most renderers just make mirrors a special case, and make the
-$\mathit{pScatter}()/p()$ implicit -- our code currently does that.
+For a mirror, $\operatorname{pScatter}()$ is huge only near one direction, so
+  $\operatorname{pScatter}()$ matters a lot more.
+In fact, most renderers just make mirrors a special case, and make the
+  $\operatorname{pScatter}()/p()$ implicit -- our code currently does that.
 
 
 Returning to the Cornell Box
@@ -2171,7 +2197,7 @@ vectors $\mathbf{s}$ and $\mathbf{t}$ perpendicular to $\mathbf{n}$ by using the
 cross product that $\mathbf{n} \times \mathbf{a}$ is perpendicular to both $\mathbf{n}$ and
 $\mathbf{a}$:
 
-    $$ \mathbf{s} = \text{unit_vector}(\mathbf{n} \times \mathbf{a}) $$
+    $$ \mathbf{s} = \operatorname{unit_vector}(\mathbf{n} \times \mathbf{a}) $$
 
     $$ \mathbf{t} = \mathbf{n} \times \mathbf{s} $$
 </div>
@@ -2204,7 +2230,7 @@ $\mathbf{s}$ are both unit vectors, their cross product $\mathbf{t}$ will be als
 ONB of $\mathbf{s}$, $\mathbf{t}$, and $\mathbf{n}$, and we have a random $(x,y,z)$ relative to the
 $z$ axis, we can get the vector relative to $\mathbf{n}$ with:
 
-    $$ \text{Random vector} = x \mathbf{s} + y \mathbf{t} + z \mathbf{n} $$
+    $$ \mathit{Random vector} = x \mathbf{s} + y \mathbf{t} + z \mathbf{n} $$
 </div>
 
 If you remember, we used similar math to produce rays from a camera. You can think of that as a
@@ -2366,26 +2392,28 @@ diagram:
 
 <div class='together'>
 If we look at a small area $dA$ on the light, the probability of sampling it is
-$p_{\text{q}}(\text{q}) \cdot dA$. On the sphere, the probability of sampling the small area
-$d\omega$ on the sphere is $p(\omega) \cdot d\omega$. There is a geometric relationship between
-$d\omega$ and $dA$:
+  $\operatorname{p_q}(q) \cdot dA$.
+On the sphere, the probability of sampling the small area $d\omega$ on the sphere is
+  $\operatorname{p}(\omega) \cdot d\omega$.
+There is a geometric relationship between $d\omega$ and $dA$:
 
-    $$ d\omega = \frac{dA \cdot \cos(\theta)}{distance^2(\text{p},\text{q})} $$
+    $$ d\omega = \frac{dA \cdot \cos(\theta)}{\operatorname{distance}^2(p,q)} $$
 
 Since the probability of sampling $d\omega$ and $dA$ must be the same, then
 
-    $$ p(\omega) \cdot d\omega = p_{\text{q}}(\text{q}) \cdot dA $$
-    $$ p(\omega) \cdot \frac{dA \cdot \cos(\theta)}{distance^2(\text{p},\text{q})}
-       =  p_{\text{q}}(\text{q}) \cdot dA $$
+    $$ \operatorname{p}(\omega) \cdot d\omega = \operatorname{p_q}(q) \cdot dA $$
+    $$ \operatorname{p}(\omega)
+       \cdot \frac{dA \cdot \cos(\theta)}{\operatorname{distance}^2(p,q)}
+       = \operatorname{p_q}(q) \cdot dA $$
 
 We know that if we sample uniformly on the light the PDF on the surface is $\frac{1}{A}$:
 
-    $$ p_{\text{q}}(\text{q}) = \frac{1}{A} $$
-    $$ p(\omega) \cdot \frac{dA \cdot \cos(\theta)}{distance^2(\text{p},\text{q})}
+    $$ \operatorname{p_q}(q) = \frac{1}{A} $$
+    $$ \operatorname{p}(\omega) \cdot \frac{dA \cdot \cos(\theta)}{\operatorname{distance}^2(p,q)}
        =  \frac{dA}{A} $$
 So
 
-  $$ p(\omega) = \frac{distance^2(\text{p},\text{q})}{\cos(\theta) \cdot A} $$
+  $$ \operatorname{p}(\omega) = \frac{\operatorname{distance}^2(p,q)}{\cos(\theta) \cdot A} $$
 </div>
 
 
@@ -2544,10 +2572,10 @@ PDF. From all of this, any `pdf` class should be responsible for,
 </div>
 
 <div class='together'>
-The details of how this is done under the hood varies for $\mathit{pSurface}$ and $\mathit{pLight}$,
-but that is exactly what class hierarchies were invented for! It’s never obvious what goes in an
-abstract class, so my approach is to be greedy and hope a minimal interface works, and for `pdf`
-this implies:
+The details of how this is done under the hood varies for $\operatorname{pSurface}$ and
+  $\operatorname{pLight}$, but that is exactly what class hierarchies were invented for!
+It’s never obvious what goes in an abstract class, so my approach is to be greedy and hope a minimal
+  interface works, and for `pdf` this implies:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef PDF_H
@@ -2915,14 +2943,15 @@ As was briefly mentioned in the chapter Playing with Importance Sampling, we can
 mixtures of any PDFs to form mixture densities that are also PDFs. Any weighted average of PDFs is
 also a PDF. As long as the weights are positive and add up to any one, we have a new PDF.
 
-  $$ \mathit{pMixture}() = w_0 p_0() + w_1 p_1() + w_2 p_2() + \ldots + w_{n-1} p_{n-1}() $$
+  $$ \operatorname{pMixture}() = w_0 p_0() + w_1 p_1() + w_2 p_2() + \ldots + w_{n-1} p_{n-1}() $$
 
   $$ 1 = w_0 + w_1 + w_2 + \ldots + w_{n-1} $$
 
 For example, we could just average the two densities:
 
-  $$ \mathit{pMixture}(\omega_o) = \frac{1}{2} \mathit{pSurface}(\omega_o) +  \frac{1}{2}
-      \mathit{pLight}(\omega_o)$$
+  $$ \operatorname{pMixture}(\omega_o)
+     = \frac{1}{2} \operatorname{pSurface}(\omega_o) + \frac{1}{2} \operatorname{pLight}(\omega_o)
+  $$
 
 <div class='together'>
 How would we instrument our code to do that? There is a very important detail that makes this not
@@ -2935,7 +2964,7 @@ quite as easy as one might expect. Generating the random direction for a mixture
         pick direction according to pLight
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-But solving for the PDF value of $\mathit{pMixture}$ is slightly more subtle. We can't just
+But solving for the PDF value of $\operatorname{pMixture}$ is slightly more subtle. We can't just
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if (direction is from pSurface)
@@ -2949,11 +2978,13 @@ have any plumbing for `generate()` to tell `value()` what the original `random_d
 can't trivially say which PDF the random direction comes from. If we thought that the above was
 correct, we would have to solve backwards to figure which PDF the direction could come from. Which
 honestly sounds like a nightmare, but fortunately we don't need to do that. There are some
-directions that both PDFs could have generated. For example, a direction toward the light could have
-been generated by either $\mathit{pLight}$ _or_ $\mathit{pSurface}$. It is sufficient for us to
-solve for the pdf value of $\mathit{pSurface}$ and of $\mathit{pLight}$ for a random direction and
-then take the PDF mixture weights to solve for the total PDF value for that direction. The mixture
-density class is actually pretty straightforward:
+directions that both PDFs could have generated.
+For example, a direction toward the light could have been generated by either
+  $\operatorname{pLight}$ _or_ $\operatorname{pSurface}$.
+It is sufficient for us to solve for the pdf value of $\operatorname{pSurface}$ and of
+  $\operatorname{pLight}$ for a random direction and then take the PDF mixture weights to solve for
+  the total PDF value for that direction.
+The mixture density class is actually pretty straightforward:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class mixture_pdf : public pdf {
@@ -3479,10 +3510,10 @@ We can see from the figure that $\sin(\theta_{max}) = R / length(\mathbf{c} - \m
 
 <div class='together'>
 We also need to evaluate the PDF of directions. For a uniform distribution toward the sphere the PDF
-is $1/\text{solid_angle}$. What is the solid angle of the sphere? It has something to do with the
+is $1/\mathit{solid_angle}$. What is the solid angle of the sphere? It has something to do with the
 $C$ above. It is -- by definition -- the area on the unit sphere, so the integral is
 
-  $$ \text{solid angle} = \int_{0}^{2\pi} \int_{0}^{\theta_{max}} \sin(\theta)
+  $$ \mathit{solid angle} = \int_{0}^{2\pi} \int_{0}^{\theta_{max}} \sin(\theta)
        = 2 \pi \cdot (1-\cos(\theta_{max})) $$
 </div>
 
