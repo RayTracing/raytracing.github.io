@@ -57,7 +57,7 @@ class camera {
 
   private:
     int    image_height;    // Rendered image height
-    point3 pp;              // Camera projection point
+    point3 center;          // Camera center
     point3 pixel00_loc;     // Location of pixel 0, 0
     vec3   pixel_delta_u;   // Offset to pixel to the right
     vec3   pixel_delta_v;   // Offset to pixel below
@@ -69,7 +69,7 @@ class camera {
         image_height = static_cast<int>(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
 
-        pp = lookfrom;  // Projection Point
+        center = lookfrom;
 
         // Determine viewport dimensions.
         auto theta = degrees_to_radians(vfov);
@@ -91,7 +91,7 @@ class camera {
         pixel_delta_v = viewport_v / image_height;
 
         // Calculate the location of the upper left pixel.
-        auto viewport_upper_left = pp - (focus_dist * w) - viewport_u/2 - viewport_v/2;
+        auto viewport_upper_left = center - (focus_dist * w) - viewport_u/2 - viewport_v/2;
         pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
         // Calculate the camera defocus disk basis vectors.
@@ -107,7 +107,7 @@ class camera {
         auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
         auto pixel_sample = pixel_center + pixel_sample_square();
 
-        auto ray_origin = (defocus_angle <= 0) ? pp : defocus_disk_sample();
+        auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
         auto ray_direction = pixel_sample - ray_origin;
 
         return ray(ray_origin, ray_direction);
@@ -129,7 +129,7 @@ class camera {
     point3 defocus_disk_sample() const {
         // Returns a random point in the camera defocus disk.
         auto p = random_in_unit_disk();
-        return pp + (p[0] * defocus_disk_u) + (p[1] * defocus_disk_v);
+        return center + (p[0] * defocus_disk_u) + (p[1] * defocus_disk_v);
     }
 
     color ray_color(const ray& r, int depth, const hittable& world) const {

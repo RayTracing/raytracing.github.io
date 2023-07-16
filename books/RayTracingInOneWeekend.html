@@ -563,13 +563,13 @@ Here's a snippet of what this code will look like:
 because the _actual_ aspect ratio is the integer-based ratio of image width over image height, which
 will yield zero for values less than one.)
 
-Next we will define a _projection point_ in 3D space, from which all scene rays will originate (this
-  is also commonly referred to as the _eye point_).
-The vector from the projection point to the viewport center will be orthogonal to the viewport.
-We'll initially set the distance between the viewport and the projection point to be one unit.
-This distance is referred to as the _focal length_.
+Next we will define the camera center: a point in 3D space from which all scene rays will originate
+  (this is also commonly referred to as the _eye point_).
+The vector from the camera center to the viewport center will be orthogonal to the viewport.
+We'll initially set the distance between the viewport and the camera center point to be one unit.
+This distance is often referred to as the _focal length_.
 
-I’ll put the projection point (or camera center if you think of a camera) at $(0,0,0)$.
+I’ll put the camera center at $(0,0,0)$.
 I will have the y-axis go up, and the x-axis to the right.
 Since we use a right-handed coordinate system, the vector into the screen is the negative z-axis.
 Note that I do not make the ray direction a unit length vector because I think not doing that makes
@@ -636,7 +636,7 @@ Drawing from all of this, here's the code that implements the camera.
         auto focal_length = 1.0;
         auto viewport_height = 2.0;
         auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
-        auto pp = point3(0, 0, 0);  // Projection Point
+        auto center = point3(0, 0, 0);  // Camera center
 
         // Calculate the vectors across the horizontal and down the vertical viewport edges.
         auto viewport_u = vec3(viewport_width, 0, 0);
@@ -647,7 +647,7 @@ Drawing from all of this, here's the code that implements the camera.
         auto pixel_delta_v = viewport_v / image_height;
 
         // Calculate the location of the upper left pixel.
-        auto viewport_upper_left = pp - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
+        auto viewport_upper_left = center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
         auto pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -660,8 +660,8 @@ Drawing from all of this, here's the code that implements the camera.
             for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
-                auto ray_direction = pixel_center - pp;
-                ray r(pp, ray_direction);
+                auto ray_direction = pixel_center - center;
+                ray r(center, ray_direction);
 
                 color pixel_color = ray_color(r);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1405,7 +1405,7 @@ And the new main:
         auto focal_length = 1.0;
         auto viewport_height = 2.0;
         auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
-        auto pp = point3(0, 0, 0);  // Projection Point
+        auto center = point3(0, 0, 0);  // Camera center
 
         // Calculate the vectors across the horizontal and down the vertical viewport edges.
         auto viewport_u = vec3(viewport_width, 0, 0);
@@ -1416,7 +1416,7 @@ And the new main:
         auto pixel_delta_v = viewport_v / image_height;
 
         // Calculate the location of the upper left pixel.
-        auto viewport_upper_left = pp - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
+        auto viewport_upper_left = center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
         auto pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
         // Render
@@ -1427,8 +1427,8 @@ And the new main:
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
                 auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
-                auto ray_direction = pixel_center - pp;
-                ray r(pp, ray_direction);
+                auto ray_direction = pixel_center - center;
+                ray r(center, ray_direction);
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1698,8 +1698,8 @@ Here's the camera class with newly migrated code:
                 std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
                 for (int i = 0; i < image_width; ++i) {
                     auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
-                    auto ray_direction = pixel_center - pp;
-                    ray r(pp, ray_direction);
+                    auto ray_direction = pixel_center - center;
+                    ray r(center, ray_direction);
 
                     color pixel_color = ray_color(r, world);
                     write_color(std::cout, pixel_color);
@@ -1713,7 +1713,7 @@ Here's the camera class with newly migrated code:
       private:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         int    image_height;   // Rendered image height
-        point3 pp;             // Camera projection point
+        point3 center;         // Camera center
         point3 pixel00_loc;    // Location of pixel 0, 0
         vec3   pixel_delta_u;  // Offset to pixel to the right
         vec3   pixel_delta_v;  // Offset to pixel below
@@ -1722,7 +1722,7 @@ Here's the camera class with newly migrated code:
             image_height = static_cast<int>(image_width / aspect_ratio);
             image_height = (image_height < 1) ? 1 : image_height;
 
-            pp = point3(0, 0, 0);  // Projection Point
+            center = point3(0, 0, 0);
 
             // Determine viewport dimensions.
             auto focal_length = 1.0;
@@ -1738,7 +1738,8 @@ Here's the camera class with newly migrated code:
             pixel_delta_v = viewport_v / image_height;
 
             // Calculate the location of the upper left pixel.
-            auto viewport_upper_left = pp - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
+            auto viewport_upper_left =
+                center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
             pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1971,7 +1972,7 @@ This depends on the function `random_in_unit_disk()` defined later in this book.
             auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
             auto pixel_sample = pixel_center + pixel_sample_square();
 
-            auto ray_origin = pp;
+            auto ray_origin = center;
             auto ray_direction = pixel_sample - ray_origin;
 
             return ray(ray_origin, ray_direction);
@@ -3276,7 +3277,7 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
             image_height = static_cast<int>(image_width / aspect_ratio);
             image_height = (image_height < 1) ? 1 : image_height;
 
-            pp = point3(0, 0, 0);  // Projection Point
+            center = point3(0, 0, 0);
 
             // Determine viewport dimensions.
             auto focal_length = 1.0;
@@ -3296,7 +3297,8 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
             pixel_delta_v = viewport_v / image_height;
 
             // Calculate the location of the upper left pixel.
-            auto viewport_upper_left = pp - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
+            auto viewport_upper_left =
+                center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
             pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
         }
 
@@ -3368,8 +3370,8 @@ I use the common convention of naming this the “view up” (_vup_) vector.
 After a few cross products and vector normalizations, we now have a complete orthonormal basis
   $(u,v,w)$ to describe our camera’s orientation.
 $u$ will be the unit vector pointing to camera right, $v$ is the unit vector pointing to camera up,
-  and $w$ is the unit vector pointing opposite the view direction (since we use right-hand
-  coordinates).
+  $w$ is the unit vector pointing opposite the view direction (since we use right-hand coordinates),
+  and the camera center is at the origin.
 
   ![Figure [cam-view-up]: Camera view up direction](../images/fig-1.20-cam-view-up.jpg)
 
@@ -3397,7 +3399,7 @@ This is convenient and will naturally keep your camera horizontally level until 
 
       private:
         int    image_height;   // Rendered image height
-        point3 pp;             // Camera projection point
+        point3 center;         // Camera center
         point3 pixel00_loc;    // Location of pixel 0, 0
         vec3   pixel_delta_u;  // Offset to pixel to the right
         vec3   pixel_delta_v;  // Offset to pixel below
@@ -3410,7 +3412,7 @@ This is convenient and will naturally keep your camera horizontally level until 
             image_height = (image_height < 1) ? 1 : image_height;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            pp = lookfrom;  // Projection Point
+            center = lookfrom;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             // Determine viewport dimensions.
@@ -3442,7 +3444,7 @@ This is convenient and will naturally keep your camera horizontally level until 
 
             // Calculate the location of the upper left pixel.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            auto viewport_upper_left = pp - (focal_length * w) - viewport_u/2 - viewport_v/2;
+            auto viewport_upper_left = center - (focal_length * w) - viewport_u/2 - viewport_v/2;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
         }
@@ -3528,12 +3530,12 @@ Objects appear blurrier the further they are from that distance (either closer o
 You can think of a lens this way: all light rays coming _from_ a specific point at the focus
   distance -- and that hit the lens -- will be bent back _to_ a single point on the image sensor.
 
-We call the distance between the projection point and the plane where everything is in perfect focus
+We call the distance between the camera center and the plane where everything is in perfect focus
   the _focus distance_.
 Be aware that the focus distance is not usually the same as the focal length -- the _focal length_
-  is the distance between the projection point and the image plane.
+  is the distance between the camera center and the image plane.
 For our model, however, these two will have the same value, as we will put our pixel grid right on
-  the focus plane, which is _focus distance_ away from the projection point.
+  the focus plane, which is _focus distance_ away from the camera center.
 
 In a physical camera, the focus distance is controlled by the distance between the lens and the
   film/sensor.
@@ -3569,7 +3571,7 @@ In practice, we accomplish this by placing the viewport in this plane.
 Putting everything together:
 
   1. The focus plane is orthogonal to the camera view direction.
-  2. The focus distance is the distance between the camera's projection point and the focus plane.
+  2. The focus distance is the distance between the camera center and the focus plane.
   3. The viewport lies on the focus plane, centered on the camera view direction vector.
   4. The grid of pixel locations lies inside the viewport (located in the 3D world).
   5. Random image sample locations are chosen from the region around the current pixel location.
@@ -3582,8 +3584,8 @@ Putting everything together:
 
 Generating Sample Rays
 -----------------------
-Without defocus blur, all scene rays originate from the camera projection (`lookfrom`) point.
-In order to accomplish defocus blur, we construct a disk centered at the camera projection point.
+Without defocus blur, all scene rays originate from the camera center (or `lookfrom`).
+In order to accomplish defocus blur, we construct a disk centered at the camera center.
 The larger the radius, the greater the defocus blur.
 You can think of our original camera as having a defocus disk of radius zero (no blur at all), so
   all rays originated at the disk center (`lookfrom`).
@@ -3594,7 +3596,7 @@ Since the size of this disk controls how much defocus blur we get, that should b
 We could just take the radius of the disk as a camera parameter, but the blur would vary depending
   on the projection distance.
 A slightly easier parameter is to specify the angle of the cone with apex at viewport center and
-  base (defocus disk) at the projection point.
+  base (defocus disk) at the camera center.
 This should give you more consistent results as you vary the focus distance for a given shot.
 
 Since we'll be choosing random points from the defocus disk, we'll need a function to do that:
@@ -3638,7 +3640,7 @@ Now let's update the camera to originate rays from the defocus disk:
 
       private:
         int    image_height;    // Rendered image height
-        point3 pp;              // Camera projection point
+        point3 center;          // Camera center
         point3 pixel00_loc;     // Location of pixel 0, 0
         vec3   pixel_delta_u;   // Offset to pixel to the right
         vec3   pixel_delta_v;   // Offset to pixel below
@@ -3652,7 +3654,7 @@ Now let's update the camera to originate rays from the defocus disk:
             image_height = static_cast<int>(image_width / aspect_ratio);
             image_height = (image_height < 1) ? 1 : image_height;
 
-            pp = lookfrom;  // Projection Point
+            center = lookfrom;
 
             // Determine viewport dimensions.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
@@ -3680,7 +3682,7 @@ Now let's update the camera to originate rays from the defocus disk:
 
             // Calculate the location of the upper left pixel.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            auto viewport_upper_left = pp - (focus_dist * w) - viewport_u/2 - viewport_v/2;
+            auto viewport_upper_left = center - (focus_dist * w) - viewport_u/2 - viewport_v/2;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
@@ -3704,7 +3706,7 @@ Now let's update the camera to originate rays from the defocus disk:
             auto pixel_sample = pixel_center + pixel_sample_square();
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            auto ray_origin = (defocus_angle <= 0) ? pp : defocus_disk_sample();
+            auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             auto ray_direction = pixel_sample - ray_origin;
 
@@ -3717,7 +3719,7 @@ Now let's update the camera to originate rays from the defocus disk:
         point3 defocus_disk_sample() const {
             // Returns a random point in the camera defocus disk.
             auto p = random_in_unit_disk();
-            return pp + (p[0] * defocus_disk_u) + (p[1] * defocus_disk_v);
+            return center + (p[0] * defocus_disk_u) + (p[1] * defocus_disk_v);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
