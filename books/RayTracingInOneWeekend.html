@@ -2684,9 +2684,12 @@ Fuzzy Reflection
 -----------------
 <div class='together'>
 We can also randomize the reflected direction by using a small sphere and choosing a new endpoint
-for the ray:
+  for the ray.
+We'll use a random point from the surface of a sphere centered on the original endpoint, scaled by
+  the fuzz factor.
 
-  ![Figure [reflect-fuzzy]: Generating fuzzed reflection rays](../images/fig-1.12-reflect-fuzzy.jpg)
+  ![Figure [reflect-fuzzy]: Generating fuzzed reflection rays
+  ](../images/fig-1.12-reflect-fuzzy.jpg)
 
 </div>
 
@@ -2707,7 +2710,7 @@ absorb those.
         const override {
             vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());
+            scattered = ray(rec.p, reflected + fuzz*random_unit_vector());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             attenuation = albedo;
             return (dot(scattered.direction(), rec.normal) > 0);
