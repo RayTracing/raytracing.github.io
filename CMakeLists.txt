@@ -15,7 +15,13 @@ set ( CMAKE_CXX_EXTENSIONS        OFF )
 
 # Source
 
+set ( EXTERNAL
+  src/external/stb_image.h
+)
+
 set ( SOURCE_ONE_WEEKEND
+  src/external/stb_image.h
+
   src/InOneWeekend/camera.h
   src/InOneWeekend/color.h
   src/InOneWeekend/hittable.h
@@ -23,6 +29,7 @@ set ( SOURCE_ONE_WEEKEND
   src/InOneWeekend/interval.h
   src/InOneWeekend/material.h
   src/InOneWeekend/ray.h
+  src/InOneWeekend/rtw_stb_image.h
   src/InOneWeekend/rtweekend.h
   src/InOneWeekend/sphere.h
   src/InOneWeekend/vec3.h
@@ -31,8 +38,8 @@ set ( SOURCE_ONE_WEEKEND
 )
 
 set ( SOURCE_NEXT_WEEK
-  src/common/external/stb_image.h
-  src/common/rtw_stb_image.h
+  src/external/stb_image.h
+
   src/TheNextWeek/aabb.h
   src/TheNextWeek/bvh.h
   src/TheNextWeek/camera.h
@@ -45,6 +52,7 @@ set ( SOURCE_NEXT_WEEK
   src/TheNextWeek/perlin.h
   src/TheNextWeek/quad.h
   src/TheNextWeek/ray.h
+  src/TheNextWeek/rtw_stb_image.h
   src/TheNextWeek/rtweekend.h
   src/TheNextWeek/sphere.h
   src/TheNextWeek/texture.h
@@ -54,8 +62,8 @@ set ( SOURCE_NEXT_WEEK
 )
 
 set ( SOURCE_REST_OF_YOUR_LIFE
-  src/common/external/stb_image.h
-  src/common/rtw_stb_image.h
+  src/external/stb_image.h
+
   src/TheRestOfYourLife/aabb.h
   src/TheRestOfYourLife/camera.h
   src/TheRestOfYourLife/color.h
@@ -69,6 +77,7 @@ set ( SOURCE_REST_OF_YOUR_LIFE
   src/TheRestOfYourLife/perlin.h
   src/TheRestOfYourLife/quad.h
   src/TheRestOfYourLife/ray.h
+  src/TheRestOfYourLife/rtw_stb_image.h
   src/TheRestOfYourLife/rtweekend.h
   src/TheRestOfYourLife/sphere.h
   src/TheRestOfYourLife/texture.h
@@ -77,7 +86,7 @@ set ( SOURCE_REST_OF_YOUR_LIFE
   src/TheRestOfYourLife/main.cc
 )
 
-include_directories(src/common)
+include_directories(src)
 
 # Specific compiler flags below. We're not going to add options for all possible compilers, but if
 # you're new to CMake (like we are), the following may be a helpful example if you're using a
@@ -102,13 +111,13 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # Executables
-add_executable(inOneWeekend      ${SOURCE_ONE_WEEKEND})
-add_executable(theNextWeek       ${SOURCE_NEXT_WEEK})
-add_executable(theRestOfYourLife ${SOURCE_REST_OF_YOUR_LIFE})
-add_executable(cos_cubed         src/TheRestOfYourLife/cos_cubed.cc         ${COMMON_ALL})
-add_executable(cos_density       src/TheRestOfYourLife/cos_density.cc       ${COMMON_ALL})
-add_executable(integrate_x_sq    src/TheRestOfYourLife/integrate_x_sq.cc    ${COMMON_ALL})
-add_executable(pi                src/TheRestOfYourLife/pi.cc                ${COMMON_ALL})
-add_executable(estimate_halfway  src/TheRestOfYourLife/estimate_halfway.cc  ${COMMON_ALL})
-add_executable(sphere_importance src/TheRestOfYourLife/sphere_importance.cc ${COMMON_ALL})
-add_executable(sphere_plot       src/TheRestOfYourLife/sphere_plot.cc       ${COMMON_ALL})
+add_executable(inOneWeekend      ${EXTERNAL} ${SOURCE_ONE_WEEKEND})
+add_executable(theNextWeek       ${EXTERNAL} ${SOURCE_NEXT_WEEK})
+add_executable(theRestOfYourLife ${EXTERNAL} ${SOURCE_REST_OF_YOUR_LIFE})
+add_executable(cos_cubed         src/TheRestOfYourLife/cos_cubed.cc         )
+add_executable(cos_density       src/TheRestOfYourLife/cos_density.cc       )
+add_executable(integrate_x_sq    src/TheRestOfYourLife/integrate_x_sq.cc    )
+add_executable(pi                src/TheRestOfYourLife/pi.cc                )
+add_executable(estimate_halfway  src/TheRestOfYourLife/estimate_halfway.cc  )
+add_executable(sphere_importance src/TheRestOfYourLife/sphere_importance.cc )
+add_executable(sphere_plot       src/TheRestOfYourLife/sphere_plot.cc       )
