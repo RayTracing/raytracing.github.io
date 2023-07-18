@@ -430,7 +430,7 @@ Now we can change our main to use this:
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
             for (int i = 0; i < image_width; ++i) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                color pixel_color(double(i)/(image_width-1), double(j)/(image_height-1), 0.25);
+                auto pixel_color = color(double(i)/(image_width-1), double(j)/(image_height-1), 0);
                 write_color(std::cout, pixel_color);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
@@ -512,8 +512,6 @@ The involved steps are
     3. Compute a color for that intersection point.
 
 When first developing a ray tracer, I always do a simple camera for getting the code up and running.
-I also make a simple `ray_color(ray)` function that returns the color of the background (a simple
-  gradient).
 
 I’ve often gotten into trouble using square images for debugging because I transpose $x$ and $y$ too
   often, so I’ll use a non-square image.
@@ -553,7 +551,7 @@ Here's a snippet of what this code will look like:
     int image_height = static_cast<int>(image_width / aspect_ratio);
     image_height = (image_height < 1) ? 1 : image_height;
 
-    // Calculate the viewport height. Since it's real valued, we don't check for values less then 1.
+    // Viewport widths less than one are ok since they are real valued.
     auto viewport_height = 2.0;
     auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -563,6 +561,11 @@ Here's a snippet of what this code will look like:
 because the _actual_ aspect ratio is the integer-based ratio of image width over image height, which
 will yield zero for values less than one.)
 
+Note that `aspect_ratio` is an ideal ratio, which we approximate as best as possible with the
+  integer-based ratio of image width / image height.
+In order for our viewport proportions to exactly match our image proportions, we use the calculated
+  image aspect ratio to determine our final viewport width.
+
 Next we will define the camera center: a point in 3D space from which all scene rays will originate
   (this is also commonly referred to as the _eye point_).
 The vector from the camera center to the viewport center will be orthogonal to the viewport.
@@ -570,35 +573,40 @@ We'll initially set the distance between the viewport and the camera center poin
 This distance is often referred to as the _focal length_.
 
 I’ll put the camera center at $(0,0,0)$.
-I will have the y-axis go up, and the x-axis to the right.
-Since we use a right-handed coordinate system, the vector into the screen is the negative z-axis.
-Note that I do not make the ray direction a unit length vector because I think not doing that makes
-  for simpler and slightly faster code.
+I will have the y-axis go up, the x-axis to the right, and the negative z-axis pointing in the
+viewing direction. (This is commonly referred to as _right-handed coordinates_.)
 
   ![Figure [camera-geom]: Camera geometry](../images/fig-1.03-cam-geom.jpg)
 
 Now the inevitable tricky part.
-While our 3D space has the conventions above, this conflicts with the standard _image_ coordinates,
-  where the Y axis is inverted (increasing going down).
+While our 3D space has the conventions above, this conflicts with our image coordinates,
+  where we want to have the zeroth pixel in the top-left and work our way down to the last pixel at
+  the bottom right.
+This means that our image coordinate Y-axis is inverted: Y increases going down the image.
 
-As we scan our image, we will start at the upper left pixel (pixel 0,0), scan left-to-right across
-  the row, and then scan the next row, top-to-bottom (reading order for most Latin languages).
+As we scan our image, we will start at the upper left pixel (pixel $0,0$), scan left-to-right across
+  each row, and then scan row-by-row, top-to-bottom.
 To help navigate the pixel grid, we'll use a vector from the left edge to the right edge
-  (`viewport_u`), and a vector from the upper edge to the lower edge (`viewport_v`).
+  ($\mathbf{V_u}$), and a vector from the upper edge to the lower edge ($\mathbf{V_v}$).
 
 Our pixel grid will be inset from the viewport edges by half the pixel-to-pixel distance, so each
   pixel will gather light from the area around it.
+
+Our pixel grid will be inset from the viewport edges by half the pixel-to-pixel distance.
+This way, our viewport area is evenly divided into width &times; height identical regions.
 Here's what our viewport and pixel grid look like:
 
   ![Figure [pixel-grid]: Viewport and pixel grid](../images/fig-1.04-pixel-grid.jpg)
 
-In this figure, we have the viewport, the pixel grid for a 7×5 resolution image, the viewport upper
-  left corner $\mathbf{Q}$, the pixel $\mathbf{P_{0,0}}$ location, the `viewport_u` vector
-  $\mathbf{V_u}$, the `viewport_v` vector $\mathbf{V_v}$, and the pixel delta vectors
-  $\mathbf{\Delta_u}$ and $\mathbf{\Delta_v}$.
+In this figure, we have the viewport, the pixel grid for a 7&times;5 resolution image, the viewport
+  upper left corner $\mathbf{Q}$, the pixel $\mathbf{P_{0,0}}$ location, the viewport vector
+  $\mathbf{V_u}$ (`viewport_u`), the viewport vector $\mathbf{V_v}$ (`viewport_v`), and the pixel
+  delta vectors $\mathbf{\Delta_u}$ and $\mathbf{\Delta_v}$.
 
 <div class='together'>
 Drawing from all of this, here's the code that implements the camera.
+We'll stub in a function `ray_color(const ray& r)` that returns the color for a given scene ray
+  -- always black for now.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "color.h"
@@ -612,9 +620,7 @@ Drawing from all of this, here's the code that implements the camera.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     color ray_color(const ray& r) {
-        vec3 unit_direction = unit_vector(r.direction());
-        auto a = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+        return color(0,0,0);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -672,16 +678,19 @@ Drawing from all of this, here's the code that implements the camera.
         std::clog << "\rDone.                 \n";
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [main-blue-white-blend]: <kbd>[main.cc]</kbd> Rendering a blue-to-white gradient]
+    [Listing [creating-rays]: <kbd>[main.cc]</kbd> Creating scene rays]
 </div>
 
-<div class='together'>
-The `ray_color(ray)` function linearly blends white and blue depending on the height of the $y$
-  coordinate _after_ scaling the ray direction to unit length (so $-1.0 < y < 1.0$).
+Notice that in the code above, I didn't make `ray_direction` a unit vector, because I think not
+  doing that makes for simpler and slightly faster code.
+
+Now we'll fill in the `ray_color(ray)` function to implement a simple gradient.
+This function will linearly blend white and blue depending on the height of the $y$ coordinate
+  _after_ scaling the ray direction to unit length (so $-1.0 < y < 1.0$).
 Because we're looking at the $y$ height after normalizing the vector, you'll notice a horizontal
   gradient to the color in addition to the vertical gradient.
 
-I then did a standard graphics trick of scaling that to $0.0 ≤ a ≤ 1.0$.
+I'll use a standard graphics trick to linearly scale $0.0 ≤ a ≤ 1.0$.
 When $a = 1.0$, I want blue.
 When $a = 0.0$, I want white.
 In between, I want a blend.
@@ -692,6 +701,33 @@ A lerp is always of the form
   $$ \text{blendedValue} = (1-a)\cdot\text{startValue} + a\cdot\text{endValue}, $$
 
 with $a$ going from zero to one.
+
+<div class='together'>
+Putting this all together, here's what we get:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "color.h"
+    #include "ray.h"
+    #include "vec3.h"
+
+    #include <iostream>
+
+
+    color ray_color(const ray& r) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        vec3 unit_direction = unit_vector(r.direction());
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    }
+
+    ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [main-blue-white-blend]: <kbd>[main.cc]</kbd> Rendering a blue-to-white gradient]
+
+</div>
+
+<div class='together'>
 In our case this produces:
 
   ![Image 2: A blue-to-white gradient depending on ray Y coordinate
