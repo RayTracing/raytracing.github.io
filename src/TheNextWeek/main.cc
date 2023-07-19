@@ -320,7 +320,7 @@ void cornell_smoke() {
 }
 
 
-void final_scene(bool high_quality) {
+void final_scene(int image_width, int samples_per_pixel, int max_depth) {
     hittable_list boxes1;
     auto ground = make_shared<lambertian>(color(0.48, 0.83, 0.53));
 
@@ -383,8 +383,11 @@ void final_scene(bool high_quality) {
 
     camera cam;
 
-    cam.aspect_ratio = 1.0;
-    cam.background   = color(0,0,0);
+    cam.aspect_ratio      = 1.0;
+    cam.image_width       = image_width;
+    cam.samples_per_pixel = samples_per_pixel;
+    cam.max_depth         = max_depth;
+    cam.background        = color(0,0,0);
 
     cam.lookfrom = point3(478, 278, -600);
     cam.lookat   = point3(278, 278, 0);
@@ -393,31 +396,21 @@ void final_scene(bool high_quality) {
 
     cam.defocus_angle = 0;
 
-    if (high_quality) {
-        cam.image_width       = 800;
-        cam.samples_per_pixel = 10000;
-        cam.max_depth         = 50;
-    } else {
-        cam.image_width       = 400;
-        cam.samples_per_pixel = 250;
-        cam.max_depth         = 4;
-    }
-
     cam.render(world);
 }
 
 
 int main() {
     switch (0) {
-        case 1:  random_spheres();     break;
-        case 2:  two_spheres();        break;
-        case 3:  earth();              break;
-        case 4:  two_perlin_spheres(); break;
-        case 5:  quads();              break;
-        case 6:  simple_light();       break;
-        case 7:  cornell_box();        break;
-        case 8:  cornell_smoke();      break;
-        case 9:  final_scene(true);    break;
-        default: final_scene(false);   break;
+        case 1:  random_spheres();            break;
+        case 2:  two_spheres();               break;
+        case 3:  earth();                     break;
+        case 4:  two_perlin_spheres();        break;
+        case 5:  quads();                     break;
+        case 6:  simple_light();              break;
+        case 7:  cornell_box();               break;
+        case 8:  cornell_smoke();             break;
+        case 9:  final_scene(800, 10000, 40); break;
+        default: final_scene(400,   250,  4); break;
     }
 }
