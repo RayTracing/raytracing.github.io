@@ -560,8 +560,8 @@ The vector from the camera center to the viewport center will be orthogonal to t
 We'll initially set the distance between the viewport and the camera center point to be one unit.
 This distance is often referred to as the _focal length_.
 
-I’ll put the camera center at $(0,0,0)$.
-I will have the y-axis go up, the x-axis to the right, and the negative z-axis pointing in the
+For simplicity we'll start with the camera center at $(0,0,0)$.
+We'll also have the y-axis go up, the x-axis to the right, and the negative z-axis pointing in the
 viewing direction. (This is commonly referred to as _right-handed coordinates_.)
 
   ![Figure [camera-geom]: Camera geometry](../images/fig-1.03-cam-geom.jpg)
@@ -1866,10 +1866,10 @@ For a single pixel composed of multiple samples, we'll select samples from the a
 
   ![Figure [pixel-samples]: Pixel samples](../images/fig-1.08-pixel-samples.jpg)
 
-First we need to update the `write_color()` function to account for the number of samples we use.
-Rather than adding a fractional contribution each time we accumulate more light to the color, we'll
-  just add the full color from each iteration, and then finish with a single division (by the number
-  of samples) at the end, before writing out the color.
+Now to update the `write_color()` function to account for the number of samples we use.
+We need to find the average across all of the samples that we take.
+We'll just add the full color from each iteration, and then finish with a single division (by the
+  number of samples) at the end, before writing out the color.
 
 To ensure that the color components of the final result remain within the proper $[0,1]$ bounds,
   we'll add and use a small helper function: `interval::clamp(x)`.
@@ -3245,7 +3245,7 @@ This gives:
 Positionable Camera
 ====================================================================================================
 Cameras, like dielectrics, are a pain to debug, so I always develop mine incrementally.
-First, let’s allow an adjustable field of view (_fov_).
+First, let’s allow for an adjustable field of view (_fov_).
 This is the visual angle from edge to edge of the rendered image.
 Since our image is not square, the fov is different horizontally and vertically.
 I always use vertical fov.
