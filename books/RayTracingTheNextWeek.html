@@ -140,22 +140,19 @@ a time period.
       private:
         ...
         ray get_ray(int i, int j) const {
-            auto s = (i + random_double()) / (image_width - 1);
-            auto t = (j + random_double()) / (image_height - 1);
+            // Get a randomly-sampled camera ray for the pixel at location i,j, originating from
+            // the camera defocus disk.
 
-            vec3 rd = lens_radius * random_in_unit_disk();
-            vec3 offset = u * rd.x() + v * rd.y();
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            auto ray_time = random_double(0.0, 1.0);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
+            auto pixel_sample = pixel_center + pixel_sample_square();
 
-            return ray(
-                origin + offset,
+            auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
+            auto ray_direction = pixel_sample - ray_origin;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                lower_left_corner + s*horizontal + (1-t)*vertical - origin - offset,
-                ray_time
+            auto ray_time = random_double();
+
+            return ray(ray_origin, ray_direction, ray_time);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            );
         }
 
         ...
@@ -364,8 +361,8 @@ $t=0$ to $\mathbf{C} + (0, r/2, 0)$ at time $t=1$:
         cam.lookat   = point3(0,0,0);
         cam.vup      = vec3(0,1,0);
 
-        cam.aperture   = 0.1;
-        cam.focus_dist = 10.0;
+        cam.defocus_angle = 0.02;
+        cam.focus_dist    = 10.0;
 
         cam.render(world);
     }
@@ -1281,6 +1278,7 @@ Now add a scene with two checkered spheres, one atop the other.
         ...
     }
 
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     void two_spheres() {
         hittable_list world;
@@ -1296,14 +1294,13 @@ Now add a scene with two checkered spheres, one atop the other.
         cam.image_width       = 400;
         cam.samples_per_pixel = 100;
         cam.max_depth         = 50;
-        cam.background        = color(0.70, 0.80, 1.00);
 
+        cam.vfov     = 20;
         cam.lookfrom = point3(13,2,3);
         cam.lookat   = point3(0,0,0);
         cam.vup      = vec3(0,1,0);
-        cam.vfov     = 20;
 
-        cam.aperture = 0;
+        cam.defocus_angle = 0;
 
         cam.render(world);
     }
@@ -1672,14 +1669,13 @@ Here's the code to read an image from a file and then assign it to a diffuse mat
         cam.image_width       = 400;
         cam.samples_per_pixel = 100;
         cam.max_depth         = 50;
-        cam.background        = color(0.70, 0.80, 1.00);
 
+        cam.vfov     = 20;
         cam.lookfrom = point3(0,0,12);
         cam.lookat   = point3(0,0,0);
         cam.vup      = vec3(0,1,0);
-        cam.vfov     = 20;
 
-        cam.aperture = 0;
+        cam.defocus_angle = 0;
 
         cam.render(hittable_list(globe));
     }
@@ -1853,14 +1849,13 @@ We can use that texture on some spheres:
         cam.image_width       = 400;
         cam.samples_per_pixel = 100;
         cam.max_depth         = 50;
-        cam.background        = color(0.70, 0.80, 1.00);
 
+        cam.vfov     = 20;
         cam.lookfrom = point3(13,2,3);
         cam.lookat   = point3(0,0,0);
         cam.vup      = vec3(0,1,0);
-        cam.vfov     = 20;
 
-        cam.aperture = 0;
+        cam.defocus_angle = 0;
 
         cam.render(world);
     }
@@ -2839,14 +2834,13 @@ And now we add a new scene to demonstrate our new `quad` primitive:
         cam.image_width       = 400;
         cam.samples_per_pixel = 100;
         cam.max_depth         = 50;
-        cam.background        = color(0.70, 0.80, 1.00);
 
+        cam.vfov     = 80;
         cam.lookfrom = point3(0,0,9);
         cam.lookat   = point3(0,0,0);
         cam.vup      = vec3(0,1,0);
-        cam.vfov     = 80;
 
-        cam.aperture = 0;
+        cam.defocus_angle = 0;
 
         cam.render(world);
     }
@@ -2943,15 +2937,14 @@ the new `color_from_emission` value.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
-        double aspect_ratio      = 1.0;
-        int    image_width       = 100;
-        int    samples_per_pixel = 10;
-        int    max_depth         = 10;
+        double aspect_ratio      = 1.0;  // Ratio of image width over height
+        int    image_width       = 100;  // Rendered image width in pixel count
+        int    samples_per_pixel = 10;   // Count of random samples for each pixel
+        int    max_depth         = 10;   // Maximum number of ray bounces into scene
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        color  background        = color(0,0,0);
+        color  background;               // Scene background color
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        double vfov     = 40;
         ...
 
       private:
@@ -3087,18 +3080,18 @@ If we set up a rectangle as a light:
 
         camera cam;
 
-        cam.image_width       = 400;
         cam.aspect_ratio      = 16.0 / 9.0;
+        cam.image_width       = 400;
         cam.samples_per_pixel = 100;
         cam.max_depth         = 50;
         cam.background        = color(0,0,0);
 
+        cam.vfov     = 20;
         cam.lookfrom = point3(26,3,6);
         cam.lookat   = point3(0,2,0);
         cam.vup      = vec3(0,1,0);
-        cam.vfov     = 20;
 
-        cam.aperture = 0;
+        cam.defocus_angle = 0;
 
         cam.render(world);
     }
@@ -3179,12 +3172,12 @@ Let’s make the 5 walls and the light of the box:
         cam.max_depth         = 50;
         cam.background        = color(0,0,0);
 
+        cam.vfov     = 40;
         cam.lookfrom = point3(278, 278, -800);
         cam.lookat   = point3(278, 278, 0);
         cam.vup      = vec3(0,1,0);
-        cam.vfov     = 40;
 
-        cam.aperture = 0;
+        cam.defocus_angle = 0;
 
         cam.render(world);
     }
@@ -3828,12 +3821,12 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
         cam.max_depth         = 50;
         cam.background        = color(0,0,0);
 
+        cam.vfov     = 40;
         cam.lookfrom = point3(278, 278, -800);
         cam.lookat   = point3(278, 278, 0);
         cam.vup      = vec3(0,1,0);
-        cam.vfov     = 40;
 
-        cam.aperture = 0;
+        cam.defocus_angle = 0;
 
         cam.render(world);
     }
@@ -3953,12 +3946,12 @@ testing.
         cam.max_depth         = max_depth;
         cam.background        = color(0,0,0);
 
+        cam.vfov     = 40;
         cam.lookfrom = point3(478, 278, -600);
         cam.lookat   = point3(278, 278, 0);
         cam.vup      = vec3(0,1,0);
-        cam.vfov     = 40;
 
-        cam.aperture = 0;
+        cam.defocus_angle = 0;
 
         cam.render(world);
     }
