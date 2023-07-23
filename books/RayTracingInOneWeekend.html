@@ -2208,8 +2208,8 @@ function to return 50% of the color from a bounce. We should expect to get a nic
 <div class='together'>
 ... Indeed we do get rather nice gray spheres:
 
-  ![<span class='num'>Image 7:</span> Rendering of diffuse spheres with hemispherical scattering
-  ](../images/img-1.10-rand-hemispherical.png class='pixel')
+  ![<span class='num'>Image 7:</span> First render of a diffuse sphere
+  ](../images/img-1.07-first-diffuse.png class='pixel')
 
 </div>
 
@@ -2269,8 +2269,8 @@ depth, returning no light contribution at the maximum depth:
 
             if (world.hit(r, interval(0, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                point3 target = rec.p + rec.normal + random_in_unit_sphere();
-                return 0.5 * ray_color(ray(rec.p, target - rec.p), depth-1, world);
+                vec3 direction = random_on_hemisphere(rec.normal);
+                return 0.5 * ray_color(ray(rec.p, direction), depth-1 world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
@@ -2308,71 +2308,8 @@ Update the main() function to use this new depth limit:
 <div class='together'>
 For this very simple scene we should get basically the same result:
 
-  ![<span class='num'>Image 8:</span> First render of a diffuse sphere
+  ![<span class='num'>Image 8:</span> Second render of a diffuse sphere with limited bounces
   ](../images/img-1.07-first-diffuse.png class='pixel')
-
-</div>
-
-
-Using Gamma Correction for Accurate Color Intensity
-----------------------------------------------------
-Note the shadowing under the sphere. The picture is very dark, but our spheres only absorb half the
-energy of each bounce, so they are 50% reflectors. The spheres should look pretty bright (in real
-life, a light grey) but they appear to be rather dark. The reason for this is that almost all
-computer programs assume that an image is “gamma corrected” before being written into an image
-file. This means that the 0 to 1 values have some transform applied before being stored as a byte.
-Images with data that are written without being transformed are said to be in _linear space_,
-whereas images that are transformed are said to be in _gamma space_. It is likely that the image
-viewer you are using is expecting an image in gamma space, but we are giving it an image in linear
-space. This is the reason why our image appears inaccurately dark.
-
-There are many good reasons for why images should be stored in gamma space, but for our purposes we
-just need to be aware of it. We are going to transform our data into gamma space so that our image
-viewer can more accurately display our image. As a simple approximation, we can use “gamma 2” as our
-transform, which is the power that you use when going from gamma space to linear space. We need to
-go from linear space to gamma space, which means taking the inverse of "gamma 2", so the power
-$1/\mathit{gamma}$, which is just the square-root.
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    inline double linear_to_gamma(double linear_component)
-    {
-        return sqrt(linear_component);
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-    void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
-        auto r = pixel_color.x();
-        auto g = pixel_color.y();
-        auto b = pixel_color.z();
-
-        // Divide the color by the number of samples.
-        auto scale = 1.0 / samples_per_pixel;
-        r *= scale;
-        g *= scale;
-        b *= scale;
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        // Apply the linear to gamma transform.
-        r = linear_to_gamma(r);
-        g = linear_to_gamma(g);
-        b = linear_to_gamma(b);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        // Write the translated [0,255] value of each color component.
-        static const interval intensity(0.000, 0.999);
-        out << static_cast<int>(256 * intensity.clamp(r)) << ' '
-            << static_cast<int>(256 * intensity.clamp(g)) << ' '
-            << static_cast<int>(256 * intensity.clamp(b)) << '\n';
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [write-color-gamma]: <kbd>[color.h]</kbd> write_color(), with gamma correction]
-
-<div class='together'>
-This yields light grey, which is more accurate:
-
-  ![<span class='num'>Image 9:</span> Diffuse sphere, with gamma correction
-  ](../images/img-1.08-gamma-correct.png class='pixel')
 
 </div>
 
@@ -2405,8 +2342,8 @@ to address this is just to ignore hits that are very close to the calculated int
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                point3 target = rec.p + rec.normal + random_in_unit_sphere();
-                return 0.5 * ray_color(ray(rec.p, target - rec.p), depth-1, world);
+                vec3 direction = random_on_hemisphere(rec.normal);
+                return 0.5 * ray_color(ray(rec.p, direction), depth-1 world);
             }
 
             vec3 unit_direction = unit_vector(r.direction());
@@ -2487,7 +2424,7 @@ The change is actually fairly minimal:
 <div class='together'>
 After rendering we get a similar image:
 
-  ![<span class='num'>Image 10:</span> Correct rendering of Lambertian spheres
+  ![<span class='num'>Image 9:</span> Correct rendering of Lambertian spheres
   ](../images/img-1.09-correct-lambertian.png class='pixel')
 
 </div>
@@ -2496,7 +2433,7 @@ It's hard to tell the difference between these two diffuse methods, given that o
 spheres is so simple, but you should be able to notice two important visual differences:
 
   1. The shadows are more pronounced after the change
-  2. Both spheres are darker in appearance after the change
+  2. Both spheres are tinted blue from the sky after the change
 
 Both of these changes are due to the less uniform scattering of the light rays--more rays are
 scattering toward the normal. This means that for diffuse objects, they will appear _darker_
@@ -2510,6 +2447,107 @@ Most scenes of interest will contain a large amount of diffuse materials. You ca
 insight by understanding the effect of different diffuse methods on the lighting of the scene.
 
 
+Using Gamma Correction for Accurate Color Intensity
+----------------------------------------------------
+Note the shadowing under the sphere. The picture is very dark, but our spheres only absorb half the
+energy of each bounce, so they are 50% reflectors. The spheres should look pretty bright (in real
+life, a light grey) but they appear to be rather dark. We can see this more clearly if we walk
+through the full brightness gamut for our diffuse material. We start by setting the reflectance of
+the `ray_color` function from `0.5` (50%) to `0.1` (10%):
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+class camera {
+    ...
+    color ray_color(const ray& r, int depth, const hittable& world) const {
+        hit_record rec;
+
+        // If we've exceeded the ray bounce limit, no more light is gathered.
+        if (depth <= 0)
+            return color(0,0,0);
+
+        if (world.hit(r, interval(0.001, infinity), rec)) {
+            vec3 direction = rec.normal + random_unit_vector();
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            return 0.1 * ray_color(ray(rec.p, direction), depth-1, world);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    }
+
+        vec3 unit_direction = unit_vector(r.direction());
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+    }
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[Listing [ray-color-gamut]: <kbd>[camera.h]</kbd> ray_color() with 10% reflectance]
+
+We render out at this new 10% reflectance. We then set reflectance to 30% and render again. We
+repeat for 50%, 70%, and finally 90%. We can overlay these images from left to right in the photo
+editor of your choice and you should get a very nice visual representation of the increasing
+brightness of your chosen gamut. This is the one that we've been working with so far: 
+
+![<span class='num'>Image 10:</span> The gamut of our renderer so far
+](../images/img-1.10-linear-gamut.png class='pixel')
+
+If you look closely, or if you use a color picker, you should notice that the 50% reflectance
+render (the one in the middle) is far too dark to be half-way between white and black (middle-gray).
+Indeed, the 70% reflector is closer to middle-gray. The reason for this is that almost all
+computer programs assume that an image is “gamma corrected” before being written into an image
+file. This means that the 0 to 1 values have some transform applied before being stored as a byte.
+Images with data that are written without being transformed are said to be in _linear space_,
+whereas images that are transformed are said to be in _gamma space_. It is likely that the image
+viewer you are using is expecting an image in gamma space, but we are giving it an image in linear
+space. This is the reason why our image appears inaccurately dark.
+
+There are many good reasons for why images should be stored in gamma space, but for our purposes we
+just need to be aware of it. We are going to transform our data into gamma space so that our image
+viewer can more accurately display our image. As a simple approximation, we can use “gamma 2” as our
+transform, which is the power that you use when going from gamma space to linear space. We need to
+go from linear space to gamma space, which means taking the inverse of "gamma 2", so the power
+$1/\mathit{gamma}$, which is just the square-root.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    inline double linear_to_gamma(double linear_component)
+    {
+        return sqrt(linear_component);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
+        auto r = pixel_color.x();
+        auto g = pixel_color.y();
+        auto b = pixel_color.z();
+
+        // Divide the color by the number of samples.
+        auto scale = 1.0 / samples_per_pixel;
+        r *= scale;
+        g *= scale;
+        b *= scale;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        // Apply the linear to gamma transform.
+        r = linear_to_gamma(r);
+        g = linear_to_gamma(g);
+        b = linear_to_gamma(b);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        // Write the translated [0,255] value of each color component.
+        static const interval intensity(0.000, 0.999);
+        out << static_cast<int>(256 * intensity.clamp(r)) << ' '
+            << static_cast<int>(256 * intensity.clamp(g)) << ' '
+            << static_cast<int>(256 * intensity.clamp(b)) << '\n';
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [write-color-gamma]: <kbd>[color.h]</kbd> write_color(), with gamma correction]
+
+
+<div class='together'>
+If we take the gamut now we get a much more consistent ramp from darkness to lightness:
+
+  ![<span class='num'>Image 11:</span> The gamut of our renderer so far
+  ](../images/img-1.11-gamma-gamut.png class='pixel')
+
+</div>
 
 
 Metal
@@ -2840,8 +2878,8 @@ Now let’s add some metal spheres to our scene:
 <div class='together'>
 Which gives:
 
-  ![<span class='num'>Image 11:</span> Shiny metal
-  ](../images/img-1.11-metal-shiny.png class='pixel')
+  ![<span class='num'>Image 12:</span> Shiny metal
+  ](../images/img-1.12-metal-shiny.png class='pixel')
 
 </div>
 
@@ -2903,8 +2941,8 @@ We can try that out by adding fuzziness 0.3 and 1.0 to the metals:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [metal-fuzz-spheres]: <kbd>[main.cc]</kbd> Metal spheres with fuzziness]
 
-  ![<span class='num'>Image 12:</span> Fuzzed metal
-  ](../images/img-1.12-metal-fuzz.png class='pixel')
+  ![<span class='num'>Image 13:</span> Fuzzed metal
+  ](../images/img-1.13-metal-fuzz.png class='pixel')
 
 </div>
 
@@ -2922,8 +2960,8 @@ The hardest part to debug is the refracted ray. I usually first just have all th
 there is a refraction ray at all. For this project, I tried to put two glass balls in our scene, and
 I got this (I have not told you how to do this right or wrong yet, but soon!):
 
-  ![<span class='num'>Image 13:</span> Glass first
-  ](../images/img-1.13-glass-first.png class='pixel')
+  ![<span class='num'>Image 14:</span> Glass first
+  ](../images/img-1.14-glass-first.png class='pixel')
 
 Is that right? Glass balls look odd in real life. But no, it isn’t right. The world should be
 flipped upside down and no weird black stuff. I just printed out the ray straight through the middle
@@ -3035,8 +3073,8 @@ Now we'll update the scene to change the left and center spheres to glass:
 <div class='together'>
 This gives us the following result:
 
-  ![<span class='num'>Image 14:</span> Glass sphere that always refracts
-  ](../images/img-1.14-glass-always-refract.png class='pixel')
+  ![<span class='num'>Image 15:</span> Glass sphere that always refracts
+  ](../images/img-1.15-glass-always-refract.png class='pixel')
 
 </div>
 
@@ -3155,8 +3193,8 @@ parameters:
 <div class='together'>
 We get:
 
-  ![<span class='num'>Image 15:</span> Glass sphere that sometimes refracts
-  ](../images/img-1.15-glass-sometimes-refract.png class='pixel')
+  ![<span class='num'>Image 16:</span> Glass sphere that sometimes refracts
+  ](../images/img-1.16-glass-sometimes-refract.png class='pixel')
 
 </div>
 
@@ -3235,8 +3273,8 @@ make a hollow glass sphere:
 <div class='together'>
 This gives:
 
-  ![<span class='num'>Image 16:</span> A hollow glass sphere
-  ](../images/img-1.16-glass-hollow.png class='pixel')
+  ![<span class='num'>Image 17:</span> A hollow glass sphere
+  ](../images/img-1.17-glass-hollow.png class='pixel')
 
 </div>
 
@@ -3358,8 +3396,8 @@ We'll test out these changes with a simple scene of two touching spheres, using 
 <div class='together'>
 This gives us the rendering:
 
-  ![<span class='num'>Image 17:</span> A wide-angle view
-  ](../images/img-1.17-wide-view.png class='pixel')
+  ![<span class='num'>Image 18:</span> A wide-angle view
+  ](../images/img-1.18-wide-view.png class='pixel')
 
 </div>
 
@@ -3516,8 +3554,8 @@ We'll change back to the prior scene, and use the new viewpoint:
 <div class='together'>
 to get:
 
-  ![<span class='num'>Image 18:</span> A distant view
-  ](../images/img-1.18-view-distant.png class='pixel')
+  ![<span class='num'>Image 19:</span> A distant view
+  ](../images/img-1.19-view-distant.png class='pixel')
 
 </div>
 
@@ -3534,7 +3572,7 @@ And we can change field of view:
 <div class='together'>
 to get:
 
-  ![<span class='num'>Image 19:</span> Zooming in](../images/img-1.19-view-zoom.png class='pixel')
+  ![<span class='num'>Image 20:</span> Zooming in](../images/img-1.20-view-zoom.png class='pixel')
 
 </div>
 
@@ -3782,8 +3820,8 @@ Using a large aperture:
 <div class='together'>
 We get:
 
-  ![<span class='num'>Image 20:</span> Spheres with depth-of-field
-  ](../images/img-1.20-depth-of-field.png class='pixel')
+  ![<span class='num'>Image 21:</span> Spheres with depth-of-field
+  ](../images/img-1.21-depth-of-field.png class='pixel')
 
 </div>
 
@@ -3868,7 +3906,7 @@ validating.)
 <div class='together'>
 This gives:
 
-  ![<span class='num'>Image 21:</span> Final scene](../images/img-1.21-book1-final.jpg)
+  ![<span class='num'>Image 22:</span> Final scene](../images/img-1.22-book1-final.jpg)
 
 </div>
 
