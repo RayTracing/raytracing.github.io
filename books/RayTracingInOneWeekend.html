@@ -2270,7 +2270,7 @@ depth, returning no light contribution at the maximum depth:
             if (world.hit(r, interval(0, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 direction = random_on_hemisphere(rec.normal);
-                return 0.5 * ray_color(ray(rec.p, direction), depth-1 world);
+                return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
@@ -2343,7 +2343,7 @@ to address this is just to ignore hits that are very close to the calculated int
             if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 vec3 direction = random_on_hemisphere(rec.normal);
-                return 0.5 * ray_color(ray(rec.p, direction), depth-1 world);
+                return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
             }
 
             vec3 unit_direction = unit_vector(r.direction());
@@ -2502,8 +2502,8 @@ There are many good reasons for why images should be stored in gamma space, but 
 just need to be aware of it. We are going to transform our data into gamma space so that our image
 viewer can more accurately display our image. As a simple approximation, we can use “gamma 2” as our
 transform, which is the power that you use when going from gamma space to linear space. We need to
-go from linear space to gamma space, which means taking the inverse of "gamma 2", so the power
-$1/\mathit{gamma}$, which is just the square-root.
+go from linear space to gamma space, which means taking the inverse of "gamma 2", which means an
+exponent of $1/\mathit{gamma}$, which is just the square-root.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     inline double linear_to_gamma(double linear_component)
@@ -2542,9 +2542,9 @@ $1/\mathit{gamma}$, which is just the square-root.
 
 
 <div class='together'>
-If we take the gamut now we get a much more consistent ramp from darkness to lightness:
+Using this gamma correction, we now get a much more consistent ramp from darkness to lightness:
 
-  ![<span class='num'>Image 11:</span> The gamut of our renderer so far
+  ![<span class='num'>Image 11:</span> The gamma-corrected of two diffuse spheres
   ](../images/img-1.11-gamma-gamut.png class='pixel')
 
 </div>
