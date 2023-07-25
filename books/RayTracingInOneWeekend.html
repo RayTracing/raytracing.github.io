@@ -577,9 +577,6 @@ As we scan our image, we will start at the upper left pixel (pixel $0,0$), scan 
 To help navigate the pixel grid, we'll use a vector from the left edge to the right edge
   ($\mathbf{V_u}$), and a vector from the upper edge to the lower edge ($\mathbf{V_v}$).
 
-Our pixel grid will be inset from the viewport edges by half the pixel-to-pixel distance, so each
-  pixel will gather light from the area around it.
-
 Our pixel grid will be inset from the viewport edges by half the pixel-to-pixel distance.
 This way, our viewport area is evenly divided into width &times; height identical regions.
 Here's what our viewport and pixel grid look like:
@@ -1810,22 +1807,50 @@ Running this newly refactored program should give us the same rendered image as 
 
 Antialiasing
 ====================================================================================================
-When a real camera takes a picture, there are usually no jaggies along edges because the edge pixels
-are a blend of some foreground and some background. We can get the same effect by averaging a bunch
-of samples inside each pixel. We will not bother with stratification. This is controversial, but is
-usual for my programs. For some ray tracers it is critical, but the kind of general one we are
-writing doesn’t benefit very much from it and it makes the code uglier. We abstract the camera class
-a bit so we can make a cooler camera later.
+If you zoom into the rendered images so far, you might notice the harsh "stair step" nature of edges
+  in our rendered images.
+This stair-stepping is commonly referred to as "aliasing", or "jaggies".
+When a real camera takes a picture, there are usually no jaggies along edges, because the edge
+  pixels are a blend of some foreground and some background.
+Consider that unlike our rendered images, a true image of the world is continuous.
+Put another way, the world (and any true image of it) has effectively infinite resolution.
+We can get the same effect by averaging a bunch of samples for each pixel.
+
+With a single ray through the center of each pixel, we are performing what is commonly called _point
+  sampling_.
+The problem with point sampling can be illustrated by rendering a small checkerboard far away.
+If this checkerboard consists of an 8&times;8 grid of black and white tiles, but only four rays hit
+  it, then all four rays might intersect only white tiles, or only black, or some odd combination.
+In the real world, when we perceive a checkerboard far away with our eyes, we perceive it as a gray
+  color, instead of sharp points of black and white.
+That's because our eyes are naturally doing what we want our ray tracer to do: integrate the
+  (continuous function of) light falling on a particular (discrete) region of our rendered image.
+
+Clearly we don't gain anything by just resampling the same ray through the pixel center multiple
+  times -- we'd just get the same result each time.
+Instead, we want to sample the light falling _around_ the pixel, and then integrate those samples to
+  approximate the true continuous result.
+So, how do we integrate the light falling around the pixel?
+
+We'll adopt the simplest model: sampling the square region centered at the pixel that extends
+  halfway to each of the four neighboring pixels.
+This is not the optimal approach, but it is the most straight-forward.
+(See [_A Pixel is Not a Little Square_][square-pixels] for a deeper dive into this topic.)
+
+  ![Figure [pixel-samples]: Pixel samples](../images/fig-1.08-pixel-samples.jpg)
+
 
 Some Random Number Utilities
 -----------------------------
-One thing we need is a random number generator that returns real random numbers. We need a function
-that returns a canonical random number which by convention returns a random real in the range
-$0 ≤ r < 1$. The “less than” before the 1 is important as we will sometimes take advantage of that.
+We're going to need need a random number generator that returns real random numbers.
+This function should return a canonical random number, which by convention falls in the range
+  $0 ≤ n < 1$.
+The “less than” before the 1 is important, as we will sometimes take advantage of that.
 
-A simple approach to this is to use the `rand()` function that can be found in `<cstdlib>`. This
-function returns a random integer in the range 0 and `RAND_MAX`. Hence we can get a real random
-number as desired with the following code snippet, added to `rtweekend.h`:
+A simple approach to this is to use the `rand()` function that can be found in `<cstdlib>`, which
+  returns a random integer in the range 0 and `RAND_MAX`.
+Hence we can get a real random number as desired with the following code snippet, added to
+  `rtweekend.h`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include <cstdlib>
@@ -1864,13 +1889,10 @@ Generating Pixels with Multiple Samples
 For a single pixel composed of multiple samples, we'll select samples from the area surrounding the
   pixel and average the resulting light (color) values together.
 
-  ![Figure [pixel-samples]: Pixel samples](../images/fig-1.08-pixel-samples.jpg)
-
-Now to update the `write_color()` function to account for the number of samples we use.
-We need to find the average across all of the samples that we take.
-We'll just add the full color from each iteration, and then finish with a single division (by the
-  number of samples) at the end, before writing out the color.
-
+First we'll update the `write_color()` function to account for the number of samples we use: we need
+  to find the average across all of the samples that we take.
+To do this, we'll add the full color from each iteration, and then finish with a single division (by
+  the number of samples) at the end, before writing out the color.
 To ensure that the color components of the final result remain within the proper $[0,1]$ bounds,
   we'll add and use a small helper function: `interval::clamp(x)`.
 
@@ -1889,6 +1911,9 @@ To ensure that the color components of the final result remain within the proper
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [clamp]: <kbd>[interval.h]</kbd> The interval::clamp() utility function]
+
+And here's the updated `write_color()` function that takes the sum total of all light for the pixel
+  and the number of samples involved:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
@@ -1911,40 +1936,12 @@ To ensure that the color components of the final result remain within the proper
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-clamped]: <kbd>[color.h]</kbd> The multi-sample write_color() function]
 
-So now we need to gather multiple samples for each pixel.
-We'll select samples from the area around the pixel center.
-Which begs the question: _what's the area surrounding the pixel_?
-
-It is very common to think of pixels as the square region around each pixel location, such that
-  these squares perfectly tile the pixel grid.
-However, there's no real reason why this must be the case.
-In fact, there's nothing that says that pixels have to sample all of the image area, or even that
-  they cannot have their regions overlap in some way.
-
-For example, consider the human eye: our "pixels" (photoreceptor cells) are randomly scattered with
-  varying density, respond to different wavelengths, cover differently sized areas, and frequently
-  overlap each other.
-(See figure 1 of [_Cell Populations of the Retina_](https://iovs.arvojournals.org/article.aspx?articleid=2188127)
-  for an example of the different photoreceptor types in the human retina. There are many more than
-  the single rod + three cone types that most people think of.)
-There's much more to say about this, but if you want to learn more about image sampling and
-  reconstruction, see the excellent technical memo
-  [_A Pixel is Not a Little Square, A Pixel is Not a Little Square, A Pixel is Not a Little Square_](https://www.researchgate.net/publication/244986797),
-  by Alvy Ray Smith, for a fantastic introduction.
-
-In spite of all this, we will proceed with the trivial square pixel model.
-It may not be the best model, but it's the simplest.
-Still, we'll design our code in a way that makes it easy for you to play with different pixel types,
-  and throw in a circular pixel model to experiment with if you wish.
-
-Ok, let's update the camera class to define and use a new `camera::get_ray(i,j)` function, and to
-  incorporate multiple samples per pixel.
-This function will use a new helper function `pixel_sample_square()`, which generates a random
-  sample point within the square pixel centered at the origin.
-This random sample will then be transformed back to the particular pixel we're sampling.
-(In addition, we've included in our source code (but don't use) the function `pixel_sample_disk()`
-  for you to play with if you'd like to experiment with non-square pixels.
-This depends on the function `random_in_unit_disk()` defined later in this book.)
+Now let's update the camera class to define and use a new `camera::get_ray(i,j)` function, which
+  will generate different samples for each pixel.
+This function will use a new helper function `pixel_sample_square()` that generates a random sample
+  point within the unit square centered at the origin.
+We then transform the random sample from this ideal square back to the particular pixel we're
+  currently sampling.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
@@ -2018,6 +2015,11 @@ This depends on the function `random_in_unit_disk()` defined later in this book.
     [Listing [camera-spp]: <kbd>[camera.h]</kbd> Camera with samples-per-pixel parameter]
 
 </div>
+
+(In addition to the new `pixel_sample_square()` function above, we've included in our source code
+  (but don't use) the function `pixel_sample_disk()` for you to play with if you'd like to
+  experiment with non-square pixels.
+This depends on the function `random_in_unit_disk()` defined later in this book.)
 
 <div class='together'>
 Main is updated to set the new camera parameter.
@@ -3994,6 +3996,7 @@ Snippets
 [discussions]:        https://github.com/RayTracing/raytracing.github.io/discussions/
 [gfx-codex]:          https://graphicscodex.com/
 [repo]:               https://github.com/RayTracing/raytracing.github.io/
+[square-pixels]:      https://www.researchgate.net/publication/244986797
 
 
 
