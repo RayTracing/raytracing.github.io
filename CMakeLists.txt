@@ -32,7 +32,7 @@ set ( SOURCE_ONE_WEEKEND
 # src/InOneWeekend/rtw_stb_image.h
 # src/InOneWeekend/rtweekend.h
 # src/InOneWeekend/sphere.h
-# src/InOneWeekend/vec3.h
+  src/InOneWeekend/vec3.h
 
   src/InOneWeekend/main.cc
 )
