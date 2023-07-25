@@ -19,7 +19,7 @@ set ( EXTERNAL
   src/external/stb_image.h
 )
 
-#set ( SOURCE_ONE_WEEKEND
+set ( SOURCE_ONE_WEEKEND
 # src/external/stb_image.h
 
 # src/InOneWeekend/camera.h
@@ -34,8 +34,8 @@ set ( EXTERNAL
 # src/InOneWeekend/sphere.h
 # src/InOneWeekend/vec3.h
 
-# src/InOneWeekend/main.cc
-#)
+  src/InOneWeekend/main.cc
+)
 
 set ( SOURCE_NEXT_WEEK
   src/external/stb_image.h
@@ -111,7 +111,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # Executables
-#add_executable(inOneWeekend      ${EXTERNAL} ${SOURCE_ONE_WEEKEND})
+add_executable(inOneWeekend      ${EXTERNAL} ${SOURCE_ONE_WEEKEND})
 add_executable(theNextWeek       ${EXTERNAL} ${SOURCE_NEXT_WEEK})
 add_executable(theRestOfYourLife ${EXTERNAL} ${SOURCE_REST_OF_YOUR_LIFE})
 add_executable(cos_cubed         src/TheRestOfYourLife/cos_cubed.cc         )
