@@ -117,7 +117,7 @@ Let’s make some C++ code to output such a thing:
             for (int i = 0; i < image_width; ++i) {
                 auto r = double(i) / (image_width-1);
                 auto g = double(j) / (image_height-1);
-                auto b = 0.25;
+                auto b = 0;
 
                 int ir = static_cast<int>(255.999 * r);
                 int ig = static_cast<int>(255.999 * g);
@@ -149,14 +149,18 @@ There are some things to note in that code:
 
 Creating an Image File
 -----------------------
-Because the file is written to the program output, you'll need to redirect it to an image file.
-Typically this is done from the command-line by using the `>` redirection operator, like so:
+Because the file is written to the standard output stream, you'll need to redirect it to an image
+file. Typically this is done from the command-line by using the `>` redirection operator, like so:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     build\Release\inOneWeekend.exe > image.ppm
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This is how things would look on Windows. On Mac or Linux, it would look like this:
+(This example assumes that you are building with CMake, using the same approach as the
+`CMakeLists.txt` file in the included source. Use whatever build environment (and language) you're
+comfortable with.)
+
+This is how things would look on Windows with CMake. On Mac or Linux, it might look like this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     build/inOneWeekend > image.ppm
@@ -166,7 +170,7 @@ Opening the output file (in `ToyViewer` on my Mac, but try it in your favorite v
 “ppm viewer” if your viewer doesn’t support it) shows this result:
 
   ![<span class='num'>Image 1:</span> First PPM image
-    ](../images/img-1.01-first-ppm-image.png class='pixel')
+  ](../images/img-1.01-first-ppm-image.png class='pixel')
 
 Hooray! This is the graphics “hello world”. If your image doesn’t look like that, open the output
 file in a text editor and see what it looks like. It should start something like this:
@@ -175,23 +179,26 @@ file in a text editor and see what it looks like. It should start something like
     P3
     256 256
     255
-    0 255 63
-    1 255 63
-    2 255 63
-    3 255 63
-    4 255 63
-    5 255 63
-    6 255 63
-    7 255 63
-    8 255 63
-    9 255 63
+    0 0 0
+    1 0 0
+    2 0 0
+    3 0 0
+    4 0 0
+    5 0 0
+    6 0 0
+    7 0 0
+    8 0 0
+    9 0 0
+    10 0 0
+    11 0 0
+    12 0 0
     ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [first-img]: First image output]
 
 If your PPM file doesn't look like this, then double-check your formatting code.
-If it _does_ look like this, then you may have line-ending differences or something similar that is
-  confusing the image reader.
+If it _does_ look like this but fails to render, then you may have line-ending differences or
+  something similar that is confusing the image reader.
 To help debug this, you can find a file `test.ppm` in the `images` directory of this project to
   ensure that your viewer can handle this format, and to use as comparison for a valid PPM file.
 
@@ -200,6 +207,10 @@ In this case, the problem is often that the PPM is written out as UTF-16, often 
 If you run into this problem, see
   [Discussion 1114](https://github.com/RayTracing/raytracing.github.io/discussions/1114)
   for help with this issue.
+
+If everything displays correctly, then you're pretty much done with system and IDE issues --
+everything in the remainder of this series uses this same simple mechanism for generated rendered
+images.
 
 If you want to produce other image formats, I am a fan of `stb_image.h`, a header-only image library
   available on GitHub at https://github.com/nothings/stb.
@@ -223,7 +234,7 @@ instead write to the logging output stream (`std::clog`):
             for (int i = 0; i < image_width; ++i) {
                 auto r = double(i) / (image_width-1);
                 auto g = double(j) / (image_height-1);
-                auto b = 0.25;
+                auto b = 0;
 
                 int ir = static_cast<int>(255.999 * r);
                 int ig = static_cast<int>(255.999 * g);
@@ -241,6 +252,9 @@ instead write to the logging output stream (`std::clog`):
 
 </div>
 
+Now when running, you'll see a running count of the number of scanlines remaining. Hopefully this
+runs so fast that you don't even see it! Don't worry -- you'll have lots of time in the future to
+watch a slowly updating progress line as we expand our ray tracer.
 
 
 The vec3 Class
@@ -835,6 +849,7 @@ that hits a small sphere we place at -1 on the z-axis:
         if (hit_sphere(point3(0,0,-1), 0.5, r))
             return color(1, 0, 0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         vec3 unit_direction = unit_vector(r.direction());
         auto a = 0.5*(unit_direction.y() + 1.0);
         return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
@@ -914,6 +929,7 @@ These changes in the code let us compute and visualize $\mathbf{n}$:
             return 0.5*color(N.x()+1, N.y()+1, N.z()+1);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         vec3 unit_direction = unit_vector(r.direction());
         auto a = 0.5*(unit_direction.y() + 1.0);
         return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
@@ -1360,8 +1376,10 @@ And the new main:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "rtweekend.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     #include "color.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "hittable.h"
     #include "hittable_list.h"
     #include "sphere.h"
@@ -1380,11 +1398,11 @@ And the new main:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     color ray_color(const ray& r, const hittable& world) {
         hit_record rec;
-        if (world.hit(r, interval(0, infinity), rec)) {
+        if (world.hit(r, 0, infinity, rec)) {
             return 0.5 * (rec.normal + color(1,1,1));
         }
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         vec3 unit_direction = unit_vector(r.direction());
         auto a = 0.5*(unit_direction.y() + 1.0);
         return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
@@ -1498,6 +1516,19 @@ and a maximum. We'll end up using this class quite often as we proceed.
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [interval-initial]: <kbd>[interval.h]</kbd> Introducing the new interval class]
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    // Common Headers
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
+    #include "interval.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "ray.h"
+    #include "vec3.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [interval-rtweekend]: <kbd>[rtweekend.h]</kbd> Including the new interval class]
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1853,9 +1884,22 @@ Hence we can get a real random number as desired with the following code snippet
   `rtweekend.h`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include <cmath>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     #include <cstdlib>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include <limits>
+    #include <memory>
     ...
 
+    // Utility Functions
+
+    inline double degrees_to_radians(double degrees) {
+        return degrees * pi / 180.0;
+    }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     inline double random_double() {
         // Returns a random real in [0,1).
         return rand() / (RAND_MAX + 1.0);
@@ -1900,6 +1944,12 @@ To ensure that the color components of the final result remain within the proper
     class interval {
       public:
         ...
+
+        bool surrounds(double x) const {
+            return min < x && x < max;
+        }
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double clamp(double x) const {
             if (x < min) return min;
@@ -1993,12 +2043,7 @@ We then transform the random sample from this ideal square back to the particula
 
             return ray(ray_origin, ray_direction);
         }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        ...
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         vec3 pixel_sample_square() const {
             // Returns a random point in the square surrounding a pixel at the origin.
             auto px = -0.5 + random_double();
@@ -2090,6 +2135,13 @@ generate arbitrary random vectors:
     class vec3 {
       public:
         ...
+
+        double length_squared() const {
+            return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
+        }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
         static vec3 random() {
             return vec3(random_double(), random_double(), random_double());
         }
@@ -2097,6 +2149,8 @@ generate arbitrary random vectors:
         static vec3 random(double min, double max) {
             return vec3(random_double(min,max), random_double(min,max), random_double(min,max));
         }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [vec-rand-util]: <kbd>[vec3.h]</kbd> vec3 random utility functions]
 
@@ -2123,6 +2177,14 @@ point if it is outside the unit sphere.
   ](../images/fig-1.11-sphere-vec.jpg)
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+
+    inline vec3 unit_vector(vec3 v) {
+        return v / v.length();
+    }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     inline vec3 random_in_unit_sphere() {
         while (true) {
             auto p = vec3::random(-1,1);
@@ -2143,6 +2205,18 @@ unit sphere.
   ](../images/fig-1.12-sphere-unit-vec.jpg)
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+
+    inline vec3 random_in_unit_sphere() {
+        while (true) {
+            auto p = vec3::random(-1,1);
+            if (p.length_squared() < 1)
+                return p;
+        }
+    }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     inline vec3 random_unit_vector() {
         return unit_vector(random_in_unit_sphere());
     }
@@ -2166,6 +2240,14 @@ correct hemisphere. If the dot product is positive, then the vector is in the co
 the dot product is negative, then we need to invert the vector.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+
+    inline vec3 random_unit_vector() {
+        return unit_vector(random_in_unit_sphere());
+    }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     inline vec3 random_on_hemisphere(const vec3& normal) {
         vec3 on_unit_sphere = random_unit_vector();
         if (dot(on_unit_sphere, normal) > 0.0) // In the same hemisphere as the normal
@@ -2270,8 +2352,8 @@ depth, returning no light contribution at the maximum depth:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             if (world.hit(r, interval(0, infinity), rec)) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 direction = random_on_hemisphere(rec.normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
@@ -2409,8 +2491,8 @@ The change is actually fairly minimal:
             if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 vec3 direction = rec.normal + random_unit_vector();
-                return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
         }
 
             vec3 unit_direction = unit_vector(r.direction());
@@ -2679,6 +2761,12 @@ reflectance $R$, or it can scatter with no attenuation but absorb the fraction $
 it could be a mixture of those strategies. For Lambertian materials we get this simple class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class material {
+        ...
+    };
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     class lambertian : public material {
       public:
         lambertian(const color& a) : albedo(a) {}
@@ -2695,7 +2783,7 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
         color albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [lambertian-initial]: <kbd>[material.h]</kbd> The lambertian material class]
+    [Listing [lambertian-initial]: <kbd>[material.h]</kbd> The new lambertian material class]
 
 Note we could just as well only scatter with some probability $p$ and have attenuation be
 $\mathit{albedo}/p$. Your choice.
@@ -2711,11 +2799,20 @@ the vector is very close to zero in all dimensions.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class vec3 {
         ...
+
+        double length_squared() const {
+            return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
+        }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
         bool near_zero() const {
             // Return true if the vector is close to zero in all dimensions.
             auto s = 1e-8;
             return (fabs(e[0]) < s) && (fabs(e[1]) < s) && (fabs(e[2]) < s);
         }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2761,9 +2858,20 @@ is a unit vector, but $\mathbf{v}$ may not be. The length of $\mathbf{b}$ should
 \cdot \mathbf{n}$. Because $\mathbf{v}$ points in, we will need a minus sign, yielding:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+
+    inline vec3 random_on_hemisphere(const vec3& normal) {
+        ...
+    }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     vec3 reflect(const vec3& v, const vec3& n) {
         return v - 2*dot(v,n)*n;
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [vec3-reflect]: <kbd>[vec3.h]</kbd> vec3 reflection function]
 
@@ -2771,6 +2879,14 @@ is a unit vector, but $\mathbf{v}$ may not be. The length of $\mathbf{b}$ should
 The metal material just reflects rays using that formula:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+
+    class lambertian : public material {
+        ...
+    };
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     class metal : public material {
       public:
         metal(const color& a) : albedo(a) {}
@@ -2796,6 +2912,10 @@ We need to modify the `ray_color()` function to use this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
+    #include "rtweekend.h"
+
+    #include "color.h"
+    #include "hittable.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "material.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2872,6 +2992,7 @@ Now let’s add some metal spheres to our scene:
         cam.image_width       = 400;
         cam.samples_per_pixel = 100;
         cam.max_depth         = 50;
+
         cam.render(world);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3018,7 +3139,15 @@ We can now rewrite $\mathbf{R'}_{\bot}$ in terms of known quantities:
 When we combine them back together, we can write a function to calculate $\mathbf{R'}$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat) {
+    ...
+
+    inline vec3 reflect(const vec3& v, const vec3& n) {
+        return v - 2*dot(v,n)*n;
+    }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
+    inline vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat) {
         auto cos_theta = fmin(dot(-uv, n), 1.0);
         vec3 r_out_perp =  etai_over_etat * (uv + cos_theta*n);
         vec3 r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
@@ -3033,6 +3162,14 @@ When we combine them back together, we can write a function to calculate $\mathb
 And the dielectric material that always refracts is:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+
+    class metal : public material {
+        ...
+    };
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     class dielectric : public material {
       public:
         dielectric(double index_of_refraction) : ir(index_of_refraction) {}
@@ -3053,7 +3190,8 @@ And the dielectric material that always refracts is:
         double ir; // Index of Refraction
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [dielectric]: <kbd>[material.h]</kbd> Dielectric material class that always refracts]
+    [Listing [dielectric-always-refract]: <kbd>[material.h]</kbd>
+        Dielectric material class that always refracts]
 
 </div>
 
@@ -3110,7 +3248,7 @@ solution does not exist, the glass cannot refract, and therefore must reflect th
         ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [dielectric]: <kbd>[material.h]</kbd> Determining if the ray can refract]
+    [Listing [dielectric-can-refract-1]: <kbd>[material.h]</kbd> Determining if the ray can refract]
 </div>
 
 Here all the light is reflected, and because in practice that is usually inside solid objects, it
@@ -3137,7 +3275,7 @@ and
         ...
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [dielectric]: <kbd>[material.h]</kbd> Determining if the ray can refract]
+    [Listing [dielectric-can-refract-2]: <kbd>[material.h]</kbd> Determining if the ray can refract]
 
 <div class='together'>
 And the dielectric material that always refracts (when possible) is:
@@ -3174,7 +3312,8 @@ And the dielectric material that always refracts (when possible) is:
         double ir; // Index of Refraction
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [dielectric]: <kbd>[material.h]</kbd> Dielectric material class with reflection]
+    [Listing [dielectric-with-refraction]: <kbd>[material.h]</kbd>
+        Dielectric material class with reflection]
 
 </div>
 
@@ -3182,7 +3321,7 @@ And the dielectric material that always refracts (when possible) is:
 Attenuation is always 1 -- the glass surface absorbs nothing. If we try that out with these
 parameters:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
     auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
     auto material_left   = make_shared<dielectric>(1.5);
@@ -3366,6 +3505,7 @@ We'll test out these changes with a simple scene of two touching spheres, using 
     int main() {
         hittable_list world;
 
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto R = cos(pi/4);
 
@@ -3466,6 +3606,7 @@ This is convenient and will naturally keep your camera horizontally level until 
             image_height = static_cast<int>(image_width / aspect_ratio);
             image_height = (image_height < 1) ? 1 : image_height;
 
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             center = lookfrom;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3539,8 +3680,9 @@ We'll change back to the prior scene, and use the new viewpoint:
         cam.samples_per_pixel = 100;
         cam.max_depth         = 50;
 
-        cam.vfov     = 90;
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.vfov     = 90;
         cam.lookfrom = point3(-2,2,1);
         cam.lookat   = point3(0,0,-1);
         cam.vup      = vec3(0,1,0);
@@ -3664,7 +3806,13 @@ This function works using the same kind of method we use in `random_in_unit_sphe
   dimensions.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 random_in_unit_disk() {
+    inline vec3 unit_vector(vec3 u) {
+        return v / v.length();
+    }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
+    inline vec3 random_in_unit_disk() {
         while (true) {
             auto p = vec3(random_double(-1,1), random_double(-1,1), 0);
             if (p.length_squared() < 1)
@@ -3764,6 +3912,7 @@ Now let's update the camera to originate rays from the defocus disk:
             auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
             auto pixel_sample = pixel_center + pixel_sample_square();
 
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3807,6 +3956,7 @@ Using a large aperture:
         cam.lookat   = point3(0,0,-1);
         cam.vup      = vec3(0,1,0);
 
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         cam.defocus_angle = 10.0;
         cam.focus_dist    = 3.4;
@@ -3840,6 +3990,8 @@ Let’s make the image on the cover of this book -- lots of random spheres.
     int main() {
         hittable_list world;
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
         auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
         world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
 
@@ -3879,9 +4031,12 @@ Let’s make the image on the cover of this book -- lots of random spheres.
 
         auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
         world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         camera cam;
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
         cam.aspect_ratio      = 16.0 / 9.0;
         cam.image_width       = 1200;
         cam.samples_per_pixel = 500;
@@ -3894,6 +4049,7 @@ Let’s make the image on the cover of this book -- lots of random spheres.
 
         cam.defocus_angle = 0.6;
         cam.focus_dist    = 10.0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         cam.render(world);
     }
