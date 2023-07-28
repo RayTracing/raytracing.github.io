@@ -3,6 +3,8 @@ Change Log -- Ray Tracing in One Weekend
 
 # v4.0.0 (pending)
 
+- Trevor Black and Steve Hollasch are now authors
+
 ### Common
   - Change: Introduce new `interval` class used throughout codebase (#777)
   - Change: Use `class` instead of `struct` throughout for simpler C++ (#781)
@@ -11,8 +13,6 @@ Change Log -- Ray Tracing in One Weekend
   - Change: `interval::clamp()` replaces standalone `clamp` utility function
   - Added: `rtw_image` class for easier image data loading, better search (#807)
   - Change: New `scene` class manages image settings, camera, geometry, and lights (#699)
-  - Change: Cleaned up multiple cases where the `inline` keyword was unnecessary, and reorganized
-    some global utility functions as either private static, or in better locations.
   - Fix: Remove redundant `virtual` keyword for methods with `override` (#805)
   - Change: `aabb` class constructor treats two params as extreme points in any orientation (#733)
   - Change: `aabb` class uses intervals for each axis (#796)
@@ -31,25 +31,41 @@ Change Log -- Ray Tracing in One Weekend
   - Fix: Add `\mathit` to italic math variables to fix slight kerning issues in equations (#839)
   - Change: Use std::clog instead of std::cerr to log scanline progress (#935)
   - Fix: Added missing commas for the Bib(La)TeX entries.
+  - Change: Updated figures throughout for improved clarity when possible
+  - Change: Updated classes to use private access for class-private variables (#869)
+  - Change: Significant rewrite and expansion of the `camera` class
+  - Change: Retired the `src/common/` directory. Each book now has complete source in one directory
+  - Change: Generated images are now output gamma-corrected rather than in linear space
+    (#980, #1033)
+  - Change: The `camera` class now handles images with width or height of one (#682, #1040)
+  - Change: Made our code `inline` clean. We now use `inline` in all header function definitions to
+    guard against copies in multiple C++ translation units (#803)
 
 ### In One Weekend
   - Added: More commentary about the choice between `double` and `float` (#752)
   - Added: Software context around the shadow acne listing
+  - Change: Updated all rendered images in text
+  - Change: Significant update to the diffuse reflection section (#696, #992)
+  - Change: Updated and clarified text around ray generation and the camera model
 
 ### The Next Week
   - Change: Rearranged the texture-mapping presentation. The three types (solid, spatial, image) are
     now sequenced in that order, and the checker texture presented more explicitly as an
     illustration of a spatial texture.
   - Change: Broad rewrite of time management for moving objects, primarily `camera` and
-    `moving_sphere`, but also impacting the API for `hittable::bounding_box()` (#799)
+    `sphere`, but also impacting the API for `hittable::bounding_box()` (#799)
   - Fix: Fixed `bvh_node` constructor definition signature (#872)
   - Fix: Fixed scaling for final Perlin noise texture (#896).
   - Added: Add listing to use new `bvh_node` class in the `random_spheres` scene (#715).
+  - Delete: The `moving_sphere` class is deprecated, and functionality moved to `sphere`
+  - Change: The `sphere` class now includes animation capability originally in `moving_sphere`
+    (#1125)
 
 ### The Rest of Your Life
   - Fix: Added missing functionality for `isotropic` (#664)
   - Fix: Variable `direction` was used without being defined in listing 11 (#831)
   - Fix: Added missing functionality for `isotropic` (#664)
+  - Fix: Fixed uniform sampling (#934)
 
 
 ----------------------------------------------------------------------------------------------------
