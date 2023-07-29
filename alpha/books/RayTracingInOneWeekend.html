@@ -132,19 +132,21 @@ Let’s make some C++ code to output such a thing:
 
 </div>
 
-There are some things to note in that code:
+There are some things to note in this code:
 
-  1. The pixels are written out in rows with pixels left to right.
+  1. The pixels are written out in rows.
 
-  2. The rows are written out from top to bottom.
+  2. Every row of pixels is written out left to right.
 
-  3. By convention, each of the red/green/blue components range from 0.0 to 1.0. We will relax that
-     later when we internally use high dynamic range, but before output we will tone map to the zero
-     to one range, so this code won’t change.
+  3. These rows are written out from top to bottom.
 
-  4. Red goes from fully off (black) to fully on (bright red) from left to right, and green goes
-     from black at the bottom to fully on at the top. Red and green together make yellow so we
-     should expect the upper right corner to be yellow.
+  4. By convention, each of the red/green/blue components are represented internally by real-valued
+     variables that range from 0.0 to 1.0. These must be scaled to integer values between 0 and 255
+     before we print them out.
+
+  5. Red goes from fully off (black) to fully on (bright red) from left to right, and green goes
+     from fully off at the top to black at the bottom. Adding red and green light together make
+     yellow so we should expect the bottom right corner to be yellow.
 
 
 Creating an Image File
@@ -166,8 +168,8 @@ This is how things would look on Windows with CMake. On Mac or Linux, it might l
     build/inOneWeekend > image.ppm
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Opening the output file (in `ToyViewer` on my Mac, but try it in your favorite viewer and Google
-“ppm viewer” if your viewer doesn’t support it) shows this result:
+Opening the output file (in `ToyViewer` on my Mac, but try it in your favorite image viewer and
+Google “ppm viewer” if your viewer doesn’t support it) shows this result:
 
   ![<span class='num'>Image 1:</span> First PPM image
   ](../images/img-1.01-first-ppm-image.png class='pixel')
@@ -198,9 +200,10 @@ file in a text editor and see what it looks like. It should start something like
 
 If your PPM file doesn't look like this, then double-check your formatting code.
 If it _does_ look like this but fails to render, then you may have line-ending differences or
-  something similar that is confusing the image reader.
-To help debug this, you can find a file `test.ppm` in the `images` directory of this project to
-  ensure that your viewer can handle this format, and to use as comparison for a valid PPM file.
+  something similar that is confusing your image viewer.
+To help debug this, you can find a file `test.ppm` in the `images` directory of the Github project.
+This should help to ensure that your viewer can handle the PPM format and to use as a comparison
+  against your generated PPM file.
 
 Some readers have reported problems viewing their generated files on Windows.
 In this case, the problem is often that the PPM is written out as UTF-16, often from PowerShell.
@@ -260,18 +263,18 @@ watch a slowly updating progress line as we expand our ray tracer.
 The vec3 Class
 ====================================================================================================
 Almost all graphics programs have some class(es) for storing geometric vectors and colors. In many
-systems these vectors are 4D (3D plus a homogeneous coordinate for geometry, and RGB plus an alpha
-transparency channel for colors). For our purposes, three coordinates suffice. We’ll use the same
-class `vec3` for colors, locations, directions, offsets, whatever. Some people don’t like this
+systems these vectors are 4D (3D position plus a homogeneous coordinate for geometry, or RGB plus an
+alpha transparency component for colors). For our purposes, three coordinates suffice. We’ll use the
+same class `vec3` for colors, locations, directions, offsets, whatever. Some people don’t like this
 because it doesn’t prevent you from doing something silly, like subtracting a position from a color.
 They have a good point, but we’re going to always take the “less code” route when not obviously
 wrong. In spite of this, we do declare two aliases for `vec3`: `point3` and `color`. Since these two
 types are just aliases for `vec3`, you won't get warnings if you pass a `color` to a function
 expecting a `point3`, and nothing is stopping you from adding a `point3` to a `color`, but it makes
-the code a little bit easier to read and understand.
+the code a little bit easier to read and to understand.
 
-We define the `vec3` class in the top half of a new `vec3.h` header file, and a set of useful vector
-utility functions in the bottom half:
+We define the `vec3` class in the top half of a new `vec3.h` header file, and define a set of useful
+vector utility functions in the bottom half:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef VEC3_H
@@ -386,8 +389,8 @@ your own tastes.
 
 Color Utility Functions
 ------------------------
-Using our new `vec3` class, we'll create a utility function to write a single pixel's color out to
-the standard output stream.
+Using our new `vec3` class, we'll create a new `color.h` header file and define a utility function
+that writes a single pixel's color out to the standard output stream.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef COLOR_H
@@ -411,7 +414,7 @@ the standard output stream.
     [Listing [color]: <kbd>[color.h]</kbd> color utility functions]
 
 <div class='together'>
-Now we can change our main to use this:
+Now we can change our main to use both of these:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "color.h"
@@ -511,20 +514,20 @@ The involved steps are
 
     1. Calculate the ray from the “eye” through the pixel,
     2. Determine which objects the ray intersects, and
-    3. Compute a color for that intersection point.
+    3. Compute a color for the closest intersection point.
 
 When first developing a ray tracer, I always do a simple camera for getting the code up and running.
 
 I’ve often gotten into trouble using square images for debugging because I transpose $x$ and $y$ too
-  often, so I’ll use a non-square image.
+  often, so we’ll use a non-square image.
 A square image has a 1&ratio;1 aspect ratio, because its width is the same as its height.
-Since I want a non-square image, I'll choose 16&ratio;9 because it's so common.
+Since we want a non-square image, we'll choose 16&ratio;9 because it's so common.
 A 16&ratio;9 aspect ratio means that the ratio of image width to image height is 16&ratio;9.
 Put another way, given an image with a 16&ratio;9 aspect ratio,
 
   $$\text{width} / \text{height} = 16 / 9 = 1.7778$$
 
-As another example, an image 800 pixels wide by 400 pixels high has a 2&ratio;1 aspect ratio.
+For a practical example, an image 800 pixels wide by 400 pixels high has a 2&ratio;1 aspect ratio.
 
 The image's aspect ratio can be determined from the ratio of its height to its width.
 However, since we have a given aspect ratio in mind, it's easier to set the image's width and the
@@ -561,10 +564,11 @@ Here's a snippet of what this code will look like:
 
 (If you're wondering why we don't just use `aspect_ratio` when computing `viewport_width`, it's
 because the _actual_ aspect ratio is the integer-based ratio of image width over image height, which
-will yield zero for values less than one.)
+_may_ not be the same as `aspect_ratio` because `image_height` may have off round-off error and may
+have been set to 1.)
 
 Note that `aspect_ratio` is an ideal ratio, which we approximate as best as possible with the
-  integer-based ratio of image width / image height.
+  integer-based ratio of image width over image height.
 In order for our viewport proportions to exactly match our image proportions, we use the calculated
   image aspect ratio to determine our final viewport width.
 
@@ -605,7 +609,7 @@ In this figure, we have the viewport, the pixel grid for a 7&times;5 resolution 
 <div class='together'>
 Drawing from all of this, here's the code that implements the camera.
 We'll stub in a function `ray_color(const ray& r)` that returns the color for a given scene ray
-  -- always black for now.
+  -- which we'll set to always return black for now.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "color.h"
@@ -704,7 +708,7 @@ A lerp is always of the form
 with $a$ going from zero to one.
 
 <div class='together'>
-Putting this all together, here's what we get:
+Putting all this together, here's what we get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "color.h"
@@ -741,20 +745,22 @@ In our case this produces:
 Adding a Sphere
 ====================================================================================================
 Let’s add a single object to our ray tracer. People often use spheres in ray tracers because
-calculating whether a ray hits a sphere is pretty straightforward.
+calculating whether a ray hits a sphere is relatively simple.
 
 
 Ray-Sphere Intersection
 ------------------------
-Recall that the equation for a sphere of radius $r$ that is centered at the origin is:
+The equation for a sphere of radius $r$ that is centered at the origin is well known to be:
 
     $$ x^2 + y^2 + z^2 = r^2 $$
 
 You can also think of this as saying that if a given point $(x,y,z)$ is on
 the sphere, then $x^2 + y^2 + z^2 = r^2$. If a given point $(x,y,z)$ is _inside_ the sphere, then
 $x^2 + y^2 + z^2 < r^2$, and if a given point $(x,y,z)$ is _outside_ the sphere, then
-$x^2 + y^2 + z^2 > r^2$. If we want to allow the sphere center to be at an arbitrary point
-$(C_x, C_y, C_z)$, then the equation becomes a lot less nice:
+$x^2 + y^2 + z^2 > r^2$.
+
+If we want to allow the sphere center to be at an arbitrary point $(C_x, C_y, C_z)$, then the
+equation becomes a lot less nice:
 
   $$ (x - C_x)^2 + (y - C_y)^2 + (z - C_z)^2 = r^2 $$
 
@@ -828,8 +834,8 @@ we have is:
 
 Creating Our First Raytraced Image
 -----------------------------------
-If we take that math and hard-code it into our program, we can test it by coloring red any pixel
-that hits a small sphere we place at -1 on the z-axis:
+If we take that math and hard-code it into our program, we can test our code by placing a small
+sphere at -1 on the z-axis and then coloring red any pixel that intersects it.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     bool hit_sphere(const point3& center, double radius, const ray& r) {
@@ -882,24 +888,27 @@ Shading with Surface Normals
 -----------------------------
 First, let’s get ourselves a surface normal so we can shade. This is a vector that is perpendicular
 to the surface at the point of intersection. There are two design decisions to make for normals.
-The first is whether these normals are unit length. That is convenient for shading so I will say
-yes, but I won’t enforce that in the code. This could allow subtle bugs, so be aware this is
-personal preference as are most design decisions like that. For a sphere, the outward normal is in
-the direction of the hit point minus the center:
+The first is whether or not these normals are unit length. This is convenient for shading so I will
+say yes, but we won’t enforce that in the code. This could allow for subtle bugs, so be aware that
+this is a personal preference. Note that many of the design decisions in this book prioritize
+convenience over absolute perfection.
+
+For a sphere, the outward normal is in the direction of the hit point minus the center:
 
   ![Figure [sphere-normal]: Sphere surface-normal geometry](../images/fig-1.06-sphere-normal.jpg)
 
-On the earth, this implies that the vector from the earth’s center to you points straight up. Let’s
+On the earth, this means that the vector from the earth’s center to you points straight up. Let’s
 throw that into the code now, and shade it. We don’t have any lights or anything yet, so let’s just
 visualize the normals with a color map.
 A common trick used for visualizing normals (because it’s easy and somewhat intuitive to assume
   $\mathbf{n}$ is a unit length vector -- so each component is between -1 and 1) is to map each
   component to the interval from 0 to 1, and then map $(x, y, z)$ to $(\mathit{red}, \mathit{green},
   \mathit{blue})$.
-For the normal, we need the hit point, not just whether we hit or not.
+For the normal, we need the hit point, not just whether we hit or not (which is all we're
+calculating at the moment).
 We only have one sphere in the scene, and it's directly in front of the camera, so we won't worry
   about negative values of $t$ yet.
-We'll just assume the closest hit point (smallest $t$).
+We'll just assume the closest hit point (smallest $t$) is the one that we want.
 These changes in the code let us compute and visualize $\mathbf{n}$:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1009,17 +1018,18 @@ Using these observations, we can now simplify the sphere-intersection code to th
 
 An Abstraction for Hittable Objects
 ------------------------------------
-Now, how about several spheres? While it is tempting to have an array of spheres, a very clean
+Now, how about more than one sphere? While it is tempting to have an array of spheres, a very clean
 solution is to make an “abstract class” for anything a ray might hit, and make both a sphere and a
-list of spheres just something you can hit. What that class should be called is something of a
-quandary -- calling it an “object” would be good if not for “object oriented” programming. “Surface”
-is often used, with the weakness being maybe we will want volumes. “hittable” emphasizes the member
-function that unites them. I don’t love any of these, but I will go with “hittable”.
+list of spheres just something that can be hit. What that class should be called is something of a
+quandary -- calling it an “object” would be good if not for “object oriented” programming.
+“Surface” is often used, with the weakness being maybe we will want volumes (fog, clouds, stuff
+like that). “hittable” emphasizes the member function that unites them. I don’t love any of these,
+but we'll go with “hittable”.
 
-This `hittable` abstract class will have a hit function that takes in a ray. Most ray tracers have
-found it convenient to add a valid interval for hits $t_{\mathit{min}}$ to $t_{\mathit{max}}$, so
-the hit only “counts” if $t_{\mathit{min}} < t < t_{\mathit{max}}$. For the initial rays this is
-positive $t$, but as we will see, it can help some details in the code to have an interval
+This `hittable` abstract class will have a `hit` function that takes in a ray. Most ray tracers
+have found it convenient to add a valid interval for hits $t_{\mathit{min}}$ to $t_{\mathit{max}}$,
+so the hit only “counts” if $t_{\mathit{min}} < t < t_{\mathit{max}}$. For the initial rays this is
+positive $t$, but as we will see, it can simplify our code to have an interval
 $t_{\mathit{min}}$ to $t_{\mathit{max}}$. One design question is whether to do things like compute
 the normal if we hit something. We might end up hitting something closer as we do our search, and we
 will only need the normal of the closest thing. I will go with the simple solution and compute a
@@ -1280,7 +1290,8 @@ C++ programmer: `vector` and `shared_ptr`.
 `shared_ptr<type>` is a pointer to some allocated type, with reference-counting semantics.
 Every time you assign its value to another shared pointer (usually with a simple assignment), the
 reference count is incremented. As shared pointers go out of scope (like at the end of a block or
-function), the reference count is decremented. Once the count goes to zero, the object is deleted.
+function), the reference count is decremented. Once the count goes to zero, the object is safely
+deleted.
 
 <div class='together'>
 Typically, a shared pointer is first initialized with a newly-allocated object, something like this:
@@ -1311,7 +1322,7 @@ above lines can be more simply expressed using C++'s `auto` type specifier:
 </div>
 
 We'll use shared pointers in our code, because it allows multiple geometries to share a common
-instance (for example, a bunch of spheres that all use the same texture map material), and because
+instance (for example, a bunch of spheres that all use the same color material), and because
 it makes memory management automatic and easier to reason about.
 
 `std::shared_ptr` is included with the `<memory>` header.
@@ -1475,8 +1486,9 @@ And the new main:
 
 </div>
 
-This yields a picture that is really just a visualization of where the spheres are along with their
-surface normal. This is often a great way to look at your model for flaws and characteristics.
+This yields a picture that is really just a visualization of where the spheres are located along
+with their surface normal. This is often a great way to view any flaws or specific characteristics
+of a geometric model.
 
   ![<span class='num'>Image 5:</span> Resulting render of normals-colored sphere with ground
   ](../images/img-1.05-normals-sphere-ground.png class='pixel')
@@ -1637,12 +1649,17 @@ In this refactoring, we'll collect the `ray_color()` function, along with the im
 The new camera class will contain two public methods `initialize()` and `render()`, plus two
   private helper methods `get_ray()` and `ray_color()`.
 
-Ultimately, the camera will use a set of public variables as parameters instead of using a
-  constructor with a long sequence of arguments, or using a bunch of setter methods.
-It's crude, but simple.
-Given this, the usage pattern will be such that the main code will create a default camera,
-  then set various camera parameters (perhaps at multiple places in the code).
-After everything's been set, it will call the `render()` method.
+Ultimately, the camera will use the simplest bring-up that we could think of. The usage pattern
+will be such that the main code will call the default constructor with no arguments, the main
+function will then modify the camera's public variables through simple assignment, before finally
+everything gets initialized by a call to the `initialize()` function.
+This is chosen instead of main calling a constructor with a ton of parameters or by calling a bunch
+of complicated setter methods. Everything is hidden within the `camera` class and main only needs
+to set what it explicitly cares about. We could have the main code call the camera's `initialize()`
+function, or just have camera call this function at the start of `render()`. We will have camera
+call this function.
+
+After main creates a camera and sets default values, it will call the `render()` method.
 The `render()` method will prepare the camera for rendering and then execute the render loop.
 
 <div class='together'>
@@ -2061,10 +2078,10 @@ We then transform the random sample from this ideal square back to the particula
 
 </div>
 
-(In addition to the new `pixel_sample_square()` function above, we've included in our source code
-  (but don't use) the function `pixel_sample_disk()` for you to play with if you'd like to
-  experiment with non-square pixels.
-This depends on the function `random_in_unit_disk()` defined later in this book.)
+(In addition to the new `pixel_sample_square()` function above, you'll also find the function
+`pixel_sample_disk()` in the Github source code. This is included in case you'd like to experiment
+with non-square pixels, but we won't be using it in this book. `pixel_sample_disk()` depends on the
+function `random_in_unit_disk()` which is defined later on.)
 
 <div class='together'>
 Main is updated to set the new camera parameter.
@@ -2109,9 +2126,9 @@ do be aware that there are alternative approaches.
 
 A Simple Diffuse Material
 --------------------------
-Diffuse objects that don’t emit light merely take on the color of their surroundings, but they
-modulate that with their own intrinsic color. Light that reflects off a diffuse surface has its
-direction randomized. So, if we send three rays into a crack between two diffuse surfaces they will
+Diffuse objects that don’t emit their own light merely take on the color of their surroundings, but
+they do modulate that with their own intrinsic color. Light that reflects off a diffuse surface has
+its direction randomized, so, if we send three rays into a crack between two diffuse surfaces they will
 each have different random behavior:
 
   ![Figure [light-bounce]: Light ray bounces](../images/fig-1.09-light-bounce.jpg)
@@ -2440,7 +2457,7 @@ to address this is just to ignore hits that are very close to the calculated int
         Calculating reflected ray origins with tolerance]
 
 <div class='together'>
-This gets rid of the shadow acne problem. Yes it is really called that. Here's result:
+This gets rid of the shadow acne problem. Yes it is really called that. Here's the result:
 
   ![<span class='num'>Image 9:</span> Diffuse sphere with no shadow acne
   ](../images/img-1.09-no-acne.png class='pixel')
@@ -2529,13 +2546,13 @@ spheres is so simple, but you should be able to notice two important visual diff
 Both of these changes are due to the less uniform scattering of the light rays--more rays are
 scattering toward the normal. This means that for diffuse objects, they will appear _darker_
 because less light bounces toward the camera. For the shadows, more light bounces straight-up, so
-the area underneath the sphere is darker
+the area underneath the sphere is darker.
 
 Not a lot of common, everyday objects are perfectly diffuse, so our visual intuition of how these
 objects behave under light can be poorly formed. As scenes become more complicated over the course
 of the book, you are encouraged to switch between the different diffuse renderers presented here.
 Most scenes of interest will contain a large amount of diffuse materials. You can gain valuable
-insight by understanding the effect of different diffuse methods on the lighting of the scene.
+insight by understanding the effect of different diffuse methods on the lighting of a scene.
 
 
 Using Gamma Correction for Accurate Color Intensity
@@ -2572,7 +2589,7 @@ class camera {
 [Listing [ray-color-gamut]: <kbd>[camera.h]</kbd> ray_color() with 10% reflectance]
 
 We render out at this new 10% reflectance. We then set reflectance to 30% and render again. We
-repeat for 50%, 70%, and finally 90%. We can overlay these images from left to right in the photo
+repeat for 50%, 70%, and finally 90%. You can overlay these images from left to right in the photo
 editor of your choice and you should get a very nice visual representation of the increasing
 brightness of your chosen gamut. This is the one that we've been working with so far: 
 
@@ -2646,11 +2663,11 @@ Metal
 
 An Abstract Class for Materials
 --------------------------------
-If we want different objects to have different materials, we have a design decision. We could have a
-universal material with lots of parameters and different material types just zero out some of those
-parameters. This is not a bad approach. Or we could have an abstract material class that
-encapsulates behavior. I am a fan of the latter approach. For our program the material needs to do
-two things:
+If we want different objects to have different materials, we have a design decision. We could have
+a universal material type with lots of parameters so each material type can just zero out the
+parameters that don't affect it. This is not a bad approach. Or we could have an abstract material
+class that encapsulates unique behavior. I am a fan of the latter approach. For our program the
+material needs to do two things:
 
   1. Produce a scattered ray (or say it absorbed the incident ray).
   2. If scattered, say how much the ray should be attenuated.
@@ -2684,9 +2701,10 @@ This suggests the abstract class:
 A Data Structure to Describe Ray-Object Intersections
 ------------------------------------------------------
 The `hit_record` is to avoid a bunch of arguments so we can stuff whatever info we want in there.
-You can use arguments instead; it’s a matter of taste. Hittables and materials need to know each
-other so there is some circularity of the references. In C++ you just need to alert the compiler
-that the pointer is to a class, which the “class material” in the hittable class below does:
+You can use arguments instead of an encapsulated type, it’s just a matter of taste. Hittables and
+materials need to be able to reference the other's type in code so there is some circularity of the
+references. In C++ you just need to alert the compiler that the pointer is to a class, which the
+`class material;` in the hittable class below does:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -2714,7 +2732,6 @@ that the pointer is to a class, which the “class material” in the hittable c
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hit-with-material]: <kbd>[hittable.h]</kbd> Hit record with added material pointer]
 
-What we have set up here is that material will tell us how rays interact with the surface.
 `hit_record` is just a way to stuff a bunch of arguments into a class so we can send them as a
 group. When a ray hits a surface (a particular sphere for example), the material pointer in the
 `hit_record` will be set to point at the material pointer the sphere was given when it was set up in
@@ -2722,8 +2739,7 @@ group. When a ray hits a surface (a particular sphere for example), the material
 functions of the material pointer to find out what ray, if any, is scattered.
 
 <div class='together'>
-To achieve this, we must have a reference to the material for our sphere class to returned
-within `hit_record`. See the highlighted lines below:
+To achieve this, `hit_record` needs to be told the material that is assigned to the sphere.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
@@ -2763,9 +2779,10 @@ within `hit_record`. See the highlighted lines below:
 
 Modeling Light Scatter and Reflectance
 ---------------------------------------
-For the Lambertian (diffuse) case we already have, it can either scatter always and attenuate by its
-reflectance $R$, or it can scatter with no attenuation but absorb the fraction $1-R$ of the rays, or
-it could be a mixture of those strategies. For Lambertian materials we get this simple class:
+For the Lambertian (diffuse) case we already have, it can either always scatter and attenuate by
+its reflectance $R$, or it can sometimes scatter (with probabilty $1-R$) with no attenuation (where
+a ray that isn't scattered is just absorbed into the material). It could also be a mixture of both
+those strategies. We will choose to always scatter, so Lambertian materials become this simple class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material {
@@ -2792,7 +2809,7 @@ it could be a mixture of those strategies. For Lambertian materials we get this 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [lambertian-initial]: <kbd>[material.h]</kbd> The new lambertian material class]
 
-Note we could just as well only scatter with some probability $p$ and have attenuation be
+Note the third option that we could scatter with some fixed probability $p$ and have attenuation be
 $\mathit{albedo}/p$. Your choice.
 
 If you read the code above carefully, you'll notice a small chance of mischief. If the random unit
@@ -2855,7 +2872,7 @@ the vector is very close to zero in all dimensions.
 
 Mirrored Light Reflection
 --------------------------
-For smooth metals the ray won’t be randomly scattered. The key math is: how does a ray get
+For a polished mirror the ray won’t be randomly scattered. The key question is: How does a ray get
 reflected from a metal mirror? Vector math is our friend here:
 
   ![Figure [reflection]: Ray reflection](../images/fig-1.15-reflection.jpg)
@@ -2915,7 +2932,7 @@ The metal material just reflects rays using that formula:
 </div>
 
 <div class='together'>
-We need to modify the `ray_color()` function to use this:
+We need to modify the `ray_color()` function for all of our changes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
@@ -3042,7 +3059,9 @@ absorb those.
             scattered = ray(rec.p, reflected + fuzz*random_unit_vector());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             attenuation = albedo;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             return (dot(scattered.direction(), rec.normal) > 0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
       private:
@@ -3079,9 +3098,9 @@ We can try that out by adding fuzziness 0.3 and 1.0 to the metals:
 
 Dielectrics
 ====================================================================================================
-Clear materials such as water, glass, and diamonds are dielectrics. When a light ray hits them, it
+Clear materials such as water, glass, and diamond are dielectrics. When a light ray hits them, it
 splits into a reflected ray and a refracted (transmitted) ray. We’ll handle that by randomly
-choosing between reflection or refraction, and only generating one scattered ray per interaction.
+choosing between reflection and refraction, only generating one scattered ray per interaction.
 
 
 Refraction
@@ -3128,8 +3147,9 @@ If we solve for $\mathbf{R'}_{\bot}$ and $\mathbf{R'}_{\parallel}$ we get:
 You can go ahead and prove this for yourself if you want, but we will treat it as fact and move on.
 The rest of the book will not require you to understand the proof.
 
-We still need to solve for $\cos\theta$. It is well known that the dot product of two vectors can
-be explained in terms of the cosine of the angle between them:
+We know the value of every term on the right-hand side except for $\cos\theta$. It is well known
+that the dot product of two vectors can be explained in terms of the cosine of the angle between
+them:
 
   $$ \mathbf{a} \cdot \mathbf{b} = |\mathbf{a}| |\mathbf{b}| \cos\theta $$
 
@@ -3441,8 +3461,9 @@ I also usually specify it in degrees and change to radians inside a constructor 
 
 Camera Viewing Geometry
 ------------------------
-I first keep the rays coming from the origin and heading to the $z = -1$ plane. We could make it the
-$z = -2$ plane, or whatever, as long as we made $h$ a ratio to that distance. Here is our setup:
+First, we'll keep the rays coming from the origin and heading to the $z = -1$ plane. We could make
+it the $z = -2$ plane, or whatever, as long as we made $h$ a ratio to that distance. Here is our
+setup:
 
   ![Figure [cam-view-geom]: Camera viewing geometry (from the side)
   ](../images/fig-1.18-cam-view-geom.jpg)
@@ -3577,7 +3598,7 @@ $u$ will be the unit vector pointing to camera right, $v$ is the unit vector poi
 
   ![Figure [cam-view-up]: Camera view up direction](../images/fig-1.20-cam-view-up.jpg)
 
-Like before, when our fixed camera faced -Z, our arbitrary view camera faces -w.
+Like before, when our fixed camera faced $-Z$, our arbitrary view camera faces $-w$.
 Keep in mind that we can -- but we don’t have to -- use world up $(0,1,0)$ to specify vup.
 This is convenient and will naturally keep your camera horizontally level until you decide to
   experiment with crazy camera angles.
@@ -3737,10 +3758,10 @@ Note, photographers call this _depth of field_, so be sure to only use the term 
 
 The reason we have defocus blur in real cameras is because they need a big hole (rather than just a
   pinhole) through which to gather light.
-A large hole would defocus everything, but if we stick a lens in the hole, there will be a certain
-  distance where everything is in focus.
-Objects appear blurrier the further they are from that distance (either closer or further from the
-  camera).
+A large hole would defocus everything, but if we stick a lens in front of the sensor, there will be
+a certain distance at which everything is in focus.
+Objects placed at that distance will appear in focus and will linearly appear blurrier the further
+they are from that distance.
 You can think of a lens this way: all light rays coming _from_ a specific point at the focus
   distance -- and that hit the lens -- will be bent back _to_ a single point on the image sensor.
 
