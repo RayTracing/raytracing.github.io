@@ -2450,16 +2450,17 @@ This gets rid of the shadow acne problem. Yes it is really called that. Here's r
 
 True Lambertian Reflection
 ---------------------------
-Using a diffuse model that scatters vectors evenly about the hemisphere produces a nice and soft
-diffuse model, but we can definitely do better. A more accurate representation of real diffuse
-objects is the _Lambertian_ distribution, which has a scattering distribution that is propertional
-to $\cos (\phi)$, where $\phi$ is the angle from the normal. This means that a ray is most likely to
-scatter toward the normal and decreases in likelihood as the direction becomes more tangential. This
-distribution is notably no longer uniform, but the _Lambertian_ distribution does a better job of
-modeling objects in the real world than our previous uniform scattering. We can create this
-distribution by picking random points on the surface of the unit sphere, and then offsetting them
-along the surface normal.
+Scattering reflected rays evenly about the hemisphere produces a nice soft diffuse model, but we can
+  definitely do better.
+A more accurate representation of real diffuse objects is the _Lambertian_ distribution.
+This distribution scatters reflected rays in a manner that is proportional to $\cos (\phi)$, where
+  $\phi$ is the angle between the reflected ray and the surface normal.
+This means that a reflected ray is most likely to scatter in a direction near the surface normal,
+  and less likely to scatter in directions away from the normal.
+This non-uniform Lambertian distribution does a better job of modeling material reflection in the
+  real world than our previous uniform scattering.
 
+We can create this distribution by adding a random unit vector to the normal vector.
 At the point of intersection on a surface there is the hit point, $\mathbf{p}$, and there is the
 normal of the surface, $\mathbf{n}$. At the point of intersection, this surface has exactly two
 sides, so there can only be two unique unit spheres tangent to any intersection point (one
