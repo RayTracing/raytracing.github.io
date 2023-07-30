@@ -1652,15 +1652,14 @@ render sections of our main program.
 The new camera class will contain two public methods `initialize()` and `render()`, plus two
 private helper methods `get_ray()` and `ray_color()`.
 
-Ultimately, the camera will use the simplest implementation that we could think of. The usage
-pattern will be such that the main code will call the default constructor with no arguments, then
-main will modify the camera's public variables through simple assignment, before everything finally
-gets initialized by a call to the `initialize()` function.
-This is chosen instead of main calling a constructor with a ton of parameters or by calling a bunch
-of complicated setter methods. Everything is hidden within the `camera` class and main only needs
-to set what it explicitly cares about. We could have the main code call the camera's `initialize()`
-function, or just have the camera call this function at the start of `render()`. We will have the
-camera call this function.
+Ultimately, the camera will follow the simplest usage pattern that we could think of: it will be
+default constructed no arguments, then the owning code will modify the camera's public variables
+through simple assignment, and finally everything is initialized by a call to the `initialize()`
+function. This pattern is chosen instead of the owner calling a constructor with a ton of parameters
+or by defining and calling a bunch of setter methods. Instead, the owning code only needs to set
+what it explicitly cares about. Finally, we could either have the owning code call `initialize()`,
+or just have the camera call this function automatically at the start of `render()`. We'll use the
+second approach.
 
 After main creates a camera and sets default values, it will call the `render()` method.
 The `render()` method will prepare the camera for rendering and then execute the render loop.
@@ -2706,7 +2705,7 @@ A Data Structure to Describe Ray-Object Intersections
 The `hit_record` is to avoid a bunch of arguments so we can stuff whatever info we want in there.
 You can use arguments instead of an encapsulated type, it’s just a matter of taste. Hittables and
 materials need to be able to reference the other's type in code so there is some circularity of the
-references. In C++ we add the line `class material;` to tell the compiler that material is a class
+references. In C++ we add the line `class material;` to tell the compiler that `material` is a class
 that will be defined later. Since we're just specifying a pointer to the class, the compiler
 doesn't need to know the details of the class, solving the circular reference issue.
 
