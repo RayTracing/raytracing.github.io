@@ -890,11 +890,25 @@ Surface Normals and Multiple Objects
 Shading with Surface Normals
 -----------------------------
 First, let’s get ourselves a surface normal so we can shade. This is a vector that is perpendicular
-to the surface at the point of intersection. There are two design decisions to make for normals.
-The first is whether or not these normals are unit length. This is convenient for shading so I will
-say yes, but we won’t enforce that in the code. This could allow for subtle bugs, so be aware that
-this is a personal preference. Note that many of the design decisions in this book prioritize
-convenience over absolute perfection.
+to the surface at the point of intersection.
+
+We have a key design decision to make for normal vectors in our code: whether normal vectors will
+have an arbitrary length, or will be normalized to unit length.
+
+It is tempting to skip the expensive square root operation involved in normalizing the vector, in
+case it's not needed.
+In practice, however, there are three important observations.
+First, if a unit-length normal vector is _ever_ required, then you might as well do it up front
+once, instead of over and over again "just in case" for every location where unit-length is
+required.
+Second, we _do_ require unit-length normal vectors in several places.
+Third, if you require normal vectors to be unit length, then you can often efficiently generate that
+vector with an understanding of the specific geometry class, in its constructor, or in the `hit()`
+function.
+For example, sphere normals can be made unit length simply by dividing by the sphere radius,
+avoiding the square root entirely.
+
+Given all of this, we will adopt the policy that all normal vectors will be of unit length.
 
 For a sphere, the outward normal is in the direction of the hit point minus the center:
 
