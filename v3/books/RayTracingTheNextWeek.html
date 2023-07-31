@@ -1,0 +1,3483 @@
+<meta charset="utf-8">
+<!-- Markdeep: https://casual-effects.com/markdeep/ -->
+
+
+
+                                   **Ray Tracing: The Next Week**
+                                         [Peter Shirley][]
+                      edited by [Steve Hollasch][] and [Trevor David Black][]
+                                                <br>
+                                     Version 3.2.3, 2020-12-07
+                                                <br>
+                      Copyright 2018-2020 Peter Shirley. All rights reserved.
+
+
+
+Overview
+====================================================================================================
+
+In Ray Tracing in One Weekend, you built a simple brute force path tracer. In this installment we’ll
+add textures, volumes (like fog), rectangles, instances, lights, and support for lots of objects
+using a BVH. When done, you’ll have a “real” ray tracer.
+
+A heuristic in ray tracing that many people--including me--believe, is that most optimizations
+complicate the code without delivering much speedup. What I will do in this mini-book is go with the
+simplest approach in each design decision I make. Check https://in1weekend.blogspot.com/ for
+readings and references to a more sophisticated approach. However, I strongly encourage you to do no
+premature optimization; if it doesn’t show up high in the execution time profile, it doesn’t need
+optimization until all the features are supported!
+
+The two hardest parts of this book are the BVH and the Perlin textures. This is why the title
+suggests you take a week rather than a weekend for this endeavor. But you can save those for last if
+you want a weekend project. Order is not very important for the concepts presented in this book, and
+without BVH and Perlin texture you will still get a Cornell Box!
+
+Thanks to everyone who lent a hand on this project. You can find them in the acknowledgments section
+at the end of this book.
+
+
+
+
+Motion Blur
+====================================================================================================
+
+When you decided to ray trace, you decided that visual quality was worth more than run-time. In your
+fuzzy reflection and defocus blur you needed multiple samples per pixel. Once you have taken a step
+down that road, the good news is that almost all effects can be brute-forced. Motion blur is
+certainly one of those. In a real camera, the shutter opens and stays open for a time interval, and
+the camera and objects may move during that time. Its really an average of what the camera sees over
+that interval that we want.
+
+
+Introduction of SpaceTime Ray Tracing
+--------------------------------------
+We can get a random estimate by sending each ray at some random time when the shutter is open. As
+long as the objects are where they should be at that time, we can get the right average answer with
+a ray that is at exactly a single time. This is fundamentally why random ray tracing tends to be
+simple.
+
+The basic idea is to generate rays at random times while the shutter is open and intersect the model
+at that one time. The way it is usually done is to have the camera move and the objects move, but
+have each ray exist at exactly one time. This way the “engine” of the ray tracer can just make sure
+the objects are where they need to be for the ray, and the intersection guts don’t change much.
+
+<div class='together'>
+For this we will first need to have a ray store the time it exists at:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class ray {
+        public:
+            ray() {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            ray(const point3& origin, const vec3& direction, double time = 0.0)
+                : orig(origin), dir(direction), tm(time)
+            {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            point3 origin() const  { return orig; }
+            vec3 direction() const { return dir; }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            double time() const    { return tm; }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            point3 at(double t) const {
+                return orig + t*dir;
+            }
+
+        public:
+            point3 orig;
+            vec3 dir;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            double tm;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [time-ray]: <kbd>[ray.h]</kbd> Ray with time information]
+</div>
+
+
+Updating the Camera to Simulate Motion Blur
+--------------------------------------------
+Now we need to modify the camera to generate rays at a random time between `time1` and `time2`.
+Should the camera keep track of `time1` and `time2` or should that be up to the user of camera when
+a ray is created? When in doubt, I like to make constructors complicated if it makes calls simple,
+so I will make the camera keep track, but that’s a personal preference. Not many changes are needed
+to camera because for now it is not allowed to move; it just sends out rays over a time period.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class camera {
+        public:
+            camera(
+                point3 lookfrom,
+                point3 lookat,
+                vec3   vup,
+                double vfov, // vertical field-of-view in degrees
+                double aspect_ratio,
+                double aperture,
+                double focus_dist,
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                double _time0 = 0,
+                double _time1 = 0
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            ) {
+                auto theta = degrees_to_radians(vfov);
+                auto h = tan(theta/2);
+                auto viewport_height = 2.0 * h;
+                auto viewport_width = aspect_ratio * viewport_height;
+
+                w = unit_vector(lookfrom - lookat);
+                u = unit_vector(cross(vup, w));
+                v = cross(w, u);
+
+                origin = lookfrom;
+                horizontal = focus_dist * viewport_width * u;
+                vertical = focus_dist * viewport_height * v;
+                lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
+
+                lens_radius = aperture / 2;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                time0 = _time0;
+                time1 = _time1;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            }
+
+            ray get_ray(double s, double t) const {
+                vec3 rd = lens_radius * random_in_unit_disk();
+                vec3 offset = u * rd.x() + v * rd.y();
+
+                return ray(
+                    origin + offset,
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                    lower_left_corner + s*horizontal + t*vertical - origin - offset,
+                    random_double(time0, time1)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                );
+            }
+
+        private:
+            point3 origin;
+            point3 lower_left_corner;
+            vec3 horizontal;
+            vec3 vertical;
+            vec3 u, v, w;
+            double lens_radius;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            double time0, time1;  // shutter open/close times
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    };
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [time-camera]: <kbd>[camera.h]</kbd> Camera with time information]
+
+
+Adding Moving Spheres
+----------------------
+We also need a moving object. I’ll create a sphere class that has its center move linearly from
+`center0` at `time0` to `center1` at `time1`. Outside that time interval it continues on, so those
+times need not match up with the camera aperture open and close.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef MOVING_SPHERE_H
+    #define MOVING_SPHERE_H
+
+    #include "rtweekend.h"
+
+    #include "hittable.h"
+
+
+    class moving_sphere : public hittable {
+        public:
+            moving_sphere() {}
+            moving_sphere(
+                point3 cen0, point3 cen1, double _time0, double _time1, double r, shared_ptr<material> m)
+                : center0(cen0), center1(cen1), time0(_time0), time1(_time1), radius(r), mat_ptr(m)
+            {};
+
+            virtual bool hit(
+                const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+            point3 center(double time) const;
+
+        public:
+            point3 center0, center1;
+            double time0, time1;
+            double radius;
+            shared_ptr<material> mat_ptr;
+    };
+
+    point3 moving_sphere::center(double time) const {
+        return center0 + ((time - time0) / (time1 - time0))*(center1 - center0);
+    }
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [moving-sphere]: <kbd>[moving_sphere.h]</kbd> A moving sphere]
+
+<div class='together'>
+An alternative to making a new moving sphere class is to just make them all move, while stationary
+spheres have the same begin and end position. I’m on the fence about that trade-off between fewer
+classes and more efficient stationary spheres, so let your design taste guide you.
+
+The `moving_sphere::hit()` function is almost identical to the `sphere::hit()` function: `center`
+just needs to become a function `center(time)`:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool moving_sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        vec3 oc = r.origin() - center(r.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        auto a = r.direction().length_squared();
+        auto half_b = dot(oc, r.direction());
+        auto c = oc.length_squared() - radius*radius;
+
+        auto discriminant = half_b*half_b - a*c;
+        if (discriminant < 0) return false;
+        auto sqrtd = sqrt(discriminant);
+
+        // Find the nearest root that lies in the acceptable range.
+        auto root = (-half_b - sqrtd) / a;
+        if (root < t_min || t_max < root) {
+            root = (-half_b + sqrtd) / a;
+            if (root < t_min || t_max < root)
+                return false;
+        }
+
+        rec.t = root;
+        rec.p = r.at(rec.t);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto outward_normal = (rec.p - center(r.time())) / radius;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        rec.set_face_normal(r, outward_normal);
+        rec.mat_ptr = mat_ptr;
+
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [moving-sphere-hit]: <kbd>[moving_sphere.h]</kbd> Moving sphere hit function]
+</div>
+
+
+Tracking the Time of Ray Intersection
+--------------------------------------
+<div class='together'>
+Now that rays have a time property, we need to update the `material::scatter()` methods to account
+for the time of intersection:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class lambertian : public material {
+        ...
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+            ) const override {
+                auto scatter_direction = rec.normal + random_unit_vector();
+
+                // Catch degenerate scatter direction
+                if (scatter_direction.near_zero())
+                    scatter_direction = rec.normal;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                scattered = ray(rec.p, scatter_direction, r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                attenuation = albedo;
+                return true;
+            }
+            ...
+    };
+
+    class metal : public material {
+        ...
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+            ) const override {
+                vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                attenuation = albedo;
+                return (dot(scattered.direction(), rec.normal) > 0);
+            }
+            ...
+    };
+
+    class dielectric : public material {
+        ...
+            virtual bool scatter(
+                ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                scattered = ray(rec.p, direction, r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                return true;
+            }
+            ...
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [material-time]: <kbd>[material.h]</kbd>
+        Handle ray time in the material::scatter() methods
+    ]
+</div>
+
+
+Putting Everything Together
+----------------------------
+<div class='together'>
+The code below takes the example diffuse spheres from the scene at the end of the last book, and
+makes them move during the image render. (Think of a camera with shutter opening at time 0 and
+closing at time 1.) Each sphere moves from its center $\mathbf{C}$ at time $t=0$ to $\mathbf{C} +
+(0, r/2, 0)$ at time $t=1$, where $r$ is a random number in $[0,1)$:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "moving_sphere.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    ...
+    hittable_list random_scene() {
+        hittable_list world;
+
+        auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
+        world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
+
+        for (int a = -11; a < 11; a++) {
+            for (int b = -11; b < 11; b++) {
+                auto choose_mat = random_double();
+                point3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
+
+                if ((center - vec3(4, 0.2, 0)).length() > 0.9) {
+                    shared_ptr<material> sphere_material;
+
+                    if (choose_mat < 0.8) {
+                        // diffuse
+                        auto albedo = color::random() * color::random();
+                        sphere_material = make_shared<lambertian>(albedo);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                        auto center2 = center + vec3(0, random_double(0,.5), 0);
+                        world.add(make_shared<moving_sphere>(
+                            center, center2, 0.0, 1.0, 0.2, sphere_material));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                    } else if (choose_mat < 0.95) {
+                        // metal
+                        auto albedo = color::random(0.5, 1);
+                        auto fuzz = random_double(0, 0.5);
+                        sphere_material = make_shared<metal>(albedo, fuzz);
+                        world.add(make_shared<sphere>(center, 0.2, sphere_material));
+                    } else {
+                        // glass
+                        sphere_material = make_shared<dielectric>(1.5);
+                        world.add(make_shared<sphere>(center, 0.2, sphere_material));
+                    }
+                }
+            }
+        }
+
+        auto material1 = make_shared<dielectric>(1.5);
+        world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, material1));
+
+        auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
+        world.add(make_shared<sphere>(point3(-4, 1, 0), 1.0, material2));
+
+        auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
+        world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
+
+        return world;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-spheres-moving]:
+    <kbd>[main.cc]</kbd> Last book's final scene, but with moving spheres]
+</div>
+
+<div class='together'>
+And with these viewing parameters:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+
+        // Image
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto aspect_ratio = 16.0 / 9.0;
+        int image_width = 400;
+        int samples_per_pixel = 100;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        const int max_depth = 50;
+
+        ...
+
+        // Camera
+
+        point3 lookfrom(13,2,3);
+        point3 lookat(0,0,0);
+        vec3 vup(0,1,0);
+        auto dist_to_focus = 10.0;
+        auto aperture = 0.1;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        int image_height = static_cast<int>(image_width / aspect_ratio);
+
+
+        camera cam(lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-spheres-moving-camera]: <kbd>[main.cc]</kbd> Viewing parameters]
+
+gives the following result:
+
+  ![Image 1: Bouncing spheres](../images/img-2.01-bouncing-spheres.png class=pixel)
+
+</div>
+
+
+
+Bounding Volume Hierarchies
+====================================================================================================
+
+This part is by far the most difficult and involved part of the ray tracer we are working on. I am
+sticking it in this chapter so the code can run faster, and because it refactors `hittable` a
+little, and when I add rectangles and boxes we won't have to go back and refactor them.
+
+The ray-object intersection is the main time-bottleneck in a ray tracer, and the time is linear with
+the number of objects. But it’s a repeated search on the same model, so we ought to be able to make
+it a logarithmic search in the spirit of binary search. Because we are sending millions to billions
+of rays on the same model, we can do an analog of sorting the model, and then each ray intersection
+can be a sublinear search. The two most common families of sorting are to 1) divide the space, and
+2) divide the objects. The latter is usually much easier to code up and just as fast to run for most
+models.
+
+
+The Key Idea
+-------------
+<div class='together'>
+The key idea of a bounding volume over a set of primitives is to find a volume that fully encloses
+(bounds) all the objects. For example, suppose you computed a bounding sphere of 10 objects. Any ray
+that misses the bounding sphere definitely misses all ten objects. If the ray hits the bounding
+sphere, then it might hit one of the ten objects. So the bounding code is always of the form:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if (ray hits bounding object)
+        return whether ray hits bounded objects
+    else
+        return false
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
+
+A key thing is we are dividing objects into subsets. We are not dividing the screen or the volume.
+Any object is in just one bounding volume, but bounding volumes can overlap.
+
+
+Hierarchies of Bounding Volumes
+--------------------------------
+<div class='together'>
+To make things sub-linear we need to make the bounding volumes hierarchical. For example, if we
+divided a set of objects into two groups, red and blue, and used rectangular bounding volumes, we’d
+have:
+
+  ![Figure [bvol-hierarchy]: Bounding volume hierarchy](../images/fig-2.01-bvol-hierarchy.jpg)
+
+</div>
+
+<div class='together'>
+Note that the blue and red bounding volumes are contained in the purple one, but they might overlap,
+and they are not ordered -- they are just both inside. So the tree shown on the right has no concept
+of ordering in the left and right children; they are simply inside. The code would be:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    if (hits purple)
+        hit0 = hits blue enclosed objects
+        hit1 = hits red enclosed objects
+        if (hit0 or hit1)
+            return true and info of closer hit
+    return false
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
+
+
+Axis-Aligned Bounding Boxes (AABBs)
+------------------------------------
+To get that all to work we need a way to make good divisions, rather than bad ones, and a way to
+intersect a ray with a bounding volume. A ray bounding volume intersection needs to be fast, and
+bounding volumes need to be pretty compact. In practice for most models, axis-aligned boxes work
+better than the alternatives, but this design choice is always something to keep in mind if you
+encounter unusual types of models.
+
+From now on we will call axis-aligned bounding rectangular parallelepiped (really, that is what they
+need to be called if precise) axis-aligned bounding boxes, or AABBs. Any method you want to use to
+intersect a ray with an AABB is fine. And all we need to know is whether or not we hit it; we don’t
+need hit points or normals or any of that stuff that we need for an object we want to display.
+
+<div class='together'>
+Most people use the “slab” method. This is based on the observation that an n-dimensional AABB is
+just the intersection of n axis-aligned intervals, often called “slabs” An interval is just the
+points between two endpoints, _e.g._, $x$ such that $3 < x < 5$, or more succinctly $x$ in $(3,5)$.
+In 2D, two intervals overlapping makes a 2D AABB (a rectangle):
+
+  ![Figure [2d-aabb]: 2D axis-aligned bounding box](../images/fig-2.02-2d-aabb.jpg)
+
+</div>
+
+<div class='together'>
+For a ray to hit one interval we first need to figure out whether the ray hits the boundaries. For
+example, again in 2D, this is the ray parameters $t_0$ and $t_1$. (If the ray is parallel to the
+plane those will be undefined.)
+
+  ![Figure [ray-slab]: Ray-slab intersection](../images/fig-2.03-ray-slab.jpg)
+
+</div>
+
+<div class='together'>
+In 3D, those boundaries are planes. The equations for the planes are $x = x_0$, and $x = x_1$. Where
+does the ray hit that plane? Recall that the ray can be thought of as just a function that given a
+$t$ returns a location $\mathbf{P}(t)$:
+
+  $$ \mathbf{P}(t) = \mathbf{A} + t \mathbf{b} $$
+</div>
+
+<div class='together'>
+That equation applies to all three of the x/y/z coordinates. For example, $x(t) = A_x + t b_x$. This
+ray hits the plane $x = x_0$ at the $t$ that satisfies this equation:
+
+  $$ x_0 = A_x + t_0 b_x $$
+</div>
+
+<div class='together'>
+Thus $t$ at that hitpoint is:
+
+  $$ t_0 = \frac{x_0 - A_x}{b_x} $$
+</div>
+
+<div class='together'>
+We get the similar expression for $x_1$:
+
+  $$ t_1 = \frac{x_1 - A_x}{b_x} $$
+</div>
+
+<div class='together'>
+The key observation to turn that 1D math into a hit test is that for a hit, the $t$-intervals need
+to overlap. For example, in 2D the green and blue overlapping only happens if there is a hit:
+
+  ![Figure [ray-slab-interval]: Ray-slab $t$-interval overlap
+  ](../images/fig-2.04-ray-slab-interval.jpg)
+
+</div>
+
+
+Ray Intersection with an AABB
+------------------------------
+<div class='together'>
+The following pseudocode determines whether the $t$ intervals in the slab overlap:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    compute (tx0, tx1)
+    compute (ty0, ty1)
+    return overlap?( (tx0, tx1), (ty0, ty1))
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+That is awesomely simple, and the fact that the 3D version also works is why people love the
+slab method:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    compute (tx0, tx1)
+    compute (ty0, ty1)
+    compute (tz0, tz1)
+    return overlap?( (tx0, tx1), (ty0, ty1), (tz0, tz1))
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
+
+<div class='together'>
+There are some caveats that make this less pretty than it first appears. First, suppose the ray is
+travelling in the negative $x$ direction. The interval $(t_{x0}, t_{x1})$ as computed above might be
+reversed, _e.g._ something like $(7, 3)$. Second, the divide in there could give us infinities. And
+if the ray origin is on one of the slab boundaries, we can get a `NaN`. There are many ways these
+issues are dealt with in various ray tracers’ AABB. (There are also vectorization issues like SIMD
+which we will not discuss here. Ingo Wald’s papers are a great place to start if you want to go the
+extra mile in vectorization for speed.) For our purposes, this is unlikely to be a major bottleneck
+as long as we make it reasonably fast, so let’s go for simplest, which is often fastest anyway!
+First let’s look at computing the intervals:
+
+  $$ t_{x0} = \frac{x_0 - A_x}{b_x} $$
+  $$ t_{x1} = \frac{x_1 - A_x}{b_x} $$
+</div>
+
+<div class='together'>
+One troublesome thing is that perfectly valid rays will have $b_x = 0$, causing division by zero.
+Some of those rays are inside the slab, and some are not. Also, the zero will have a ± sign under
+IEEE floating point. The good news for $b_x = 0$ is that $t_{x0}$ and $t_{x1}$ will both be +∞ or
+both be -∞ if not between $x_0$ and $x_1$. So, using min and max should get us the right answers:
+
+  $$ t_{x0} = \min(
+     \frac{x_0 - A_x}{b_x},
+     \frac{x_1 - A_x}{b_x})
+  $$
+
+  $$ t_{x1} = \max(
+     \frac{x_0 - A_x}{b_x},
+     \frac{x_1 - A_x}{b_x})
+  $$
+</div>
+
+The remaining troublesome case if we do that is if $b_x = 0$ and either $x_0 - A_x = 0$ or $x_1 -
+A_x = 0$ so we get a `NaN`. In that case we can probably accept either hit or no hit answer, but
+we’ll revisit that later.
+
+<div class='together'>
+Now, let’s look at that overlap function. Suppose we can assume the intervals are not reversed (so
+the first value is less than the second value in the interval) and we want to return true in that
+case. The boolean overlap that also computes the overlap interval $(f, F)$ of intervals $(d, D)$ and
+$(e, E)$ would be:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    bool overlap(d, D, e, E, f, F)
+        f = max(d, e)
+        F = min(D, E)
+        return (f < F)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</div>
+
+<div class='together'>
+If there are any `NaN`s running around there, the compare will return false so we need to be sure
+our bounding boxes have a little padding if we care about grazing cases (and we probably should
+because in a ray tracer all cases come up eventually). With all three dimensions in a loop, and
+passing in the interval $[t_{min}$, $t_{max}]$, we get:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef AABB_H
+    #define AABB_H
+
+    #include "rtweekend.h"
+
+    class aabb {
+        public:
+            aabb() {}
+            aabb(const point3& a, const point3& b) { minimum = a; maximum = b;}
+
+            point3 min() const {return minimum; }
+            point3 max() const {return maximum; }
+
+            bool hit(const ray& r, double t_min, double t_max) const {
+                for (int a = 0; a < 3; a++) {
+                    auto t0 = fmin((minimum[a] - r.origin()[a]) / r.direction()[a],
+                                   (maximum[a] - r.origin()[a]) / r.direction()[a]);
+                    auto t1 = fmax((minimum[a] - r.origin()[a]) / r.direction()[a],
+                                   (maximum[a] - r.origin()[a]) / r.direction()[a]);
+                    t_min = fmax(t0, t_min);
+                    t_max = fmin(t1, t_max);
+                    if (t_max <= t_min)
+                        return false;
+                }
+                return true;
+            }
+
+            point3 minimum;
+            point3 maximum;
+    };
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [aabb]: <kbd>[aabb.h]</kbd> Axis-aligned bounding box class]
+</div>
+
+
+An Optimized AABB Hit Method
+-----------------------------
+<div class='together'>
+In reviewing this intersection method, Andrew Kensler at Pixar tried some experiments and proposed
+the following version of the code. It works extremely well on many compilers, and I have adopted it
+as my go-to method:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline bool aabb::hit(const ray& r, double t_min, double t_max) const {
+        for (int a = 0; a < 3; a++) {
+            auto invD = 1.0f / r.direction()[a];
+            auto t0 = (min()[a] - r.origin()[a]) * invD;
+            auto t1 = (max()[a] - r.origin()[a]) * invD;
+            if (invD < 0.0f)
+                std::swap(t0, t1);
+            t_min = t0 > t_min ? t0 : t_min;
+            t_max = t1 < t_max ? t1 : t_max;
+            if (t_max <= t_min)
+                return false;
+        }
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [aabb-hit]: <kbd>[aabb.h]</kbd> Axis-aligned bounding box hit function]
+</div>
+
+
+Constructing Bounding Boxes for Hittables
+------------------------------------------
+<div class='together'>
+We now need to add a function to compute the bounding boxes of all the hittables. Then we will make
+a hierarchy of boxes over all the primitives, and the individual primitives--like spheres--will live
+at the leaves. That function returns a bool because not all primitives have bounding boxes (_e.g._,
+infinite planes). In addition, moving objects will have a bounding box that encloses the object for
+the entire time interval [`time0`,`time1`].
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "aabb.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+
+    class hittable {
+        public:
+            ...
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const = 0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            virtual bool bounding_box(double time0, double time1, aabb& output_box) const = 0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            ...
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hittable-bbox]: <kbd>[hittable.h]</kbd> Hittable class with bounding-box]
+</div>
+
+<div class='together'>
+For a sphere, that `bounding_box` function is easy:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class sphere : public hittable {
+        public:
+            ...
+            virtual bool hit(
+                const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            virtual bool bounding_box(double time0, double time1, aabb& output_box) const override;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            ...
+    };
+
+    ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    bool sphere::bounding_box(double time0, double time1, aabb& output_box) const {
+        output_box = aabb(
+            center - vec3(radius, radius, radius),
+            center + vec3(radius, radius, radius));
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [sphere-bbox]: <kbd>[sphere.h]</kbd> Sphere with bounding box]
+</div>
+
+<div class='together'>
+For `moving sphere`, we can take the box of the sphere at $t_0$, and the box of the sphere at $t_1$,
+and compute the box of those two boxes:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "aabb.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+
+    class moving_sphere : public hittable {
+        public:
+            ...
+            virtual bool hit(
+                const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            virtual bool bounding_box(
+                double _time0, double _time1, aabb& output_box) const override;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            ...
+    };
+
+    ...
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    bool moving_sphere::bounding_box(double _time0, double _time1, aabb& output_box) const {
+        aabb box0(
+            center(_time0) - vec3(radius, radius, radius),
+            center(_time0) + vec3(radius, radius, radius));
+        aabb box1(
+            center(_time1) - vec3(radius, radius, radius),
+            center(_time1) + vec3(radius, radius, radius));
+        output_box = surrounding_box(box0, box1);
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [moving-sphere-bbox]: <kbd>[moving_sphere.h]</kbd> Moving sphere with bounding box]
+</div>
+
+
+Creating Bounding Boxes of Lists of Objects
+--------------------------------------------
+<div class='together'>
+For lists you can store the bounding box at construction, or compute it on the fly. I like doing it
+the fly because it is only usually called at BVH construction.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "aabb.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+
+    class hittable_list : public hittable {
+        public:
+            ...
+            virtual bool hit(
+                const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            virtual bool bounding_box(
+                double time0, double time1, aabb& output_box) const override;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+    };
+
+    ...
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    bool hittable_list::bounding_box(double time0, double time1, aabb& output_box) const {
+        if (objects.empty()) return false;
+
+        aabb temp_box;
+        bool first_box = true;
+
+        for (const auto& object : objects) {
+            if (!object->bounding_box(time0, time1, temp_box)) return false;
+            output_box = first_box ? temp_box : surrounding_box(output_box, temp_box);
+            first_box = false;
+        }
+
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hit-list-bbox]: <kbd>[hittable_list.h]</kbd> Hittable list with bounding box]
+</div>
+
+<div class='together'>
+This requires the `surrounding_box` function for `aabb` which computes the bounding box of two
+boxes:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    aabb surrounding_box(aabb box0, aabb box1) {
+        point3 small(fmin(box0.min().x(), box1.min().x()),
+                     fmin(box0.min().y(), box1.min().y()),
+                     fmin(box0.min().z(), box1.min().z()));
+
+        point3 big(fmax(box0.max().x(), box1.max().x()),
+                   fmax(box0.max().y(), box1.max().y()),
+                   fmax(box0.max().z(), box1.max().z()));
+
+        return aabb(small,big);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [surrounding-box]: <kbd>[aabb.h]</kbd> Surrounding bounding box]
+</div>
+
+
+The BVH Node Class
+-------------------
+<div class='together'>
+A BVH is also going to be a `hittable` -- just like lists of `hittable`s. It’s really a container,
+but it can respond to the query “does this ray hit you?”. One design question is whether we have two
+classes, one for the tree, and one for the nodes in the tree; or do we have just one class and have
+the root just be a node we point to. I am a fan of the one class design when feasible. Here is such
+a class:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef BVH_H
+    #define BVH_H
+
+    #include "rtweekend.h"
+
+    #include "hittable.h"
+    #include "hittable_list.h"
+
+
+    class bvh_node : public hittable {
+        public:
+            bvh_node();
+
+            bvh_node(const hittable_list& list, double time0, double time1)
+                : bvh_node(list.objects, 0, list.objects.size(), time0, time1)
+            {}
+
+            bvh_node(
+                const std::vector<shared_ptr<hittable>>& src_objects,
+                size_t start, size_t end, double time0, double time1);
+
+            virtual bool hit(
+                const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+            virtual bool bounding_box(double time0, double time1, aabb& output_box) const override;
+
+        public:
+            shared_ptr<hittable> left;
+            shared_ptr<hittable> right;
+            aabb box;
+    };
+
+    bool bvh_node::bounding_box(double time0, double time1, aabb& output_box) const {
+        output_box = box;
+        return true;
+    }
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [bvh]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy]
+</div>
+
+Note that the children pointers are to generic hittables. They can be other `bvh_nodes`, or
+`spheres`, or any other `hittable`.
+
+<div class='together'>
+The `hit` function is pretty straightforward: check whether the box for the node is hit, and if so,
+check the children and sort out any details:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool bvh_node::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+        if (!box.hit(r, t_min, t_max))
+            return false;
+
+        bool hit_left = left->hit(r, t_min, t_max, rec);
+        bool hit_right = right->hit(r, t_min, hit_left ? rec.t : t_max, rec);
+
+        return hit_left || hit_right;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [bvh-hit]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy hit function]
+</div>
+
+
+Splitting BVH Volumes
+----------------------
+<div class='together'>
+The most complicated part of any efficiency structure, including the BVH, is building it. We do this
+in the constructor. A cool thing about BVHs is that as long as the list of objects in a `bvh_node`
+gets divided into two sub-lists, the hit function will work. It will work best if the division is
+done well, so that the two children have smaller bounding boxes than their parent’s bounding box,
+but that is for speed not correctness. I’ll choose the middle ground, and at each node split the
+list along one axis. I’ll go for simplicity:
+
+  1. randomly choose an axis
+  2. sort the primitives (`using std::sort`)
+  3. put half in each subtree
+
+</div>
+
+<div class='together'>
+When the list coming in is two elements, I put one in each subtree and end the recursion. The
+traversal algorithm should be smooth and not have to check for null pointers, so if I just have one
+element I duplicate it in each subtree. Checking explicitly for three elements and just following
+one recursion would probably help a little, but I figure the whole method will get optimized later.
+This yields:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include <algorithm>
+    ...
+
+    bvh_node::bvh_node(
+        std::vector<shared_ptr<hittable>>& src_objects,
+        size_t start, size_t end, double time0, double time1
+    ) {
+        auto objects = src_objects; // Create a modifiable array of the source scene objects
+
+        int axis = random_int(0,2);
+        auto comparator = (axis == 0) ? box_x_compare
+                        : (axis == 1) ? box_y_compare
+                                      : box_z_compare;
+
+        size_t object_span = end - start;
+
+        if (object_span == 1) {
+            left = right = objects[start];
+        } else if (object_span == 2) {
+            if (comparator(objects[start], objects[start+1])) {
+                left = objects[start];
+                right = objects[start+1];
+            } else {
+                left = objects[start+1];
+                right = objects[start];
+            }
+        } else {
+            std::sort(objects.begin() + start, objects.begin() + end, comparator);
+
+            auto mid = start + object_span/2;
+            left = make_shared<bvh_node>(objects, start, mid, time0, time1);
+            right = make_shared<bvh_node>(objects, mid, end, time0, time1);
+        }
+
+        aabb box_left, box_right;
+
+        if (  !left->bounding_box (time0, time1, box_left)
+           || !right->bounding_box(time0, time1, box_right)
+        )
+            std::cerr << "No bounding box in bvh_node constructor.\n";
+
+        box = surrounding_box(box_left, box_right);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [bvh-node]: <kbd>[bvh.h]</kbd> Bounding volume hierarchy node]
+</div>
+
+<div class='together'>
+    This uses a new function: `random_int()`:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline int random_int(int min, int max) {
+        // Returns a random integer in [min,max].
+        return static_cast<int>(random_double(min, max+1));
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [random-int]: <kbd>[rtweekend.h]</kbd> A function to return random integers in a range]
+</div>
+
+The check for whether there is a bounding box at all is in case you sent in something like an
+infinite plane that doesn’t have a bounding box. We don’t have any of those primitives, so it
+shouldn’t happen until you add such a thing.
+
+
+The Box Comparison Functions
+-----------------------------
+<div class='together'>
+Now we need to implement the box comparison functions, used by `std::sort()`. To do this, create a
+generic comparator returns true if the first argument is less than the second, given an additional
+axis index argument. Then define axis-specific comparison functions that use the generic comparison
+function.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    inline bool box_compare(const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis) {
+        aabb box_a;
+        aabb box_b;
+
+        if (!a->bounding_box(0,0, box_a) || !b->bounding_box(0,0, box_b))
+            std::cerr << "No bounding box in bvh_node constructor.\n";
+
+        return box_a.min().e[axis] < box_b.min().e[axis];
+    }
+
+
+    bool box_x_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
+        return box_compare(a, b, 0);
+    }
+
+    bool box_y_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
+        return box_compare(a, b, 1);
+    }
+
+    bool box_z_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
+        return box_compare(a, b, 2);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [bvh-x-comp]: <kbd>[bvh.h]</kbd> BVH comparison function, X-axis]
+</div>
+
+
+
+Solid Textures
+====================================================================================================
+
+A texture in graphics usually means a function that makes the colors on a surface procedural. This
+procedure can be synthesis code, or it could be an image lookup, or a combination of both. We will
+first make all colors a texture. Most programs keep constant rgb colors and textures in different
+classes, so feel free to do something different, but I am a big believer in this architecture
+because being able to make any color a texture is great.
+
+The First Texture Class: Constant Texture
+------------------------------------------
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef TEXTURE_H
+    #define TEXTURE_H
+
+    #include "rtweekend.h"
+
+    class texture {
+        public:
+            virtual color value(double u, double v, const point3& p) const = 0;
+    };
+
+    class solid_color : public texture {
+        public:
+            solid_color() {}
+            solid_color(color c) : color_value(c) {}
+
+            solid_color(double red, double green, double blue)
+              : solid_color(color(red,green,blue)) {}
+
+            virtual color value(double u, double v, const vec3& p) const override {
+                return color_value;
+            }
+
+        private:
+            color color_value;
+    };
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [texture]: <kbd>[texture.h]</kbd> A texture class]
+
+We'll need to update the `hit_record` structure to store the U,V surface coordinates of the
+ray-object hit point.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    struct hit_record {
+        vec3 p;
+        vec3 normal;
+        shared_ptr<material> mat_ptr;
+        double t;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double u;
+        double v;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        bool front_face;
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [hit-record-uv]: <kbd>[hittable.h]</kbd> Adding U,V coordinates to the `hit_record`]
+
+We will also need to compute $(u,v)$ texture coordinates for hittables.
+
+
+Texture Coordinates for Spheres
+--------------------------------
+<div class='together'>
+For spheres, texture coordinates are usually based on some form of longitude and latitude, _i.e._,
+spherical coordinates. So we compute $(\theta,\phi)$ in spherical coordinates, where $\theta$ is the
+angle up from the bottom pole (that is, up from -Y), and $\phi$ is the angle around the Y-axis (from
+-X to +Z to +X to -Z back to -X).
+
+We want to map $\theta$ and $\phi$ to texture coordinates $u$ and $v$ each in $[0,1]$, where
+$(u=0,v=0)$ maps to the bottom-left corner of the texture. Thus the normalization from
+$(\theta,\phi)$ to $(u,v)$ would be:
+
+  $$ u = \frac{\phi}{2\pi} $$
+  $$ v = \frac{\theta}{\pi} $$
+</div>
+
+<div class='together'>
+To compute $\theta$ and $\phi$ for a given point on the unit sphere centered at the origin, we start
+with the equations for the corresponding Cartesian coordinates:
+
+  $$ \begin{align*}
+      y &= -\cos(\theta)            \\
+      x &= -\cos(\phi) \sin(\theta) \\
+      z &= \quad\sin(\phi) \sin(\theta)
+     \end{align*}
+  $$
+</div>
+
+<div class='together'>
+We need to invert these equations to solve for $\theta$ and $\phi$. Because of the lovely `<cmath>`
+function `atan2()`, which takes any pair of numbers proportional to sine and cosine and returns the
+angle, we can pass in $x$ and $z$ (the $\sin(\theta)$ cancel) to solve for $\phi$:
+
+  $$ \phi = \text{atan2}(z, -x) $$
+</div>
+
+<div class='together'>
+`atan2()` returns values in the range $-\pi$ to $\pi$, but they go from 0 to $\pi$, then flip to
+$-\pi$ and proceed back to zero. While this is mathematically correct, we want $u$ to range from $0$
+to $1$, not from $0$ to $1/2$ and then from $-1/2$ to $0$. Fortunately,
+
+  $$ \text{atan2}(a,b) = \text{atan2}(-a,-b) + \pi, $$
+
+and the second formulation yields values from $0$ continuously to $2\pi$. Thus, we can compute
+$\phi$ as
+
+  $$ \phi = \text{atan2}(-z, x) + \pi $$
+</div>
+
+<div>
+The derivation for $\theta$ is more straightforward:
+
+  $$ \theta = \text{acos}(-y) $$
+</div>
+
+<div class='together'>
+So for a sphere, the $(u,v)$ coord computation is accomplished by a utility function that takes
+points on the unit sphere centered at the origin, and computes $u$ and $v$:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class sphere : public hittable {
+        ...
+        private:
+            static void get_sphere_uv(const point3& p, double& u, double& v) {
+                // p: a given point on the sphere of radius one, centered at the origin.
+                // u: returned value [0,1] of angle around the Y axis from X=-1.
+                // v: returned value [0,1] of angle from Y=-1 to Y=+1.
+                //     <1 0 0> yields <0.50 0.50>       <-1  0  0> yields <0.00 0.50>
+                //     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
+                //     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
+
+                auto theta = acos(-p.y());
+                auto phi = atan2(-p.z(), p.x()) + pi;
+
+                u = phi / (2*pi);
+                v = theta / pi;
+            }
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [get-sphere-uv]: <kbd>[sphere.h]</kbd> get_sphere_uv function]
+</div>
+
+<div class='together'>
+Update the `sphere::hit()` function to use this function to update the hit record UV coordinates.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool sphere::hit(...) {
+        ...
+
+        rec.t = root;
+        rec.p = r.at(rec.t);
+        vec3 outward_normal = (rec.p - center) / radius;
+        rec.set_face_normal(r, outward_normal);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        get_sphere_uv(outward_normal, rec.u, rec.v);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        rec.mat_ptr = mat_ptr;
+
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [get-sphere-uv-call]: <kbd>[sphere.h]</kbd> Sphere UV coordinates from hit]
+</div>
+
+<div class='together'>
+
+<div class='together'>
+Now we can make textured materials by replacing the `const color& a` with a texture pointer:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "texture.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    ...
+    class lambertian : public material {
+        public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
+            lambertian(shared_ptr<texture> a) : albedo(a) {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+            ) const override {
+                auto scatter_direction = rec.normal + random_unit_vector();
+
+                // Catch degenerate scatter direction
+                if (scatter_direction.near_zero())
+                    scatter_direction = rec.normal;
+
+                scattered = ray(rec.p, scatter_direction, r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                attenuation = albedo->value(rec.u, rec.v, rec.p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                return true;
+            }
+
+        public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            shared_ptr<texture> albedo;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [lambertian-textured]: <kbd>[material.h]</kbd> Lambertian material with texture]
+</div>
+
+
+A Checker Texture
+------------------
+<div class='together'>
+We can create a checker texture by noting that the sign of sine and cosine just alternates in a
+regular way, and if we multiply trig functions in all three dimensions, the sign of that product
+forms a 3D checker pattern.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class checker_texture : public texture {
+        public:
+            checker_texture() {}
+
+            checker_texture(shared_ptr<texture> _even, shared_ptr<texture> _odd)
+                : even(_even), odd(_odd) {}
+
+            checker_texture(color c1, color c2)
+                : even(make_shared<solid_color>(c1)) , odd(make_shared<solid_color>(c2)) {}
+
+            virtual color value(double u, double v, const point3& p) const override {
+                auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());
+                if (sines < 0)
+                    return odd->value(u, v, p);
+                else
+                    return even->value(u, v, p);
+            }
+
+        public:
+            shared_ptr<texture> odd;
+            shared_ptr<texture> even;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [checker-texture]: <kbd>[texture.h]</kbd> Checkered texture]
+</div>
+
+Those checker odd/even pointers can be to a constant texture or to some other procedural texture.
+This is in the spirit of shader networks introduced by Pat Hanrahan back in the 1980s.
+
+<div class='together'>
+If we add this to our `random_scene()` function’s base sphere:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hittable_list random_scene() {
+        hittable_list world;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
+        world.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(checker)));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        for (int a = -11; a < 11; a++) {
+            ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [checker-example]: <kbd>[main.cc]</kbd> Checkered texture in use]
+
+We get:
+
+  ![Image 2: Spheres on checkered ground](../images/img-2.02-checker-ground.png class=pixel)
+
+</div>
+
+
+Rendering a Scene with a Checkered Texture
+-------------------------------------------
+We're going to add a second scene to our program, and will add more scenes after that as we progress
+through this book. To help with this, we'll set up a hard-coded switch statement to select the
+desired scene for a given run. Clearly, this is a crude approach, but we're trying to keep things
+dead simple and focus on the raytracing. You may want to use a different approach in your own
+raytracer.
+
+<div class='together'>
+Here's the scene construction function:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hittable_list two_spheres() {
+        hittable_list objects;
+
+        auto checker = make_shared<checker_texture>(color(0.2, 0.3, 0.1), color(0.9, 0.9, 0.9));
+
+        objects.add(make_shared<sphere>(point3(0,-10, 0), 10, make_shared<lambertian>(checker)));
+        objects.add(make_shared<sphere>(point3(0, 10, 0), 10, make_shared<lambertian>(checker)));
+
+        return objects;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-two-checker]: <kbd>[main.cc]</kbd> Scene with two checkered spheres]
+</div>
+
+<div class='together'>
+The following changes set up our main function:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    // World
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    hittable_list world;
+
+    point3 lookfrom;
+    point3 lookat;
+    auto vfov = 40.0;
+    auto aperture = 0.0;
+
+    switch (0) {
+        case 1:
+            world = random_scene();
+            lookfrom = point3(13,2,3);
+            lookat = point3(0,0,0);
+            vfov = 20.0;
+            aperture = 0.1;
+            break;
+
+        default:
+        case 2:
+            world = two_spheres();
+            lookfrom = point3(13,2,3);
+            lookat = point3(0,0,0);
+            vfov = 20.0;
+            break;
+    }
+
+    // Camera
+
+    vec3 vup(0,1,0);
+    auto dist_to_focus = 10.0;
+    int image_height = static_cast<int>(image_width / aspect_ratio);
+
+    camera cam(lookfrom, lookat, vup, vfov, aspect_ratio, aperture, dist_to_focus, 0.0, 1.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-two-checker-view]: <kbd>[main.cc]</kbd> Second scene]
+</div>
+
+<div class='together'>
+We get this result:
+
+  ![Image 3: Checkered spheres](../images/img-2.03-checker-spheres.png class=pixel)
+
+</div>
+
+
+
+Perlin Noise
+====================================================================================================
+
+<div class='together'>
+To get cool looking solid textures most people use some form of Perlin noise. These are named after
+their inventor Ken Perlin. Perlin texture doesn’t return white noise like this:
+
+  ![Image 4: White noise](../images/img-2.04-white-noise.jpg class=pixel)
+
+Instead it returns something similar to blurred white noise:
+
+  ![Image 5: White noise, blurred](../images/img-2.05-white-noise-blurred.jpg class=pixel)
+
+</div>
+
+A key part of Perlin noise is that it is repeatable: it takes a 3D point as input and always returns
+the same randomish number. Nearby points return similar numbers. Another important part of Perlin
+noise is that it be simple and fast, so it’s usually done as a hack. I’ll build that hack up
+incrementally based on Andrew Kensler’s description.
+
+
+Using Blocks of Random Numbers
+-------------------------------
+<div class='together'>
+We could just tile all of space with a 3D array of random numbers and use them in blocks. You get
+something blocky where the repeating is clear:
+
+  ![Image 6: Tiled random patterns](../images/img-2.06-tile-random.jpg class=pixel)
+
+</div>
+
+<div class='together'>
+Let’s just use some sort of hashing to scramble this, instead of tiling. This has a bit of support
+code to make it all happen:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef PERLIN_H
+    #define PERLIN_H
+
+    #include "rtweekend.h"
+
+    class perlin {
+        public:
+            perlin() {
+                ranfloat = new double[point_count];
+                for (int i = 0; i < point_count; ++i) {
+                    ranfloat[i] = random_double();
+                }
+
+                perm_x = perlin_generate_perm();
+                perm_y = perlin_generate_perm();
+                perm_z = perlin_generate_perm();
+            }
+
+            ~perlin() {
+                delete[] ranfloat;
+                delete[] perm_x;
+                delete[] perm_y;
+                delete[] perm_z;
+            }
+
+            double noise(const point3& p) const {
+                auto i = static_cast<int>(4*p.x()) & 255;
+                auto j = static_cast<int>(4*p.y()) & 255;
+                auto k = static_cast<int>(4*p.z()) & 255;
+
+                return ranfloat[perm_x[i] ^ perm_y[j] ^ perm_z[k]];
+            }
+
+        private:
+            static const int point_count = 256;
+            double* ranfloat;
+            int* perm_x;
+            int* perm_y;
+            int* perm_z;
+
+            static int* perlin_generate_perm() {
+                auto p = new int[point_count];
+
+                for (int i = 0; i < perlin::point_count; i++)
+                    p[i] = i;
+
+                permute(p, point_count);
+
+                return p;
+            }
+
+            static void permute(int* p, int n) {
+                for (int i = n-1; i > 0; i--) {
+                    int target = random_int(0, i);
+                    int tmp = p[i];
+                    p[i] = p[target];
+                    p[target] = tmp;
+                }
+            }
+    };
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin]: <kbd>[perlin.h]</kbd> A Perlin texture class and functions]
+</div>
+
+<div class='together'>
+Now if we create an actual texture that takes these floats between 0 and 1 and creates grey colors:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "perlin.h"
+
+    class noise_texture : public texture {
+        public:
+            noise_texture() {}
+
+            virtual color value(double u, double v, const point3& p) const override {
+                return color(1,1,1) * noise.noise(p);
+            }
+
+        public:
+            perlin noise;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [noise-texture]: <kbd>[texture.h]</kbd> Noise texture]
+</div>
+
+<div class='together'>
+We can use that texture on some spheres:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hittable_list two_perlin_spheres() {
+        hittable_list objects;
+
+        auto pertext = make_shared<noise_texture>();
+        objects.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
+        objects.add(make_shared<sphere>(point3(0, 2, 0), 2, make_shared<lambertian>(pertext)));
+
+        return objects;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-perlin]: <kbd>[main.cc]</kbd> Scene with two Perlin-textured spheres]
+</div>
+
+<div class='together'>
+With a similar scene setup to before:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+        ...
+        switch (0) {
+            ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+            default:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            case 2:
+                ...
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            default:
+            case 3:
+                world = two_perlin_spheres();
+                lookfrom = point3(13,2,3);
+                lookat = point3(0,0,0);
+                vfov = 20.0;
+                break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-perlin-view]: <kbd>[main.cc]</kbd> Viewing parameters]
+</div>
+
+<div class='together'>
+Add the hashing does scramble as hoped:
+
+  ![Image 7: Hashed random texture](../images/img-2.07-hash-random.png class=pixel)
+
+</div>
+
+
+Smoothing out the Result
+-------------------------
+<div class='together'>
+To make it smooth, we can linearly interpolate:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    class perlin {
+        public:
+            ...
+            double noise(point3 vec3& p) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                auto u = p.x() - floor(p.x());
+                auto v = p.y() - floor(p.y());
+                auto w = p.z() - floor(p.z());
+
+                auto i = static_cast<int>(floor(p.x()));
+                auto j = static_cast<int>(floor(p.y()));
+                auto k = static_cast<int>(floor(p.z()));
+                double c[2][2][2];
+
+                for (int di=0; di < 2; di++)
+                    for (int dj=0; dj < 2; dj++)
+                        for (int dk=0; dk < 2; dk++)
+                            c[di][dj][dk] = ranfloat[
+                                perm_x[(i+di) & 255] ^
+                                perm_y[(j+dj) & 255] ^
+                                perm_z[(k+dk) & 255]
+                            ];
+
+                return trilinear_interp(c, u, v, w);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            }
+            ...
+        private:
+            ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            static double trilinear_interp(double c[2][2][2], double u, double v, double w) {
+                auto accum = 0.0;
+                for (int i=0; i < 2; i++)
+                    for (int j=0; j < 2; j++)
+                        for (int k=0; k < 2; k++)
+                            accum += (i*u + (1-i)*(1-u))*
+                                    (j*v + (1-j)*(1-v))*
+                                    (k*w + (1-k)*(1-w))*c[i][j][k];
+
+                return accum;
+            }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-trilinear]: <kbd>[perlin.h]</kbd> Perlin with trilienear interpolation]
+</div>
+
+<div class='together'>
+And we get:
+
+  ![Image 8: Perlin texture with trilinear interpolation
+  ](../images/img-2.08-perlin-trilerp.png class=pixel)
+
+</div>
+
+
+Improvement with Hermitian Smoothing
+-------------------------------------
+<div class='together'>
+Smoothing yields an improved result, but there are obvious grid features in there. Some of it is
+Mach bands, a known perceptual artifact of linear interpolation of color. A standard trick is to use
+a Hermite cubic to round off the interpolation:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class perlin (
+        public:
+            ...
+            double noise(const point3& p) const {
+                auto u = p.x() - floor(p.x());
+                auto v = p.y() - floor(p.y());
+                auto w = p.z() - floor(p.z());
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                u = u*u*(3-2*u);
+                v = v*v*(3-2*v);
+                w = w*w*(3-2*w);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+                auto i = static_cast<int>(floor(p.x()));
+                auto j = static_cast<int>(floor(p.y()));
+                auto k = static_cast<int>(floor(p.z()));
+                ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-smoothed]: <kbd>[perlin.h]</kbd> Perlin smoothed]
+</div>
+
+<div class='together'>
+This gives a smoother looking image:
+
+  ![Image 9: Perlin texture, trilinearly interpolated, smoothed
+  ](../images/img-2.09-perlin-trilerp-smooth.png class=pixel)
+
+</div>
+
+
+Tweaking The Frequency
+-----------------------
+<div class='together'>
+It is also a bit low frequency. We can scale the input point to make it vary more quickly:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class noise_texture : public texture {
+        public:
+            noise_texture() {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            noise_texture(double sc) : scale(sc) {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            virtual color value(double u, double v, const point3& p) const override {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                return color(1,1,1) * noise.noise(scale * p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            }
+
+        public:
+            perlin noise;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            double scale;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-smoothed-2]: <kbd>[texture.h]</kbd> Perlin smoothed, higher frequency]
+</div>
+
+<div class='together'>
+We then add that scale to the `two_perlin_spheres()` scene description:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hittable_list two_perlin_spheres() {
+        hittable_list objects;
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        auto pertext = make_shared<noise_texture>(4);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        objects.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
+        objects.add(make_shared<sphere>(point3(0, 2, 0), 2, make_shared<lambertian>(pertext)));
+
+        return objects;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scale-perlin]: <kbd>[main.cc]</kbd> Perlin-textured spheres with a scale to the noise]
+</div>
+
+which gives:
+
+  ![Image 10: Perlin texture, higher frequency](../images/img-2.10-perlin-hifreq.png class=pixel)
+
+</div>
+
+
+Using Random Vectors on the Lattice Points
+-------------------------------------------
+<div class='together'>
+This is still a bit blocky looking, probably because the min and max of the pattern always lands
+exactly on the integer x/y/z. Ken Perlin’s very clever trick was to instead put random unit vectors
+(instead of just floats) on the lattice points, and use a dot product to move the min and max off
+the lattice. So, first we need to change the random floats to random vectors. These vectors are any
+reasonable set of irregular directions, and I won't bother to make them exactly uniform:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class perlin {
+        public:
+            perlin() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                ranvec = new vec3[point_count];
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                for (int i = 0; i < point_count; ++i) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                    ranvec[i] = unit_vector(vec3::random(-1,1));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                }
+
+                perm_x = perlin_generate_perm();
+                perm_y = perlin_generate_perm();
+                perm_z = perlin_generate_perm();
+            }
+
+            ~perlin() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                delete[] ranvec;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                delete[] perm_x;
+                delete[] perm_y;
+                delete[] perm_z;
+            }
+        ...
+        private:
+            static const int point_count = 256;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            vec3* ranvec;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            int* perm_x;
+            int* perm_y;
+            int* perm_z;
+            ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-randunit]: <kbd>[perlin.h]</kbd> Perlin with random unit translations]
+</div>
+
+<div class='together'>
+The Perlin class `noise()` method is now:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class perlin {
+        public:
+            ...
+            double noise(const point3& p) const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                auto u = p.x() - floor(p.x());
+                auto v = p.y() - floor(p.y());
+                auto w = p.z() - floor(p.z());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                auto i = static_cast<int>(floor(p.x()));
+                auto j = static_cast<int>(floor(p.y()));
+                auto k = static_cast<int>(floor(p.z()));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                vec3 c[2][2][2];
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+                for (int di=0; di < 2; di++)
+                    for (int dj=0; dj < 2; dj++)
+                        for (int dk=0; dk < 2; dk++)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                            c[di][dj][dk] = ranvec[
+                                perm_x[(i+di) & 255] ^
+                                perm_y[(j+dj) & 255] ^
+                                perm_z[(k+dk) & 255]
+                            ];
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                return perlin_interp(c, u, v, w);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            }
+            ...
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-2]: <kbd>[perlin.h]</kbd> Perlin class with new noise() method]
+</div>
+
+<div class='together'>
+And the interpolation becomes a bit more complicated:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class perlin {
+        ...
+        private:
+            ...
+            static double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                auto uu = u*u*(3-2*u);
+                auto vv = v*v*(3-2*v);
+                auto ww = w*w*(3-2*w);
+                auto accum = 0.0;
+
+                for (int i=0; i < 2; i++)
+                    for (int j=0; j < 2; j++)
+                        for (int k=0; k < 2; k++) {
+                            vec3 weight_v(u-i, v-j, w-k);
+                            accum += (i*uu + (1-i)*(1-uu))
+                                   * (j*vv + (1-j)*(1-vv))
+                                   * (k*ww + (1-k)*(1-ww))
+                                   * dot(c[i][j][k], weight_v);
+                        }
+
+                return accum;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            }
+            ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-interp]: <kbd>[perlin.h]</kbd> Perlin interpolation function so far]
+</div>
+
+<div class='together'>
+The output of the perlin interpretation can return negative values. These negative values will be
+passed to the `sqrt()` function of our gamma function and get turned into `NaN`s. We will cast the
+perlin output back to between 0 and 1.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class noise_texture : public texture {
+        public:
+            noise_texture() {}
+            noise_texture(double sc) : scale(sc) {}
+
+            virtual color value(double u, double v, const point3& p) const override {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                return color(1,1,1) * 0.5 * (1.0 + noise.noise(scale * p));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            }
+
+        public:
+            perlin noise;
+            double scale;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-smoothed-2]: <kbd>[texture.h]</kbd> Perlin smoothed, higher frequency]
+</div>
+
+<div class='together'>
+This finally gives something more reasonable looking:
+
+  ![Image 11: Perlin texture, shifted off integer values
+  ](../images/img-2.11-perlin-shift.png class=pixel)
+
+</div>
+
+
+Introducing Turbulence
+-----------------------
+<div class='together'>
+Very often, a composite noise that has multiple summed frequencies is used. This is usually called
+turbulence, and is a sum of repeated calls to noise:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class perlin {
+        ...
+        public:
+            ...
+            double turb(const point3& p, int depth=7) const {
+                auto accum = 0.0;
+                auto temp_p = p;
+                auto weight = 1.0;
+
+                for (int i = 0; i < depth; i++) {
+                    accum += weight*noise(temp_p);
+                    weight *= 0.5;
+                    temp_p *= 2;
+                }
+
+                return fabs(accum);
+            }
+            ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [perlin-turb]: <kbd>[perlin.h]</kbd> Turbulence function]
+</div>
+
+Here `fabs()` is the absolute value function defined in `<cmath>`.
+
+<div class='together'>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class noise_texture : public texture {
+        public:
+            noise_texture() {}
+            noise_texture(double sc) : scale(sc) {}
+
+            virtual color value(double u, double v, const point3& p) const override {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                return color(1,1,1) * noise.turb(scale * p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            }
+
+        public:
+            perlin noise;
+            double scale;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [noise-tex-2]: <kbd>[texture.h]</kbd> Noise texture with turbulence]
+</div>
+
+<div class='together'>
+Used directly, turbulence gives a sort of camouflage netting appearance:
+
+  ![Image 12: Perlin texture with turbulence](../images/img-2.12-perlin-turb.png class=pixel)
+
+</div>
+
+
+Adjusting the Phase
+--------------------
+<div class='together'>
+However, usually turbulence is used indirectly. For example, the “hello world” of procedural solid
+textures is a simple marble-like texture. The basic idea is to make color proportional to something
+like a sine function, and use turbulence to adjust the phase (so it shifts $x$ in $\sin(x)$) which
+makes the stripes undulate. Commenting out straight noise and turbulence, and giving a marble-like
+effect is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class noise_texture : public texture {
+        public:
+            noise_texture() {}
+            noise_texture(double sc) : scale(sc) {}
+
+            virtual color value(double u, double v, const point3& p) const override {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                return color(1,1,1) * 0.5 * (1 + sin(scale*p.z() + 10*noise.turb(p)));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            }
+
+        public:
+            perlin noise;
+            double scale;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [noise-tex-3]: <kbd>[texture.h]</kbd> Noise texture with marbled texture]
+
+Which yields:
+
+  ![Image 13: Perlin noise, marbled texture](../images/img-2.13-perlin-marble.png class=pixel)
+
+</div>
+
+
+
+Image Texture Mapping
+====================================================================================================
+
+From the hitpoint $\mathbf{P}$, we compute the surface coordinates $(u,v)$. We then use these to
+index into our procedural solid texture (like marble). We can also read in an image and use the
+2D $(u,v)$ texture coordinate to index into the image.
+
+<div class='together'>
+A direct way to use scaled $(u,v)$ in an image is to round the $u$ and $v$ to integers, and use that
+as $(i,j)$ pixels. This is awkward, because we don’t want to have to change the code when we change
+image resolution. So instead, one of the the most universal unofficial standards in graphics is to
+use texture coordinates instead of image pixel coordinates. These are just some form of fractional
+position in the image. For example, for pixel $(i,j)$ in an $N_x$ by $N_y$ image, the image texture
+position is:
+
+  $$ u = \frac{i}{N_x-1} $$
+  $$ v = \frac{j}{N_y-1} $$
+</div>
+
+This is just a fractional position.
+
+
+Storing Texture Image Data
+---------------------------
+Now we also need to create a texture class that holds an image. I am going to use my favorite image
+utility [stb_image][]. It reads in an image into a big array of unsigned char. These are just packed
+RGBs with each component in the range [0,255] (black to full white). The `image_texture` class uses
+the resulting image data.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+    #include "rtw_stb_image.h"
+    #include "perlin.h"
+
+    #include <iostream>
+
+    ...
+
+    class image_texture : public texture {
+        public:
+            const static int bytes_per_pixel = 3;
+
+            image_texture()
+              : data(nullptr), width(0), height(0), bytes_per_scanline(0) {}
+
+            image_texture(const char* filename) {
+                auto components_per_pixel = bytes_per_pixel;
+
+                data = stbi_load(
+                    filename, &width, &height, &components_per_pixel, components_per_pixel);
+
+                if (!data) {
+                    std::cerr << "ERROR: Could not load texture image file '" << filename << "'.\n";
+                    width = height = 0;
+                }
+
+                bytes_per_scanline = bytes_per_pixel * width;
+            }
+
+            ~image_texture() {
+                delete data;
+            }
+
+            virtual color value(double u, double v, const vec3& p) const override {
+                // If we have no texture data, then return solid cyan as a debugging aid.
+                if (data == nullptr)
+                    return color(0,1,1);
+
+                // Clamp input texture coordinates to [0,1] x [1,0]
+                u = clamp(u, 0.0, 1.0);
+                v = 1.0 - clamp(v, 0.0, 1.0);  // Flip V to image coordinates
+
+                auto i = static_cast<int>(u * width);
+                auto j = static_cast<int>(v * height);
+
+                // Clamp integer mapping, since actual coordinates should be less than 1.0
+                if (i >= width)  i = width-1;
+                if (j >= height) j = height-1;
+
+                const auto color_scale = 1.0 / 255.0;
+                auto pixel = data + j*bytes_per_scanline + i*bytes_per_pixel;
+
+                return color(color_scale*pixel[0], color_scale*pixel[1], color_scale*pixel[2]);
+            }
+
+        private:
+            unsigned char *data;
+            int width, height;
+            int bytes_per_scanline;
+    };
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [img-texture]: <kbd>[texture.h]</kbd> Image texture class]
+
+<div class='together'>
+The representation of a packed array in that order is pretty standard. Thankfully, the [stb_image][]
+package makes that super simple -- just write a header called `rtw_stb_image.h` that also deals with
+some compiler warnings:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef RTWEEKEND_STB_IMAGE_H
+    #define RTWEEKEND_STB_IMAGE_H
+
+    // Disable pedantic warnings for this external library.
+    #ifdef _MSC_VER
+        // Microsoft Visual C++ Compiler
+        #pragma warning (push, 0)
+    #endif
+
+    #define STB_IMAGE_IMPLEMENTATION
+    #include "external/stb_image.h"
+
+    // Restore warning levels.
+    #ifdef _MSC_VER
+        // Microsoft Visual C++ Compiler
+        #pragma warning (pop)
+    #endif
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rtw-stb-image]: <kbd>[rtw_stb_image.h]</kbd> Include the stb_image package]
+
+The above assumes that you have copied the `stb_image.h` into a folder called `external`. Adjust
+according to your directory structure.
+</div>
+
+
+Using an Image Texture
+-----------------------
+<div class='together'>
+I just grabbed a random earth map from the web -- any standard projection will do for our purposes.
+
+  ![Image 14: earthmap.jpg](../images/earthmap.jpg class=pixel)
+
+</div>
+
+<div class='together'>
+Here's the code to read an image from a file and then assign it to a diffuse material:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hittable_list earth() {
+        auto earth_texture = make_shared<image_texture>("earthmap.jpg");
+        auto earth_surface = make_shared<lambertian>(earth_texture);
+        auto globe = make_shared<sphere>(point3(0,0,0), 2, earth_surface);
+
+        return hittable_list(globe);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [stbi-load-use]: <kbd>[main.cc]</kbd> Using stbi_load() to load an image]
+</div>
+
+We start to see some of the power of all colors being textures -- we can assign any kind of texture
+to the lambertian material, and lambertian doesn’t need to be aware of it.
+
+<div class='together'>
+To test this, throw it into main:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+        ...
+        switch (0) {
+            ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+            default:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            case 3:
+                ...
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            default:
+            case 4:
+                world = earth();
+                lookfrom = point3(13,2,3);
+                lookat = point3(0,0,0);
+                vfov = 20.0;
+                break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-earth-view]: <kbd>[main.cc]</kbd> Viewing parameters]
+
+If the photo comes back with a large cyan sphere in the middle, then stb_image failed to find your
+Earth map photo. The program will look for the file in the same directory as the executable. Make
+sure to copy the Earth into your build directory, or rewrite `earth()` to point somewhere else.
+
+  ![Image 15: Earth-mapped sphere](../images/img-2.15-earth-sphere.png class=pixel)
+
+</div>
+
+
+
+Rectangles and Lights
+====================================================================================================
+Lighting is a key component of raytracing. Early simple raytracers used abstract light sources, like
+points in space, or directions. Modern approaches have more physically based lights, which have
+position and size. To create such light sources, we need to be able to take any regular object and
+turn it into something that emits light into our scene.
+
+
+Emissive Materials
+-------------------
+<div class='together'>
+First, let’s make a light emitting material. We need to add an emitted function (we could also add
+it to `hit_record` instead -- that’s a matter of design taste). Like the background, it just tells
+the ray what color it is and performs no reflection. It’s very simple:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class diffuse_light : public material  {
+        public:
+            diffuse_light(shared_ptr<texture> a) : emit(a) {}
+            diffuse_light(color c) : emit(make_shared<solid_color>(c)) {}
+
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+            ) const override {
+                return false;
+            }
+
+            virtual color emitted(double u, double v, const point3& p) const override {
+                return emit->value(u, v, p);
+            }
+
+        public:
+            shared_ptr<texture> emit;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [diffuse-light]: <kbd>[material.h]</kbd> A diffuse light class]
+</div>
+
+<div class='together'>
+So that I don’t have to make all the non-emitting materials implement `emitted()`, I have the base
+class return black:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class material {
+        public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            virtual color emitted(double u, double v, const point3& p) const {
+                return color(0,0,0);
+            }
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+            ) const = 0;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [matl-emit]: <kbd>[material.h]</kbd> New emitted function in class material]
+</div>
+
+
+Adding Background Color to the Ray Color Function
+--------------------------------------------------
+<div class='together'>
+Next, we want a pure black background so the only light in the scene is coming from the emitters. To
+do this, we’ll add a background color parameter to our `ray_color` function, and pay attention to
+the new `emitted` value.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    color ray_color(const ray& r, const color& background, const hittable& world, int depth) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        hit_record rec;
+
+        // If we've exceeded the ray bounce limit, no more light is gathered.
+        if (depth <= 0)
+            return color(0,0,0);
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        // If the ray hits nothing, return the background color.
+        if (!world.hit(r, 0.001, infinity, rec))
+            return background;
+
+        ray scattered;
+        color attenuation;
+        color emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+
+        if (!rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+            return emitted;
+
+        return emitted + attenuation * ray_color(scattered, background, world, depth-1);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    }
+    ...
+
+    int main() {
+        ...
+
+        point3 lookfrom;
+        point3 lookat;
+        auto vfov = 40.0;
+        auto aperture = 0.0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        color background(0,0,0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        switch (0) {
+            case 1:
+                world = random_scene();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                background = color(0.70, 0.80, 1.00);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                lookfrom = point3(13,2,3);
+                lookat = point3(0,0,0);
+                vfov = 20.0;
+                aperture = 0.1;
+                break;
+
+            case 2:
+                world = two_spheres();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                background = color(0.70, 0.80, 1.00);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                lookfrom = point3(13,2,3);
+                lookat = point3(0,0,0);
+                vfov = 20.0;
+                break;
+
+            case 3:
+                world = two_perlin_spheres();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                background = color(0.70, 0.80, 1.00);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                lookfrom = point3(13,2,3);
+                lookat = point3(0,0,0);
+                vfov = 20.0;
+                break;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+            default:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            case 4:
+                world = earth();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                background = color(0.70, 0.80, 1.00);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                lookfrom = point3(13,2,3);
+                lookat = point3(0,0,0);
+                vfov = 20.0;
+                break;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            default:
+            case 5:
+                background = color(0.0, 0.0, 0.0);
+                break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                    pixel_color += ray_color(r, background, world, max_depth);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-emitted]: <kbd>[main.cc]</kbd> ray_color function for emitting materials]
+
+Since we're removing the code that we used to determine the color of the sky when a ray hit it, we
+need to pass in a new color value for our old scene renders. We've elected to stick with a flat
+bluish-white for the whole sky. You could always pass in a boolean to switch between the previous
+skybox code versus the new solid color background. We're keeping it simple here.
+
+</div>
+
+
+Creating Rectangle Objects
+---------------------------
+Now, let’s make some rectangles. Rectangles are often convenient for modeling man-made environments.
+I’m a fan of doing axis-aligned rectangles because they are easy. (We’ll get to instancing so we can
+rotate them later.)
+
+<div class='together'>
+First, here is a rectangle in an xy plane. Such a plane is defined by its z value. For example, $z =
+k$. An axis-aligned rectangle is defined by the lines $x=x_0$, $x=x_1$, $y=y_0$, and $y=y_1$.
+
+  ![Figure [ray-rect]: Ray-rectangle intersection](../images/fig-2.05-ray-rect.jpg)
+
+</div>
+
+<div class='together'>
+To determine whether a ray hits such a rectangle, we first determine where the ray hits the plane.
+Recall that a ray $\mathbf{P}(t) = \mathbf{A} + t \mathbf{b}$ has its z component defined by $P_z(t)
+= A_z + t b_z$. Rearranging those terms we can solve for what the t is where $z=k$.
+
+  $$ t = \frac{k-A_z}{b_z} $$
+</div>
+
+<div class='together'>
+Once we have $t$, we can plug that into the equations for $x$ and $y$:
+
+  $$ x = A_x + t b_x $$
+  $$ y = A_y + t b_y $$
+</div>
+
+It is a hit if $x_0 < x < x_1$ and $y_0 < y < y_1$.
+
+Because our rectangles are axis-aligned, their bounding boxes will have an infinitely-thin side.
+This can be a problem when dividing them up with our axis-aligned bounding volume hierarchy. To
+counter this, all hittable objects should get a bounding box that has finite width along every
+dimension. For our rectangles, we'll just pad the box a bit on the infnitely-thin side.
+
+<div class='together'>
+The actual `xy_rect` class is thus:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef AARECT_H
+    #define AARECT_H
+
+    #include "rtweekend.h"
+
+    #include "hittable.h"
+
+    class xy_rect : public hittable {
+        public:
+            xy_rect() {}
+
+            xy_rect(double _x0, double _x1, double _y0, double _y1, double _k, 
+                shared_ptr<material> mat)
+                : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
+
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+            virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+                // The bounding box must have non-zero width in each dimension, so pad the Z
+                // dimension a small amount.
+                output_box = aabb(point3(x0,y0, k-0.0001), point3(x1, y1, k+0.0001));
+                return true;
+            }
+
+        public:
+            shared_ptr<material> mp;
+            double x0, x1, y0, y1, k;
+    };
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [xy-rect]: <kbd>[aarect.h]</kbd> XY-plane rectangle objects]
+</div>
+
+<div class='together'>
+And the hit function is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool xy_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+        auto t = (k-r.origin().z()) / r.direction().z();
+        if (t < t_min || t > t_max)
+            return false;
+        auto x = r.origin().x() + t*r.direction().x();
+        auto y = r.origin().y() + t*r.direction().y();
+        if (x < x0 || x > x1 || y < y0 || y > y1)
+            return false;
+        rec.u = (x-x0)/(x1-x0);
+        rec.v = (y-y0)/(y1-y0);
+        rec.t = t;
+        auto outward_normal = vec3(0, 0, 1);
+        rec.set_face_normal(r, outward_normal);
+        rec.mat_ptr = mp;
+        rec.p = r.at(t);
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [xy-rect-hit]: <kbd>[aarect.h]</kbd> Hit function for XY rectangle objects]
+</div>
+
+
+Turning Objects into Lights
+----------------------------
+<div class='together'>
+If we set up a rectangle as a light:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hittable_list simple_light() {
+        hittable_list objects;
+
+        auto pertext = make_shared<noise_texture>(4);
+        objects.add(make_shared<sphere>(point3(0,-1000,0), 1000, make_shared<lambertian>(pertext)));
+        objects.add(make_shared<sphere>(point3(0,2,0), 2, make_shared<lambertian>(pertext)));
+
+        auto difflight = make_shared<diffuse_light>(color(4,4,4));
+        objects.add(make_shared<xy_rect>(3, 5, 1, 3, -2, difflight));
+
+        return objects;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rect-light]: <kbd>[main.cc]</kbd> A simple rectangle light]
+</div>
+
+<div class='together'>
+And then create a new scene, making careful attention to set the background color black:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+    #include "camera.h"
+    #include "color.h"
+    #include "hittable_list.h"
+    #include "material.h"
+    #include "moving_sphere.h"
+    #include "sphere.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "aarect.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    #include <iostream>
+    ...
+    int main() {
+        ...
+        switch (0) {
+            ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            default:
+            case 5:
+                world = simple_light();
+                samples_per_pixel = 400;
+                background = color(0,0,0);
+                lookfrom = point3(26,3,6);
+                lookat = point3(0,2,0);
+                vfov = 20.0;
+                break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rectangle-light]: <kbd>[main.cc]</kbd> Rectangle light scene with black background]
+
+<div class='together'>
+We get:
+
+  ![Image 16: Scene with rectangle light source](../images/img-2.16-rect-light.png class=pixel)
+
+</div>
+
+Note that the light is brighter than $(1,1,1)$. This allows it to be bright enough to light things.
+
+<div class='together'>
+Fool around with making some spheres lights too.
+
+  ![Image 17: Scene with rectangle and sphere light sources
+  ](../images/img-2.17-rect-sphere-light.png class=pixel)
+
+</div>
+
+
+More Axis-Aligned Rectangles
+-----------------------------
+Now let’s add the other two axes and the famous Cornell Box.
+
+<div class='together'>
+This is xz and yz:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class xz_rect : public hittable {
+        public:
+            xz_rect() {}
+
+            xz_rect(double _x0, double _x1, double _z0, double _z1, double _k,
+                shared_ptr<material> mat)
+                : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+            virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+                // The bounding box must have non-zero width in each dimension, so pad the Y
+                // dimension a small amount.
+                output_box = aabb(point3(x0,k-0.0001,z0), point3(x1, k+0.0001, z1));
+                return true;
+            }
+
+        public:
+            shared_ptr<material> mp;
+            double x0, x1, z0, z1, k;
+    };
+
+    class yz_rect : public hittable {
+        public:
+            yz_rect() {}
+
+            yz_rect(double _y0, double _y1, double _z0, double _z1, double _k,
+                shared_ptr<material> mat)
+                : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+            virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+                // The bounding box must have non-zero width in each dimension, so pad the X
+                // dimension a small amount.
+                output_box = aabb(point3(k-0.0001, y0, z0), point3(k+0.0001, y1, z1));
+                return true;
+            }
+
+        public:
+            shared_ptr<material> mp;
+            double y0, y1, z0, z1, k;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [xz-yz-rects]: <kbd>[aarect.h]</kbd> XZ and YZ rectangle objects]
+</div>
+
+<div class='together'>
+With unsurprising hit functions:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool xz_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+        auto t = (k-r.origin().y()) / r.direction().y();
+        if (t < t_min || t > t_max)
+            return false;
+        auto x = r.origin().x() + t*r.direction().x();
+        auto z = r.origin().z() + t*r.direction().z();
+        if (x < x0 || x > x1 || z < z0 || z > z1)
+            return false;
+        rec.u = (x-x0)/(x1-x0);
+        rec.v = (z-z0)/(z1-z0);
+        rec.t = t;
+        auto outward_normal = vec3(0, 1, 0);
+        rec.set_face_normal(r, outward_normal);
+        rec.mat_ptr = mp;
+        rec.p = r.at(t);
+        return true;
+    }
+
+    bool yz_rect::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+        auto t = (k-r.origin().x()) / r.direction().x();
+        if (t < t_min || t > t_max)
+            return false;
+        auto y = r.origin().y() + t*r.direction().y();
+        auto z = r.origin().z() + t*r.direction().z();
+        if (y < y0 || y > y1 || z < z0 || z > z1)
+            return false;
+        rec.u = (y-y0)/(y1-y0);
+        rec.v = (z-z0)/(z1-z0);
+        rec.t = t;
+        auto outward_normal = vec3(1, 0, 0);
+        rec.set_face_normal(r, outward_normal);
+        rec.mat_ptr = mp;
+        rec.p = r.at(t);
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [xz-yz]: <kbd>[aarect.h]</kbd> XZ and YZ rectangle object hit functions]
+</div>
+
+
+Creating an Empty “Cornell Box”
+--------------------------------
+<div class='together'>
+The “Cornell Box” was introduced in 1984 to model the interaction of light between diffuse surfaces.
+Let’s make the 5 walls and the light of the box:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    hittable_list cornell_box() {
+        hittable_list objects;
+
+        auto red   = make_shared<lambertian>(color(.65, .05, .05));
+        auto white = make_shared<lambertian>(color(.73, .73, .73));
+        auto green = make_shared<lambertian>(color(.12, .45, .15));
+        auto light = make_shared<diffuse_light>(color(15, 15, 15));
+
+        objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
+        objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+        objects.add(make_shared<xz_rect>(213, 343, 227, 332, 554, light));
+        objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+        objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
+        objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+
+        return objects;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [cornell-box-empty]: <kbd>[main.cc]</kbd> Cornell box scene, empty]
+</div>
+
+<div class='together'>
+Add the view and scene info:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    int main() {
+        ...
+        switch (0) {
+            ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+            default:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            case 5:
+                ...
+                break;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            default:
+            case 6:
+                world = cornell_box();
+                aspect_ratio = 1.0;
+                image_width = 600;
+                samples_per_pixel = 200;
+                background = color(0,0,0);
+                lookfrom = point3(278, 278, -800);
+                lookat = point3(278, 278, 0);
+                vfov = 40.0;
+                break;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [cornell-box-view]: <kbd>[main.cc]</kbd> Changing aspect ratio and viewing parameters]
+</div>
+
+<div class='together'>
+We get:
+
+  ![Image 18: Empty Cornell box](../images/img-2.18-cornell-empty.png class=pixel)
+
+This image is very noisy because the light is small.
+</div>
+
+
+
+Instances
+====================================================================================================
+
+The Cornell Box usually has two blocks in it. These are rotated relative to the walls. First, let’s
+make an axis-aligned block primitive that holds 6 rectangles:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef BOX_H
+    #define BOX_H
+
+    #include "rtweekend.h"
+
+    #include "aarect.h"
+    #include "hittable_list.h"
+
+    class box : public hittable  {
+        public:
+            box() {}
+            box(const point3& p0, const point3& p1, shared_ptr<material> ptr);
+
+            virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+            virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+                output_box = aabb(box_min, box_max);
+                return true;
+            }
+
+        public:
+            point3 box_min;
+            point3 box_max;
+            hittable_list sides;
+    };
+
+    box::box(const point3& p0, const point3& p1, shared_ptr<material> ptr) {
+        box_min = p0;
+        box_max = p1;
+
+        sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p1.z(), ptr));
+        sides.add(make_shared<xy_rect>(p0.x(), p1.x(), p0.y(), p1.y(), p0.z(), ptr));
+
+        sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p1.y(), ptr));
+        sides.add(make_shared<xz_rect>(p0.x(), p1.x(), p0.z(), p1.z(), p0.y(), ptr));
+
+        sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p1.x(), ptr));
+        sides.add(make_shared<yz_rect>(p0.y(), p1.y(), p0.z(), p1.z(), p0.x(), ptr));
+    }
+
+    bool box::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+        return sides.hit(r, t_min, t_max, rec);
+    }
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [box-class]: <kbd>[box.h]</kbd> A box object]
+
+<div class='together'>
+Now we can add two blocks (but not rotated)
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "box.h"
+    ...
+    objects.add(make_shared<box>(point3(130, 0, 65), point3(295, 165, 230), white));
+    objects.add(make_shared<box>(point3(265, 0, 295), point3(430, 330, 460), white));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [add-boxes]: <kbd>[main.cc]</kbd> Adding box objects]
+
+</div>
+
+<div class='together'>
+This gives:
+
+  ![Image 19: Cornell box with two blocks](../images/img-2.19-cornell-blocks.png class=pixel)
+
+</div>
+
+<div class='together'>
+Now that we have boxes, we need to rotate them a bit to have them match the _real_ Cornell box. In
+ray tracing, this is usually done with an _instance_. An instance is a geometric primitive that has
+been moved or rotated somehow. This is especially easy in ray tracing because we don’t move
+anything; instead we move the rays in the opposite direction. For example, consider a _translation_
+(often called a _move_). We could take the pink box at the origin and add 2 to all its x components,
+or (as we almost always do in ray tracing) leave the box where it is, but in its hit routine
+subtract 2 off the x-component of the ray origin.
+
+  ![Figure [ray-box]: Ray-box intersection with moved ray vs box](../images/fig-2.06-ray-box.jpg)
+
+</div>
+
+
+Instance Translation
+---------------------
+<div class='together'>
+Whether you think of this as a move or a change of coordinates is up to you. The code for this, to
+move any underlying hittable is a _translate_ instance.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class translate : public hittable {
+        public:
+            translate(shared_ptr<hittable> p, const vec3& displacement)
+                : ptr(p), offset(displacement) {}
+
+            virtual bool hit(
+                const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+            virtual bool bounding_box(double time0, double time1, aabb& output_box) const override;
+
+        public:
+            shared_ptr<hittable> ptr;
+            vec3 offset;
+    };
+
+    bool translate::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+        ray moved_r(r.origin() - offset, r.direction(), r.time());
+        if (!ptr->hit(moved_r, t_min, t_max, rec))
+            return false;
+
+        rec.p += offset;
+        rec.set_face_normal(moved_r, rec.normal);
+
+        return true;
+    }
+
+    bool translate::bounding_box(double time0, double time1, aabb& output_box) const {
+        if (!ptr->bounding_box(time0, time1, output_box))
+            return false;
+
+        output_box = aabb(
+            output_box.min() + offset,
+            output_box.max() + offset);
+
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [translate-class]: <kbd>[hittable.h]</kbd> Hittable translation class]
+</div>
+
+
+Instance Rotation
+------------------
+<div class='together'>
+Rotation isn’t quite as easy to understand or generate the formulas for. A common graphics tactic is
+to apply all rotations about the x, y, and z axes. These rotations are in some sense axis-aligned.
+First, let’s rotate by theta about the z-axis. That will be changing only x and y, and in ways that
+don’t depend on z.
+
+  ![Figure [rot-z]: Rotation about the Z axis](../images/fig-2.07-rot-z.jpg)
+
+</div>
+
+<div class='together'>
+This involves some basic trigonometry that uses formulas that I will not cover here. That gives you
+the correct impression it’s a little involved, but it is straightforward, and you can find it in any
+graphics text and in many lecture notes. The result for rotating counter-clockwise about z is:
+
+  $$ x' = \cos(\theta) \cdot x - \sin(\theta) \cdot y $$
+  $$ y' = \sin(\theta) \cdot x + \cos(\theta) \cdot y $$
+</div>
+
+The great thing is that it works for any $\theta$ and doesn’t need any cases for quadrants or
+anything like that. The inverse transform is the opposite geometric operation: rotate by $-\theta$.
+Here, recall that $\cos(\theta) = \cos(-\theta)$ and $\sin(-\theta) = -\sin(\theta)$, so the
+formulas are very simple.
+
+<div class='together'>
+Similarly, for rotating about y (as we want to do for the blocks in the box) the formulas are:
+
+  $$ x' =  \cos(\theta) \cdot x + \sin(\theta) \cdot z $$
+  $$ z' = -\sin(\theta) \cdot x + \cos(\theta) \cdot z $$
+
+And about the x-axis:
+
+  $$ y' = \cos(\theta) \cdot y - \sin(\theta) \cdot z $$
+  $$ z' = \sin(\theta) \cdot y + \cos(\theta) \cdot z $$
+</div>
+
+Unlike the situation with translations, the surface normal vector also changes, so we need to
+transform directions too if we get a hit. Fortunately for rotations, the same formulas apply. If you
+add scales, things get more complicated. See the web page https://in1weekend.blogspot.com/ for links
+to that.
+
+<div class='together'>
+For a y-rotation class we have:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class rotate_y : public hittable {
+        public:
+            rotate_y(shared_ptr<hittable> p, double angle);
+
+            virtual bool hit(
+                const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+            virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+                output_box = bbox;
+                return hasbox;
+            }
+
+        public:
+            shared_ptr<hittable> ptr;
+            double sin_theta;
+            double cos_theta;
+            bool hasbox;
+            aabb bbox;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rot-y]: <kbd>[hittable.h]</kbd> Hittable rotate-Y class]
+</div>
+
+<div class='together'>
+With constructor:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    rotate_y::rotate_y(shared_ptr<hittable> p, double angle) : ptr(p) {
+        auto radians = degrees_to_radians(angle);
+        sin_theta = sin(radians);
+        cos_theta = cos(radians);
+        hasbox = ptr->bounding_box(0, 1, bbox);
+
+        point3 min( infinity,  infinity,  infinity);
+        point3 max(-infinity, -infinity, -infinity);
+
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                for (int k = 0; k < 2; k++) {
+                    auto x = i*bbox.max().x() + (1-i)*bbox.min().x();
+                    auto y = j*bbox.max().y() + (1-j)*bbox.min().y();
+                    auto z = k*bbox.max().z() + (1-k)*bbox.min().z();
+
+                    auto newx =  cos_theta*x + sin_theta*z;
+                    auto newz = -sin_theta*x + cos_theta*z;
+
+                    vec3 tester(newx, y, newz);
+
+                    for (int c = 0; c < 3; c++) {
+                        min[c] = fmin(min[c], tester[c]);
+                        max[c] = fmax(max[c], tester[c]);
+                    }
+                }
+            }
+        }
+
+        bbox = aabb(min, max);
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rot-y-rot]: <kbd>[hittable.h]</kbd> Rotate-Y rotate method]
+</div>
+
+<div class='together'>
+And the hit function:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool rotate_y::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+        auto origin = r.origin();
+        auto direction = r.direction();
+
+        origin[0] = cos_theta*r.origin()[0] - sin_theta*r.origin()[2];
+        origin[2] = sin_theta*r.origin()[0] + cos_theta*r.origin()[2];
+
+        direction[0] = cos_theta*r.direction()[0] - sin_theta*r.direction()[2];
+        direction[2] = sin_theta*r.direction()[0] + cos_theta*r.direction()[2];
+
+        ray rotated_r(origin, direction, r.time());
+
+        if (!ptr->hit(rotated_r, t_min, t_max, rec))
+            return false;
+
+        auto p = rec.p;
+        auto normal = rec.normal;
+
+        p[0] =  cos_theta*rec.p[0] + sin_theta*rec.p[2];
+        p[2] = -sin_theta*rec.p[0] + cos_theta*rec.p[2];
+
+        normal[0] =  cos_theta*rec.normal[0] + sin_theta*rec.normal[2];
+        normal[2] = -sin_theta*rec.normal[0] + cos_theta*rec.normal[2];
+
+        rec.p = p;
+        rec.set_face_normal(rotated_r, normal);
+
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [rot-y-hit]: <kbd>[hittable.h]</kbd> Hittable Y-rotate hit function]
+</div>
+
+<div class='together'>
+And the changes to Cornell are:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    shared_ptr<hittable> box1 = make_shared<box>(point3(0, 0, 0), point3(165, 330, 165), white);
+    box1 = make_shared<rotate_y>(box1, 15);
+    box1 = make_shared<translate>(box1, vec3(265,0,295));
+    objects.add(box1);
+
+    shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
+    box2 = make_shared<rotate_y>(box2, -18);
+    box2 = make_shared<translate>(box2, vec3(130,0,65));
+    objects.add(box2);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-rot-y]: <kbd>[main.cc]</kbd> Cornell scene with Y-rotated boxes]
+</div>
+
+<div class='together'>
+Which yields:
+
+  ![Image 20: Standard Cornell box scene](../images/img-2.20-cornell-standard.png class=pixel)
+
+</div>
+
+
+
+Volumes
+====================================================================================================
+
+One thing it’s nice to add to a ray tracer is smoke/fog/mist. These are sometimes called _volumes_
+or _participating media_. Another feature that is nice to add is subsurface scattering, which is
+sort of like dense fog inside an object. This usually adds software architectural mayhem because
+volumes are a different animal than surfaces, but a cute technique is to make a volume a random
+surface. A bunch of smoke can be replaced with a surface that probabilistically might or might not
+be there at every point in the volume. This will make more sense when you see the code.
+
+
+Constant Density Mediums
+-------------------------
+First, let’s start with a volume of constant density. A ray going through there can either scatter
+inside the volume, or it can make it all the way through like the middle ray in the figure. More
+thin transparent volumes, like a light fog, are more likely to have rays like the middle one. How
+far the ray has to travel through the volume also determines how likely it is for the ray to make it
+through.
+
+  ![Figure [ray-vol]: Ray-volume interaction](../images/fig-2.08-ray-vol.jpg)
+
+<div class='together'>
+As the ray passes through the volume, it may scatter at any point. The denser the volume, the more
+likely that is. The probability that the ray scatters in any small distance $\Delta L$ is:
+
+  $$ \text{probability} = C \cdot \Delta L $$
+</div>
+
+<div class='together'>
+where $C$ is proportional to the optical density of the volume. If you go through all the
+differential equations, for a random number you get a distance where the scattering occurs. If that
+distance is outside the volume, then there is no “hit”. For a constant volume we just need the
+density $C$ and the boundary. I’ll use another hittable for the boundary. The resulting class is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #ifndef CONSTANT_MEDIUM_H
+    #define CONSTANT_MEDIUM_H
+
+    #include "rtweekend.h"
+
+    #include "hittable.h"
+    #include "material.h"
+    #include "texture.h"
+
+    class constant_medium : public hittable {
+        public:
+            constant_medium(shared_ptr<hittable> b, double d, shared_ptr<texture> a)
+                : boundary(b),
+                  neg_inv_density(-1/d),
+                  phase_function(make_shared<isotropic>(a))
+                {}
+
+            constant_medium(shared_ptr<hittable> b, double d, color c)
+                : boundary(b),
+                  neg_inv_density(-1/d),
+                  phase_function(make_shared<isotropic>(c))
+                {}
+
+            virtual bool hit(
+                const ray& r, double t_min, double t_max, hit_record& rec) const override;
+
+            virtual bool bounding_box(double time0, double time1, aabb& output_box) const override {
+                return boundary->bounding_box(time0, time1, output_box);
+            }
+
+        public:
+            shared_ptr<hittable> boundary;
+            shared_ptr<material> phase_function;
+            double neg_inv_density;
+    };
+
+    #endif
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [const-med-class]: <kbd>[constant_medium.h]</kbd> Constant medium class]
+</div>
+
+<div class='together'>
+The scattering function of isotropic picks a uniform random direction:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class isotropic : public material {
+        public:
+            isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
+            isotropic(shared_ptr<texture> a) : albedo(a) {}
+
+            virtual bool scatter(
+                const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+            ) const override {
+                scattered = ray(rec.p, random_in_unit_sphere(), r_in.time());
+                attenuation = albedo->value(rec.u, rec.v, rec.p);
+                return true;
+            }
+
+        public:
+            shared_ptr<texture> albedo;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [isotropic-class]: <kbd>[material.h]</kbd> The isotropic class]
+</div>
+
+<div class='together'>
+And the hit function is:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    bool constant_medium::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
+        // Print occasional samples when debugging. To enable, set enableDebug true.
+        const bool enableDebug = false;
+        const bool debugging = enableDebug && random_double() < 0.00001;
+
+        hit_record rec1, rec2;
+
+        if (!boundary->hit(r, -infinity, infinity, rec1))
+            return false;
+
+        if (!boundary->hit(r, rec1.t+0.0001, infinity, rec2))
+            return false;
+
+        if (debugging) std::cerr << "\nt_min=" << rec1.t << ", t_max=" << rec2.t << '\n';
+
+        if (rec1.t < t_min) rec1.t = t_min;
+        if (rec2.t > t_max) rec2.t = t_max;
+
+        if (rec1.t >= rec2.t)
+            return false;
+
+        if (rec1.t < 0)
+            rec1.t = 0;
+
+        const auto ray_length = r.direction().length();
+        const auto distance_inside_boundary = (rec2.t - rec1.t) * ray_length;
+        const auto hit_distance = neg_inv_density * log(random_double());
+
+        if (hit_distance > distance_inside_boundary)
+            return false;
+
+        rec.t = rec1.t + hit_distance / ray_length;
+        rec.p = r.at(rec.t);
+
+        if (debugging) {
+            std::cerr << "hit_distance = " <<  hit_distance << '\n'
+                      << "rec.t = " <<  rec.t << '\n'
+                      << "rec.p = " <<  rec.p << '\n';
+        }
+
+        rec.normal = vec3(1,0,0);  // arbitrary
+        rec.front_face = true;     // also arbitrary
+        rec.mat_ptr = phase_function;
+
+        return true;
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [const-med-hit]: <kbd>[constant_medium.h]</kbd> Constant medium hit method]
+</div>
+
+The reason we have to be so careful about the logic around the boundary is we need to make sure this
+works for ray origins inside the volume. In clouds, things bounce around a lot so that is a common
+case.
+
+In addition, the above code assumes that once a ray exits the constant medium boundary, it will
+continue forever outside the boundary. Put another way, it assumes that the boundary shape is
+convex. So this particular implementation will work for boundaries like boxes or spheres, but will
+not work with toruses or shapes that contain voids. It's possible to write an implementation that
+handles arbitrary shapes, but we'll leave that as an exercise for the reader.
+
+
+Rendering a Cornell Box with Smoke and Fog Boxes
+-------------------------------------------------
+<div class='together'>
+If we replace the two blocks with smoke and fog (dark and light particles), and make the light
+bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "constant_medium.h"
+    ...
+
+    hittable_list cornell_smoke() {
+        hittable_list objects;
+
+        auto red   = make_shared<lambertian>(color(.65, .05, .05));
+        auto white = make_shared<lambertian>(color(.73, .73, .73));
+        auto green = make_shared<lambertian>(color(.12, .45, .15));
+        auto light = make_shared<diffuse_light>(color(7, 7, 7));
+
+        objects.add(make_shared<yz_rect>(0, 555, 0, 555, 555, green));
+        objects.add(make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+        objects.add(make_shared<xz_rect>(113, 443, 127, 432, 554, light));
+        objects.add(make_shared<xz_rect>(0, 555, 0, 555, 555, white));
+        objects.add(make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+        objects.add(make_shared<xy_rect>(0, 555, 0, 555, 555, white));
+
+        shared_ptr<hittable> box1 = make_shared<box>(point3(0,0,0), point3(165,330,165), white);
+        box1 = make_shared<rotate_y>(box1, 15);
+        box1 = make_shared<translate>(box1, vec3(265,0,295));
+
+        shared_ptr<hittable> box2 = make_shared<box>(point3(0,0,0), point3(165,165,165), white);
+        box2 = make_shared<rotate_y>(box2, -18);
+        box2 = make_shared<translate>(box2, vec3(130,0,65));
+
+        objects.add(make_shared<constant_medium>(box1, 0.01, color(0,0,0)));
+        objects.add(make_shared<constant_medium>(box2, 0.01, color(1,1,1)));
+
+        return objects;
+    }
+
+    ...
+
+    int main() {
+        ...
+        switch (0) {
+            ...
+            default:
+            case 7:
+                world = cornell_smoke();
+                aspect_ratio = 1.0;
+                image_width = 600;
+                samples_per_pixel = 200;
+                lookfrom = point3(278, 278, -800);
+                lookat = point3(278, 278, 0);
+                vfov = 40.0;
+                break;
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [cornell-smoke]: <kbd>[main.cc]</kbd> Cornell box, with smoke]
+</div>
+
+<div class='together'>
+We get:
+
+  ![Image 21: Cornell box with blocks of smoke](../images/img-2.21-cornell-smoke.png class=pixel)
+
+</div>
+
+
+
+A Scene Testing All New Features
+====================================================================================================
+
+Let’s put it all together, with a big thin mist covering everything, and a blue subsurface
+reflection sphere (we didn’t implement that explicitly, but a volume inside a dielectric is what a
+subsurface material is). The biggest limitation left in the renderer is no shadow rays, but that is
+why we get caustics and subsurface for free. It’s a double-edged design decision.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+    #include "bvh.h"
+    ...
+
+    hittable_list final_scene() {
+        hittable_list boxes1;
+        auto ground = make_shared<lambertian>(color(0.48, 0.83, 0.53));
+
+        const int boxes_per_side = 20;
+        for (int i = 0; i < boxes_per_side; i++) {
+            for (int j = 0; j < boxes_per_side; j++) {
+                auto w = 100.0;
+                auto x0 = -1000.0 + i*w;
+                auto z0 = -1000.0 + j*w;
+                auto y0 = 0.0;
+                auto x1 = x0 + w;
+                auto y1 = random_double(1,101);
+                auto z1 = z0 + w;
+
+                boxes1.add(make_shared<box>(point3(x0,y0,z0), point3(x1,y1,z1), ground));
+            }
+        }
+
+        hittable_list objects;
+
+        objects.add(make_shared<bvh_node>(boxes1, 0, 1));
+
+        auto light = make_shared<diffuse_light>(color(7, 7, 7));
+        objects.add(make_shared<xz_rect>(123, 423, 147, 412, 554, light));
+
+        auto center1 = point3(400, 400, 200);
+        auto center2 = center1 + vec3(30,0,0);
+        auto moving_sphere_material = make_shared<lambertian>(color(0.7, 0.3, 0.1));
+        objects.add(make_shared<moving_sphere>(center1, center2, 0, 1, 50, moving_sphere_material));
+
+        objects.add(make_shared<sphere>(point3(260, 150, 45), 50, make_shared<dielectric>(1.5)));
+        objects.add(make_shared<sphere>(
+            point3(0, 150, 145), 50, make_shared<metal>(color(0.8, 0.8, 0.9), 1.0)
+        ));
+
+        auto boundary = make_shared<sphere>(point3(360,150,145), 70, make_shared<dielectric>(1.5));
+        objects.add(boundary);
+        objects.add(make_shared<constant_medium>(boundary, 0.2, color(0.2, 0.4, 0.9)));
+        boundary = make_shared<sphere>(point3(0, 0, 0), 5000, make_shared<dielectric>(1.5));
+        objects.add(make_shared<constant_medium>(boundary, .0001, color(1,1,1)));
+
+        auto emat = make_shared<lambertian>(make_shared<image_texture>("earthmap.jpg"));
+        objects.add(make_shared<sphere>(point3(400,200,400), 100, emat));
+        auto pertext = make_shared<noise_texture>(0.1);
+        objects.add(make_shared<sphere>(point3(220,280,300), 80, make_shared<lambertian>(pertext)));
+
+        hittable_list boxes2;
+        auto white = make_shared<lambertian>(color(.73, .73, .73));
+        int ns = 1000;
+        for (int j = 0; j < ns; j++) {
+            boxes2.add(make_shared<sphere>(point3::random(0,165), 10, white));
+        }
+
+        objects.add(make_shared<translate>(
+            make_shared<rotate_y>(
+                make_shared<bvh_node>(boxes2, 0.0, 1.0), 15),
+                vec3(-100,270,395)
+            )
+        );
+
+        return objects;
+    }
+
+    int main() {
+        ...
+        switch (0) {
+            ...
+            default:
+            case 8:
+                world = final_scene();
+                aspect_ratio = 1.0;
+                image_width = 800;
+                samples_per_pixel = 10000;
+                background = color(0,0,0);
+                lookfrom = point3(478, 278, -600);
+                lookat = point3(278, 278, 0);
+                vfov = 40.0;
+                break;
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scene-final]: <kbd>[main.cc]</kbd> Final scene]
+
+<div class='together'>
+Running it with 10,000 rays per pixel yields:
+
+  ![Image 22: Final scene](../images/img-2.22-book2-final.jpg)
+
+</div>
+
+Now go off and make a really cool image of your own! See https://in1weekend.blogspot.com/ for
+pointers to further reading and features, and feel free to email questions, comments, and cool
+images to me at ptrshrl@gmail.com.
+
+
+
+                               (insert acknowledgments.md.html here)
+
+
+
+Citing This Book
+====================================================================================================
+Consistent citations make it easier to identify the source, location and versions of this work. If
+you are citing this book, we ask that you try to use one of the following forms if possible.
+
+Basic Data
+-----------
+  - **Title (series)**: “Ray Tracing in One Weekend Series”
+  - **Title (book)**: “Ray Tracing: The Next Week”
+  - **Author**: Peter Shirley
+  - **Editors**: Steve Hollasch, Trevor David Black
+  - **Version/Edition**: v3.2.3
+  - **Date**: 2020-12-07
+  - **URL (series)**: https://raytracing.github.io/
+  - **URL (book)**: https://raytracing.github.io/books/RayTracingTheNextWeek.html
+
+Snippets
+---------
+
+  ### Markdown
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [_Ray Tracing: The Next Week_](https://raytracing.github.io/books/RayTracingTheNextWeek.html)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ### HTML
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    <a href='https://raytracing.github.io/books/RayTracingTheNextWeek.html'>
+        <cite>Ray Tracing: The Next Week</cite>
+    </a>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ### LaTeX and BibTex
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ~\cite{Shirley2020RTW2}
+
+    @misc{Shirley2020RTW2,
+       title = {Ray Tracing: The Next Week},
+       author = {Peter Shirley},
+       year = {2020},
+       month = {December}
+       note = {\small \texttt{https://raytracing.github.io/books/RayTracingTheNextWeek.html}},
+       url = {https://raytracing.github.io/books/RayTracingTheNextWeek.html}
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ### BibLaTeX
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    \usepackage{biblatex}
+
+    ~\cite{Shirley2020RTW2}
+
+    @online{Shirley2020RTW2,
+       title = {Ray Tracing: The Next Week},
+       author = {Peter Shirley},
+       year = {2020},
+       month = {December}
+       url = {https://raytracing.github.io/books/RayTracingTheNextWeek.html}
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ### IEEE
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    “Ray Tracing: The Next Week.” raytracing.github.io/books/RayTracingTheNextWeek.html
+    (accessed MMM. DD, YYYY)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  ### MLA:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Ray Tracing: The Next Week. raytracing.github.io/books/RayTracingTheNextWeek.html
+    Accessed DD MMM. YYYY.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+
+[stb_image]:          https://github.com/nothings/stb
+[Peter Shirley]:      https://github.com/petershirley
+[Steve Hollasch]:     https://github.com/hollasch
+[Trevor David Black]: https://github.com/trevordblack
+
+
+
+<!-- Markdeep: https://casual-effects.com/markdeep/ -->
+<link rel='stylesheet' href='../style/book.css'>
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep.min.js"></script>
+<script src="https://morgan3d.github.io/markdeep/latest/markdeep.min.js"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
