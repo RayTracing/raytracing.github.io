@@ -9,7 +9,19 @@ Ray Tracing in One Weekend Book Series
 Getting the Books
 ------------------
 The _Ray Tracing in One Weekend_ series of books are now available to the public for free directly
-from the web:
+from the web.
+
+We are currently hosting both the older v3.2.3 version and the v4.0.0-alpha.1 versions in the same
+project. The older v3 version is provide for readers who are in the middle of going through the
+series so you can maintain continuity. For new readers, or readers newly starting one of the books,
+we strongly recommend that you jump above the v4 train.
+
+### Version 3.2.3
+  - [Ray Tracing in One Weekend][web1-v3]
+  - [Ray Tracing: The Next Week][web2-v3]
+  - [Ray Tracing: The Rest of Your Life][web3-v3]
+
+### Version 4.0.0-alpha.1
 
   - [Ray Tracing in One Weekend][web1]
   - [Ray Tracing: The Next Week][web2]
@@ -21,18 +33,15 @@ versions, use the print function in your browser.
 
 Project Status
 ---------------
-We are driving toward our v4.0.0 release for book 1 by SIGGRAPH 2023 (August 6). It's been a long
-journey from v3.2.3, released December 2020, but we're seeing the finish line. We hope to have books
-2 & 3 ready by the end of 2023.
+Version v4.0.0-alpha.1 is now released for SIGGRAPH 2023. Book 1 is largely completed, and we are
+driving books 2 and 3 to completion, with a final release date by the end of 2023. It's been a long
+journey from v3.2.3, released December 2020, but we're seeing the finish line.
 
-If you'd like to check out the latest and watch our progress, we're on the `dev-major` branch. Our
-relevant milestones are
+If you'd like to check out the latest updates and watch our progress, we're on the `dev-major`
+branch. Our relevant milestones are
 
-  - [v4.0.0 Book 1](https://github.com/RayTracing/raytracing.github.io/milestone/20)
-  - [v4.0.0 Book 1 Release](https://github.com/RayTracing/raytracing.github.io/milestone/21)
-  - [v4.0.0 Book 2](https://github.com/RayTracing/raytracing.github.io/milestone/24)
-  - [v4.0.0 Book 3](https://github.com/RayTracing/raytracing.github.io/milestone/22)
-  - [v4.0.0 Books 2 & 3 Release](https://github.com/RayTracing/raytracing.github.io/milestone/23)
+  - [v4.0.0](https://github.com/RayTracing/raytracing.github.io/milestone/16)
+  - [v4.0.0-release](https://github.com/RayTracing/raytracing.github.io/milestone/19)
 
 Let us know if you'd like to help out. If you have a change you'd like to contribute,
 _**[please see our contribution guidelines][CONTRIBUTING]**_.
@@ -68,6 +77,9 @@ The organization of this repository is meant to be simple and self-evident at a 
   - `src/<book>/` --
     Contains the source specific to any one book. There is no sharing of source outside of the
     common directory.
+
+  - `v3/` --
+    All content (same general structure) for the v3.2.3 release (from December 2020).
 
 
 Source Code
@@ -166,9 +178,9 @@ _**please review the [CONTRIBUTING][] document for the most effective way to pro
 [book2]:           books/RayTracingTheNextWeek.html
 [book3]:           books/RayTracingTheRestOfYourLife.html
 [CONTRIBUTING]:    CONTRIBUTING.md
-[cover1]:          images/RTOneWeekend-small.jpg
-[cover2]:          images/RTNextWeek-small.jpg
-[cover3]:          images/RTRestOfYourLife-small.jpg
+[cover1]:          images/cover/CoverRTW1-small.jpg
+[cover2]:          images/cover/CoverRTW2-small.jpg
+[cover3]:          images/cover/CoverRTW3-small.jpg
 [discussions]:     https://github.com/RayTracing/raytracing.github.io/discussions/
 [GitHub home]:     https://github.com/RayTracing/raytracing.github.io/
 [ImageMagick]:     https://imagemagick.org/
@@ -177,5 +189,8 @@ _**please review the [CONTRIBUTING][] document for the most effective way to pro
 [milestone 19]:    https://github.com/RayTracing/raytracing.github.io/milestone/19
 [v3.2.3]:          https://github.com/RayTracing/raytracing.github.io/releases/tag/v3.2.3
 [web1]:            https://raytracing.github.io/books/RayTracingInOneWeekend.html
+[web1-v3]:         https://raytracing.github.io/books/v3/RayTracingInOneWeekend.html
 [web2]:            https://raytracing.github.io/books/RayTracingTheNextWeek.html
+[web2-v3]:         https://raytracing.github.io/books/v3/RayTracingTheNextWeek.html
 [web3]:            https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html
+[web3-v3]:         https://raytracing.github.io/books/v3/RayTracingTheRestOfYourLife.html
