@@ -33,18 +33,30 @@ versions, use the print function in your browser.
 
 Project Status
 ---------------
-Version v4.0.0-alpha.1 is now released for SIGGRAPH 2023. Book 1 is largely completed, and we are
-driving books 2 and 3 to completion, with a final release date by the end of 2023. It's been a long
-journey from v3.2.3, released December 2020, but we're seeing the finish line.
+Phew! We had a great SIGGRAPH in LA, including a birds-of-a-feather session for those interested in
+the book series. We had about 50 people attending. I won't recap everything presented there, but
+there are three main items that everyone should know about.
 
-If you'd like to check out the latest updates and watch our progress, we're on the `dev-major`
-branch. Our relevant milestones are
+**First, v4.0.0-alpha.1 is released.** Book one is largely complete, and we're now focusing on books
+two and three. You can find it at the regular spot: https://raytracing.github.io. We are temporarily
+preserving the final version of v3.2.3 inside the repo, so you can just grab the latest and
+reference both versions.
+
+**Second, Trevor and I are pounding away at the remaining steps to get the final v4.0.0 release done
+and published.** We're planning on finishing this work by the end of 2023. If you'd like to check
+out the latest updates and watch our progress, we're on the `dev` branch. You can also browse our
+release backlog to see what we're planning. Our relevant milestones are
 
   - [v4.0.0](https://github.com/RayTracing/raytracing.github.io/milestone/16)
   - [v4.0.0-release](https://github.com/RayTracing/raytracing.github.io/milestone/19)
 
-Let us know if you'd like to help out. If you have a change you'd like to contribute,
-_**[please see our contribution guidelines][CONTRIBUTING]**_.
+**Third, we're starting to think about where we go from here.** Top of mind topics include shadow
+rays, triangle mesh geometry, and parallelism, but there are many possible extensions both large and
+small. If you're interested in contributing, email us! You can find our contact info at the head of
+each book.
+
+If you'd like to contribute a PR _**please read our [contribution guidelines][CONTRIBUTING]
+first**_.
 
 
 GitHub Discussions
@@ -70,16 +82,15 @@ The organization of this repository is meant to be simple and self-evident at a 
   - `src/` --
     Contains the source.
 
-  - `src/common/` --
-    Contains any headers that are common to two or more books. This is also where external headers
-    are stored.
-
   - `src/<book>/` --
-    Contains the source specific to any one book. There is no sharing of source outside of the
-    common directory.
+    Contains the final source code for each book.
 
   - `v3/` --
     All content (same general structure) for the v3.2.3 release (from December 2020).
+
+  - `v3/common` --
+    Contains v3 headers that are common to two or more v3 books. This is also where external headers
+    are stored.
 
 
 Source Code
@@ -106,10 +117,10 @@ languages (see [_Implementations in Other Languages_][implementations]), and acr
 operating systems. Feel free to add your own implementation to the list!
 
 ### Branches
-The `master` branch contains the latest released (and live) assets. All ongoing development, with
-all of the latest changes, can be found in the `dev-patch`, `dev-minor`, and `dev-major` branches.
-We try to keep CHANGELOG.md up to date, so you can easily browse what's new in each development
-branch.
+The `master` branch contains the latest released (and live) assets. In general, ongoing development,
+with all of the latest changes, can be found in the `dev` branch, which may contain patch, minor and
+major changes, depending on the release in progress. We try to keep CHANGELOG.md up to date, so you
+can easily browse what's new in each development branch.
 
 
 Building and Running

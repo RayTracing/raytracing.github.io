@@ -13,9 +13,12 @@ improvements.
 Development Branches
 ---------------------
 We use `master` as our release branch. _Generally, changes should never go directly to the master
-branch_. All ongoing development work (and all of the latest changes) will be in the `dev-patch`,
-`dev-minor`, or `dev-major` branches. The appropriate target branch for any pull requests you want
-to make will be determined in the associated issue first (all PRs should have an associated issue).
+branch_. All ongoing development work (and all of the latest changes) will be in the `dev` branch.
+However, we may want changes in other development branches (for example, in a `dev-patch` branch for
+a quick patch release). The appropriate target branch for any pull requests you want to make will be
+determined in the associated issue first (all PRs should have an associated issue).
+
+☞ _**Key Point: submitting a PR to `master` is almost always the wrong move.**_
 
 
 Issues
@@ -33,6 +36,9 @@ When entering a new issue, please include all relevant information. For content 
 book or books this applies to, and specific locations that should be reviewed. Similarly for code:
 please include the file, function/class, and line number(s) if that applies.
 
+Finally, _please keep issues focused on a single problem or suggestion_. If discussion prompts you
+to think of another related issue, create a new issue for that topic.
+
 
 Pull Requests
 --------------
@@ -46,8 +52,8 @@ To contribute a change to the project, *please follow these steps*:
      duplicate other work planned or in progress, and decide which development branch is correct
      for the release type and release schedule.
 
-  4. Create your changes in a feature branch (or fork) from the assigned development branch
-     (`dev-patch`, `dev-minor`, `dev-major`).
+  4. Create your changes in a feature branch (or fork) from the assigned development branch (usually
+     `dev`).
 
   5. Follow the existing code style.
 
@@ -56,15 +62,18 @@ To contribute a change to the project, *please follow these steps*:
 
   7. When ready, create your pull request and request a review from "rt-contributors".
 
+  8. Congratulate yourself for having been part of the 1% of contributors who actually read and
+     followed these guidelines.
+
 Note the code philosophy outlined in the first section of the first book. In short, the code is
 intended to be clear for everyone, using simple C/C++ idioms as much as possible. We have chosen to
 adopt _some_ modern conventions where we feel it makes the code more accessible to non-C++
 programmers. Please follow the existing coding style and simplicity when offering your suggested
 changes.
 
-If anything above sounds daunting, note that you'll get _massive_ credit for actually reading the
-CONTRIBUTING.md and following the process above -- so we'd be delighted to answer any questions and
-guide you through the process.
+If anything above sounds daunting, note that you'll get _**massive**_ credit for actually reading
+the CONTRIBUTING.md and following the process above -- so we'd be delighted to answer any questions
+and guide you through the process.
 
 
 Questions
