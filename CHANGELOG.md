@@ -1,7 +1,7 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
-# v4.0.0-alpha.1 (2023-08-06)
+# v4.0.0-alpha.2 (2023-08-11 ...)
 
 It's been quite a while since our last release of v3.2.3 at the end of 2020. For this cycle, we've
 tackled a load of significant backlog items, including rewrites of much of our underlying code. As
