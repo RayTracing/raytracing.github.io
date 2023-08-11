@@ -2171,9 +2171,9 @@ And the interpolation becomes a bit more complicated:
 
 </div>
 
-The output of the perlin interpretation can return negative values. These negative values will be
-passed to the `sqrt()` function of our gamma function and get turned into `NaN`s. We will cast the
-perlin output back to between 0 and 1.
+The output of the Perlin interpolation function can return negative values. These negative values
+will be passed to our `linear_to_gamma()` color function, which expects only positive inputs. To
+mitigate this, we'll map the $[-1,+1]$ range of values to $[0,1]$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class noise_texture : public texture {
@@ -3431,9 +3431,9 @@ don’t depend on z.
 
   ![Figure [rot-z]: Rotation about the Z axis](../images/fig-2.09-rot-z.jpg)
 
-This involves some basic trigonometry that uses formulas that I will not cover here. That gives you
-the correct impression it’s a little involved, but it is straightforward, and you can find it in any
-graphics text and in many lecture notes. The result for rotating counter-clockwise about z is:
+This involves some basic trigonometry using formulas that I will not cover here. It’s a little
+involved, but it is straightforward, and you can find it in any graphics text and in many lecture
+notes. The result for rotating counter-clockwise about z is:
 
   $$ x' = \cos(\theta) \cdot x - \sin(\theta) \cdot y $$
   $$ y' = \sin(\theta) \cdot x + \cos(\theta) \cdot y $$
