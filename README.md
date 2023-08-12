@@ -117,10 +117,14 @@ languages (see [_Implementations in Other Languages_][implementations]), and acr
 operating systems. Feel free to add your own implementation to the list!
 
 ### Branches
-The `master` branch contains the latest released (and live) assets. In general, ongoing development,
-with all of the latest changes, can be found in the `dev` branch, which may contain patch, minor and
-major changes, depending on the release in progress. We try to keep CHANGELOG.md up to date, so you
-can easily browse what's new in each development branch.
+In general, ongoing development, with all of the latest changes, can be found in the `dev` branch,
+which may contain patch, minor and major changes, depending on the release in progress. We try to
+keep CHANGELOG.md up to date, so you can easily browse what's new in each development branch. We may
+from time to time use additional development branches, so stay up to date by reviewing the
+[CONTRIBUTING][] page.
+
+The `release` branch contains the latest released (and live) assets. This is the branch from which
+GitHub pages serves up https://raytracing.github.io/.
 
 
 Building and Running

@@ -12,13 +12,11 @@ improvements.
 
 Development Branches
 ---------------------
-We use `master` as our release branch. _Generally, changes should never go directly to the master
+We use `release` as our release branch. _Generally, changes should never go directly to the release
 branch_. All ongoing development work (and all of the latest changes) will be in the `dev` branch.
 However, we may want changes in other development branches (for example, in a `dev-patch` branch for
 a quick patch release). The appropriate target branch for any pull requests you want to make will be
 determined in the associated issue first (all PRs should have an associated issue).
-
-☞ _**Key Point: submitting a PR to `master` is almost always the wrong move.**_
 
 
 Issues
@@ -29,8 +27,7 @@ all kinds, even better ways to present something -- just go to the [issues page]
 **Before creating a new issue**, please review existing issues to see if someone has already
 submitted the same one. Chances are you're not the first to encounter something, so a little quick
 research can save everyone some hassle. It's also a good idea to verify that problems still exist in
-the development branch (which will be one of `dev-patch`, `dev-minor` or `dev-major`) when creating
-new issues.
+the development branch (`dev`) when creating new issues.
 
 When entering a new issue, please include all relevant information. For content issues, include the
 book or books this applies to, and specific locations that should be reviewed. Similarly for code:
