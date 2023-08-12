@@ -163,10 +163,9 @@ a time period.
 
 Adding Moving Spheres
 ----------------------
-Now to create a moving object.
-I’ll update the sphere class so that its center moves linearly from `center1` at time=0 to `center2`
-at time=1.
-(It continues on indefinitely outside that time interval, so it really can be sampled at any time.)
+Now to create a moving object. I’ll update the sphere class so that its center moves linearly from
+`center1` at time=0 to `center2` at time=1. (It continues on indefinitely outside that time
+interval, so it really can be sampled at any time.)
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
@@ -508,8 +507,8 @@ The following pseudocode determines whether the $t$ intervals in the slab overla
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 <div class='together'>
-That is awesomely simple, and the fact that the 3D version also works is why people love the
-slab method:
+That is awesomely simple, and the fact that the 3D version also works is why people love the slab
+method:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     compute (tx0, tx1)
@@ -764,8 +763,8 @@ two boxes.
     [Listing [moving-sphere-bbox]: <kbd>[sphere.h]</kbd> Moving sphere with bounding box]
 
 <div class='together'>
-Now we need a new `aabb` constructor that takes two boxes as input.
-First, we'll add a new interval constructor that takes two intervals as input:
+Now we need a new `aabb` constructor that takes two boxes as input. First, we'll add a new interval
+constructor that takes two intervals as input:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class interval {
@@ -909,7 +908,6 @@ list along one axis. I’ll go for simplicity:
   1. randomly choose an axis
   2. sort the primitives (`using std::sort`)
   3. put half in each subtree
-
 
 When the list coming in is two elements, I put one in each subtree and end the recursion. The
 traversal algorithm should be smooth and not have to check for null pointers, so if I just have one
@@ -1142,10 +1140,9 @@ parameter.
 To accomplish the checkered pattern, we'll first compute the floor of each component of the input
 point. We could truncate the coordinates, but that would pull values toward zero, which would give
 us the same color on both sides of zero. The floor function will always shift values to the integer
-value on the left (toward negative infinity). Given these three integer results
-($\lfloor x \rfloor, \lfloor y \rfloor, \lfloor z \rfloor$) we take their sum and compute the
-result modulo two, which gives us either 0 or 1. Zero maps to the even color, and one to the odd
-color.
+value on the left (toward negative infinity). Given these three integer results ($\lfloor x \rfloor,
+\lfloor y \rfloor, \lfloor z \rfloor$) we take their sum and compute the result modulo two, which
+gives us either 0 or 1. Zero maps to the even color, and one to the odd color.
 
 Finally, we add a scaling factor to the texture, to allow us to control the size of the checker
 pattern in the scene.
@@ -1486,8 +1483,8 @@ Now we can make textured materials by replacing the `const color& a` with a text
 </div>
 
 From the hitpoint $\mathbf{P}$, we compute the surface coordinates $(u,v)$. We then use these to
-index into our procedural solid texture (like marble). We can also read in an image and use the
-2D $(u,v)$ texture coordinate to index into the image.
+index into our procedural solid texture (like marble). We can also read in an image and use the 2D
+$(u,v)$ texture coordinate to index into the image.
 
 A direct way to use scaled $(u,v)$ in an image is to round the $u$ and $v$ to integers, and use that
 as $(i,j)$ pixels. This is awkward, because we don’t want to have to change the code when we change
@@ -2601,10 +2598,10 @@ so that
 
   $$ \mathbf{P} = \mathbf{Q} + \alpha \mathbf{u} + \beta \mathbf{v} $$
 
-If $\mathbf{u}$ and $\mathbf{v}$ were guaranteed to be orthogonal to each other (forming a 90°
-angle between them), then this would be a simple matter of using the dot product to project
-$\mathbf{P}$ onto each of the basis vectors $\mathbf{u}$ and $\mathbf{v}$. However, since we are not
-restricting $\mathbf{u}$ and $\mathbf{v}$ to be orthogonal, the math's a little bit trickier.
+If $\mathbf{u}$ and $\mathbf{v}$ were guaranteed to be orthogonal to each other (forming a 90° angle
+between them), then this would be a simple matter of using the dot product to project $\mathbf{P}$
+onto each of the basis vectors $\mathbf{u}$ and $\mathbf{v}$. However, since we are not restricting
+$\mathbf{u}$ and $\mathbf{v}$ to be orthogonal, the math's a little bit trickier.
 
   $$ \mathbf{P} = \mathbf{Q} + \alpha \mathbf{u} + \beta \mathbf{v}$$
 
@@ -2707,8 +2704,8 @@ The vector $\mathbf{w}$ is constant for a given quadrilateral, so we'll cache th
 
 Interior Testing of The Intersection Using UV Coordinates
 ----------------------------------------------------------
-Now that we have the intersection point's planar coordinates $\alpha$ and $\beta$, we can easily
-use these to determine if the intersection point is inside the quadrilateral -- that is, if the ray
+Now that we have the intersection point's planar coordinates $\alpha$ and $\beta$, we can easily use
+these to determine if the intersection point is inside the quadrilateral -- that is, if the ray
 actually hit the quadrilateral.
 
 <div class='together'>
@@ -3284,14 +3281,14 @@ This gives:
 </div>
 
 Now that we have boxes, we need to rotate them a bit to have them match the _real_ Cornell box. In
-ray tracing, this is usually done with an _instance_. An instance is a copy of a geometric
-primitive that has been placed into the scene. This instance is entirely independent of the other
-copies of the primitive and can be moved or rotated. In this case, our geometric primitive is our
-hittable `box` object, and we want to rotate it. This is especially easy in ray tracing because we
-don’t actually need to move objects in the scene; instead we move the rays in the opposite
-direction. For example, consider a _translation_ (often called a _move_). We could take the pink box
-at the origin and add two to all its x components, or (as we almost always do in ray tracing) leave
-the box where it is, but in its hit routine subtract two off the x-component of the ray origin.
+ray tracing, this is usually done with an _instance_. An instance is a copy of a geometric primitive
+that has been placed into the scene. This instance is entirely independent of the other copies of
+the primitive and can be moved or rotated. In this case, our geometric primitive is our hittable
+`box` object, and we want to rotate it. This is especially easy in ray tracing because we don’t
+actually need to move objects in the scene; instead we move the rays in the opposite direction. For
+example, consider a _translation_ (often called a _move_). We could take the pink box at the origin
+and add two to all its x components, or (as we almost always do in ray tracing) leave the box where
+it is, but in its hit routine subtract two off the x-component of the ray origin.
 
   ![Figure [ray-box]: Ray-box intersection with moved ray vs box](../images/fig-2.08-ray-box.jpg)
 
@@ -3377,8 +3374,8 @@ make this happen.
 </div>
 
 We also need to remember to offset the bounding box, otherwise the incident ray might be looking in
-  the wrong place and trivially reject the intersection.
-The expression `object->bounding_box() + offset` above requires some additional support.
+the wrong place and trivially reject the intersection. The expression `object->bounding_box() +
+offset` above requires some additional support.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class aabb {
@@ -3460,15 +3457,15 @@ coordinates.
 
 The pseudocode for the `translate::hit` function above describes the function in terms of _moving_:
 
-1. Move the ray backwards by the offset
-2. Determine whether an intersection exists along the offset ray (and if so, where)
-3. Move the intersection point forwards by the offset
+  1. Move the ray backwards by the offset
+  2. Determine whether an intersection exists along the offset ray (and if so, where)
+  3. Move the intersection point forwards by the offset
 
 But this can also be thought of in terms of a _changing of coordinates_:
 
-1. Change the ray from world space to object space
-2. Determine whether an intersection exists in object space (and if so, where)
-3. Change the intersection point from object space to world space
+  1. Change the ray from world space to object space
+  2. Determine whether an intersection exists in object space (and if so, where)
+  3. Change the intersection point from object space to world space
 
 Rotating an object will not only change the point of intersection, but will also change the surface
 normal vector, which will change the direction of reflections and refractions. So we need to change
