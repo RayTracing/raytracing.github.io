@@ -1,7 +1,23 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
-# v4.0.0-alpha.2 (2023-08-11 ...)
+# v4.0.0-alpha.2 (In Progress)
+
+This will likely change to the official v4.0.0 release, but we _might_ put out another alpha before
+then.
+
+### Common
+  - Fix - Fix references from `random_in_hemisphere()` to `random_on_hemisphere()` (#1198)
+
+### In One Weekend
+
+### The Next Week
+
+### The Rest of Your Life
+
+
+----------------------------------------------------------------------------------------------------
+# v4.0.0-alpha.1 (2023-08-06)
 
 It's been quite a while since our last release of v3.2.3 at the end of 2020. For this cycle, we've
 tackled a load of significant backlog items, including rewrites of much of our underlying code. As
