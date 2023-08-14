@@ -27,8 +27,8 @@ we strongly recommend that you jump above the v4 train.
   - [Ray Tracing: The Next Week][web2]
   - [Ray Tracing: The Rest of Your Life][web3]
 
-These books have been formatted for both screen and print. For printed copies, or to create PDF
-versions, use the print function in your browser.
+These books have been formatted for both screen and print. For more information about printing your
+own copies, or on getting PDFs of the books, see [PRINTING.md][] for more information.
 
 
 Project Status
@@ -202,6 +202,7 @@ _**please review the [CONTRIBUTING][] document for the most effective way to pro
 [implementations]: https://github.com/RayTracing/raytracing.github.io/wiki/Implementations
 [milestone 16]:    https://github.com/RayTracing/raytracing.github.io/milestone/16
 [milestone 19]:    https://github.com/RayTracing/raytracing.github.io/milestone/19
+[PRINTING.md]:     PRINTING.md
 [v3.2.3]:          https://github.com/RayTracing/raytracing.github.io/releases/tag/v3.2.3
 [web1]:            https://raytracing.github.io/books/RayTracingInOneWeekend.html
 [web1-v3]:         https://raytracing.github.io/books/v3/RayTracingInOneWeekend.html
