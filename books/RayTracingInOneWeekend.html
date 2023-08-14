@@ -2305,7 +2305,7 @@ Limiting the Number of Child Rays
 ----------------------------------
 There's one potential problem lurking here. Notice that the `ray_color` function is recursive. When
 will it stop recursing? When it fails to hit anything. In some cases, however, that may be a long
-time — long enough to blow the stack. To guard against that, let's limit the maximum recursion
+time -- long enough to blow the stack. To guard against that, let's limit the maximum recursion
 depth, returning no light contribution at the maximum depth:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -4076,28 +4076,48 @@ Next Steps
 -----------
 You now have a cool ray tracer! What next?
 
-  1. Lights -- You can do this explicitly, by sending shadow rays to lights, or it can be done
-     implicitly by making some objects emit light, biasing scattered rays toward them, and then
-     downweighting those rays to cancel out the bias. Both work. I am in the minority in favoring
-     the latter approach.
 
-  2. Triangles -- Most cool models are in triangle form. The model I/O is the worst and almost
-     everybody tries to get somebody else’s code to do this.
+### Book 2: _Ray Tracing: The Next Week_
+The second book in this series builds on the ray tracer you've developed here. This includes new
+features such as:
 
-  3. Surface Textures -- This lets you paste images on like wall paper. Pretty easy and a good thing
-     to do.
+  - Motion blur -- Realistially render moving objects.
+  - Bounding volume hierarchies -- speeding up the rendering of complex scenes.
+  - Texture maps -- placing images on objects.
+  - Perlin noise -- a random noise generator very useful for many techniques.
+  - Quadrilaterals -- something to render besides spheres! Also, the foundation to implement disks,
+    triangles, rings or just about any other 2D primitive.
+  - Lights -- add sources of light to your scene.
+  - Transforms -- useful for placing and rotating objects.
+  - Volumetric rendering -- render smoke, clouds and other gaseous volumes.
 
-  4. Solid textures -- Ken Perlin has his code online. Andrew Kensler has some very cool info at his
-     blog.
 
-  5. Volumes and Media -- Cool stuff and will challenge your software architecture. I favor making
-     volumes have the hittable interface and probabilistically have intersections based on density.
-     Your rendering code doesn’t even have to know it has volumes with that method.
+### Book 3: _Ray Tracing: The Rest of Your Life_
+This book expands again on the content from the second book. A lot of this book is about improving
+both the rendered image quality and the renderer performance, and focuses on generating the _right_
+rays and accumulating them appropriately.
 
-  6. Parallelism -- Run $N$ copies of your code on $N$ cores with different random seeds. Average
-     the $N$ runs. This averaging can also be done hierarchically where $N/2$ pairs can be averaged
-     to get $N/4$ images, and pairs of those can be averaged. That method of parallelism should
-     extend well into the thousands of cores with very little coding.
+This book is for the reader seriously interested in writing professional-level ray tracers, and/or
+interested in the foundation to implement advanced effects like subsurface scattering or nested
+dielectrics.
+
+
+### Other Directions
+There are so many additional directions you can take from here, including techniques we haven't
+(yet?) covered in this series. These include:
+
+**Triangles** -- Most cool models are in triangle form. The model I/O is the worst and almost
+everybody tries to get somebody else’s code to do this. This also includes efficiently handling
+large _meshes_ of triangles, which present their own challenges.
+
+**Parallelism** -- Run $N$ copies of your code on $N$ cores with different random seeds. Average the
+$N$ runs. This averaging can also be done hierarchically where $N/2$ pairs can be averaged to get
+$N/4$ images, and pairs of those can be averaged. That method of parallelism should extend well into
+the thousands of cores with very little coding.
+
+**Shadow Rays** -- When firing rays at light sources, you can determine exactly how a particular point
+is shadowed. With this, you can render crisp or soft shadows, adding another degreee of realism to
+your scenes.
 
 Have fun, and please send me your cool images!
 
