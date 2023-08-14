@@ -2601,10 +2601,64 @@ so that
 
   $$ \mathbf{P} = \mathbf{Q} + \alpha \mathbf{u} + \beta \mathbf{v} $$
 
-If $\mathbf{u}$ and $\mathbf{v}$ were guaranteed to be orthogonal to each other (forming a 90° angle
-between them), then this would be a simple matter of using the dot product to project $\mathbf{P}$
-onto each of the basis vectors $\mathbf{u}$ and $\mathbf{v}$. However, since we are not restricting
+Pulling a rabbit out of my hat, the planar coordinates $\alpha$ and $\beta$ are given by the
+following equations:
+
+  $$ \alpha = \mathbf{w} \cdot (\mathbf{p} \times \mathbf{v}) $$
+  $$ \beta  = \mathbf{w} \cdot (\mathbf{u} \times \mathbf{p}) $$
+
+where
+
+  $$ \mathbf{w} = \frac{\mathbf{n}}{\mathbf{n} \cdot (\mathbf{u} \times \mathbf{v})}
+                = \frac{\mathbf{n}}{\mathbf{n} \cdot \mathbf{n}}$$
+
+The vector $\mathbf{w}$ is constant for a given quadrilateral, so we'll cache that value.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class quad : public hittable {
+      public:
+        quad(const point3& _Q, const vec3& _u, const vec3& _v, shared_ptr<material> m)
+          : Q(_Q), u(_u), v(_v), mat(m)
+        {
+            auto n = cross(u, v);
+            normal = unit_vector(n);
+            D = dot(normal, Q);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            w = n / dot(n,n);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            set_bounding_box();
+        }
+        ...
+
+      private:
+        point3 Q;
+        vec3 u, v;
+        shared_ptr<material> mat;
+        aabb bbox;
+        vec3 normal;
+        double D;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        vec3 w;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [quad-w]: <kbd>[quad.h]</kbd> Caching the quadrilateral's w value]
+
+
+Deriving the Planar Coordinates
+--------------------------------
+
+(This section covers the derivation of the equations above. Feel free to skip to the next section if
+you're not interested.)
+
+Refer back to figure [ray-plane]. If the planar basis vectors $\mathbf{u}$ and $\mathbf{v}$ were
+guaranteed to be orthogonal to each other (forming a 90° angle between them), then solving for
+$\alpha$ and $\beta$ would be a simple matter of using the dot product to project $\mathbf{P}$ onto
+each of the basis vectors $\mathbf{u}$ and $\mathbf{v}$. However, since we are not restricting
 $\mathbf{u}$ and $\mathbf{v}$ to be orthogonal, the math's a little bit trickier.
+
+To set things up, consider that
 
   $$ \mathbf{P} = \mathbf{Q} + \alpha \mathbf{u} + \beta \mathbf{v}$$
 
@@ -2613,7 +2667,7 @@ $\mathbf{u}$ and $\mathbf{v}$ to be orthogonal, the math's a little bit trickier
 Here, $\mathbf{P}$ is the _point_ of intersection, and $\mathbf{p}$ is the _vector_ from
 $\mathbf{Q}$ to $\mathbf{P}$.
 
-Cross the above equation with $\mathbf{u}$ and $\mathbf{v}$, respectively:
+Cross the equation for $\mathbf{p}$ with $\mathbf{u}$ and $\mathbf{v}$, respectively:
 
   $$ \begin{align*}
      \mathbf{u} \times \mathbf{p} &= \mathbf{u} \times (\alpha \mathbf{u} + \beta \mathbf{v}) \\
@@ -2671,39 +2725,6 @@ for the plane's basis frame, for any planar point $\mathbf{P}$:
   $$ \alpha = \mathbf{w} \cdot (\mathbf{p} \times \mathbf{v}) $$
   $$ \beta  = \mathbf{w} \cdot (\mathbf{u} \times \mathbf{p}) $$
 
-The vector $\mathbf{w}$ is constant for a given quadrilateral, so we'll cache that value.
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class quad : public hittable {
-      public:
-        quad(const point3& _Q, const vec3& _u, const vec3& _v, shared_ptr<material> m)
-          : Q(_Q), u(_u), v(_v), mat(m)
-        {
-            auto n = cross(u, v);
-            normal = unit_vector(n);
-            D = dot(normal, Q);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            w = n / dot(n,n);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-            set_bounding_box();
-        }
-        ...
-
-      private:
-        point3 Q;
-        vec3 u, v;
-        shared_ptr<material> mat;
-        aabb bbox;
-        vec3 normal;
-        double D;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        vec3 w;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [quad-w]: <kbd>[quad.h]</kbd> Caching the quadrilateral's w value]
-
 
 Interior Testing of The Intersection Using UV Coordinates
 ----------------------------------------------------------
@@ -2725,14 +2746,6 @@ just needs to meet the following criteria:
   2. $ 0 \leq \beta \leq 1 $
 
 That's the last piece needed to implement quadrilateral primitives.
-
-Pause a bit here and consider that if you use the $(\alpha,\beta)$ coordinates to determine if a
-point lies inside a quadrilateral (parallelogram), it's not too hard to imagine using these same 2D
-coordinates to determine if the intersection point lies inside _any_ other 2D (planar) primitive!
-
-We'll leave these additional 2D shape possibilities as an exercise to the reader, depending on your
-desire to explore. Consider triangles, disks, and rings (all of these are surprisingly easy). You
-could even create cut-out stencils based on the pixels of a texture map, or a Mandelbrot shape!
 
 In order to make such experimentation a bit easier, we'll factor out the $(\alpha,\beta)$ interior
 test method from the hit method.
@@ -2864,6 +2877,23 @@ And now we add a new scene to demonstrate our new `quad` primitive:
 </div>
 
   ![<span class='num'>Image 16:</span> Quads](../images/img-2.16-quads.png class='pixel')
+
+
+Additional 2D Primitives
+-------------------------
+Pause a bit here and consider that if you use the $(\alpha,\beta)$ coordinates to determine if a
+point lies inside a quadrilateral (parallelogram), it's not too hard to imagine using these same 2D
+coordinates to determine if the intersection point lies inside _any_ other 2D (planar) primitive!
+
+For example, suppose we change the `is_interior()` function to return true if `sqrt(a*a + b*b) < r`.
+This would then implement disk primitives of radius `r`. For triangles, try
+`a > 0 && b > 0 && a + b < 1`.
+
+We'll leave additional 2D shape possibilities as an exercise to the reader, depending on your desire
+to explore. You could even create cut-out stencils based on the pixels of a texture map, or a
+Mandelbrot shape! As a little Easter egg, check out the `alternate-2D-primitves` tag in the source
+repository. This has solutions for triangles, ellipses and annuli (rings) in
+`src/TheNextWeek/quad.h`
 
 
 
