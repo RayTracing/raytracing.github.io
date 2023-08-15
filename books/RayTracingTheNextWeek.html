@@ -375,8 +375,10 @@ $t=0$ to $\mathbf{C} + (0, r/2, 0)$ at time $t=1$:
 <div class='together'>
 This gives the following result:
 
+  <div id="image-bouncing-spheres">
   ![<span class='num'>Image 1:</span> Bouncing spheres
   ](../images/img-2.01-bouncing-spheres.png class='pixel')
+  </div>
 
 </div>
 
@@ -926,12 +928,13 @@ we haven't yet defined.
       public:
         ...
         bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
-            auto objects = src_objects; // Create a modifiable array of the source scene objects
-
             int axis = random_int(0,2);
+
             auto comparator = (axis == 0) ? box_x_compare
                             : (axis == 1) ? box_y_compare
                                           : box_z_compare;
+
+            auto objects = src_objects; // A modifiable array of the source scene objects
 
             size_t object_span = end - start;
 
@@ -1037,6 +1040,111 @@ At this point, we're ready to use our new BVH code. Let's use it on our random s
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-spheres-bvh]: <kbd>[main.cc]</kbd> Random spheres, using BVH]
+
+The rendered image should be identical to the non-BVH version shown in
+[image 1](#image-bouncing-spheres). However, if you time the two versions, the BVH version should be
+faster. I see a speedup of almost _six and a half times_ the prior version.
+
+
+Another BVH Optimization
+-------------------------
+We can speed up the BVH optimization a bit more. Instead of choosing a random splitting axis, let's
+split the longest axis of the enclosing bounding box to get the most subdivision. The change is
+straight-forward, but we'll add a few things to the `aabb` class in the process.
+
+The first task is to construct an axis-aligned bounding box of the span of objects in the BVH
+constructor. Basically, we'll construct the `bvh_node`s bounding box from this span by initializing
+the bounding box to empty, and then augmenting it with each bounding box in the span of objects.
+
+We don't have a way yet to express an empty bounding box, so we'll imagine one for now and
+implementing it shortly.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class bvh_node : public hittable {
+      public:
+        ...
+        bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            // Build the bounding box of the span of source objects.
+            bbox = aabb::empty;
+            for (int object_index=start; object_index < end; ++object_index)
+                bbox = aabb(bbox, src_objects[object_index]->bounding_box());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [object-span-bbox]: <kbd>[bvh.h]</kbd> Building the bbox for the span of BVH objects]
+
+Now that we have the bounding box, set the splitting axis to the one with the longest side. Again,
+we'll imagine a function that does that for us: `aabb::longest_axis()`. Finally, since we're
+computing the bounding box of the object span up front, we can delete the original line that
+computed it as the union of the left and right sides.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class bvh_node : public hittable {
+      public:
+        ...
+        bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
+            // Build the bounding box of the span of source objects.
+            bbox = aabb::empty;
+            for (int object_index=start; object_index < end; ++object_index)
+                bbox = aabb(bbox, src_objects[object_index]->bounding_box());
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            int axis = bbox.longest_axis();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            auto comparator = (axis == 0) ? box_x_compare
+                            : (axis == 1) ? box_y_compare
+                                          : box_z_compare;
+
+            ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+            bbox = aabb(left->bounding_box(), right->bounding_box());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [object-span-bbox]: <kbd>[bvh.h]</kbd> Building the bbox for the span of BVH objects]
+
+Now to implement the empty `aabb` code and the new `aabb::longest_axis()` function:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class aabb {
+      public:
+        ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        int longest_axis() const {
+            // Returns the index of the longest axis of the bounding box.
+
+            if (x.size() > y.size())
+                return x.size() > z.size() ? 0 : 2;
+            else
+                return y.size() > z.size() ? 1 : 2;
+        }
+
+        static const aabb empty, universe;
+    };
+
+    const aabb aabb::empty    = aabb(interval::empty,    interval::empty,    interval::empty);
+    const aabb aabb::universe = aabb(interval::universe, interval::universe, interval::universe);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    ...
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [aabb-empty-and-axis]: <kbd>[aabb.h]</kbd>
+    New aabb constants and longest_axis() function]
+
+As before, you should see identical results to [image 1](#image-bouncing-spheres), but rendering a
+little bit faster. On my system, this yields something like an additional 18% render speedup. Not
+bad for a little extra work.
 
 
 
