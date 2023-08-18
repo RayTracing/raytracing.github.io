@@ -904,12 +904,12 @@ have an area that is half of the total. From $0$ to $2\pi$ for example:
     }
 
     int main() {
-        int N = 10000;
+        unsigned int N = 10000;
         double sum = 0.0;
 
         // iterate through all of our samples
         std::vector<sample> samples;
-        for (int i = 0; i < N; i++) {
+        for (unsigned int i = 0; i < N; i++) {
             // Get the area under the curve
             auto x = random_double(0, 2*pi);
             auto sin_x = sin(x);
@@ -927,9 +927,9 @@ have an area that is half of the total. From $0$ to $2\pi$ for example:
         double half_sum = sum / 2.0;
         double halfway_point = 0.0;
         double accum = 0.0;
-        for (int i = 0; i < N; i++){
+        for (unsigned int i = 0; i < N; i++){
             accum += samples[i].p_x;
-            if (accum >= half_sum){
+            if (accum >= half_sum) {
                 halfway_point = samples[i].x;
                 break;
             }
@@ -1991,7 +1991,7 @@ $f()/p() = \cos^3(\theta) / \frac{1}{2\pi}$, and we can test this:
     #include <iomanip>
     #include <math.h>
 
-    double f(double r1, double r2) {
+    double f(double r2) {
         // auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
         // auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
         auto z = 1 - r2;
@@ -1999,7 +1999,7 @@ $f()/p() = \cos^3(\theta) / \frac{1}{2\pi}$, and we can test this:
         return cos_theta*cos_theta*cos_theta;
     }
 
-    double pdf(double r1, double r2) {
+    double pdf() {
         return 1.0 / (2.0*pi);
     }
 
@@ -2008,9 +2008,8 @@ $f()/p() = \cos^3(\theta) / \frac{1}{2\pi}$, and we can test this:
 
         auto sum = 0.0;
         for (int i = 0; i < N; i++) {
-            auto r1 = random_double();
             auto r2 = random_double();
-            sum += f(r1, r2) / pdf(r1, r2);
+            sum += f(r2) / pdf();
         }
 
         std::cout << std::fixed << std::setprecision(12);
@@ -2706,7 +2705,7 @@ functions through to subclasses if you want a purely abstract `hittable` interfa
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        virtual double pdf_value(const point3& o, const vec3& v) const {
+        virtual double pdf_value(const point3& origin, const vec3& direction) const {
             return 0.0;
         }
 
@@ -2743,13 +2742,13 @@ And then we change `quad` to implement those functions:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double pdf_value(const point3& origin, const vec3& v) const override {
+        double pdf_value(const point3& origin, const vec3& direction) const override {
             hit_record rec;
-            if (!this->hit(ray(origin, v), interval(0.001, infinity), rec))
+            if (!this->hit(ray(origin, direction), interval(0.001, infinity), rec))
                 return 0;
 
-            auto distance_squared = rec.t * rec.t * v.length_squared();
-            auto cosine = fabs(dot(v, rec.normal) / v.length());
+            auto distance_squared = rec.t * rec.t * direction.length_squared();
+            auto cosine = fabs(dot(direction, rec.normal) / direction.length());
 
             return distance_squared / (cosine * area);
         }
@@ -2763,11 +2762,11 @@ And then we change `quad` to implement those functions:
       private:
         point3 Q;
         vec3 u, v;
+        vec3 w;
         shared_ptr<material> mat;
         aabb bbox;
         vec3 normal;
         double D;
-        vec3 w;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double area;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3484,14 +3483,14 @@ The sphere class needs the two PDF-related functions:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double pdf_value(const point3& o, const vec3& v) const override {
+        double pdf_value(const point3& origin, const vec3& direction) const override {
             // This method only works for stationary spheres.
 
             hit_record rec;
-            if (!this->hit(ray(o, v), interval(0.001, infinity), rec))
+            if (!this->hit(ray(origin, direction), interval(0.001, infinity), rec))
                 return 0;
 
-            auto cos_theta_max = sqrt(1 - radius*radius/(center1 - o).length_squared());
+            auto cos_theta_max = sqrt(1 - radius*radius/(center1 - origin).length_squared());
             auto solid_angle = 2*pi*(1-cos_theta_max);
 
             return  1 / solid_angle;
@@ -3586,12 +3585,12 @@ think both tactics would work fine, but I will go with instrumenting `hittable_l
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double pdf_value(const point3& o, const vec3& v) const override {
-            auto weight = 1.0/objects.size();
+        double pdf_value(const point3& origin, const vec3& direction) const override {
+            auto weight = 1.0 / objects.size();
             auto sum = 0.0;
 
             for (const auto& object : objects)
-                sum += weight * object->pdf_value(o, v);
+                sum += weight * object->pdf_value(origin, direction);
 
             return sum;
         }
