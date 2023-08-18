@@ -53,7 +53,7 @@ class hittable_list : public hittable {
     aabb bounding_box() const override { return bbox; }
 
     double pdf_value(const point3 &o, const vec3 &v) const override {
-        auto weight = 1.0/objects.size();
+        auto weight = 1.0 / objects.size();
         auto sum = 0.0;
 
         for (const auto& object : objects)

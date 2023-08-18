@@ -77,13 +77,13 @@ class quad : public hittable {
         return true;
     }
 
-    double pdf_value(const point3& origin, const vec3& v) const override {
+    double pdf_value(const point3& origin, const vec3& direction) const override {
         hit_record rec;
-        if (!this->hit(ray(origin, v), interval(0.001, infinity), rec))
+        if (!this->hit(ray(origin, direction), interval(0.001, infinity), rec))
             return 0;
 
-        auto distance_squared = rec.t * rec.t * v.length_squared();
-        auto cosine = fabs(dot(v, rec.normal) / v.length());
+        auto distance_squared = rec.t * rec.t * direction.length_squared();
+        auto cosine = fabs(dot(direction, rec.normal) / direction.length());
 
         return distance_squared / (cosine * area);
     }
@@ -96,11 +96,11 @@ class quad : public hittable {
   private:
     point3 Q;
     vec3 u, v;
+    vec3 w;
     shared_ptr<material> mat;
     aabb bbox;
     vec3 normal;
     double D;
-    vec3 w;
     double area;
 };
 

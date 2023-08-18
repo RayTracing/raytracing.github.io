@@ -78,11 +78,11 @@ class quad : public hittable {
   private:
     point3 Q;
     vec3 u, v;
+    vec3 w;
     shared_ptr<material> mat;
     aabb bbox;
     vec3 normal;
     double D;
-    vec3 w;
 };
 
 

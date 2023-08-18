@@ -27,12 +27,12 @@ bool compare_by_x(const sample& a, const sample& b) {
 }
 
 int main() {
-    int N = 10000;
+    unsigned int N = 10000;
     double sum = 0.0;
 
     // iterate through all of our samples
     std::vector<sample> samples;
-    for (int i = 0; i < N; i++) {
+    for (unsigned int i = 0; i < N; i++) {
         // Get the area under the curve
         auto x = random_double(0, 2*pi);
         auto sin_x = sin(x);
@@ -50,9 +50,9 @@ int main() {
     double half_sum = sum / 2.0;
     double halfway_point = 0.0;
     double accum = 0.0;
-    for (int i = 0; i < N; i++){
+    for (unsigned int i = 0; i < N; i++){
         accum += samples[i].p_x;
-        if (accum >= half_sum){
+        if (accum >= half_sum) {
             halfway_point = samples[i].x;
             break;
         }
