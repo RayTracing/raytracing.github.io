@@ -104,8 +104,6 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_options("/we 5204") # Class has virtual functions, but its trivial destructor is not virtual
     add_compile_options("/wd 4100") # unreferenced formal parameter
     add_compile_options("/wd 4365") # conversion from 'size_t' to 'const int __int64', signed/unsigned mismatch
-    add_compile_options("/wd 4457") # index X range checked by comparison on this line
-    add_compile_options("/wd 4464") # feeds call on this line
     add_compile_options("/wd 4514") # Ureferenced inline function has been removed
     add_compile_options("/wd 4626") # assignment operator was implicitly defined as deleted
     add_compile_options("/wd 4710") # Function not inlined
