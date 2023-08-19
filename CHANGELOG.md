@@ -10,6 +10,8 @@ then.
   - Fix - Fix references from `random_in_hemisphere()` to `random_on_hemisphere()` (#1198)
 
 ### In One Weekend
+  - Update reference to "Fundamentals of Interactive Computer Graphics" to "Computer Graphics:
+    Principles and Practice". This is the name used by newer editions of the book.
 
 ### The Next Week
 
