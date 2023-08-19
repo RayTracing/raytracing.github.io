@@ -969,7 +969,7 @@ This uses a new function: `random_int()`:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline int random_int(int min, int max) {
         // Returns a random integer in [min,max].
-        return static_cast<int>(random_double(min, max+1));
+        return int(random_double(min, max+1));
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-int]: <kbd>[rtweekend.h]</kbd> A function to return random integers in a range]
@@ -1271,9 +1271,9 @@ pattern in the scene.
         {}
 
         color value(double u, double v, const point3& p) const override {
-            auto xInteger = static_cast<int>(std::floor(inv_scale * p.x()));
-            auto yInteger = static_cast<int>(std::floor(inv_scale * p.y()));
-            auto zInteger = static_cast<int>(std::floor(inv_scale * p.z()));
+            auto xInteger = int(std::floor(inv_scale * p.x()));
+            auto yInteger = int(std::floor(inv_scale * p.y()));
+            auto zInteger = int(std::floor(inv_scale * p.z()));
 
             bool isEven = (xInteger + yInteger + zInteger) % 2 == 0;
 
@@ -1739,8 +1739,8 @@ The `image_texture` class uses the `rtw_image` class:
             u = interval(0,1).clamp(u);
             v = 1.0 - interval(0,1).clamp(v);  // Flip V to image coordinates
 
-            auto i = static_cast<int>(u * image.width());
-            auto j = static_cast<int>(v * image.height());
+            auto i = int(u * image.width());
+            auto j = int(v * image.height());
             auto pixel = image.pixel_data(i,j);
 
             auto color_scale = 1.0 / 255.0;
@@ -1877,9 +1877,9 @@ code to make it all happen:
         }
 
         double noise(const point3& p) const {
-            auto i = static_cast<int>(4*p.x()) & 255;
-            auto j = static_cast<int>(4*p.y()) & 255;
-            auto k = static_cast<int>(4*p.z()) & 255;
+            auto i = int(4*p.x()) & 255;
+            auto j = int(4*p.y()) & 255;
+            auto k = int(4*p.z()) & 255;
 
             return ranfloat[perm_x[i] ^ perm_y[j] ^ perm_z[k]];
         }
@@ -2010,9 +2010,9 @@ To make it smooth, we can linearly interpolate:
             auto v = p.y() - floor(p.y());
             auto w = p.z() - floor(p.z());
 
-            auto i = static_cast<int>(floor(p.x()));
-            auto j = static_cast<int>(floor(p.y()));
-            auto k = static_cast<int>(floor(p.z()));
+            auto i = int(floor(p.x()));
+            auto j = int(floor(p.y()));
+            auto k = int(floor(p.z()));
             double c[2][2][2];
 
             for (int di=0; di < 2; di++)
@@ -2078,9 +2078,9 @@ a Hermite cubic to round off the interpolation:
             w = w*w*(3-2*w);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            auto i = static_cast<int>(floor(p.x()));
-            auto j = static_cast<int>(floor(p.y()));
-            auto k = static_cast<int>(floor(p.z()));
+            auto i = int(floor(p.x()));
+            auto j = int(floor(p.y()));
+            auto k = int(floor(p.z()));
             ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-smoothed]: <kbd>[perlin.h]</kbd> Perlin smoothed]
@@ -2214,9 +2214,9 @@ The Perlin class `noise()` method is now:
             auto v = p.y() - floor(p.y());
             auto w = p.z() - floor(p.z());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            auto i = static_cast<int>(floor(p.x()));
-            auto j = static_cast<int>(floor(p.y()));
-            auto k = static_cast<int>(floor(p.z()));
+            auto i = int(floor(p.x()));
+            auto j = int(floor(p.y()));
+            auto k = int(floor(p.z()));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 c[2][2][2];
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
