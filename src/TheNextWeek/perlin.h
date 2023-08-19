@@ -38,9 +38,9 @@ class perlin {
         auto u = p.x() - floor(p.x());
         auto v = p.y() - floor(p.y());
         auto w = p.z() - floor(p.z());
-        auto i = static_cast<int>(floor(p.x()));
-        auto j = static_cast<int>(floor(p.y()));
-        auto k = static_cast<int>(floor(p.z()));
+        auto i = int(floor(p.x()));
+        auto j = int(floor(p.y()));
+        auto k = int(floor(p.z()));
         vec3 c[2][2][2];
 
         for (int di=0; di < 2; di++)

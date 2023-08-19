@@ -71,7 +71,7 @@ class camera {
     vec3   defocus_disk_v;  // Defocus disk vertical radius
 
     void initialize() {
-        image_height = static_cast<int>(image_width / aspect_ratio);
+        image_height = int(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
 
         center = lookfrom;
@@ -80,9 +80,9 @@ class camera {
         auto theta = degrees_to_radians(vfov);
         auto h = tan(theta/2);
         auto viewport_height = 2 * h * focus_dist;
-        auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
+        auto viewport_width = viewport_height * (double(image_width)/image_height);
 
-        sqrt_spp = static_cast<int>(sqrt(samples_per_pixel));
+        sqrt_spp = int(sqrt(samples_per_pixel));
         recip_sqrt_spp = 1.0 / sqrt_spp;
 
         // Calculate the u,v,w unit basis vectors for the camera coordinate frame.

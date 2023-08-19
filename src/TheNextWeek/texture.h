@@ -53,9 +53,9 @@ class checker_texture : public texture {
     {}
 
     color value(double u, double v, const point3& p) const override {
-        auto xInteger = static_cast<int>(std::floor(inv_scale * p.x()));
-        auto yInteger = static_cast<int>(std::floor(inv_scale * p.y()));
-        auto zInteger = static_cast<int>(std::floor(inv_scale * p.z()));
+        auto xInteger = int(std::floor(inv_scale * p.x()));
+        auto yInteger = int(std::floor(inv_scale * p.y()));
+        auto zInteger = int(std::floor(inv_scale * p.z()));
 
         bool isEven = (xInteger + yInteger + zInteger) % 2 == 0;
 
@@ -98,8 +98,8 @@ class image_texture : public texture {
         u = interval(0,1).clamp(u);
         v = 1.0 - interval(0,1).clamp(v);  // Flip V to image coordinates
 
-        auto i = static_cast<int>(u * image.width());
-        auto j = static_cast<int>(v * image.height());
+        auto i = int(u * image.width());
+        auto j = int(v * image.height());
         auto pixel = image.pixel_data(i,j);
 
         auto color_scale = 1.0 / 255.0;

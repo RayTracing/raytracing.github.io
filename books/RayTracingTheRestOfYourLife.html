@@ -3596,7 +3596,7 @@ think both tactics would work fine, but I will go with instrumenting `hittable_l
         }
 
         vec3 random(const vec3& o) const override {
-            auto int_size = static_cast<int>(objects.size());
+            auto int_size = int(objects.size());
             return objects[random_int(0, int_size-1)]->random(o);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3680,9 +3680,9 @@ always remember for `NaN`s is that a `NaN` does not equal itself. Using this tri
 
         // Write the translated [0,255] value of each color component.
         static const interval intensity(0.000, 0.999);
-        out << static_cast<int>(256 * intensity.clamp(r)) << ' '
-            << static_cast<int>(256 * intensity.clamp(g)) << ' '
-            << static_cast<int>(256 * intensity.clamp(b)) << '\n';
+        out << int(256 * intensity.clamp(r)) << ' '
+            << int(256 * intensity.clamp(g)) << ' '
+            << int(256 * intensity.clamp(b)) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-nan]: <kbd>[color.h]</kbd> NaN-tolerant write_color function]

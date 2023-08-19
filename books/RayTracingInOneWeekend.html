@@ -122,9 +122,9 @@ Let’s make some C++ code to output such a thing:
                 auto g = double(j) / (image_height-1);
                 auto b = 0;
 
-                int ir = static_cast<int>(255.999 * r);
-                int ig = static_cast<int>(255.999 * g);
-                int ib = static_cast<int>(255.999 * b);
+                int ir = int(255.999 * r);
+                int ig = int(255.999 * g);
+                int ib = int(255.999 * b);
 
                 std::cout << ir << ' ' << ig << ' ' << ib << '\n';
             }
@@ -240,9 +240,9 @@ instead write to the logging output stream (`std::clog`):
                 auto g = double(j) / (image_height-1);
                 auto b = 0;
 
-                int ir = static_cast<int>(255.999 * r);
-                int ig = static_cast<int>(255.999 * g);
-                int ib = static_cast<int>(255.999 * b);
+                int ir = int(255.999 * r);
+                int ig = int(255.999 * g);
+                int ib = int(255.999 * b);
 
                 std::cout << ir << ' ' << ig << ' ' << ib << '\n';
             }
@@ -405,9 +405,9 @@ that writes a single pixel's color out to the standard output stream.
 
     void write_color(std::ostream &out, color pixel_color) {
         // Write the translated [0,255] value of each color component.
-        out << static_cast<int>(255.999 * pixel_color.x()) << ' '
-            << static_cast<int>(255.999 * pixel_color.y()) << ' '
-            << static_cast<int>(255.999 * pixel_color.z()) << '\n';
+        out << int(255.999 * pixel_color.x()) << ' '
+            << int(255.999 * pixel_color.y()) << ' '
+            << int(255.999 * pixel_color.z()) << '\n';
     }
 
     #endif
@@ -548,12 +548,12 @@ to give us the desired aspect ratio. Here's a snippet of what this code will loo
     int image_width = 400;
 
     // Calculate the image height, and ensure that it's at least 1.
-    int image_height = static_cast<int>(image_width / aspect_ratio);
+    int image_height = int(image_width / aspect_ratio);
     image_height = (image_height < 1) ? 1 : image_height;
 
     // Viewport widths less than one are ok since they are real valued.
     auto viewport_height = 2.0;
-    auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
+    auto viewport_width = viewport_height * (double(image_width)/image_height);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [image-setup]: Rendered image setup]
 
@@ -634,14 +634,14 @@ return black for now.
         int image_width = 400;
 
         // Calculate the image height, and ensure that it's at least 1.
-        int image_height = static_cast<int>(image_width / aspect_ratio);
+        int image_height = int(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
 
         // Camera
 
         auto focal_length = 1.0;
         auto viewport_height = 2.0;
-        auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
+        auto viewport_width = viewport_height * (double(image_width)/image_height);
         auto camera_center = point3(0, 0, 0);
 
         // Calculate the vectors across the horizontal and down the vertical viewport edges.
@@ -1426,7 +1426,7 @@ And the new main:
         int image_width = 400;
 
         // Calculate the image height, and ensure that it's at least 1.
-        int image_height = static_cast<int>(image_width / aspect_ratio);
+        int image_height = int(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
 
 
@@ -1443,7 +1443,7 @@ And the new main:
 
         auto focal_length = 1.0;
         auto viewport_height = 2.0;
-        auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
+        auto viewport_width = viewport_height * (double(image_width)/image_height);
         auto camera_center = point3(0, 0, 0);
 
         // Calculate the vectors across the horizontal and down the vertical viewport edges.
@@ -1781,7 +1781,7 @@ migrated code:
         vec3   pixel_delta_v;  // Offset to pixel below
 
         void initialize() {
-            image_height = static_cast<int>(image_width / aspect_ratio);
+            image_height = int(image_width / aspect_ratio);
             image_height = (image_height < 1) ? 1 : image_height;
 
             center = point3(0, 0, 0);
@@ -1789,7 +1789,7 @@ migrated code:
             // Determine viewport dimensions.
             auto focal_length = 1.0;
             auto viewport_height = 2.0;
-            auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
+            auto viewport_width = viewport_height * (double(image_width)/image_height);
 
             // Calculate the vectors across the horizontal and down the vertical viewport edges.
             auto viewport_u = vec3(viewport_width, 0, 0);
@@ -1986,9 +1986,9 @@ and the number of samples involved:
 
         // Write the translated [0,255] value of each color component.
         static const interval intensity(0.000, 0.999);
-        out << static_cast<int>(256 * intensity.clamp(r)) << ' '
-            << static_cast<int>(256 * intensity.clamp(g)) << ' '
-            << static_cast<int>(256 * intensity.clamp(b)) << '\n';
+        out << int(256 * intensity.clamp(r)) << ' '
+            << int(256 * intensity.clamp(g)) << ' '
+            << int(256 * intensity.clamp(b)) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-clamped]: <kbd>[color.h]</kbd> The multi-sample write_color() function]
@@ -2632,9 +2632,9 @@ robustly handle negative inputs.
 
         // Write the translated [0,255] value of each color component.
         static const interval intensity(0.000, 0.999);
-        out << static_cast<int>(256 * intensity.clamp(r)) << ' '
-            << static_cast<int>(256 * intensity.clamp(g)) << ' '
-            << static_cast<int>(256 * intensity.clamp(b)) << '\n';
+        out << int(256 * intensity.clamp(r)) << ' '
+            << int(256 * intensity.clamp(g)) << ' '
+            << int(256 * intensity.clamp(b)) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-gamma]: <kbd>[color.h]</kbd> write_color(), with gamma correction]
@@ -3484,7 +3484,7 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
         ...
 
         void initialize() {
-            image_height = static_cast<int>(image_width / aspect_ratio);
+            image_height = int(image_width / aspect_ratio);
             image_height = (image_height < 1) ? 1 : image_height;
 
             center = point3(0, 0, 0);
@@ -3496,7 +3496,7 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
             auto h = tan(theta/2);
             auto viewport_height = 2 * h * focal_length;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
+            auto viewport_width = viewport_height * (double(image_width)/image_height);
 
             // Calculate the vectors across the horizontal and down the vertical viewport edges.
             auto viewport_u = vec3(viewport_width, 0, 0);
@@ -3621,7 +3621,7 @@ angles.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         void initialize() {
-            image_height = static_cast<int>(image_width / aspect_ratio);
+            image_height = int(image_width / aspect_ratio);
             image_height = (image_height < 1) ? 1 : image_height;
 
 
@@ -3636,7 +3636,7 @@ angles.
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
             auto viewport_height = 2 * h * focal_length;
-            auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
+            auto viewport_width = viewport_height * (double(image_width)/image_height);
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -3866,7 +3866,7 @@ Now let's update the camera to originate rays from the defocus disk:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         void initialize() {
-            image_height = static_cast<int>(image_width / aspect_ratio);
+            image_height = int(image_width / aspect_ratio);
             image_height = (image_height < 1) ? 1 : image_height;
 
             center = lookfrom;
@@ -3880,7 +3880,7 @@ Now let's update the camera to originate rays from the defocus disk:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto viewport_height = 2 * h * focus_dist;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
+            auto viewport_width = viewport_height * (double(image_width)/image_height);
 
             // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
             w = unit_vector(lookfrom - lookat);
