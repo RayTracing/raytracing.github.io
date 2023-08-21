@@ -155,17 +155,38 @@ There are some things to note in this code:
 Creating an Image File
 -----------------------
 Because the file is written to the standard output stream, you'll need to redirect it to an image
-file. Typically this is done from the command-line by using the `>` redirection operator, like so:
+file. Typically this is done from the command-line by using the `>` redirection operator.
+
+On Windows, you'd get the debug build from CMake running this command:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    cmake -B build
+    cmake --build build
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Then run your newly-built program like so:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    build\Debug\inOneWeekend.exe > image.ppm
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Later, it will be better to run optimized builds for speed. In that case, you would build like this:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    cmake --build build --config release
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+and would run the optimized program like this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     build\Release\inOneWeekend.exe > image.ppm
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-(This example assumes that you are building with CMake, using the same approach as the
+The examples above assume that you are building with CMake, using the same approach as the
 `CMakeLists.txt` file in the included source. Use whatever build environment (and language) you're
-comfortable with.)
+most comfortable with.
 
-This is how things would look on Windows with CMake. On Mac or Linux, it might look like this:
+On Mac or Linux, release build, you would launch the program like this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     build/inOneWeekend > image.ppm
