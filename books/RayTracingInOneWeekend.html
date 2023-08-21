@@ -560,10 +560,10 @@ to give us the desired aspect ratio. Here's a snippet of what this code will loo
 If you're wondering why we don't just use `aspect_ratio` when computing `viewport_width`, it's
 because the value set to `aspect_ratio` is the ideal ratio, it may not be the _actual_ ratio between
 `image_width` and `image_height`. If `image_height` was allowed to be real valued--rather than just
-an integer--then it would fine to use `aspect_ratio`. But the _actual_ ratio between `image_width`
-and `image_height` can vary based on two parts of the code. First, `integer_height` is rounded down
-to the nearest integer, which can increase the ratio. Second, we don't allow `integer_height` to be
-less than one, which can also change the actual aspect ratio.
+an integer--then it would be fine to use `aspect_ratio`. But the _actual_ ratio between
+`image_width` and `image_height` can vary based on two parts of the code. First, `image_height` is
+rounded down to the nearest integer, which can increase the ratio. Second, we don't allow
+`image_height` to be less than one, which can also change the actual aspect ratio.
 
 Note that `aspect_ratio` is an ideal ratio, which we approximate as best as possible with the
 integer-based ratio of image width over image height. In order for our viewport proportions to
@@ -756,67 +756,71 @@ and if a given point $(x,y,z)$ is _outside_ the sphere, then $x^2 + y^2 + z^2 > 
 If we want to allow the sphere center to be at an arbitrary point $(C_x, C_y, C_z)$, then the
 equation becomes a lot less nice:
 
-  $$ (x - C_x)^2 + (y - C_y)^2 + (z - C_z)^2 = r^2 $$
+  $$ (C_x - x)^2 + (C_y - y)^2 + (C_z - z)^2 = r^2 $$
 
 In graphics, you almost always want your formulas to be in terms of vectors so that all the
 $x$/$y$/$z$ stuff can be simply represented using a `vec3` class. You might note that the vector
-from center $\mathbf{C} = (C_x, C_y, C_z)$ to point $\mathbf{P} = (x,y,z)$ is
-$(\mathbf{P} - \mathbf{C})$. If we use the definition of the dot product:
+from point $\mathbf{P} = (x,y,z)$ to center $\mathbf{C} = (C_x, C_y, C_z)$ is
+$(\mathbf{C} - \mathbf{P})$.
 
-  $$ (\mathbf{P} - \mathbf{C}) \cdot (\mathbf{P} - \mathbf{C})
-     = (x - C_x)^2 + (y - C_y)^2 + (z - C_z)^2
+If we use the definition of the dot product:
+
+  $$ (\mathbf{C} - \mathbf{P}) \cdot (\mathbf{C} - \mathbf{P})
+     = (C_x - x)^2 + (C_y - y)^2 + (C_z - z)^2
   $$
 
 Then we can rewrite the equation of the sphere in vector form as:
 
-  $$ (\mathbf{P} - \mathbf{C}) \cdot (\mathbf{P} - \mathbf{C}) = r^2 $$
+  $$ (\mathbf{C} - \mathbf{P}) \cdot (\mathbf{C} - \mathbf{P}) = r^2 $$
 
 We can read this as “any point $\mathbf{P}$ that satisfies this equation is on the sphere”. We want
-to know if our ray $\mathbf{P}(t) = \mathbf{A} + t\mathbf{b}$ ever hits the sphere anywhere. If it
+to know if our ray $\mathbf{P}(t) = \mathbf{Q} + t\mathbf{d}$ ever hits the sphere anywhere. If it
 does hit the sphere, there is some $t$ for which $\mathbf{P}(t)$ satisfies the sphere equation. So
 we are looking for any $t$ where this is true:
 
-  $$ (\mathbf{P}(t) - \mathbf{C}) \cdot (\mathbf{P}(t) - \mathbf{C}) = r^2 $$
+  $$ (\mathbf{C} - \mathbf{P}(t)) \cdot (\mathbf{C} - \mathbf{P}(t)) = r^2 $$
 
 which can be found by replacing $\mathbf{P}(t)$ with its expanded form:
 
-  $$ ((\mathbf{A} + t \mathbf{b}) - \mathbf{C})
-      \cdot ((\mathbf{A} + t \mathbf{b}) - \mathbf{C}) = r^2 $$
+  $$ (\mathbf{C} - (\mathbf{Q} + t \mathbf{d}))
+      \cdot (\mathbf{C} - (\mathbf{Q} + t \mathbf{d})) = r^2 $$
 
 We have three vectors on the left dotted by three vectors on the right. If we solved for the full
 dot product we would get nine vectors. You can definitely go through and write everything out, but
 we don't need to work that hard. If you remember, we want to solve for $t$, so we'll separate the
 terms based on whether there is a $t$ or not:
 
-  $$ (t \mathbf{b} + (\mathbf{A} - \mathbf{C}))
-      \cdot (t \mathbf{b} + (\mathbf{A} - \mathbf{C})) = r^2 $$
+  $$ (-t \mathbf{d} + (\mathbf{C} - \mathbf{Q})) \cdot (-t \mathbf{d} + (\mathbf{C} - \mathbf{Q}))
+     = r^2
+  $$
 
 And now we follow the rules of vector algebra to distribute the dot product:
 
-  $$ t^2 \mathbf{b} \cdot \mathbf{b}
-     + 2t \mathbf{b} \cdot (\mathbf{A}-\mathbf{C})
-     + (\mathbf{A}-\mathbf{C}) \cdot (\mathbf{A}-\mathbf{C}) = r^2
+  $$ t^2 \mathbf{d} \cdot \mathbf{d}
+     - 2t \mathbf{d} \cdot (\mathbf{C} - \mathbf{Q})
+     + (\mathbf{C} - \mathbf{Q}) \cdot (\mathbf{C} - \mathbf{Q}) = r^2
   $$
 
 Move the square of the radius over to the left hand side:
 
-  $$ t^2 \mathbf{b} \cdot \mathbf{b}
-     + 2t \mathbf{b} \cdot (\mathbf{A}-\mathbf{C})
-     + (\mathbf{A}-\mathbf{C}) \cdot (\mathbf{A}-\mathbf{C}) - r^2 = 0
+  $$ t^2 \mathbf{d} \cdot \mathbf{d}
+     - 2t \mathbf{d} \cdot (\mathbf{C} - \mathbf{Q})
+     + (\mathbf{C} - \mathbf{Q}) \cdot (\mathbf{C} - \mathbf{Q}) - r^2 = 0
   $$
 
 It's hard to make out what exactly this equation is, but the vectors and $r$ in that equation are
 all constant and known. Furthermore, the only vectors that we have are reduced to scalars by dot
 product. The only unknown is $t$, and we have a $t^2$, which means that this equation is quadratic.
-You can solve for a quadratic equation by using the quadratic formula:
+You can solve for a quadratic equation $ax^2 + bx + c = 0$ by using the quadratic formula:
 
   $$ \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} $$
 
-Where for ray-sphere intersection the $a$/$b$/$c$ values are:
+So solving for $t$ in the ray-sphere intersection equation gives us these values for $a$, $b$, and
+$c$:
 
-  $$ a = \mathbf{b} \cdot \mathbf{b} $$
-  $$ b = 2 \mathbf{b} \cdot (\mathbf{A}-\mathbf{C}) $$
-  $$ c = (\mathbf{A}-\mathbf{C}) \cdot (\mathbf{A}-\mathbf{C}) - r^2 $$
+  $$ a = \mathbf{d} \cdot \mathbf{d} $$
+  $$ b = -2 \mathbf{d} \cdot (\mathbf{C} - \mathbf{Q}) $$
+  $$ c = (\mathbf{C} - \mathbf{Q}) \cdot (\mathbf{C} - \mathbf{Q}) - r^2 $$
 
 Using all of the above you can solve for $t$, but there is a square root part that can be either
 positive (meaning two real solutions), negative (meaning no real solutions), or zero (meaning one
@@ -833,9 +837,9 @@ sphere at -1 on the z-axis and then coloring red any pixel that intersects it.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     bool hit_sphere(const point3& center, double radius, const ray& r) {
-        vec3 oc = r.origin() - center;
+        vec3 oc = center - r.origin();
         auto a = dot(r.direction(), r.direction());
-        auto b = 2.0 * dot(oc, r.direction());
+        auto b = -2.0 * dot(r.direction(), oc);
         auto c = dot(oc, oc) - radius*radius;
         auto discriminant = b*b - 4*a*c;
         return (discriminant >= 0);
@@ -915,9 +919,9 @@ code let us compute and visualize $\mathbf{n}$:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     double hit_sphere(const point3& center, double radius, const ray& r) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        vec3 oc = r.origin() - center;
+        vec3 oc = center - r.origin();
         auto a = dot(r.direction(), r.direction());
-        auto b = 2.0 * dot(oc, r.direction());
+        auto b = -2.0 * dot(r.direction(), oc);
         auto c = dot(oc, oc) - radius*radius;
         auto discriminant = b*b - 4*a*c;
 
@@ -962,9 +966,9 @@ Let’s revisit the ray-sphere function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     double hit_sphere(const point3& center, double radius, const ray& r) {
-        vec3 oc = r.origin() - center;
+        vec3 oc = center - r.origin();
         auto a = dot(r.direction(), r.direction());
-        auto b = 2.0 * dot(oc, r.direction());
+        auto b = -2.0 * dot(r.direction(), oc);
         auto c = dot(oc, oc) - radius*radius;
         auto discriminant = b*b - 4*a*c;
 
@@ -979,35 +983,41 @@ Let’s revisit the ray-sphere function:
 
 First, recall that a vector dotted with itself is equal to the squared length of that vector.
 
-Second, notice how the equation for `b` has a factor of two in it. Consider what happens to the
-quadratic equation if $b = 2h$:
+Second, notice how the equation for `b` has a factor of negative two in it. Consider what happens to
+the quadratic equation if $b = -2h$:
 
   $$ \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} $$
 
-  $$ = \frac{-2h \pm \sqrt{(2h)^2 - 4ac}}{2a} $$
+  $$ = \frac{-(-2h) \pm \sqrt{(-2h)^2 - 4ac}}{2a} $$
 
-  $$ = \frac{-2h \pm 2\sqrt{h^2 - ac}}{2a} $$
+  $$ = \frac{2h \pm 2\sqrt{h^2 - ac}}{2a} $$
 
-  $$ = \frac{-h \pm \sqrt{h^2 - ac}}{a} $$
+  $$ = \frac{h \pm \sqrt{h^2 - ac}}{a} $$
+
+This simplifies nicely, so we'll use it. So solving for $h$:
+
+  $$ b = -2 \mathbf{d} \cdot (\mathbf{C} - \mathbf{Q}) $$
+  $$ b = -2h $$
+  $$ h = \frac{b}{-2} = \mathbf{d} \cdot (\mathbf{C} - \mathbf{Q}) $$
 
 <div class='together'>
 Using these observations, we can now simplify the sphere-intersection code to this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     double hit_sphere(const point3& center, double radius, const ray& r) {
-        vec3 oc = r.origin() - center;
+        vec3 oc = center - r.origin();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto a = r.direction().length_squared();
-        auto half_b = dot(oc, r.direction());
+        auto h = dot(r.direction(), oc);
         auto c = oc.length_squared() - radius*radius;
-        auto discriminant = half_b*half_b - a*c;
+        auto discriminant = h*h - a*c;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         if (discriminant < 0) {
             return -1.0;
         } else {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            return (-half_b - sqrt(discriminant) ) / a;
+            return (h - sqrt(discriminant)) / a;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
     }
@@ -1075,19 +1085,19 @@ And here’s the sphere:
         sphere(point3 _center, double _radius) : center(_center), radius(_radius) {}
 
         bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override {
-            vec3 oc = r.origin() - center;
+            vec3 oc = center - r.origin();
             auto a = r.direction().length_squared();
-            auto half_b = dot(oc, r.direction());
+            auto h = dot(r.direction(), oc);
             auto c = oc.length_squared() - radius*radius;
 
-            auto discriminant = half_b*half_b - a*c;
+            auto discriminant = h*h - a*c;
             if (discriminant < 0) return false;
             auto sqrtd = sqrt(discriminant);
 
             // Find the nearest root that lies in the acceptable range.
-            auto root = (-half_b - sqrtd) / a;
+            auto root = (h - sqrtd) / a;
             if (root <= ray_tmin || ray_tmax <= root) {
-                root = (-half_b + sqrtd) / a;
+                root = (h + sqrtd) / a;
                 if (root <= ray_tmin || ray_tmax <= root)
                     return false;
             }
@@ -1596,11 +1606,11 @@ and a maximum. We'll end up using this class quite often as we proceed.
             ...
 
             // Find the nearest root that lies in the acceptable range.
-            auto root = (-half_b - sqrtd) / a;
+            auto root = (h - sqrtd) / a;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             if (!ray_t.surrounds(root)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                root = (-half_b + sqrtd) / a;
+                root = (h + sqrtd) / a;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 if (!ray_t.surrounds(root))
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++

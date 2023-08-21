@@ -40,20 +40,20 @@ class sphere : public hittable {
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         point3 center = is_moving ? sphere_center(r.time()) : center1;
-        vec3 oc = r.origin() - center;
+        vec3 oc = center - r.origin();
         auto a = r.direction().length_squared();
-        auto half_b = dot(oc, r.direction());
+        auto h = dot(r.direction(), oc);
         auto c = oc.length_squared() - radius*radius;
 
-        auto discriminant = half_b*half_b - a*c;
+        auto discriminant = h*h - a*c;
         if (discriminant < 0)
             return false;
 
         // Find the nearest root that lies in the acceptable range.
         auto sqrtd = sqrt(discriminant);
-        auto root = (-half_b - sqrtd) / a;
+        auto root = (h - sqrtd) / a;
         if (!ray_t.surrounds(root)) {
-            root = (-half_b + sqrtd) / a;
+            root = (h + sqrtd) / a;
             if (!ray_t.surrounds(root))
                 return false;
         }
