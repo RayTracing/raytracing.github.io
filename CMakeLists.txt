@@ -95,24 +95,12 @@ include_directories(src)
 message (STATUS "Compiler ID: " ${CMAKE_CXX_COMPILER_ID})
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    # /we #### - treat warning as error
     # /wd #### - Disable warning
-    # /w3 #### - set warning to level 3
-    add_compile_options("/Wall")    # Enable all warnings
-    add_compile_options("/w3 5038") # Data member will be initialized after [other] data member
+    # /we #### - treat warning as error
+    add_compile_options("/W4")      # Enable level-4 warnings
     add_compile_options("/we 4265") # Class has virtual functions, but its non-trivial destructor is not virtual
     add_compile_options("/we 5204") # Class has virtual functions, but its trivial destructor is not virtual
     add_compile_options("/wd 4100") # unreferenced formal parameter
-    add_compile_options("/wd 4365") # conversion from 'size_t' to 'const int __int64', signed/unsigned mismatch
-    add_compile_options("/wd 4514") # Ureferenced inline function has been removed
-    add_compile_options("/wd 4626") # assignment operator was implicitly defined as deleted
-    add_compile_options("/wd 4710") # Function not inlined
-    add_compile_options("/wd 4711") # Function selected for automatic inline expansion
-    add_compile_options("/wd 4820") # N bytes padding added after data member
-    add_compile_options("/wd 5027") # move assignment operator was implicitly defined as deleted
-    add_compile_options("/wd 5045") # will insert Spectre mitigation for memory load if /Qspectre switch specified
-    add_compile_options("/wd 5219") # implicit conversion from 'unsigned __int64' to 'double', possible loss of data
-    add_compile_options("/wd 5267") # definition of implicit assignment operator is deprecated; has user-provided dtor
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_options(-Wnon-virtual-dtor) # Class has virtual functions, but its destructor is not virtual
     add_compile_options(-Wreorder) # Data member will be initialized after [other] data member
