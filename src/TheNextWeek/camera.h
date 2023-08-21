@@ -22,11 +22,10 @@
 
 class camera {
   public:
-    double aspect_ratio      = 1.0;    // Ratio of image width over height
-    int    image_width       = 100;    // Rendered image width in pixel count
-    int    samples_per_pixel = 10;     // Count of random samples for each pixel
-    int    max_depth         = 10;     // Maximum number of ray bounces into scene
-    color  background;                 // Scene background color
+    double aspect_ratio      = 1.0;  // Ratio of image width over height
+    int    image_width       = 100;  // Rendered image width in pixel count
+    int    samples_per_pixel = 10;   // Count of random samples for each pixel
+    int    max_depth         = 10;   // Maximum number of ray bounces into scene
 
     double vfov     = 90;              // Vertical view angle (field of view)
     point3 lookfrom = point3(0,0,-1);  // Point camera is looking from
@@ -110,9 +109,8 @@ class camera {
 
         auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
         auto ray_direction = pixel_sample - ray_origin;
-        auto ray_time = random_double();
 
-        return ray(ray_origin, ray_direction, ray_time);
+        return ray(ray_origin, ray_direction);
     }
 
     vec3 pixel_sample_square() const {
@@ -141,20 +139,17 @@ class camera {
 
         hit_record rec;
 
-        // If the ray hits nothing, return the background color.
-        if (!world.hit(r, interval(0.001, infinity), rec))
-            return background;
+        if (world.hit(r, interval(0.001, infinity), rec)) {
+            ray scattered;
+            color attenuation;
+            if (rec.mat->scatter(r, rec, attenuation, scattered))
+                return attenuation * ray_color(scattered, depth-1, world);
+            return color(0,0,0);
+        }
 
-        ray scattered;
-        color attenuation;
-        color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
-
-        if (!rec.mat->scatter(r, rec, attenuation, scattered))
-            return color_from_emission;
-
-        color color_from_scatter = attenuation * ray_color(scattered, depth-1, world);
-
-        return color_from_emission + color_from_scatter;
+        vec3 unit_direction = unit_vector(r.direction());
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
     }
 };
 
