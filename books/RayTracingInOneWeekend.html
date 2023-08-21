@@ -3417,8 +3417,31 @@ material:
 Modeling a Hollow Glass Sphere
 -------------------------------
 An interesting and easy trick with dielectric spheres is to note that if you use a negative radius,
-the geometry is unaffected, but the surface normal points inward. This can be used as a bubble to
-make a hollow glass sphere:
+the geometry is unaffected, but the surface normal points inward.
+
+However, properly handling negative radii can be tricky. Recall the line from `sphere::hit()` in
+listing [sphere-material] that calculates the outward normal:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 outward_normal = (rec.p - center) / radius;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [proper-invert-sphere-normal]: Proper normal handling for spheres with negative radii]
+
+In your own implementation, you might have been tempted to instead do something like this:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    vec3 outward_normal = (rec.p - center).unit_vector();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [improper-invert-sphere-normal]:
+    Problematic normal calculation for spheres with negative radii]
+
+If you do that, spheres with negative radii won't work properly. Since a sphere with a negative
+radius is a _bubble_, its interior is the infinite space outside the sphere. Its exterior is the
+finite bubble inside the sphere, so the outward normal needs to point toward the sphere center.
+Dividing by the (negative) radius flips the normal as we want. If you implmented your code like the
+second example above, you'll want to fix that now.
+
+Let's use this hollow sphere hack to model a sphere with a given thickness:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
