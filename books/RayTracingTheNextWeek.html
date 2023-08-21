@@ -71,9 +71,6 @@ time for each ray:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        ray(const point3& origin, const vec3& direction) : orig(origin), dir(direction), tm(0)
-        {}
-
         ray(const point3& origin, const vec3& direction, double time = 0.0)
           : orig(origin), dir(direction), tm(time)
         {}
@@ -186,7 +183,9 @@ interval, so it really can be sampled at any time.)
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        ...
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            ...
+        }
 
       private:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -198,10 +197,10 @@ interval, so it really can be sampled at any time.)
         bool is_moving;
         vec3 center_vec;
 
-        point3 center(double time) const {
+        point3 sphere_center(double time) const {
             // Linearly interpolate from center1 to center2 according to time, where t=0 yields
             // center1, and t=1 yields center2.
-            return center0 + time*center_vec;
+            return center1 + time*center_vec;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
@@ -236,23 +235,6 @@ The updated `sphere::hit()` function is almost identical to the old `sphere::hit
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [moving-sphere-hit]: <kbd>[sphere.h]</kbd> Moving sphere hit function]
-
-</div>
-
-<div class='together'>
-We need to implement the new `interval::contains()` method mentioned above:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class interval {
-      public:
-        ...
-        bool contains(double x) const {
-            return min <= x && x <= max;
-        }
-        ...
-    };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [interval-contains]: <kbd>interval.h</kbd> interval::contains() method]
 
 </div>
 
@@ -4198,7 +4180,7 @@ Snippets
     (accessed MMM. DD, YYYY)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  ### MLA:
+  ### MLA
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Ray Tracing: The Next Week. raytracing.github.io/books/RayTracingTheNextWeek.html
     Accessed DD MMM. YYYY.
