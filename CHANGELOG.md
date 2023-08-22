@@ -10,10 +10,11 @@ then.
   - Fix - Fix references from `random_in_hemisphere()` to `random_on_hemisphere()` (#1198)
 
 ### In One Weekend
-  - Update reference to "Fundamentals of Interactive Computer Graphics" to "Computer Graphics:
-    Principles and Practice". This is the name used by newer editions of the book.
+  - Change - Update reference to "Fundamentals of Interactive Computer Graphics" to "Computer
+    Graphics: Principles and Practice". This is the name used by newer editions of the book.
 
 ### The Next Week
+  - Change - `perlin::turb()` no longer defaults the value for the depth parameter.
 
 ### The Rest of Your Life
 

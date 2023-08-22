@@ -77,7 +77,7 @@ class noise_texture : public texture {
 
     color value(double u, double v, const point3& p) const override {
         auto s = scale * p;
-        return color(1,1,1)*0.5*(1 + sin(s.z() + 10*noise.turb(s)));
+        return color(1,1,1)*0.5*(1 + sin(s.z() + 10*noise.turb(s, 7)));
     }
 
   private:

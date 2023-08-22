@@ -2306,7 +2306,7 @@ turbulence, and is a sum of repeated calls to noise:
       ...
       public:
         ...
-        double turb(const point3& p, int depth=7) const {
+        double turb(const point3& p, int depth) const {
             auto accum = 0.0;
             auto temp_p = p;
             auto weight = 1.0;
@@ -2335,7 +2335,7 @@ Here `fabs()` is the absolute value function defined in `<cmath>`.
         color value(double u, double v, const point3& p) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto s = scale * p;
-            return color(1,1,1) * noise.turb(s);
+            return color(1,1,1) * noise.turb(s, 7);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
@@ -2373,7 +2373,7 @@ effect is:
         color value(double u, double v, const point3& p) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto s = scale * p;
-            return color(1,1,1) * 0.5 * (1 + sin(s.z() + 10*noise.turb(s)));
+            return color(1,1,1) * 0.5 * (1 + sin(s.z() + 10*noise.turb(s, 7)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
