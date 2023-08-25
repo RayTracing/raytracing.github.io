@@ -16,12 +16,16 @@ then.
 
 ### In One Weekend
   - Change - Update reference to "Fundamentals of Interactive Computer Graphics" to "Computer
-    Graphics: Principles and Practice". This is the name used by newer editions of the book.
+             Graphics: Principles and Practice". This is the name used by newer editions of the
+             book.
   - Change - New BVH optimization splits the bounds according to the longest bounding box dimension,
              yielding a 15-20% speedup (#1007)
 
 ### The Next Week
   - Change - `perlin::turb()` no longer defaults the value for the depth parameter.
+  - Change - AABB automatically pads to mininmum size for any dimension; no longer requires
+             primitives to call aabb::pad() function.
+  - Change - Reworked the AABB chapter (#1236)
   - New - add section on alternative 2D primitives such as triangle, ellipse and annulus (#1204,
           #1205)
 
