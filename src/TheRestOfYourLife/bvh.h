@@ -27,7 +27,7 @@ class bvh_node : public hittable {
     bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
         // Build the bounding box of the span of source objects.
         bbox = aabb::empty;
-        for (int object_index=start; object_index < end; ++object_index)
+        for (int object_index=start; object_index < end; object_index++)
             bbox = aabb(bbox, src_objects[object_index]->bounding_box());
 
         int axis = bbox.longest_axis();

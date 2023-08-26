@@ -116,8 +116,8 @@ Let’s make some C++ code to output such a thing:
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        for (int j = 0; j < image_height; ++j) {
-            for (int i = 0; i < image_width; ++i) {
+        for (int j = 0; j < image_height; j++) {
+            for (int i = 0; i < image_width; i++) {
                 auto r = double(i) / (image_width-1);
                 auto g = double(j) / (image_height-1);
                 auto b = 0;
@@ -235,7 +235,7 @@ instead write to the logging output stream (`std::clog`):
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            for (int i = 0; i < image_width; ++i) {
+            for (int i = 0; i < image_width; i++) {
                 auto r = double(i) / (image_width-1);
                 auto g = double(j) / (image_height-1);
                 auto b = 0;
@@ -435,9 +435,9 @@ Now we can change our main to use both of these:
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        for (int j = 0; j < image_height; ++j) {
+        for (int j = 0; j < image_height; j++) {
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-            for (int i = 0; i < image_width; ++i) {
+            for (int i = 0; i < image_width; i++) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 auto pixel_color = color(double(i)/(image_width-1), double(j)/(image_height-1), 0);
                 write_color(std::cout, pixel_color);
@@ -662,9 +662,9 @@ return black for now.
 
         std::cout << "P3\n" << image_width << " " << image_height << "\n255\n";
 
-        for (int j = 0; j < image_height; ++j) {
+        for (int j = 0; j < image_height; j++) {
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-            for (int i = 0; i < image_width; ++i) {
+            for (int i = 0; i < image_width; i++) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
                 auto ray_direction = pixel_center - camera_center;
@@ -1463,9 +1463,9 @@ And the new main:
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        for (int j = 0; j < image_height; ++j) {
+        for (int j = 0; j < image_height; j++) {
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-            for (int i = 0; i < image_width; ++i) {
+            for (int i = 0; i < image_width; i++) {
                 auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
                 auto ray_direction = pixel_center - camera_center;
                 ray r(camera_center, ray_direction);
@@ -1760,9 +1760,9 @@ migrated code:
 
             std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-            for (int j = 0; j < image_height; ++j) {
+            for (int j = 0; j < image_height; j++) {
                 std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-                for (int i = 0; i < image_width; ++i) {
+                for (int i = 0; i < image_width; i++) {
                     auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
                     auto ray_direction = pixel_center - center;
                     ray r(center, ray_direction);
@@ -2017,12 +2017,12 @@ we're currently sampling.
 
             std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-            for (int j = 0; j < image_height; ++j) {
+            for (int j = 0; j < image_height; j++) {
                 std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-                for (int i = 0; i < image_width; ++i) {
+                for (int i = 0; i < image_width; i++) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                     color pixel_color(0,0,0);
-                    for (int sample = 0; sample < samples_per_pixel; ++sample) {
+                    for (int sample = 0; sample < samples_per_pixel; sample++) {
                         ray r = get_ray(i, j);
                         pixel_color += ray_color(r, world);
                     }
@@ -2330,11 +2330,11 @@ depth, returning no light contribution at the maximum depth:
 
             std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-            for (int j = 0; j < image_height; ++j) {
+            for (int j = 0; j < image_height; j++) {
                 std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-                for (int i = 0; i < image_width; ++i) {
+                for (int i = 0; i < image_width; i++) {
                     color pixel_color(0,0,0);
-                    for (int sample = 0; sample < samples_per_pixel; ++sample) {
+                    for (int sample = 0; sample < samples_per_pixel; sample++) {
                         ray r = get_ray(i, j);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                         pixel_color += ray_color(r, max_depth, world);

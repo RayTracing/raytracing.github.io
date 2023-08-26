@@ -18,7 +18,7 @@ class perlin {
   public:
     perlin() {
         ranvec = new vec3[point_count];
-        for (int i = 0; i < point_count; ++i) {
+        for (int i = 0; i < point_count; i++) {
             ranvec[i] = unit_vector(vec3::random(-1,1));
         }
 
