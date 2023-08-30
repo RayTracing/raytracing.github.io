@@ -29,9 +29,10 @@ class aabb {
     aabb(const point3& a, const point3& b) {
         // Treat the two points a and b as extrema for the bounding box, so we don't require a
         // particular minimum/maximum coordinate order.
-        x = interval(fmin(a[0],b[0]), fmax(a[0],b[0]));
-        y = interval(fmin(a[1],b[1]), fmax(a[1],b[1]));
-        z = interval(fmin(a[2],b[2]), fmax(a[2],b[2]));
+
+        x = span(a[0],b[0]);
+        y = span(a[1],b[1]);
+        z = span(a[2],b[2]);
 
         pad_to_minimums();
     }
@@ -42,27 +43,26 @@ class aabb {
         z = interval(box0.z, box1.z);
     }
 
-    const interval& axis(int n) const {
+    const interval& axis_interval(int n) const {
         if (n == 1) return y;
         if (n == 2) return z;
         return x;
     }
 
     bool hit(const ray& r, interval ray_t) const {
-        for (int a = 0; a < 3; a++) {
-            auto invD = 1 / r.direction()[a];
-            auto orig = r.origin()[a];
+        const point3& ray_orig = r.origin();
+        const vec3&   ray_dir  = r.direction();
 
-            auto t0 = (axis(a).min - orig) * invD;
-            auto t1 = (axis(a).max - orig) * invD;
+        for (int axis = 0; axis < 3; axis++) {
+            const interval& ax = axis_interval(axis);
+            const double adinv = 1.0 / ray_dir[axis];
 
-            if (invD < 0)
-                std::swap(t0, t1);
+            auto s = (ax.min - ray_orig[axis]) * adinv;
+            auto t = (ax.max - ray_orig[axis]) * adinv;
 
-            if (t0 > ray_t.min) ray_t.min = t0;
-            if (t1 < ray_t.max) ray_t.max = t1;
+            ray_t = ray_t.intersect(span(s,t));
 
-            if (ray_t.max <= ray_t.min)
+            if (ray_t.is_empty())
                 return false;
         }
         return true;

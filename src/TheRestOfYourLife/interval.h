@@ -17,16 +17,20 @@ class interval {
 
     interval(double _min, double _max) : min(_min), max(_max) {}
 
-    interval(const interval& a, const interval& b)
-      : min(fmin(a.min, b.min)), max(fmax(a.max, b.max)) {}
+    interval(const interval& a, const interval& b) {
+        // Create the interval tightly enclosing the two input intervals.
+        min = a.min <= b.min ? a.min : b.min;
+        max = a.max >= b.max ? a.max : b.max;
+    }
+
+    bool is_empty() const {
+        // Returns false if the interval is empty (inside out), or if either bound is a
+        // floating-point NaN (not a number).
+        return !(min <= max);
+    }
 
     double size() const {
         return max - min;
-    }
-
-    interval expand(double delta) const {
-        auto padding = delta/2;
-        return interval(min - padding, max + padding);
     }
 
     bool contains(double x) const {
@@ -43,6 +47,17 @@ class interval {
         return x;
     }
 
+    interval expand(double delta) const {
+        auto padding = delta/2;
+        return interval(min - padding, max + padding);
+    }
+
+    interval intersect(const interval& other) const {
+        double a = min >= other.min ? min : other.min;
+        double b = max <= other.max ? max : other.max;
+        return interval(a,b);
+    }
+
     static const interval empty, universe;
 };
 
@@ -56,6 +71,14 @@ interval operator+(const interval& ival, double displacement) {
 interval operator+(double displacement, const interval& ival) {
     return ival + displacement;
 }
+
+inline interval span(double a, double b) {
+    // Return the non-empty interval between a and b, regardless of their order.
+    if (a > b)
+        return interval(b, a);
+    return interval(a, b);
+}
+
 
 
 #endif
