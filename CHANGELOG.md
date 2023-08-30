@@ -3,7 +3,7 @@ Change Log -- Ray Tracing in One Weekend
 
 # v4.0.0-alpha.2 (In Progress)
 
-This will likely change to the official v4.0.0 release, but we _might_ put out another alpha before
+This will likely change to the official v4.0.0 release, but we might put out another alpha before
 then.
 
 ### Common
@@ -29,8 +29,10 @@ then.
   - Change - Reworked the AABB chapter (#1236)
   - New - add section on alternative 2D primitives such as triangle, ellipse and annulus (#1204,
           #1205)
-  - Change - changed bvh construction (removed const qualifer for objects vector) so sorting is done 
+  - Change - changed bvh construction (removed const qualifer for objects vector) so sorting is done
              in place and copying of vector is avoided, better bvh build performance (#1388, #1391)
+  - Change - Refactor AABB class. Renamed `aabb:axis()` to `aabb::axis_interval()`. Minor
+             refactoring of `aabb::hit()` function. (#927, #1270)
 
 ### The Rest of Your Life
 

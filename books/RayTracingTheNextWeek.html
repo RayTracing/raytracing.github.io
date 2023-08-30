@@ -574,8 +574,10 @@ given amount:
     class interval {
       public:
         ...
-        double size() const {
-            return max - min;
+        double clamp(double x) const {
+            if (x < min) return min;
+            if (x > max) return max;
+            return x;
         }
 
 
@@ -586,7 +588,7 @@ given amount:
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        ...
+        static const interval empty, universe;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [interval-expand]: <kbd>[interval.h]</kbd> interval::expand() method]
@@ -614,25 +616,37 @@ Now we have everything we need to implement the new AABB class.
         aabb(const point3& a, const point3& b) {
             // Treat the two points a and b as extrema for the bounding box, so we don't require a
             // particular minimum/maximum coordinate order.
-            x = interval(fmin(a[0],b[0]), fmax(a[0],b[0]));
-            y = interval(fmin(a[1],b[1]), fmax(a[1],b[1]));
-            z = interval(fmin(a[2],b[2]), fmax(a[2],b[2]));
+
+            x = (a[0] <= b[0]) ? interval(a[0], b[0]) : interval(b[0], a[0]);
+            y = (a[1] <= b[1]) ? interval(a[1], b[1]) : interval(b[1], a[1]);
+            z = (a[2] <= b[2]) ? interval(a[2], b[2]) : interval(b[2], a[2]);
         }
 
-        const interval& axis(int n) const {
+        const interval& axis_interval(int n) const {
             if (n == 1) return y;
             if (n == 2) return z;
             return x;
         }
 
         bool hit(const ray& r, interval ray_t) const {
-            for (int a = 0; a < 3; a++) {
-                auto t0 = fmin((axis(a).min - r.origin()[a]) / r.direction()[a],
-                               (axis(a).max - r.origin()[a]) / r.direction()[a]);
-                auto t1 = fmax((axis(a).min - r.origin()[a]) / r.direction()[a],
-                               (axis(a).max - r.origin()[a]) / r.direction()[a]);
-                ray_t.min = fmax(t0, ray_t.min);
-                ray_t.max = fmin(t1, ray_t.max);
+            const point3& ray_orig = r.origin();
+            const vec3&   ray_dir  = r.direction();
+
+            for (int axis = 0; axis < 3; axis++) {
+                const interval& ax = axis_interval(axis);
+                const double adinv = 1.0 / ray_dir[axis];
+
+                auto t0 = (ax.min - ray_orig[axis]) * adinv;
+                auto t1 = (ax.max - ray_orig[axis]) * adinv;
+
+                if (t0 < t1) {
+                    if (t0 > ray_t.min) ray_t.min = t0;
+                    if (t1 < ray_t.max) ray_t.max = t1;
+                } else {
+                    if (t1 > ray_t.min) ray_t.min = t1;
+                    if (t0 < ray_t.max) ray_t.max = t0;
+                }
+
                 if (ray_t.max <= ray_t.min)
                     return false;
             }
@@ -646,40 +660,6 @@ Now we have everything we need to implement the new AABB class.
 
 </div>
 
-
-An Optimized AABB Hit Method
------------------------------
-In reviewing this intersection method, Andrew Kensler at Pixar tried some experiments and proposed
-the following version of the code. It works extremely well on many compilers, and I have adopted it
-as my go-to method:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class aabb {
-      public:
-        ...
-        bool hit(const ray& r, interval ray_t) const {
-            for (int a = 0; a < 3; a++) {
-                auto invD = 1 / r.direction()[a];
-                auto orig = r.origin()[a];
-
-                auto t0 = (axis(a).min - orig) * invD;
-                auto t1 = (axis(a).max - orig) * invD;
-
-                if (invD < 0)
-                    std::swap(t0, t1);
-
-                if (t0 > ray_t.min) ray_t.min = t0;
-                if (t1 < ray_t.max) ray_t.max = t1;
-
-                if (ray_t.max <= ray_t.min)
-                    return false;
-            }
-            return true;
-        }
-        ...
-    };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [aabb-hit]: <kbd>[aabb.h]</kbd> Optional optimized AABB hit function]
 
 
 Constructing Bounding Boxes for Hittables
@@ -778,17 +758,24 @@ two boxes.
 
 <div class='together'>
 Now we need a new `aabb` constructor that takes two boxes as input. First, we'll add a new interval
-constructor that takes two intervals as input:
+constructor to do this:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class interval {
       public:
-        ...
+        double min, max;
+
+        interval() : min(+infinity), max(-infinity) {} // Default interval is empty
+
+        interval(double _min, double _max) : min(_min), max(_max) {}
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        interval(const interval& a, const interval& b)
-          : min(fmin(a.min, b.min)), max(fmax(a.max, b.max)) {}
+        interval(const interval& a, const interval& b) {
+            // Create the interval tightly enclosing the two input intervals.
+            min = a.min <= b.min ? a.min : b.min;
+            max = a.max >= b.max ? a.max : b.max;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         double size() const {
@@ -807,6 +794,12 @@ Now we can use this to construct an axis-aligned bounding box from two input box
     class aabb {
       public:
         ...
+
+        aabb(const point3& a, const point3& b) {
+            ...
+        }
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         aabb(const aabb& box0, const aabb& box1) {
             x = interval(box0.x, box1.x);
@@ -814,6 +807,7 @@ Now we can use this to construct an axis-aligned bounding box from two input box
             z = interval(box0.z, box1.z);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1010,7 +1004,9 @@ function.
         static bool box_compare(
             const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis_index
         ) {
-            return a->bounding_box().axis(axis_index).min < b->bounding_box().axis(axis_index).min;
+            auto a_axis_interval = a->bounding_box().axis_interval(axis_index);
+            auto b_axis_interval = b->bounding_box().axis_interval(axis_index);
+            return a_axis_interval.min < b_axis_interval.min;
         }
 
         static bool box_x_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
@@ -2497,6 +2493,7 @@ constructed AABBs always have a non-zero volume:
         aabb(const point3& a, const point3& b) {
             // Treat the two points a and b as extrema for the bounding box, so we don't require a
             // particular minimum/maximum coordinate order.
+
             x = interval(fmin(a[0],b[0]), fmax(a[0],b[0]));
             y = interval(fmin(a[1],b[1]), fmax(a[1],b[1]));
             z = interval(fmin(a[2],b[2]), fmax(a[2],b[2]));
