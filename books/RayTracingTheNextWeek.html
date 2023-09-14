@@ -543,7 +543,7 @@ between $x_0$ and $x_1$. So, using min and max should get us the right answers:
 
 The remaining troublesome case if we do that is if $d_x = 0$ and either $x_0 - A_x = 0$ or
 $x_1 - A_x = 0$ so we get a `NaN`. In that case we can arbitrarily interpret that as either hit or
-no hit, but we’ll revisit that later.
+no hit. If you look at the code below, you'll see that we go with "no hit".
 
 Now, let’s look at the pseudo-function `overlaps`. Suppose we can assume the intervals are not
 reversed, and we want to return true when the intervals overlap. The boolean `overlaps()` function
@@ -569,8 +569,10 @@ given amount:
     class interval {
       public:
         ...
-        double size() const {
-            return max - min;
+        double clamp(double x) const {
+            if (x < min) return min;
+            if (x > max) return max;
+            return x;
         }
 
 
@@ -581,7 +583,7 @@ given amount:
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        ...
+        static const interval empty, universe;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [interval-expand]: <kbd>[interval.h]</kbd> interval::expand() method]
@@ -612,9 +614,9 @@ Now we have everything we need to implment the new AABB class.
         aabb(const point3& a, const point3& b) {
             // Treat the two points a and b as extrema for the bounding box, so we don't require a
             // particular minimum/maximum coordinate order.
-            x = interval(fmin(a[0],b[0]), fmax(a[0],b[0]));
-            y = interval(fmin(a[1],b[1]), fmax(a[1],b[1]));
-            z = interval(fmin(a[2],b[2]), fmax(a[2],b[2]));
+            x = span(a[0],b[0]);
+            y = span(a[1],b[1]);
+            z = span(a[2],b[2]);
 
             pad_to_minimums();
         }
@@ -627,13 +629,14 @@ Now we have everything we need to implment the new AABB class.
 
         bool hit(const ray& r, interval ray_t) const {
             for (int a = 0; a < 3; a++) {
-                auto t0 = fmin((axis(a).min - r.origin()[a]) / r.direction()[a],
-                               (axis(a).max - r.origin()[a]) / r.direction()[a]);
-                auto t1 = fmax((axis(a).min - r.origin()[a]) / r.direction()[a],
-                               (axis(a).max - r.origin()[a]) / r.direction()[a]);
-                ray_t.min = fmax(t0, ray_t.min);
-                ray_t.max = fmin(t1, ray_t.max);
-                if (ray_t.max <= ray_t.min)
+                const interval& ax = axis(a);
+                auto ao = r.origin()[a];
+                auto ad = r.direction()[a];
+
+                auto t_interval = span((ax.min - ao) / ad, (ax.max - ao) / ad);
+                ray_t = ray_t.intersect(t_interval);
+
+                if (ray_t.is_empty())
                     return false;
             }
             return true;
@@ -657,40 +660,67 @@ Now we have everything we need to implment the new AABB class.
 
 </div>
 
-
-An Optimized AABB Hit Method
------------------------------
-In reviewing this intersection method, Andrew Kensler at Pixar tried some experiments and proposed
-the following version of the code. It works extremely well on many compilers, and I have adopted it
-as my go-to method:
+<div class='together'>
+The new code above introduces new interval functions we need to write: `interval::is_empty()`,
+`interval::intersect()`, and `span()`.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class aabb {
-      public:
+    class interval {
         ...
-        bool hit(const ray& r, interval ray_t) const {
-            for (int a = 0; a < 3; a++) {
-                auto invD = 1 / r.direction()[a];
-                auto orig = r.origin()[a];
-
-                auto t0 = (axis(a).min - orig) * invD;
-                auto t1 = (axis(a).max - orig) * invD;
-
-                if (invD < 0)
-                    std::swap(t0, t1);
-
-                if (t0 > ray_t.min) ray_t.min = t0;
-                if (t1 < ray_t.max) ray_t.max = t1;
-
-                if (ray_t.max <= ray_t.min)
-                    return false;
-            }
-            return true;
+        interval(const interval& a, const interval& b) {
+            // Create the interval tightly enclosing the two input intervals.
+            min = a.min <= b.min ? a.min : b.min;
+            max = a.max >= b.max ? a.max : b.max;
         }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
+        bool is_empty() const {
+            // Returns false if the interval is empty (inside out), or if either bound is a
+            // floating-point NaN (not a number).
+            return !(min <= max);
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
+
+        interval expand(double delta) const {
+            auto padding = delta/2;
+            return interval(min - padding, max + padding);
+        }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        interval intersect(interval& other) const {
+            double a = min >= other.min ? min : other.min;
+            double b = max <= other.max ? max : other.max;
+            return interval(a,b);
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        static const interval empty, universe;
     };
+
+    ...
+
+    interval operator+(double displacement, const interval& ival) {
+        return ival + displacement;
+    }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
+    inline interval span(double a, double b) {
+        // Return the non-empty interval between a and b, regardless of their order.
+        if (a > b)
+            return interval(b, a);
+        return interval(a, b);
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [aabb-hit]: <kbd>[aabb.h]</kbd> Optional optimized AABB hit function]
+    [Listing [new-interval-funcs]: <kbd>[interval.h]</kbd>
+        New interval functions is_empty(), intersect() and span()
+    ]
+
+</div>
 
 
 Constructing Bounding Boxes for Hittables
@@ -793,12 +823,19 @@ constructor that takes two intervals as input:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class interval {
       public:
-        ...
+        double min, max;
+
+        interval() : min(+infinity), max(-infinity) {} // Default interval is empty
+
+        interval(double _min, double _max) : min(_min), max(_max) {}
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        interval(const interval& a, const interval& b)
-          : min(fmin(a.min, b.min)), max(fmax(a.max, b.max)) {}
+        interval(const interval& a, const interval& b) {
+            // Create the interval tightly enclosing the two input intervals.
+            min = a.min <= b.min ? a.min : b.min;
+            max = a.max >= b.max ? a.max : b.max;
+        }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         double size() const {
