@@ -1231,7 +1231,8 @@ know more about the specific geometry.
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [front-face-tracking]: <kbd>[hittable.h]</kbd>
-        Adding front-face tracking to hit_record]
+        Adding front-face tracking to hit_record
+    ]
 
 <div class='together'>
 And then we add the surface side determination to the class:
@@ -1618,7 +1619,8 @@ and a maximum. We'll end up using this class quite often as we proceed.
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hittable-list-with-interval]: <kbd>[hittable_list.h]</kbd>
-        hittable_list::hit() using interval]
+        hittable_list::hit() using interval
+    ]
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2328,7 +2330,8 @@ return 50% of the color from a bounce. We should expect to get a nice gray color
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-random-unit]: <kbd>[camera.h]</kbd>
-        ray_color() using a random ray direction]
+        ray_color() using a random ray direction
+    ]
 
 <div class='together'>
 ... Indeed we do get rather nice gray spheres:
@@ -2478,7 +2481,8 @@ to address this is just to ignore hits that are very close to the calculated int
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [reflect-tolerance]: <kbd>[camera.h]</kbd>
-        Calculating reflected ray origins with tolerance]
+        Calculating reflected ray origins with tolerance
+    ]
 
 <div class='together'>
 This gets rid of the shadow acne problem. Yes it is really called that. Here's the result:
@@ -2585,30 +2589,30 @@ life, a light grey) but they appear to be rather dark. We can see this more clea
 through the full brightness gamut for our diffuse material. We start by setting the reflectance of
 the `ray_color` function from `0.5` (50%) to `0.1` (10%):
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-class camera {
-    ...
-    color ray_color(const ray& r, int depth, const hittable& world) const {
-        hit_record rec;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class camera {
+        ...
+        color ray_color(const ray& r, int depth, const hittable& world) const {
+            hit_record rec;
 
-        // If we've exceeded the ray bounce limit, no more light is gathered.
-        if (depth <= 0)
-            return color(0,0,0);
+            // If we've exceeded the ray bounce limit, no more light is gathered.
+            if (depth <= 0)
+                return color(0,0,0);
 
-        if (world.hit(r, interval(0.001, infinity), rec)) {
-            vec3 direction = rec.normal + random_unit_vector();
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            return 0.1 * ray_color(ray(rec.p, direction), depth-1, world);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    }
+            if (world.hit(r, interval(0.001, infinity), rec)) {
+                vec3 direction = rec.normal + random_unit_vector();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+                return 0.1 * ray_color(ray(rec.p, direction), depth-1, world);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
 
-        vec3 unit_direction = unit_vector(r.direction());
-        auto a = 0.5*(unit_direction.y() + 1.0);
-        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
-    }
-};
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[Listing [ray-color-gamut]: <kbd>[camera.h]</kbd> ray_color() with 10% reflectance]
+            vec3 unit_direction = unit_vector(r.direction());
+            auto a = 0.5*(unit_direction.y() + 1.0);
+            return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+        }
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-gamut]: <kbd>[camera.h]</kbd> ray_color() with 10% reflectance]
 
 We render out at this new 10% reflectance. We then set reflectance to 30% and render again. We
 repeat for 50%, 70%, and finally 90%. You can overlay these images from left to right in the photo
@@ -2673,7 +2677,6 @@ robustly handle negative inputs.
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-gamma]: <kbd>[color.h]</kbd> write_color(), with gamma correction]
-
 
 <div class='together'>
 Using this gamma correction, we now get a much more consistent ramp from darkness to lightness:
@@ -2799,7 +2802,8 @@ To achieve this, `hit_record` needs to be told the material that is assigned to 
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-material]: <kbd>[sphere.h]</kbd>
-        Ray-sphere intersection with added material information]
+        Ray-sphere intersection with added material information
+    ]
 
 </div>
 
@@ -3248,7 +3252,8 @@ And the dielectric material that always refracts is:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [dielectric-always-refract]: <kbd>[material.h]</kbd>
-        Dielectric material class that always refracts]
+        Dielectric material class that always refracts
+    ]
 
 </div>
 
@@ -3306,6 +3311,7 @@ solution does not exist, the glass cannot refract, and therefore must reflect th
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [dielectric-can-refract-1]: <kbd>[material.h]</kbd> Determining if the ray can refract]
+
 </div>
 
 Here all the light is reflected, and because in practice that is usually inside solid objects, it is
@@ -3370,7 +3376,8 @@ And the dielectric material that always refracts (when possible) is:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [dielectric-with-refraction]: <kbd>[material.h]</kbd>
-        Dielectric material class with reflection]
+        Dielectric material class with reflection
+    ]
 
 </div>
 
@@ -3468,7 +3475,8 @@ In your own implementation, you might have been tempted to instead do something 
     vec3 outward_normal = (rec.p - center).unit_vector();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [improper-invert-sphere-normal]:
-    Problematic normal calculation for spheres with negative radii]
+        Problematic normal calculation for spheres with negative radii
+    ]
 
 If you do that, spheres with negative radii won't work properly. Since a sphere with a negative
 radius is a _bubble_, its interior is the infinite space outside the sphere. Its exterior is the
