@@ -465,20 +465,20 @@ undefined.)
 How do we find the intersection between a ray and a plane? Recall that the ray is just defined by a
 function that--given a parameter $t$--returns a location $\mathbf{P}(t)$:
 
-  $$ \mathbf{P}(t) = \mathbf{A} + t \mathbf{b} $$
+  $$ \mathbf{P}(t) = \mathbf{Q} + t \mathbf{d} $$
 
-This equation applies to all three of the x/y/z coordinates. For example, $x(t) = A_x + t b_x$. This
+This equation applies to all three of the x/y/z coordinates. For example, $x(t) = Q_x + t d_x$. This
 ray hits the plane $x = x_0$ at the parameter $t$ that satisfies this equation:
 
-  $$ x_0 = A_x + t_0 b_x $$
+  $$ x_0 = Q_x + t_0 d_x $$
 
 So $t$ at the intersection is given by
 
-  $$ t_0 = \frac{x_0 - A_x}{b_x} $$
+  $$ t_0 = \frac{x_0 - Q_x}{d_x} $$
 
 We get the similar expression for $x_1$:
 
-  $$ t_1 = \frac{x_1 - A_x}{b_x} $$
+  $$ t_1 = \frac{x_1 - Q_x}{d_x} $$
 
 <div class='together'>
 The key observation to turn that 1D math into a 2D or 3D hit test is this: if a ray intersects the
@@ -521,30 +521,30 @@ love the slab method:
 There are some caveats that make this less pretty than it first appears. Consider again the 1D
 equations for $t_0$ and $t_1$:
 
-  $$ t_0 = \frac{x_0 - A_x}{b_x} $$
-  $$ t_1 = \frac{x_1 - A_x}{b_x} $$
+  $$ t_0 = \frac{x_0 - Q_x}{d_x} $$
+  $$ t_1 = \frac{x_1 - Q_x}{d_x} $$
 
 First, suppose the ray is traveling in the negative $\mathbf{x}$ direction. The interval $(t_{x0},
 t_{x1})$ as computed above might be reversed, like $(7, 3)$ for example. Second, the denominator
-$b_x$ could be zero, yielding infinite values. And if the ray origin lies on one of the slab
+$d_x$ could be zero, yielding infinite values. And if the ray origin lies on one of the slab
 boundaries, we can get a `NaN`, since both the numerator and the denominator can be zero. Also, the
 zero will have a ± sign when using IEEE floating point.
 
-The good news for $b_x = 0$ is that $t_{x0}$ and $t_{x1}$ will be equal: both +∞ or -∞, if not
+The good news for $d_x = 0$ is that $t_{x0}$ and $t_{x1}$ will be equal: both +∞ or -∞, if not
 between $x_0$ and $x_1$. So, using min and max should get us the right answers:
 
   $$ t_{x0} = \min(
-     \frac{x_0 - A_x}{b_x},
-     \frac{x_1 - A_x}{b_x})
+     \frac{x_0 - Q_x}{d_x},
+     \frac{x_1 - Q_x}{d_x})
   $$
 
   $$ t_{x1} = \max(
-     \frac{x_0 - A_x}{b_x},
-     \frac{x_1 - A_x}{b_x})
+     \frac{x_0 - Q_x}{d_x},
+     \frac{x_1 - Q_x}{d_x})
   $$
 
-The remaining troublesome case if we do that is if $b_x = 0$ and either $x_0 - A_x = 0$ or
-$x_1 - A_x = 0$ so we get a `NaN`. In that case we can arbitrarily interpret that as either hit or
+The remaining troublesome case if we do that is if $d_x = 0$ and either $x_0 - Q_x = 0$ or
+$x_1 - Q_x = 0$ so we get a `NaN`. In that case we can arbitrarily interpret that as either hit or
 no hit, but we’ll revisit that later.
 
 Now, let’s look at the pseudo-function `overlaps`. Suppose we can assume the intervals are not
