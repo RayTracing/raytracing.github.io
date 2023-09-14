@@ -508,8 +508,8 @@ function that we'll call `ray::at(t)`:
 
         ray(const point3& origin, const vec3& direction) : orig(origin), dir(direction) {}
 
-        point3 origin() const  { return orig; }
-        vec3 direction() const { return dir; }
+        const point3& origin() const  { return orig; }
+        const vec3& direction() const { return dir; }
 
         point3 at(double t) const {
             return orig + t*dir;
@@ -525,6 +525,10 @@ function that we'll call `ray::at(t)`:
     [Listing [ray-initial]: <kbd>[ray.h]</kbd> The ray class]
 
 </div>
+
+(For those unfamiliar with C++, the functions `ray::origin()` and `ray::direction()` both return an
+immutable reference to their members. Callers can either just use the reference directly, or make a
+mutable copy depending on their needs.)
 
 
 Sending Rays Into the Scene
