@@ -2291,7 +2291,7 @@ But first, let's quickly update the `isotropic` material:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class isotropic : public material {
       public:
-        isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
+        isotropic(const color& c) : albedo(make_shared<solid_color>(c)) {}
         isotropic(shared_ptr<texture> a) : albedo(a) {}
 
 
@@ -3167,7 +3167,7 @@ As does the `isotropic` material:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class isotropic : public material {
       public:
-        isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
+        isotropic(const color& c) : albedo(make_shared<solid_color>(c)) {}
         isotropic(shared_ptr<texture> a) : albedo(a) {}
 
 
@@ -3595,9 +3595,9 @@ think both tactics would work fine, but I will go with instrumenting `hittable_l
             return sum;
         }
 
-        vec3 random(const vec3& o) const override {
+        vec3 random(const vec3& origin) const override {
             auto int_size = int(objects.size());
-            return objects[random_int(0, int_size-1)]->random(o);
+            return objects[random_int(0, int_size-1)]->random(origin);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -3659,7 +3659,7 @@ always remember for `NaN`s is that a `NaN` does not equal itself. Using this tri
 `write_color()` function to replace any `NaN` components with zero:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
+    void write_color(std::ostream& out, const color& pixel_color, int samples_per_pixel) {
         auto r = pixel_color.x();
         auto g = pixel_color.y();
         auto b = pixel_color.z();
