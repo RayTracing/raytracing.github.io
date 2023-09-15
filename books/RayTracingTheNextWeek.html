@@ -463,20 +463,20 @@ undefined.)
 How do we find the intersection between a ray and a plane? Recall that the ray is just defined by a
 function that--given a parameter $t$--returns a location $\mathbf{P}(t)$:
 
-  $$ \mathbf{P}(t) = \mathbf{A} + t \mathbf{d} $$
+  $$ \mathbf{P}(t) = \mathbf{Q} + t \mathbf{d} $$
 
-This equation applies to all three of the x/y/z coordinates. For example, $x(t) = A_x + t d_x$. This
+This equation applies to all three of the x/y/z coordinates. For example, $x(t) = Q_x + t d_x$. This
 ray hits the plane $x = x_0$ at the parameter $t$ that satisfies this equation:
 
-  $$ x_0 = A_x + t_0 d_x $$
+  $$ x_0 = Q_x + t_0 d_x $$
 
 So $t$ at the intersection is given by
 
-  $$ t_0 = \frac{x_0 - A_x}{d_x} $$
+  $$ t_0 = \frac{x_0 - Q_x}{d_x} $$
 
 We get the similar expression for $x_1$:
 
-  $$ t_1 = \frac{x_1 - A_x}{d_x} $$
+  $$ t_1 = \frac{x_1 - Q_x}{d_x} $$
 
 <div class='together'>
 The key observation to turn that 1D math into a 2D or 3D hit test is this: if a ray intersects the
@@ -519,8 +519,8 @@ love the slab method:
 There are some caveats that make this less pretty than it first appears. Consider again the 1D
 equations for $t_0$ and $t_1$:
 
-  $$ t_0 = \frac{x_0 - A_x}{d_x} $$
-  $$ t_1 = \frac{x_1 - A_x}{d_x} $$
+  $$ t_0 = \frac{x_0 - Q_x}{d_x} $$
+  $$ t_1 = \frac{x_1 - Q_x}{d_x} $$
 
 First, suppose the ray is traveling in the negative $\mathbf{x}$ direction. The interval $(t_{x0},
 t_{x1})$ as computed above might be reversed, like $(7, 3)$ for example. Second, the denominator
@@ -532,17 +532,17 @@ The good news for $d_x = 0$ is that $t_{x0}$ and $t_{x1}$ will be equal: both +â
 between $x_0$ and $x_1$. So, using min and max should get us the right answers:
 
   $$ t_{x0} = \min(
-     \frac{x_0 - A_x}{d_x},
-     \frac{x_1 - A_x}{d_x})
+     \frac{x_0 - Q_x}{d_x},
+     \frac{x_1 - Q_x}{d_x})
   $$
 
   $$ t_{x1} = \max(
-     \frac{x_0 - A_x}{d_x},
-     \frac{x_1 - A_x}{d_x})
+     \frac{x_0 - Q_x}{d_x},
+     \frac{x_1 - Q_x}{d_x})
   $$
 
-The remaining troublesome case if we do that is if $d_x = 0$ and either $x_0 - A_x = 0$ or
-$x_1 - A_x = 0$ so we get a `NaN`. In that case we can arbitrarily interpret that as either hit or
+The remaining troublesome case if we do that is if $d_x = 0$ and either $x_0 - Q_x = 0$ or
+$x_1 - Q_x = 0$ so we get a `NaN`. In that case we can arbitrarily interpret that as either hit or
 no hit. If you look at the code below, you'll see that we go with "no hit".
 
 Now, letâ€™s look at the pseudo-function `overlaps`. Suppose we can assume the intervals are not
@@ -661,17 +661,17 @@ Now we have everything we need to implment the new AABB class.
 </div>
 
 <div class='together'>
-The new code above introduces new interval functions we need to write: `interval::is_empty()`,
+The new code above relies on three new interval functions we need to write: `interval::is_empty()`,
 `interval::intersect()`, and `span()`.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class interval {
-        ...
-        interval(const interval& a, const interval& b) {
-            // Create the interval tightly enclosing the two input intervals.
-            min = a.min <= b.min ? a.min : b.min;
-            max = a.max >= b.max ? a.max : b.max;
-        }
+      public:
+        double min, max;
+
+        interval() : min(+infinity), max(-infinity) {} // Default interval is empty
+
+        interval(double _min, double _max) : min(_min), max(_max) {}
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
@@ -854,13 +854,20 @@ Now we can use this to construct an axis-aligned bounding box from two input box
     class aabb {
       public:
         ...
+
+        aabb(const point3& a, const point3& b) {
+            ...
+        }
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         aabb(const aabb& box0, const aabb& box1) {
             x = interval(box0.x, box1.x);
             y = interval(box0.y, box1.y);
             z = interval(box0.z, box1.z);
         }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
