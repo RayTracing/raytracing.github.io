@@ -45,7 +45,7 @@ class rtw_image {
 
     ~rtw_image() { STBI_FREE(data); }
 
-    bool load(const std::string filename) {
+    bool load(const std::string& filename) {
         // Loads image data from the given file name. Returns true if the load succeeded.
         auto n = bytes_per_pixel; // Dummy out parameter: original components per pixel
         data = stbi_load(filename.c_str(), &image_width, &image_height, &n, bytes_per_pixel);

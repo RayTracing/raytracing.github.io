@@ -20,7 +20,7 @@
 class sphere : public hittable {
   public:
     // Stationary Sphere
-    sphere(point3 _center, double _radius, shared_ptr<material> _material)
+    sphere(const point3& _center, double _radius, shared_ptr<material> _material)
       : center1(_center), radius(_radius), mat(_material), is_moving(false)
     {
         auto rvec = vec3(radius, radius, radius);
@@ -28,7 +28,8 @@ class sphere : public hittable {
     }
 
     // Moving Sphere
-    sphere(point3 _center1, point3 _center2, double _radius, shared_ptr<material> _material)
+    sphere(const point3& _center1, const point3& _center2, double _radius,
+           shared_ptr<material> _material)
       : center1(_center1), radius(_radius), mat(_material), is_moving(true)
     {
         auto rvec = vec3(radius, radius, radius);

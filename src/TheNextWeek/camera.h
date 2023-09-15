@@ -22,11 +22,11 @@
 
 class camera {
   public:
-    double aspect_ratio      = 1.0;    // Ratio of image width over height
-    int    image_width       = 100;    // Rendered image width in pixel count
-    int    samples_per_pixel = 10;     // Count of random samples for each pixel
-    int    max_depth         = 10;     // Maximum number of ray bounces into scene
-    color  background;                 // Scene background color
+    double aspect_ratio      = 1.0;  // Ratio of image width over height
+    int    image_width       = 100;  // Rendered image width in pixel count
+    int    samples_per_pixel = 10;   // Count of random samples for each pixel
+    int    max_depth         = 10;   // Maximum number of ray bounces into scene
+    color  background;               // Scene background color
 
     double vfov     = 90;              // Vertical view angle (field of view)
     point3 lookfrom = point3(0,0,-1);  // Point camera is looking from

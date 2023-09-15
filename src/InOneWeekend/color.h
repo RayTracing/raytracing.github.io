@@ -25,7 +25,7 @@ inline double linear_to_gamma(double linear_component)
     return 0;
 }
 
-void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
+void write_color(std::ostream& out, const color& pixel_color, int samples_per_pixel) {
     auto r = pixel_color.x();
     auto g = pixel_color.y();
     auto b = pixel_color.z();
@@ -36,7 +36,7 @@ void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
     g *= scale;
     b *= scale;
 
-    // Apply a linear to gamma transform for gamma 2
+    // Apply the linear to gamma transform.
     r = linear_to_gamma(r);
     g = linear_to_gamma(g);
     b = linear_to_gamma(b);
