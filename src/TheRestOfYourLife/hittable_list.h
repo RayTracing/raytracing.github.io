@@ -62,7 +62,7 @@ class hittable_list : public hittable {
         return sum;
     }
 
-    vec3 random(const vec3& origin) const override {
+    vec3 random(const point3& origin) const override {
         auto int_size = int(objects.size());
         return objects[random_int(0, int_size-1)]->random(origin);
     }

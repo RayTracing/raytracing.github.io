@@ -72,21 +72,21 @@ class sphere : public hittable {
 
     aabb bounding_box() const override { return bbox; }
 
-    double pdf_value(const point3& o, const vec3& v) const override {
+    double pdf_value(const point3& origin, const vec3& direction) const override {
         // This method only works for stationary spheres.
 
         hit_record rec;
-        if (!this->hit(ray(o, v), interval(0.001, infinity), rec))
+        if (!this->hit(ray(origin, direction), interval(0.001, infinity), rec))
             return 0;
 
-        auto cos_theta_max = sqrt(1 - radius*radius/(center1 - o).length_squared());
+        auto cos_theta_max = sqrt(1 - radius*radius/(center1 - origin).length_squared());
         auto solid_angle = 2*pi*(1-cos_theta_max);
 
         return  1 / solid_angle;
     }
 
-    vec3 random(const point3& o) const override {
-        vec3 direction = center1 - o;
+    vec3 random(const point3& origin) const override {
+        vec3 direction = center1 - origin;
         auto distance_squared = direction.length_squared();
         onb uvw;
         uvw.build_from_w(direction);
