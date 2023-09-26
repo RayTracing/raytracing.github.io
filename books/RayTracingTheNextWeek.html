@@ -176,11 +176,12 @@ interval, so it really can be sampled at any time.)
       public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // Stationary Sphere
-        sphere(point3 _center, double _radius, shared_ptr<material> _material)
+        sphere(const point3& _center, double _radius, shared_ptr<material> _material)
           : center1(_center), radius(_radius), mat(_material), is_moving(false) {}
 
         // Moving Sphere
-        sphere(point3 _center1, point3 _center2, double _radius, shared_ptr<material> _material)
+        sphere(const point3& _center1, const point3& _center2, double _radius,
+               shared_ptr<material> _material)
           : center1(_center1), radius(_radius), mat(_material), is_moving(true)
         {
             center_vec = _center2 - _center1;
@@ -735,7 +736,7 @@ For a stationary sphere, the `bounding_box` function is easy:
       public:
         // Stationary Sphere
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        sphere(point3 _center, double _radius, shared_ptr<material> _material)
+        sphere(const point3& _center, double _radius, shared_ptr<material> _material)
           : center1(_center), radius(_radius), mat(_material), is_moving(false)
         {
             auto rvec = vec3(radius, radius, radius);
@@ -770,7 +771,8 @@ two boxes.
       public:
         ...
         // Moving Sphere
-        sphere(point3 _center1, point3 _center2, double _radius, shared_ptr<material> _material)
+        sphere(const point3& _center1, const point3& _center2, double _radius,
+               shared_ptr<material> _material)
           : center1(_center1), radius(_radius), mat(_material), is_moving(true)
         {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1222,7 +1224,7 @@ Constant Color Texture
 
     class solid_color : public texture {
       public:
-        solid_color(color c) : color_value(c) {}
+        solid_color(const color& c) : color_value(c) {}
 
         solid_color(double red, double green, double blue) : solid_color(color(red,green,blue)) {}
 
@@ -1290,7 +1292,7 @@ pattern in the scene.
         checker_texture(double _scale, shared_ptr<texture> _even, shared_ptr<texture> _odd)
           : inv_scale(1.0 / _scale), even(_even), odd(_odd) {}
 
-        checker_texture(double _scale, color c1, color c2)
+        checker_texture(double _scale, const color& c1, const color& c2)
           : inv_scale(1.0 / _scale),
             even(make_shared<solid_color>(c1)),
             odd(make_shared<solid_color>(c2))
@@ -1693,7 +1695,7 @@ Adjust according to your directory structure.
 
         ~rtw_image() { STBI_FREE(data); }
 
-        bool load(const std::string filename) {
+        bool load(const std::string& filename) {
             // Loads image data from the given file name. Returns true if the load succeeded.
             auto n = bytes_per_pixel; // Dummy out parameter: original components per pixel
             data = stbi_load(filename.c_str(), &image_width, &image_height, &n, bytes_per_pixel);
@@ -1749,7 +1751,6 @@ The `image_texture` class uses the `rtw_image` class:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "rtw_stb_image.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "perlin.h"
 
     ...
 
@@ -1948,9 +1949,13 @@ code to make it all happen:
 <div class='together'>
 Now if we create an actual texture that takes these floats between 0 and 1 and creates grey colors:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "perlin.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
+    ...
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     class noise_texture : public texture {
       public:
         noise_texture() {}
@@ -2279,8 +2284,15 @@ And the interpolation becomes a bit more complicated:
       ...
       private:
         ...
-        static double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+        static double trilinear_interp(double c[2][2][2], double u, double v, double w) {
+            ...
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        static double perlin_interp(const vec3 c[2][2][2], double u, double v, double w) {
             auto uu = u*u*(3-2*u);
             auto vv = v*v*(3-2*v);
             auto ww = w*w*(3-2*w);
@@ -2297,9 +2309,8 @@ And the interpolation becomes a bit more complicated:
                     }
 
             return accum;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-interp]: <kbd>[perlin.h]</kbd> Perlin interpolation function so far]
@@ -3050,7 +3061,7 @@ the ray what color it is and performs no reflection. It’s very simple:
     class diffuse_light : public material {
       public:
         diffuse_light(shared_ptr<texture> a) : emit(a) {}
-        diffuse_light(color c) : emit(make_shared<solid_color>(c)) {}
+        diffuse_light(const color& c) : emit(make_shared<solid_color>(c)) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
@@ -3842,7 +3853,7 @@ The resulting class is:
           : boundary(b), neg_inv_density(-1/d), phase_function(make_shared<isotropic>(a))
         {}
 
-        constant_medium(shared_ptr<hittable> b, double d, color c)
+        constant_medium(shared_ptr<hittable> b, double d, const color& c)
           : boundary(b), neg_inv_density(-1/d), phase_function(make_shared<isotropic>(c))
         {}
 
@@ -3913,7 +3924,7 @@ The scattering function of isotropic picks a uniform random direction:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class isotropic : public material {
       public:
-        isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
+        isotropic(const color& c) : albedo(make_shared<solid_color>(c)) {}
         isotropic(shared_ptr<texture> a) : albedo(a) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)

@@ -322,7 +322,7 @@ vector utility functions in the bottom half:
         double operator[](int i) const { return e[i]; }
         double& operator[](int i) { return e[i]; }
 
-        vec3& operator+=(const vec3 &v) {
+        vec3& operator+=(const vec3& v) {
             e[0] += v.e[0];
             e[1] += v.e[1];
             e[2] += v.e[2];
@@ -355,47 +355,47 @@ vector utility functions in the bottom half:
 
     // Vector Utility Functions
 
-    inline std::ostream& operator<<(std::ostream &out, const vec3 &v) {
+    inline std::ostream& operator<<(std::ostream& out, const vec3& v) {
         return out << v.e[0] << ' ' << v.e[1] << ' ' << v.e[2];
     }
 
-    inline vec3 operator+(const vec3 &u, const vec3 &v) {
+    inline vec3 operator+(const vec3& u, const vec3& v) {
         return vec3(u.e[0] + v.e[0], u.e[1] + v.e[1], u.e[2] + v.e[2]);
     }
 
-    inline vec3 operator-(const vec3 &u, const vec3 &v) {
+    inline vec3 operator-(const vec3& u, const vec3& v) {
         return vec3(u.e[0] - v.e[0], u.e[1] - v.e[1], u.e[2] - v.e[2]);
     }
 
-    inline vec3 operator*(const vec3 &u, const vec3 &v) {
+    inline vec3 operator*(const vec3& u, const vec3& v) {
         return vec3(u.e[0] * v.e[0], u.e[1] * v.e[1], u.e[2] * v.e[2]);
     }
 
-    inline vec3 operator*(double t, const vec3 &v) {
+    inline vec3 operator*(double t, const vec3& v) {
         return vec3(t*v.e[0], t*v.e[1], t*v.e[2]);
     }
 
-    inline vec3 operator*(const vec3 &v, double t) {
+    inline vec3 operator*(const vec3& v, double t) {
         return t * v;
     }
 
-    inline vec3 operator/(vec3 v, double t) {
+    inline vec3 operator/(const vec3& v, double t) {
         return (1/t) * v;
     }
 
-    inline double dot(const vec3 &u, const vec3 &v) {
+    inline double dot(const vec3& u, const vec3& v) {
         return u.e[0] * v.e[0]
              + u.e[1] * v.e[1]
              + u.e[2] * v.e[2];
     }
 
-    inline vec3 cross(const vec3 &u, const vec3 &v) {
+    inline vec3 cross(const vec3& u, const vec3& v) {
         return vec3(u.e[1] * v.e[2] - u.e[2] * v.e[1],
                     u.e[2] * v.e[0] - u.e[0] * v.e[2],
                     u.e[0] * v.e[1] - u.e[1] * v.e[0]);
     }
 
-    inline vec3 unit_vector(vec3 v) {
+    inline vec3 unit_vector(const vec3& v) {
         return v / v.length();
     }
 
@@ -424,7 +424,7 @@ that writes a single pixel's color out to the standard output stream.
 
     using color = vec3;
 
-    void write_color(std::ostream &out, color pixel_color) {
+    void write_color(std::ostream& out, const color& pixel_color) {
         // Write the translated [0,255] value of each color component.
         out << int(255.999 * pixel_color.x()) << ' '
             << int(255.999 * pixel_color.y()) << ' '
@@ -1108,7 +1108,7 @@ And here’s the sphere:
 
     class sphere : public hittable {
       public:
-        sphere(point3 _center, double _radius) : center(_center), radius(_radius) {}
+        sphere(const point3& _center, double _radius) : center(_center), radius(_radius) {}
 
         bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override {
             vec3 oc = center - r.origin();
@@ -2013,7 +2013,7 @@ And here's the updated `write_color()` function that takes the sum total of all 
 and the number of samples involved:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
+    void write_color(std::ostream& out, const color& pixel_color, int samples_per_pixel) {
         auto r = pixel_color.x();
         auto g = pixel_color.y();
         auto b = pixel_color.z();
@@ -2225,7 +2225,7 @@ point if it is outside the unit sphere.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
 
-    inline vec3 unit_vector(vec3 v) {
+    inline vec3 unit_vector(const vec3& v) {
         return v / v.length();
     }
 
@@ -2651,7 +2651,7 @@ robustly handle negative inputs.
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-    void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
+    void write_color(std::ostream& out, const color& pixel_color, int samples_per_pixel) {
         auto r = pixel_color.x();
         auto g = pixel_color.y();
         auto b = pixel_color.z();
@@ -2777,7 +2777,7 @@ To achieve this, `hit_record` needs to be told the material that is assigned to 
     class sphere : public hittable {
       public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        sphere(point3 _center, double _radius, shared_ptr<material> _material)
+        sphere(const point3& _center, double _radius, shared_ptr<material> _material)
           : center(_center), radius(_radius), mat(_material) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -3877,7 +3877,7 @@ Since we'll be choosing random points from the defocus disk, we'll need a functi
 `random_in_unit_sphere()`, just for two dimensions.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline vec3 unit_vector(vec3 u) {
+    inline vec3 unit_vector(const vec3& u) {
         return v / v.length();
     }
 

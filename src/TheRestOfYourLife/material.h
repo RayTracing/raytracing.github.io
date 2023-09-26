@@ -131,7 +131,7 @@ class dielectric : public material {
 class diffuse_light : public material {
   public:
     diffuse_light(shared_ptr<texture> a) : emit(a) {}
-    diffuse_light(color c) : emit(make_shared<solid_color>(c)) {}
+    diffuse_light(const color& c) : emit(make_shared<solid_color>(c)) {}
 
     color emitted(const ray& r_in, const hit_record& rec, double u, double v, const point3& p)
     const override {
@@ -147,7 +147,7 @@ class diffuse_light : public material {
 
 class isotropic : public material {
   public:
-    isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
+    isotropic(const color& c) : albedo(make_shared<solid_color>(c)) {}
     isotropic(shared_ptr<texture> a) : albedo(a) {}
 
     bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
