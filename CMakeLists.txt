@@ -20,8 +20,7 @@ set ( EXTERNAL
 )
 
 set ( SOURCE_ONE_WEEKEND
-  src/external/stb_image.h
-
+  src/InOneWeekend/main.cc
   src/InOneWeekend/camera.h
   src/InOneWeekend/color.h
   src/InOneWeekend/hittable.h
@@ -33,13 +32,10 @@ set ( SOURCE_ONE_WEEKEND
   src/InOneWeekend/rtweekend.h
   src/InOneWeekend/sphere.h
   src/InOneWeekend/vec3.h
-
-  src/InOneWeekend/main.cc
 )
 
 set ( SOURCE_NEXT_WEEK
-  src/external/stb_image.h
-
+  src/TheNextWeek/main.cc
   src/TheNextWeek/aabb.h
   src/TheNextWeek/bvh.h
   src/TheNextWeek/camera.h
@@ -57,13 +53,10 @@ set ( SOURCE_NEXT_WEEK
   src/TheNextWeek/sphere.h
   src/TheNextWeek/texture.h
   src/TheNextWeek/vec3.h
-
-  src/TheNextWeek/main.cc
 )
 
 set ( SOURCE_REST_OF_YOUR_LIFE
-  src/external/stb_image.h
-
+  src/TheRestOfYourLife/main.cc
   src/TheRestOfYourLife/aabb.h
   src/TheRestOfYourLife/camera.h
   src/TheRestOfYourLife/color.h
@@ -82,8 +75,6 @@ set ( SOURCE_REST_OF_YOUR_LIFE
   src/TheRestOfYourLife/sphere.h
   src/TheRestOfYourLife/texture.h
   src/TheRestOfYourLife/vec3.h
-
-  src/TheRestOfYourLife/main.cc
 )
 
 include_directories(src)
