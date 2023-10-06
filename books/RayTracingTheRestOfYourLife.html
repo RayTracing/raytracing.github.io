@@ -7,7 +7,7 @@
                                **Ray Tracing: The Rest of Your Life**
                    [Peter Shirley][], [Trevor David Black][], [Steve Hollasch][]
                                                 <br>
-                                     Version 4.0.0-alpha.1, 2023-08-06
+                                     Version 4.0.0-alpha.2, 2023-XX-XX
                                                 <br>
                       Copyright 2018-2023 Peter Shirley. All rights reserved.
 
@@ -24,9 +24,9 @@ tracers rely on the techniques described in these first two books. However, your
 increasingly complicated visual effects like subsurface scattering or nested dielectrics will be
 severely limited by a missing mathematical foundation. In this volume, I assume that you are either
 a highly interested student, or are someone who is pursuing a career related to ray tracing. We will
-be diving into the math of creating a very serious ray tracer. When you are done, you should be
-well equipped to use and modify the various commercial ray tracers found in many popular domains,
-such as the movie, television, product design, and architecture industries.
+be diving into the math of creating a very serious ray tracer. When you are done, you should be well
+equipped to use and modify the various commercial ray tracers found in many popular domains, such as
+the movie, television, product design, and architecture industries.
 
 There are many many things I do not cover in this short volume. For example, there are many ways of
 writing Monte Carlo rendering programs--I dive into only one of them. I don’t cover shadow rays
@@ -40,6 +40,9 @@ need in order to study these and other interesting techniques.
 I hope that you find the math as fascinating as I do.
 
 As before, https://in1weekend.blogspot.com/ will have further readings and references.
+
+These books have been formatted to print well directly from your browser. We also include PDFs of
+each book [with each release][releases], in the "Assets" section.
 
 Thanks to everyone who lent a hand on this project. You can find them in the acknowledgments section
 at the end of this book.
@@ -124,8 +127,8 @@ centered at the origin:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estpi-1]: <kbd>[pi.cc]</kbd> Estimating π]
 
-The answer of $\pi$ found will vary from computer to computer based on the initial random seed.
-On my computer, this gives me the answer `Estimate of Pi = 3.143760000000`.
+The answer of $\pi$ found will vary from computer to computer based on the initial random seed. On
+my computer, this gives me the answer `Estimate of Pi = 3.143760000000`.
 
 </div>
 
@@ -309,13 +312,13 @@ location.
 
             std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-            for (int j = 0; j < image_height; ++j) {
+            for (int j = 0; j < image_height; j++) {
                 std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-                for (int i = 0; i < image_width; ++i) {
+                for (int i = 0; i < image_width; i++) {
                     color pixel_color(0,0,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                    for (int s_j = 0; s_j < sqrt_spp; ++s_j) {
-                        for (int s_i = 0; s_i < sqrt_spp; ++s_i) {
+                    for (int s_j = 0; s_j < sqrt_spp; s_j++) {
+                        for (int s_i = 0; s_i < sqrt_spp; s_i++) {
                             ray r = get_ray(i, j, s_i, s_j);
                             pixel_color += ray_color(r, max_depth, world);
                         }
@@ -474,8 +477,8 @@ If we assume that we have all of the following:
 
     $$ Y = (y_0, y_1, ..., y_{N-1}) = (f(x_0), f(x_1), ..., f(x_{N-1})) $$
 
-If we assume all of the above, then we could solve for the arithmetic mean--the average--of the
-list $Y$ with the following:
+If we assume all of the above, then we could solve for the arithmetic mean--the average--of the list
+$Y$ with the following:
 
     $$ \operatorname{average}(Y) = E[Y] = \frac{1}{N} \sum_{i=0}^{N-1} y_i $$
     $$ = \frac{1}{N} \sum_{i=0}^{N-1} f(x_i) $$
@@ -602,10 +605,10 @@ The Monte Carlo approach:
 </div>
 
 <div class='together'>
-This, as expected, produces approximately the exact answer we get with integration, _i.e._
-$I = 8/3$. You could rightly point to this example and say that the integration is actually a lot
-less work than the Monte Carlo. That might be true in the case where the function is $f(x) = x^2$,
-but there exist many functions where it might be simpler to solve for the Monte Carlo than for the
+This, as expected, produces approximately the exact answer we get with integration, _i.e._ $I =
+8/3$. You could rightly point to this example and say that the integration is actually a lot less
+work than the Monte Carlo. That might be true in the case where the function is $f(x) = x^2$, but
+there exist many functions where it might be simpler to solve for the Monte Carlo than for the
 integration, like $f(x) = sin^5(x)$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -651,24 +654,24 @@ the background color is black, then the only real sources of light in the scene 
 that are actually placed about the scene. There might be two rays that intersect at nearby points on
 a surface, one that is randomly reflected toward the light and one that is not. The ray that is
 reflected toward the light will appear a very bright color. The ray that is reflected to somewhere
-else will appear a very dark color. The two intensities should really be somewhere in the middle.
-We could lessen this problem if we steered both of these rays toward the light, but this would cause
+else will appear a very dark color. The two intensities should really be somewhere in the middle. We
+could lessen this problem if we steered both of these rays toward the light, but this would cause
 the scene to be inaccurately bright.
 
 For any given ray, we usually trace from the camera, through the scene, and terminate at a light.
 But imagine if we traced this same ray from the light source, through the scene, and terminated at
-the camera. This ray would start with a bright intensity and would lose energy with each
-successive bounce around the scene. It would ultimately arrive at the camera, having been dimmed and
-colored by its reflections off various surfaces. Now, imagine if this ray was forced to bounce
-toward the camera as soon as it could. It would appear inaccurately bright because it hadn't been
-dimmed by successive bounces. This is analogous to sending more random samples toward the light. It
-would go a long way toward solving our problem of having a bright pixel next to a dark pixel, but it
-would then just make _all_ of our pixels bright.
+the camera. This ray would start with a bright intensity and would lose energy with each successive
+bounce around the scene. It would ultimately arrive at the camera, having been dimmed and colored by
+its reflections off various surfaces. Now, imagine if this ray was forced to bounce toward the
+camera as soon as it could. It would appear inaccurately bright because it hadn't been dimmed by
+successive bounces. This is analogous to sending more random samples toward the light. It would go a
+long way toward solving our problem of having a bright pixel next to a dark pixel, but it would then
+just make _all_ of our pixels bright.
 
 We can remove this inaccuracy by downweighting those samples to adjust for the over-sampling. How do
-we do this adjustment? Well, we'll first need to understand the concept of a
-_probability density function_. But to understand the concept of a _probability density function_,
-we'll first need to know what a _density function_ is.
+we do this adjustment? Well, we'll first need to understand the concept of a _probability density
+function_. But to understand the concept of a _probability density function_, we'll first need to
+know what a _density function_ is.
 
 A _density function_ is just the continuous version of a histogram. Here’s an example of a histogram
 from the histogram Wikipedia page:
@@ -679,10 +682,10 @@ If we had more items in our data source, the number of bins would stay the same,
 have a higher frequency of each item. If we divided the data into more bins, we'd have more bins,
 but each bin would have a lower frequency of each item. If we took the number of bins and raised it
 to infinity, we'd have an infinite number of zero-frequency bins. To solve for this, we'll replace
-our histogram, which is a _discrete function_, with a _discrete density function_. A
-_discrete density function_ differs from a _discrete function_ in that it normalizes the y-axis to a
-fraction or percentage of the total, _i.e_ its density, instead of a total count for each bin.
-Converting from a _discrete function_ to a _discrete density function_ is trivial:
+our histogram, which is a _discrete function_, with a _discrete density function_. A _discrete
+density function_ differs from a _discrete function_ in that it normalizes the y-axis to a fraction
+or percentage of the total, _i.e_ its density, instead of a total count for each bin. Converting
+from a _discrete function_ to a _discrete density function_ is trivial:
 
     $$ \text{Density of Bin i} = \frac{\text{Number of items in Bin i}}
                                       {\text{Number of items total}} $$
@@ -694,9 +697,8 @@ changing our discrete values into continuous values.
                             {(H-H’)} $$
 
 So a _density function_ is a continuous histogram where all of the values are normalized against a
-total. If we had a specific tree we wanted to know the height of, we could create a
-_probability function_ that would tell us how likely it is for our tree to fall within a specific
-bin.
+total. If we had a specific tree we wanted to know the height of, we could create a _probability
+function_ that would tell us how likely it is for our tree to fall within a specific bin.
 
     $$ \text{Probability of Bin i} = \frac{\text{Number of items in Bin i}}
                                           {\text{Number of items total}} $$
@@ -708,9 +710,9 @@ interpret that as a statistical predictor of a tree’s height:
         \text{Bin Density}\cdot(H-H’)$$
 
 Indeed, with this continuous probability function, we can now say the likelihood that any given tree
-has a height that places it within any arbitrary span of multiple bins. This is a
-_probability density function_ (henceforth _PDF_). In short, a PDF is a continuous function that
-can be  integrated over to determine how likely a result is over an integral.
+has a height that places it within any arbitrary span of multiple bins. This is a _probability
+density function_ (henceforth _PDF_). In short, a PDF is a continuous function that can be
+integrated over to determine how likely a result is over an integral.
 
 
 Constructing a PDF
@@ -727,8 +729,8 @@ probability of getting a number near two.
 
 The PDF $p(r)$ is a linear function that starts with $0$ at $r=0$ and monotonically increases to its
 highest point at $p(2)$ for $r=2$. What is the value of $p(2)$? What is the value of $p(r)$? Maybe
-$p(2)$ is 2? The PDF increases linearly from 0 to 2, so guessing that the value of $p(2)$ is 2
-seems reasonable. At least it looks like it can't be 0.
+$p(2)$ is 2? The PDF increases linearly from 0 to 2, so guessing that the value of $p(2)$ is 2 seems
+reasonable. At least it looks like it can't be 0.
 
 Remember that the PDF is a probability function. We are constraining the PDF so that it lies in the
 range [0,2]. The PDF represents the continuous density function for a probabilistic list. If we know
@@ -750,8 +752,8 @@ We need to solve for the value of $C$. We can use integration to work backwards.
     $$ = C ( \frac{2^2}{2} - \frac{0}{2} ) $$
     $$ C = \frac{1}{2} $$
 
-That gives us the PDF of $p(r) = r/2$. Just as with histograms we can sum up (integrate) the
-region to figure out the probability that $r$ is in some interval $[x_0,x_1]$:
+That gives us the PDF of $p(r) = r/2$. Just as with histograms we can sum up (integrate) the region
+to figure out the probability that $r$ is in some interval $[x_0,x_1]$:
 
     $$ \operatorname{Probability} (r | x_0 \leq r \leq x_1 )
        = \operatorname{area}(p(r), x_0, x_1)
@@ -813,12 +815,12 @@ exists a function $f(d)$ that takes uniform input and produces a nonuniform dist
 PDF. We just need to figure out a way to solve for $f(d)$.
 
 For the PDF given above, where $p(r) = \frac{r}{2}$, the probability of a random sample is higher
-toward 2 than it is toward 0. There is a greater probability of getting a number between 1.8 and
-2.0 than between 0.0 and 0.2. If we put aside our mathematics hat for a second and put on our
-computer science hat, maybe we can figure out a smart way of partitioning the PDF. We know that
-there is a higher probability near 2 than near 0, but what is the value that splits the probability
-in half? What is the value that a random number has a 50% chance of being higher than and a 50%
-chance of being lower than? What is the $x$ that solves:
+toward 2 than it is toward 0. There is a greater probability of getting a number between 1.8 and 2.0
+than between 0.0 and 0.2. If we put aside our mathematics hat for a second and put on our computer
+science hat, maybe we can figure out a smart way of partitioning the PDF. We know that there is a
+higher probability near 2 than near 0, but what is the value that splits the probability in half?
+What is the value that a random number has a 50% chance of being higher than and a 50% chance of
+being lower than? What is the $x$ that solves:
 
     $$ 50\% = \int_{0}^{x}  \frac{r}{2} dr  = \int_{x}^{2}  \frac{r}{2} dr $$
 
@@ -829,9 +831,9 @@ Solving gives us:
     $$ x^2 = 2$$
     $$ x = \sqrt{2}$$
 
-As a crude approximation we could create a function `f(d)` that takes as input
-`double d = random_double()`. If `d` is less than (or equal to) 0.5, it produces a uniform number
-in $[0,\sqrt{2}]$, if `d` is greater than 0.5, it produces a uniform number in $[\sqrt{2}, 2]$.
+As a crude approximation we could create a function `f(d)` that takes as input `double d =
+random_double()`. If `d` is less than (or equal to) 0.5, it produces a uniform number in
+$[0,\sqrt{2}]$, if `d` is greater than 0.5, it produces a uniform number in $[\sqrt{2}, 2]$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     double f(double d)
@@ -902,12 +904,12 @@ have an area that is half of the total. From $0$ to $2\pi$ for example:
     }
 
     int main() {
-        int N = 10000;
+        unsigned int N = 10000;
         double sum = 0.0;
 
         // iterate through all of our samples
         std::vector<sample> samples;
-        for (int i = 0; i < N; i++) {
+        for (unsigned int i = 0; i < N; i++) {
             // Get the area under the curve
             auto x = random_double(0, 2*pi);
             auto sin_x = sin(x);
@@ -925,9 +927,9 @@ have an area that is half of the total. From $0$ to $2\pi$ for example:
         double half_sum = sum / 2.0;
         double halfway_point = 0.0;
         double accum = 0.0;
-        for (int i = 0; i < N; i++){
+        for (unsigned int i = 0; i < N; i++){
             accum += samples[i].p_x;
-            if (accum >= half_sum){
+            if (accum >= half_sum) {
                 halfway_point = samples[i].x;
                 break;
             }
@@ -944,8 +946,8 @@ have an area that is half of the total. From $0$ to $2\pi$ for example:
 </div>
 
 <div class='together'>
-This code snippet isn't too different from what we had before. We're still solving for the sum
-over an interval (0 to $2\pi$). Only this time, we're also storing and sorting all of our samples by
+This code snippet isn't too different from what we had before. We're still solving for the sum over
+an interval (0 to $2\pi$). Only this time, we're also storing and sorting all of our samples by
 their input and output. We use this to determine the point at which they subtotal half of the sum
 across the entire interval. Once we know that our first $j$ samples sum up to half of the total sum,
 we know that the $j\text{th}$ $x$ roughly corresponds to our halfway point:
@@ -1000,8 +1002,8 @@ _accumulated_ area (or _accumulated_ probability) from zero. In the case of the 
     $$ f(x) = e^{\frac{-x}{2 \pi}} sin^2(x)  $$
 
 we cared about the accumulated probability from $0$ to $2\pi$ (100%) and the accumulated probability
-from $0$ to $2.016$ (50%). We can generalize this to an important term, the
-_Cumulative Distribution Function_ $P(x)$ is defined as:
+from $0$ to $2.016$ (50%). We can generalize this to an important term, the _Cumulative Distribution
+Function_ $P(x)$ is defined as:
 
     $$ P(x) =  \int_{-\infty}^{x}  p(x') dx' $$
 
@@ -1303,8 +1305,8 @@ Let's review the main concepts that underlie Monte Carlo ray tracers:
   2. You pick a PDF $p$ that is non-zero and non-negative over $[a,b]$
   3. You average a whole ton of $\frac{f(r)}{p(r)}$ where $r$ is a random number with PDF $p$.
 
-Any choice of PDF $p$ will always converge to the right answer, but the closer that $p$
-approximates $f$, the faster that it will converge.
+Any choice of PDF $p$ will always converge to the right answer, but the closer that $p$ approximates
+$f$, the faster that it will converge.
 
 
 
@@ -1342,9 +1344,9 @@ doesn't matter which coordinate system you choose to use. Although, however you 
 remember that a PDF must integrate to one over the whole surface and that the PDF represents the
 _relative probability_ of that direction being sampled. Recall that we have a `vec3` function to
 generate uniform random samples on the unit sphere (`random_unit_vector()`). What is the PDF of
-these uniform samples?
-As a uniform density on the unit sphere, it is $1/\mathit{area}$ of the sphere, which is $1/(4\pi)$.
-If the integrand is $\cos^2(\theta)$, and $\theta$ is the angle with the $z$ axis:
+these uniform samples? As a uniform density on the unit sphere, it is $1/\mathit{area}$ of the
+sphere, which is $1/(4\pi)$. If the integrand is $\cos^2(\theta)$, and $\theta$ is the angle with
+the $z$ axis:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     double f(const vec3& d) {
@@ -1375,8 +1377,8 @@ The analytic answer is $\frac{4}{3} \pi$ -- if you remember enough advanced calc
 code above produces that. The key point here is that all of the integrals and the probability and
 everything else is over the unit sphere. The way to represent a single direction in 3D is its
 associated point on the unit sphere. The way to represent a range of directions in 3D is the amount
-of area on the unit sphere that those directions travel through. Call it direction, area, or
-_solid angle_ -- it’s all the same thing. Solid angle is the term that you'll usually find in the
+of area on the unit sphere that those directions travel through. Call it direction, area, or _solid
+angle_ -- it’s all the same thing. Solid angle is the term that you'll usually find in the
 literature. You have radians (r) in $\theta$ over one dimension, and you have _steradians_ (sr) in
 $\theta$ _and_ $\phi$ over two dimensions (the unit sphere is a three dimensional object, but its
 surface is only two dimensional). Solid Angle is just the two dimensional extension of angles. If
@@ -1409,21 +1411,21 @@ Probability of light being scattered: $A$
 Probability of light being absorbed: $1-A$
 
 Where here $A$ stands for _albedo_, which is latin for _whiteness_. Albedo is a precise technical
-term in some disciplines, but in all cases it is used to define some form of
-_fractional reflectance_. This _fractional reflectance_ (or albedo) will vary with color and (as we
-implemented for our glass material) can also vary with incident direction (the direction of the
-incoming ray). It can help to stop and remember that when we simulate light propagation, all we're
-doing is simulating the movement of photons through a space. If you remember your high school
-Physics then you should recall that every photon has a unique energy and wavelength associated by
-the Planck constant:
+term in some disciplines, but in all cases it is used to define some form of _fractional
+reflectance_. This _fractional reflectance_ (or albedo) will vary with color and (as we implemented
+for our glass material) can also vary with incident direction (the direction of the incoming ray).
+It can help to stop and remember that when we simulate light propagation, all we're doing is
+simulating the movement of photons through a space. If you remember your high school Physics then
+you should recall that every photon has a unique energy and wavelength associated by the Planck
+constant:
 
     $$ E = \frac{hc}{\lambda} $$
 
 Each individual photon has a _tiny_ amount of energy, but when you add enough of them up you get all
 of the illumination in your rendering. The absorption or scattering of a photon with a surface or a
 volume (or really anything that a photon can interact with) is probabilistically determined by the
-albedo of the object. Albedo can depend on color because some objects are more likely to absorb
-some wavelengths.
+albedo of the object. Albedo can depend on color because some objects are more likely to absorb some
+wavelengths.
 
 In most physically based renderers, we would use a predefined set of specific wavelengths for the
 light color rather than RGB. As an example, we would replace our _tristimulus_ RGB renderer with
@@ -1440,22 +1442,17 @@ in the _LMS color space_ (long, medium, short).
 Scattering
 -----------
 If the light does scatter, it will have a directional distribution that we can describe as a PDF
-over solid angle.
-I will refer to this as its _scattering PDF_: $\operatorname{pScatter}()$.
-The scattering PDF will vary with outgoing direction: $\operatorname{pScatter}(\omega_o)$.
-The scattering PDF can also vary with _incident direction_:
-  $\operatorname{pScatter}(\omega_i, \omega_o)$.
-You can see this varying with incident direction when you look at reflections off a road -- they
-  become mirror-like as your viewing angle (incident angle) approaches grazing.
-The scattering PDF can vary with the wavelength of the light:
-  $\operatorname{pScatter}(\omega_i, \omega_o, \lambda)$.
-A good example of this is a prism refracting white light into a rainbow.
-Lastly, the scattering PDF can also depend on the scattering position:
-  $\operatorname{pScatter}(\mathbf{x}, \omega_i, \omega_o, \lambda)$.
-The $\mathbf{x}$ is just math notation for the scattering position:
-  $\mathbf{x} = (x, y, z)$.
-The albedo of an object can also depend on these quantities:
-  $A(\mathbf{x}, \omega_i, \omega_o, \lambda)$.
+over solid angle. I will refer to this as its _scattering PDF_: $\operatorname{pScatter}()$. The
+scattering PDF will vary with outgoing direction: $\operatorname{pScatter}(\omega_o)$. The
+scattering PDF can also vary with _incident direction_:
+$\operatorname{pScatter}(\omega_i, \omega_o)$. You can see this varying with incident direction when
+you look at reflections off a road -- they become mirror-like as your viewing angle (incident angle)
+approaches grazing. The scattering PDF can vary with the wavelength of the light:
+$\operatorname{pScatter}(\omega_i, \omega_o, \lambda)$. A good example of this is a prism refracting
+white light into a rainbow. Lastly, the scattering PDF can also depend on the scattering position:
+$\operatorname{pScatter}(\mathbf{x}, \omega_i, \omega_o, \lambda)$. The $\mathbf{x}$ is just math
+notation for the scattering position: $\mathbf{x} = (x, y, z)$. The albedo of an object can also
+depend on these quantities: $A(\mathbf{x}, \omega_i, \omega_o, \lambda)$.
 
 The color of a surface is found by integrating these terms over the unit hemisphere by the incident
 direction:
@@ -1465,12 +1462,11 @@ direction:
         \operatorname{pScatter}(\mathbf{x}, \omega_i, \omega_o, \lambda) \cdot
         \operatorname{Color}_i(\mathbf{x}, \omega_i, \lambda) $$
 
-We've added a $\operatorname{Color}_i$ term.
-The scattering PDF and the albedo at the surface of an object are acting as filters to the light
-  that is shining on that point.
-So we need to solve for the light that is shining on that point.
-This is a recursive algorithm, and is the reason our `ray_color` function returns the color of the
-  current object multiplied by the color of the next ray.
+We've added a $\operatorname{Color}_i$ term. The scattering PDF and the albedo at the surface of an
+object are acting as filters to the light that is shining on that point. So we need to solve for the
+light that is shining on that point. This is a recursive algorithm, and is the reason our
+`ray_color` function returns the color of the current object multiplied by the color of the next
+ray.
 
 
 The Scattering PDF
@@ -1487,16 +1483,15 @@ where $p(\mathbf{x}, \omega_i, \omega_o, \lambda)$ is the PDF of whatever outgoi
 randomly generate.
 
 For a Lambertian surface we already implicitly implemented this formula for the special case where
-  $pScatter(\, \ldots \,)$ is a cosine density.
-The $\operatorname{pScatter}(\, \ldots \,)$ of a Lambertian surface is proportional to
-  $\cos(\theta_o)$, where $\theta_o$ is the angle relative to the surface normal.
-Let's solve for $C$ once more:
+$pScatter(\, \ldots \,)$ is a cosine density. The $\operatorname{pScatter}(\, \ldots \,)$ of a
+Lambertian surface is proportional to $\cos(\theta_o)$, where $\theta_o$ is the angle relative to
+the surface normal. Let's solve for $C$ once more:
 
     $$ \operatorname{pScatter}(\mathbf{x}, \omega_i, \omega_o, \lambda) = C \cdot \cos(\theta_o) $$
 
 All two dimensional PDFs need to integrate to one over the whole surface (remember that
-  $\operatorname{pScatter}$ is a PDF).
-We set $\operatorname{pScatter}(\theta_o < 0) = 0$ so that we don't scatter below the horizon.
+$\operatorname{pScatter}$ is a PDF). We set $\operatorname{pScatter}(\theta_o < 0) = 0$ so that we
+don't scatter below the horizon.
 
     $$ 1 = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} C \cdot cos(\theta) dA $$
 
@@ -1511,11 +1506,10 @@ So:
     $$ 1 = C \cdot \pi $$
     $$ C = \frac{1}{\pi} $$
 
-The integral of $\cos(\theta_o)$ over the hemisphere is $\pi$, so we need to we need to normalize
-  by $\frac{1}{\pi}$.
-The PDF $\operatorname{pScatter}$ is only dependent on outgoing direction ($\omega_o$), so we'll
-  simplify its representation to just $\operatorname{pScatter}(\omega_o)$.
-Put all of this together and you get the scattering PDF for a Lambertian surface:
+The integral of $\cos(\theta_o)$ over the hemisphere is $\pi$, so we need to we need to normalize by
+$\frac{1}{\pi}$. The PDF $\operatorname{pScatter}$ is only dependent on outgoing direction
+($\omega_o$), so we'll simplify its representation to just $\operatorname{pScatter}(\omega_o)$. Put
+all of this together and you get the scattering PDF for a Lambertian surface:
 
     $$ \operatorname{pScatter}(\omega_o) = \frac{\cos(\theta_o)}{\pi} $$
 
@@ -1539,8 +1533,8 @@ This is exactly what we had in our original `ray_color()` function!
 </div>
 
 The treatment above is slightly non-standard because I want the same math to work for surfaces and
-volumes. If you read the literature, you’ll see reflection defined by the
-_Bidirectional Reflectance Distribution Function_ (BRDF). It relates pretty simply to our terms:
+volumes. If you read the literature, you’ll see reflection defined by the _Bidirectional Reflectance
+Distribution Function_ (BRDF). It relates pretty simply to our terms:
 
     $$ BRDF(\omega_i, \omega_o, \lambda) = \frac{A(\mathbf{x}, \omega_i, \omega_o, \lambda) \cdot
         \operatorname{pScatter}(\mathbf{x}, \omega_i, \omega_o, \lambda)}{\cos(\theta_o)} $$
@@ -1558,14 +1552,11 @@ lights.
 Playing with Importance Sampling
 ====================================================================================================
 Our goal over the next several chapters is to instrument our program to send a bunch of extra rays
-  toward light sources so that our picture is less noisy.
-Let’s assume we can send a bunch of rays toward the light source using a PDF
-  $\operatorname{pLight}(\omega_o)$.
-Let’s also assume we have a PDF related to $operatorname{pScatter}$, and let’s call that
-  $operatorname{pSurface}(\omega_o)$.
-A great thing about PDFs is that you can just use linear mixtures of them to form mixture densities
-  that are also PDFs.
-For example, the simplest would be:
+toward light sources so that our picture is less noisy. Let’s assume we can send a bunch of rays
+toward the light source using a PDF $\operatorname{pLight}(\omega_o)$. Let’s also assume we have a
+PDF related to $operatorname{pScatter}$, and let’s call that $operatorname{pSurface}(\omega_o)$. A
+great thing about PDFs is that you can just use linear mixtures of them to form mixture densities
+that are also PDFs. For example, the simplest would be:
 
   $$ p(\omega_o) = \frac{1}{2} \operatorname{pSurface}(\omega_o) +  \frac{1}{2}
       \operatorname{pLight}(\omega_o)$$
@@ -1577,15 +1568,13 @@ out how to make the PDF larger where the product
     $$ \operatorname{pScatter}(\mathbf{x}, \omega_i, \omega_o) \cdot
         \operatorname{Color}_i(\mathbf{x}, \omega_i) $$
 
-is largest.
-For diffuse surfaces, this is mainly a matter of guessing where
-  $\operatorname{Color}_i(\mathbf{x}, \omega_i)$ is largest.
-Which is equivalent to guessing where the most light is coming from.
+is largest. For diffuse surfaces, this is mainly a matter of guessing where
+$\operatorname{Color}_i(\mathbf{x}, \omega_i)$ is largest. Which is equivalent to guessing where the
+most light is coming from.
 
 For a mirror, $\operatorname{pScatter}()$ is huge only near one direction, so
-  $\operatorname{pScatter}()$ matters a lot more.
-In fact, most renderers just make mirrors a special case, and make the
-  $\operatorname{pScatter}()/p()$ implicit -- our code currently does that.
+$\operatorname{pScatter}()$ matters a lot more. In fact, most renderers just make mirrors a special
+case, and make the $\operatorname{pScatter}()/p()$ implicit -- our code currently does that.
 
 
 Returning to the Cornell Box
@@ -1801,9 +1790,9 @@ Random Hemispherical Sampling
 To confirm our understanding, let's try a different scattering distribution. For this one, we'll
 attempt to repeat the uniform hemispherical scattering from the first book. There's nothing wrong
 with this technique, but we are no longer treating our objects as Lambertian. Lambertian is a
-specific type of diffuse material that requires a $\cos(\theta_o)$ scattering distribution.
-Uniform hemispherical scattering is a different diffuse material. If we keep the material the same
-but change the PDF, as we did in last section, we will still converge on the same answer, but our
+specific type of diffuse material that requires a $\cos(\theta_o)$ scattering distribution. Uniform
+hemispherical scattering is a different diffuse material. If we keep the material the same but
+change the PDF, as we did in last section, we will still converge on the same answer, but our
 convergence may take more or less samples. However, if we change the material, we will have
 fundamentally changed the render and the algorithm will converge on a different answer. So when we
 replace Lambertian diffuse with uniform hemispherical diffuse we should expect the outcome of our
@@ -1819,7 +1808,7 @@ PDF:
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            auto scatter_direction = random_in_hemisphere(rec.normal);
+            auto scatter_direction = random_on_hemisphere(rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             // Catch degenerate scatter direction
@@ -1854,10 +1843,10 @@ of the tall box is much more uniform in color. If you aren't sure what the best 
 your material is, it's pretty reasonable to just go ahead and assume a uniform PDF, and while that
 might converge slowly, it's not going to ruin your render. That said, if you're not sure what the
 correct sampling pattern for your material is, your choice of PDF is not going to be your biggest
-concern, as incorrectly choosing your scattering function _will_ ruin your render. At the very
-least it will produce an incorrect result. You may find yourself with the most difficult kind of bug
-to find in a Monte Carlo program -- a bug that produces a reasonable looking image! You won’t know
-if the bug is in the first version of the program, or the second, or both!
+concern, as incorrectly choosing your scattering function _will_ ruin your render. At the very least
+it will produce an incorrect result. You may find yourself with the most difficult kind of bug to
+find in a Monte Carlo program -- a bug that produces a reasonable looking image! You won’t know if
+the bug is in the first version of the program, or the second, or both!
 
 Let’s build some infrastructure to address this.
 
@@ -2002,7 +1991,7 @@ $f()/p() = \cos^3(\theta) / \frac{1}{2\pi}$, and we can test this:
     #include <iomanip>
     #include <math.h>
 
-    double f(double r1, double r2) {
+    double f(double r2) {
         // auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
         // auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
         auto z = 1 - r2;
@@ -2010,7 +1999,7 @@ $f()/p() = \cos^3(\theta) / \frac{1}{2\pi}$, and we can test this:
         return cos_theta*cos_theta*cos_theta;
     }
 
-    double pdf(double r1, double r2) {
+    double pdf() {
         return 1.0 / (2.0*pi);
     }
 
@@ -2019,9 +2008,8 @@ $f()/p() = \cos^3(\theta) / \frac{1}{2\pi}$, and we can test this:
 
         auto sum = 0.0;
         for (int i = 0; i < N; i++) {
-            auto r1 = random_double();
             auto r2 = random_double();
-            sum += f(r1, r2) / pdf(r1, r2);
+            sum += f(r2) / pdf();
         }
 
         std::cout << std::fixed << std::setprecision(12);
@@ -2117,8 +2105,8 @@ Orthonormal Bases
 ====================================================================================================
 In the last chapter we developed methods to generate random directions relative to the $z$ axis. If
 we want to be able to produce reflections off of any surface, we are going to need to make this more
-general: Not all normals are going to be perfectly aligned with the $z$ axis. So in this chapter
-we are going to generalize our methods so that they support arbitrary surface normal vectors.
+general: Not all normals are going to be perfectly aligned with the $z$ axis. So in this chapter we
+are going to generalize our methods so that they support arbitrary surface normal vectors.
 
 
 Relative Coordinates
@@ -2303,7 +2291,7 @@ But first, let's quickly update the `isotropic` material:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class isotropic : public material {
       public:
-        isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
+        isotropic(const color& c) : albedo(make_shared<solid_color>(c)) {}
         isotropic(shared_ptr<texture> a) : albedo(a) {}
 
 
@@ -2362,10 +2350,9 @@ diagram:
   ](../images/fig-3.11-shape-onto-pdf.jpg)
 
 If we look at a small area $dA$ on the light, the probability of sampling it is
-  $\operatorname{p_q}(q) \cdot dA$.
-On the sphere, the probability of sampling the small area $d\omega$ on the sphere is
-  $\operatorname{p}(\omega) \cdot d\omega$.
-There is a geometric relationship between $d\omega$ and $dA$:
+$\operatorname{p_q}(q) \cdot dA$. On the sphere, the probability of sampling the small area
+$d\omega$ on the sphere is $\operatorname{p}(\omega) \cdot d\omega$. There is a geometric
+relationship between $d\omega$ and $dA$:
 
     $$ d\omega = \frac{dA \cdot \cos(\theta)}{\operatorname{distance}^2(p,q)} $$
 
@@ -2464,9 +2451,9 @@ appears to work.
 
 Switching to Unidirectional Light
 ----------------------------------
-The noisy pops around the light on the ceiling are because the light is two-sided
-and there is a small space between light and ceiling. We probably want to have the light just emit
-down. We can do that by letting the emitted member function of hittable take extra information:
+The noisy pops around the light on the ceiling are because the light is two-sided and there is a
+small space between light and ceiling. We probably want to have the light just emit down. We can do
+that by letting the emitted member function of hittable take extra information:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material {
@@ -2526,12 +2513,11 @@ how we want to standardize our usage of PDFs. We already know that we are going 
 the surface and a PDF for the light, so let's create a `pdf` base class. So far, we've had a `pdf()`
 function that took a direction and returned the PDF's distribution value for that direction. This
 value has so far been one of $1/4\pi$, $1/2\pi$, and $\cos(\theta)/\pi$. In a couple of our examples
-we generated the random direction using a different distribution than the
-distribution of the PDF. We covered this quite a lot in the chapter Playing with Importance
-Sampling. In general, if we know the distribution of our random directions, we should use a PDF with
-the same distribution. This will lead to the fastest convergence. With that in mind, we'll create a
-`pdf` class that is responsible for generating random directions and determining the value of the
-PDF.
+we generated the random direction using a different distribution than the distribution of the PDF.
+We covered this quite a lot in the chapter Playing with Importance Sampling. In general, if we know
+the distribution of our random directions, we should use a PDF with the same distribution. This will
+lead to the fastest convergence. With that in mind, we'll create a `pdf` class that is responsible
+for generating random directions and determining the value of the PDF.
 
 From all of this, any `pdf` class should be responsible for
 
@@ -2540,9 +2526,9 @@ From all of this, any `pdf` class should be responsible for
 
 <div class='together'>
 The details of how this is done under the hood varies for $\operatorname{pSurface}$ and
-  $\operatorname{pLight}$, but that is exactly what class hierarchies were invented for!
-It’s never obvious what goes in an abstract class, so my approach is to be greedy and hope a minimal
-  interface works, and for `pdf` this implies:
+$\operatorname{pLight}$, but that is exactly what class hierarchies were invented for! It’s never
+obvious what goes in an abstract class, so my approach is to be greedy and hope a minimal interface
+works, and for `pdf` this implies:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef PDF_H
@@ -2719,11 +2705,11 @@ functions through to subclasses if you want a purely abstract `hittable` interfa
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        virtual double pdf_value(const point3& o, const vec3& v) const {
+        virtual double pdf_value(const point3& origin, const vec3& direction) const {
             return 0.0;
         }
 
-        virtual vec3 random(const vec3& o) const {
+        virtual vec3 random(const point3& origin) const {
             return vec3(1, 0, 0);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2756,13 +2742,13 @@ And then we change `quad` to implement those functions:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double pdf_value(const point3& origin, const vec3& v) const override {
+        double pdf_value(const point3& origin, const vec3& direction) const override {
             hit_record rec;
-            if (!this->hit(ray(origin, v), interval(0.001, infinity), rec))
+            if (!this->hit(ray(origin, direction), interval(0.001, infinity), rec))
                 return 0;
 
-            auto distance_squared = rec.t * rec.t * v.length_squared();
-            auto cosine = fabs(dot(v, rec.normal) / v.length());
+            auto distance_squared = rec.t * rec.t * direction.length_squared();
+            auto cosine = fabs(dot(direction, rec.normal) / direction.length());
 
             return distance_squared / (cosine * area);
         }
@@ -2776,11 +2762,11 @@ And then we change `quad` to implement those functions:
       private:
         point3 Q;
         vec3 u, v;
+        vec3 w;
         shared_ptr<material> mat;
         aabb bbox;
         vec3 normal;
         double D;
-        vec3 w;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double area;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2810,12 +2796,12 @@ Add a `lights` parameter to the camera `render()` function:
             std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
             int sqrt_spp = int(sqrt(samples_per_pixel));
-            for (int j = 0; j < image_height; ++j) {
+            for (int j = 0; j < image_height; j++) {
                 std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-                for (int i = 0; i < image_width; ++i) {
+                for (int i = 0; i < image_width; i++) {
                     color pixel_color(0,0,0);
-                    for (int s_j = 0; s_j < sqrt_spp; ++s_j) {
-                        for (int s_i = 0; s_i < sqrt_spp; ++s_i) {
+                    for (int s_j = 0; s_j < sqrt_spp; s_j++) {
+                        for (int s_i = 0; s_i < sqrt_spp; s_i++) {
                             ray r = get_ray(i, j, s_i, s_j);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                             pixel_color += ray_color(r, max_depth, world, lights);
@@ -2956,13 +2942,11 @@ have any plumbing for `generate()` to tell `value()` what the original `random_d
 can't trivially say which PDF the random direction comes from. If we thought that the above was
 correct, we would have to solve backwards to figure which PDF the direction could come from. Which
 honestly sounds like a nightmare, but fortunately we don't need to do that. There are some
-directions that both PDFs could have generated.
-For example, a direction toward the light could have been generated by either
-  $\operatorname{pLight}$ _or_ $\operatorname{pSurface}$.
-It is sufficient for us to solve for the pdf value of $\operatorname{pSurface}$ and of
-  $\operatorname{pLight}$ for a random direction and then take the PDF mixture weights to solve for
-  the total PDF value for that direction.
-The mixture density class is actually pretty straightforward:
+directions that both PDFs could have generated. For example, a direction toward the light could have
+been generated by either $\operatorname{pLight}$ _or_ $\operatorname{pSurface}$. It is sufficient
+for us to solve for the pdf value of $\operatorname{pSurface}$ and of $\operatorname{pLight}$ for a
+random direction and then take the PDF mixture weights to solve for the total PDF value for that
+direction. The mixture density class is actually pretty straightforward:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class mixture_pdf : public pdf {
@@ -3069,14 +3053,14 @@ There are some other issues with the code.
 
 The PDF construction is hard coded in the `ray_color()` function. We should clean that up.
 
-We've accidentally broken the specular rays (glass and metal), and they are no longer supported.
-The math would continue to work out if we just made their scattering function a delta function, but
-that would lead to all kinds of floating point disasters. We could either make specular reflection
-a special case that skips $f()/p()$, or we could set surface roughness to a very small -- but
-nonzero -- value and have almost-mirrors that look perfectly smooth but that don’t generate NaNs. I
-don’t have an opinion on which way to do it (I have tried both and they both have their advantages),
-but we have smooth metal and glass code anyway, so we'll add perfect specular surfaces that just
-skip over explicit $f()/p()$ calculations.
+We've accidentally broken the specular rays (glass and metal), and they are no longer supported. The
+math would continue to work out if we just made their scattering function a delta function, but that
+would lead to all kinds of floating point disasters. We could either make specular reflection a
+special case that skips $f()/p()$, or we could set surface roughness to a very small -- but nonzero
+-- value and have almost-mirrors that look perfectly smooth but that don’t generate NaNs. I don’t
+have an opinion on which way to do it (I have tried both and they both have their advantages), but
+we have smooth metal and glass code anyway, so we'll add perfect specular surfaces that just skip
+over explicit $f()/p()$ calculations.
 
 We also lack a real background function infrastructure in case we want to add an environment map or
 a more interesting functional background. Some environment maps are HDR (the RGB components are
@@ -3084,10 +3068,10 @@ normalized floats rather than 0–255 bytes). Our output has been HDR all along;
 truncating it.
 
 Finally, our renderer is RGB. A more physically based one -- like an automobile manufacturer might
-use -- would probably need to use spectral colors and maybe even polarization. For a movie
-renderer, most studios still get away with RGB. You can make a hybrid renderer that has both modes,
-but that is of course harder. I’m going to stick to RGB for now, but I will touch on this at the end
-of the book.
+use -- would probably need to use spectral colors and maybe even polarization. For a movie renderer,
+most studios still get away with RGB. You can make a hybrid renderer that has both modes, but that
+is of course harder. I’m going to stick to RGB for now, but I will touch on this at the end of the
+book.
 
 
 
@@ -3183,7 +3167,7 @@ As does the `isotropic` material:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class isotropic : public material {
       public:
-        isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
+        isotropic(const color& c) : albedo(make_shared<solid_color>(c)) {}
         isotropic(shared_ptr<texture> a) : albedo(a) {}
 
 
@@ -3499,21 +3483,21 @@ The sphere class needs the two PDF-related functions:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double pdf_value(const point3& o, const vec3& v) const override {
+        double pdf_value(const point3& origin, const vec3& direction) const override {
             // This method only works for stationary spheres.
 
             hit_record rec;
-            if (!this->hit(ray(o, v), interval(0.001, infinity), rec))
+            if (!this->hit(ray(origin, direction), interval(0.001, infinity), rec))
                 return 0;
 
-            auto cos_theta_max = sqrt(1 - radius*radius/(center1 - o).length_squared());
+            auto cos_theta_max = sqrt(1 - radius*radius/(center1 - origin).length_squared());
             auto solid_angle = 2*pi*(1-cos_theta_max);
 
             return  1 / solid_angle;
         }
 
-        vec3 random(const point3& o) const override {
-            vec3 direction = center1 - o;
+        vec3 random(const point3& origin) const override {
+            vec3 direction = center1 - origin;
             auto distance_squared = direction.length_squared();
             onb uvw;
             uvw.build_from_w(direction);
@@ -3601,19 +3585,19 @@ think both tactics would work fine, but I will go with instrumenting `hittable_l
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double pdf_value(const point3& o, const vec3& v) const override {
-            auto weight = 1.0/objects.size();
+        double pdf_value(const point3& origin, const vec3& direction) const override {
+            auto weight = 1.0 / objects.size();
             auto sum = 0.0;
 
             for (const auto& object : objects)
-                sum += weight * object->pdf_value(o, v);
+                sum += weight * object->pdf_value(origin, direction);
 
             return sum;
         }
 
-        vec3 random(const vec3& o) const override {
-            auto int_size = static_cast<int>(objects.size());
-            return objects[random_int(0, int_size-1)]->random(o);
+        vec3 random(const point3& origin) const override {
+            auto int_size = int(objects.size());
+            return objects[random_int(0, int_size-1)]->random(origin);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -3675,7 +3659,7 @@ always remember for `NaN`s is that a `NaN` does not equal itself. Using this tri
 `write_color()` function to replace any `NaN` components with zero:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
+    void write_color(std::ostream& out, const color& pixel_color, int samples_per_pixel) {
         auto r = pixel_color.x();
         auto g = pixel_color.y();
         auto b = pixel_color.z();
@@ -3696,9 +3680,9 @@ always remember for `NaN`s is that a `NaN` does not equal itself. Using this tri
 
         // Write the translated [0,255] value of each color component.
         static const interval intensity(0.000, 0.999);
-        out << static_cast<int>(256 * intensity.clamp(r)) << ' '
-            << static_cast<int>(256 * intensity.clamp(g)) << ' '
-            << static_cast<int>(256 * intensity.clamp(b)) << '\n';
+        out << int(256 * intensity.clamp(r)) << ' '
+            << int(256 * intensity.clamp(g)) << ' '
+            << int(256 * intensity.clamp(b)) << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-nan]: <kbd>[color.h]</kbd> NaN-tolerant write_color function]
@@ -3763,8 +3747,8 @@ Basic Data
   - **Title (series)**: “Ray Tracing in One Weekend Series”
   - **Title (book)**: “Ray Tracing: The Rest of Your Life”
   - **Author**: Peter Shirley, Trevor David Black, Steve Hollasch
-  - **Version/Edition**: v4.0.0-alpha.1
-  - **Date**: 2023-08-06
+  - **Version/Edition**: v4.0.0-alpha.2
+  - **Date**: 2023-XX-XX
   - **URL (series)**: https://raytracing.github.io/
   - **URL (book)**: https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html
 
@@ -3791,7 +3775,7 @@ Snippets
        title = {Ray Tracing: The Rest of Your Life},
        author = {Peter Shirley, Trevor David Black, Steve Hollasch},
        year = {2023},
-       month = {August},
+       month = {XXX},
        note = {\small \texttt{https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html}},
        url = {https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html}
     }
@@ -3807,7 +3791,7 @@ Snippets
        title = {Ray Tracing: The Rest of Your Life},
        author = {Peter Shirley, Trevor David Black, Steve Hollasch},
        year = {2023},
-       month = {August},
+       month = {XXX},
        url = {https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html}
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

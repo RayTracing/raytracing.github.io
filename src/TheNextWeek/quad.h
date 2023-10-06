@@ -28,7 +28,7 @@ class quad : public hittable {
     }
 
     virtual void set_bounding_box() {
-        bbox = aabb(Q, Q + u + v).pad();
+        bbox = aabb(Q, Q + u + v);
     }
 
     aabb bounding_box() const override { return bbox; }
@@ -78,11 +78,11 @@ class quad : public hittable {
   private:
     point3 Q;
     vec3 u, v;
+    vec3 w;
     shared_ptr<material> mat;
     aabb bbox;
     vec3 normal;
     double D;
-    vec3 w;
 };
 
 

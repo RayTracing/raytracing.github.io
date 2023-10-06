@@ -27,7 +27,7 @@ class texture {
 
 class solid_color : public texture {
   public:
-    solid_color(color c) : color_value(c) {}
+    solid_color(const color& c) : color_value(c) {}
 
     solid_color(double red, double green, double blue)
       : solid_color(color(red,green,blue)) {}
@@ -46,16 +46,16 @@ class checker_texture : public texture {
     checker_texture(double _scale, shared_ptr<texture> _even, shared_ptr<texture> _odd)
       : inv_scale(1.0 / _scale), even(_even), odd(_odd) {}
 
-    checker_texture(double _scale, color c1, color c2)
+    checker_texture(double _scale, const color& c1, const color& c2)
       : inv_scale(1.0 / _scale),
         even(make_shared<solid_color>(c1)),
         odd(make_shared<solid_color>(c2))
     {}
 
     color value(double u, double v, const point3& p) const override {
-        auto xInteger = static_cast<int>(std::floor(inv_scale * p.x()));
-        auto yInteger = static_cast<int>(std::floor(inv_scale * p.y()));
-        auto zInteger = static_cast<int>(std::floor(inv_scale * p.z()));
+        auto xInteger = int(std::floor(inv_scale * p.x()));
+        auto yInteger = int(std::floor(inv_scale * p.y()));
+        auto zInteger = int(std::floor(inv_scale * p.z()));
 
         bool isEven = (xInteger + yInteger + zInteger) % 2 == 0;
 
@@ -77,7 +77,7 @@ class noise_texture : public texture {
 
     color value(double u, double v, const point3& p) const override {
         auto s = scale * p;
-        return color(1,1,1)*0.5*(1 + sin(s.z() + 10*noise.turb(s)));
+        return color(1,1,1)*0.5*(1 + sin(s.z() + 10*noise.turb(s, 7)));
     }
 
   private:
@@ -98,8 +98,8 @@ class image_texture : public texture {
         u = interval(0,1).clamp(u);
         v = 1.0 - interval(0,1).clamp(v);  // Flip V to image coordinates
 
-        auto i = static_cast<int>(u * image.width());
-        auto j = static_cast<int>(v * image.height());
+        auto i = int(u * image.width());
+        auto j = int(v * image.height());
         auto pixel = image.pixel_data(i,j);
 
         auto color_scale = 1.0 / 255.0;

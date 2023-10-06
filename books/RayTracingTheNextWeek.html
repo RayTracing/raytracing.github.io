@@ -7,7 +7,7 @@
                                    **Ray Tracing: The Next Week**
                    [Peter Shirley][], [Trevor David Black][], [Steve Hollasch][]
                                                 <br>
-                                     Version 4.0.0-alpha.1, 2023-08-06
+                                     Version 4.0.0-alpha.2, 2023-XX-XX
                                                 <br>
                       Copyright 2018-2023 Peter Shirley. All rights reserved.
 
@@ -30,6 +30,9 @@ The two hardest parts of this book are the BVH and the Perlin textures. This is 
 suggests you take a week rather than a weekend for this endeavor. But you can save those for last if
 you want a weekend project. Order is not very important for the concepts presented in this book, and
 without BVH and Perlin texture you will still get a Cornell Box!
+
+These books have been formatted to print well directly from your browser. We also include PDFs of
+each book [with each release][releases], in the "Assets" section.
 
 Thanks to everyone who lent a hand on this project. You can find them in the acknowledgments section
 at the end of this book.
@@ -68,18 +71,19 @@ time for each ray:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        ray(const point3& origin, const vec3& direction) : orig(origin), dir(direction), tm(0)
-        {}
+        ray(const point3& origin, const vec3& direction)
+          : orig(origin), dir(direction), tm(0) {}
 
-        ray(const point3& origin, const vec3& direction, double time = 0.0)
-          : orig(origin), dir(direction), tm(time)
-        {}
+        ray(const point3& origin, const vec3& direction, double time)
+          : orig(origin), dir(direction), tm(time) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        point3 origin() const  { return orig; }
-        vec3 direction() const { return dir; }
+        const point3& origin() const  { return orig; }
+        const vec3& direction() const { return dir; }
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double time() const    { return tm; }
+        double time() const { return tm; }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         point3 at(double t) const {
@@ -163,28 +167,30 @@ a time period.
 
 Adding Moving Spheres
 ----------------------
-Now to create a moving object.
-I’ll update the sphere class so that its center moves linearly from `center1` at time=0 to `center2`
-at time=1.
-(It continues on indefinitely outside that time interval, so it really can be sampled at any time.)
+Now to create a moving object. I’ll update the sphere class so that its center moves linearly from
+`center1` at time=0 to `center2` at time=1. (It continues on indefinitely outside that time
+interval, so it really can be sampled at any time.)
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
       public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // Stationary Sphere
-        sphere(point3 _center, double _radius, shared_ptr<material> _material)
+        sphere(const point3& _center, double _radius, shared_ptr<material> _material)
           : center1(_center), radius(_radius), mat(_material), is_moving(false) {}
 
         // Moving Sphere
-        sphere(point3 _center1, point3 _center2, double _radius, shared_ptr<material> _material)
+        sphere(const point3& _center1, const point3& _center2, double _radius,
+               shared_ptr<material> _material)
           : center1(_center1), radius(_radius), mat(_material), is_moving(true)
         {
             center_vec = _center2 - _center1;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        ...
+        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+            ...
+        }
 
       private:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -196,10 +202,10 @@ at time=1.
         bool is_moving;
         vec3 center_vec;
 
-        point3 center(double time) const {
+        point3 sphere_center(double time) const {
             // Linearly interpolate from center1 to center2 according to time, where t=0 yields
             // center1, and t=1 yields center2.
-            return center0 + time*center_vec;
+            return center1 + time*center_vec;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
@@ -224,9 +230,9 @@ The updated `sphere::hit()` function is almost identical to the old `sphere::hit
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             point3 center = is_moving ? sphere_center(r.time()) : center1;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            vec3 oc = r.origin() - center;
+            vec3 oc = center - r.origin();
             auto a = r.direction().length_squared();
-            auto half_b = dot(oc, r.direction());
+            auto h = dot(r.direction(), oc);
             auto c = oc.length_squared() - radius*radius;
             ...
         }
@@ -234,23 +240,6 @@ The updated `sphere::hit()` function is almost identical to the old `sphere::hit
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [moving-sphere-hit]: <kbd>[sphere.h]</kbd> Moving sphere hit function]
-
-</div>
-
-<div class='together'>
-We need to implement the new `interval::contains()` method mentioned above:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class interval {
-      public:
-        ...
-        bool contains(double x) const {
-            return min <= x && x <= max;
-        }
-        ...
-    };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [interval-contains]: <kbd>interval.h</kbd> interval::contains() method]
 
 </div>
 
@@ -373,8 +362,10 @@ $t=0$ to $\mathbf{C} + (0, r/2, 0)$ at time $t=1$:
 <div class='together'>
 This gives the following result:
 
+  <div id="image-bouncing-spheres">
   ![<span class='num'>Image 1:</span> Bouncing spheres
   ](../images/img-2.01-bouncing-spheres.png class='pixel')
+  </div>
 
 </div>
 
@@ -386,22 +377,22 @@ This part is by far the most difficult and involved part of the ray tracer we ar
 sticking it in this chapter so the code can run faster, and because it refactors `hittable` a
 little, and when I add rectangles and boxes we won't have to go back and refactor them.
 
-The ray-object intersection is the main time-bottleneck in a ray tracer, and the time is linear with
-the number of objects. But it’s a repeated search on the same model, so we ought to be able to make
+Ray-object intersection is the main time-bottleneck in a ray tracer, and the run time is linear with
+the number of objects. But it’s a repeated search on the same scene, so we ought to be able to make
 it a logarithmic search in the spirit of binary search. Because we are sending millions to billions
-of rays on the same model, we can do an analog of sorting the model, and then each ray intersection
-can be a sublinear search. The two most common families of sorting are to 1) divide the space, and
-2) divide the objects. The latter is usually much easier to code up and just as fast to run for most
-models.
+of rays into the same scene, we can sort the objects in the scene, and then each ray intersection
+can be a sublinear search. The two most common methods of sorting are to 1) subdivide the space, and
+2) subdivide the objects. The latter is usually much easier to code up, and just as fast to run for
+most models.
 
 
 The Key Idea
 -------------
-The key idea of a bounding volume over a set of primitives is to find a volume that fully encloses
-(bounds) all the objects. For example, suppose you computed a sphere that bounds 10 objects. Any ray
-that misses the bounding sphere definitely misses all ten objects inside. If the ray hits the
-bounding sphere, then it might hit one of the ten objects. So the bounding code is always of the
-form:
+The key idea of creating bounding volumes for a set of primitives is to find a volume that fully
+encloses (bounds) all the objects. For example, suppose you computed a sphere that bounds 10
+objects. Any ray that misses the bounding sphere definitely misses all ten objects inside. If the
+ray hits the bounding sphere, then it might hit one of the ten objects. So the bounding code is
+always of the form:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if (ray hits bounding object)
@@ -410,8 +401,9 @@ form:
         return false
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A key thing is we are dividing objects into subsets. We are not dividing the screen or the volume.
-Any object is in just one bounding volume, but bounding volumes can overlap.
+Note that we will use these bounding volumes to group the objects in the scene into subgroups. We
+are *not* dividing the screen or the scene space. We want any given object to be in just one
+bounding volume, though bounding volumes can overlap.
 
 
 Hierarchies of Bounding Volumes
@@ -444,33 +436,34 @@ Axis-Aligned Bounding Boxes (AABBs)
 To get that all to work we need a way to make good divisions, rather than bad ones, and a way to
 intersect a ray with a bounding volume. A ray bounding volume intersection needs to be fast, and
 bounding volumes need to be pretty compact. In practice for most models, axis-aligned boxes work
-better than the alternatives, but this design choice is always something to keep in mind if you
-encounter unusual types of models.
+better than the alternatives (such as the spherical bounds mentioned above), but this design choice
+is always something to keep in mind if you encounter other types of bounding models.
 
-From now on we will call axis-aligned bounding rectangular parallelepiped (really, that is what they
-need to be called if precise) _axis-aligned bounding boxes_, or AABBs. Any method you want to use to
-intersect a ray with an AABB is fine. And all we need to know is whether or not we hit it; we don’t
-need hit points or normals or any of the stuff we need to display the object.
+From now on we will call axis-aligned bounding rectangular parallelepipeds (really, that is what
+they need to be called if we're being precise) _axis-aligned bounding boxes_, or AABBs. (In the
+code, you will also come across the naming abbreviation "bbox" for "bounding box".) Any method you
+want to use to intersect a ray with an AABB is fine. And all we need to know is whether or not we
+hit it; we don’t need hit points or normals or any of the stuff we need to display the object.
 
 <div class='together'>
 Most people use the “slab” method. This is based on the observation that an n-dimensional AABB is
-just the intersection of $n$ axis-aligned intervals, often called “slabs”. An interval is just the
-points between two endpoints, _e.g._, $x$ such that $3 < x < 5$, or more succinctly $x$ in $(3,5)$.
-In 2D, two intervals overlapping makes a 2D AABB (a rectangle):
+just the intersection of $n$ axis-aligned intervals, often called “slabs”. Recall that an interval
+is just the points within two endpoints, for example, $x$ such that $3 \leq x \leq 5$, or more
+succinctly $x$ in $[3,5]$. In 2D, an AABB (a rectangle) is defined by the overlap two intervals:
 
   ![Figure [2d-aabb]: 2D axis-aligned bounding box](../images/fig-2.02-2d-aabb.jpg)
 
 </div>
 
-For a ray to hit one interval we first need to figure out whether the ray hits the boundaries. For
-example, again in 2D, this is the ray parameters $t_0$ and $t_1$. (If the ray is parallel to the
-plane, its intersection with the plane will be undefined.)
+To determine if a ray hits one interval, we first need to figure out whether the ray hits the
+boundaries. For example, in 1D, ray intersection with two planes will yield the ray parameters $t_0$
+and $t_1$. (If the ray is parallel to the planes, its intersection with any plane will be
+undefined.)
 
   ![Figure [ray-slab]: Ray-slab intersection](../images/fig-2.03-ray-slab.jpg)
 
-In 3D, those boundaries are planes. The equations for the planes are $x = x_0$ and $x = x_1$. Where
-does the ray hit that plane? Recall that the ray can be thought of as just a function that given a
-$t$ returns a location $\mathbf{P}(t)$:
+How do we find the intersection between a ray and a plane? Recall that the ray is just defined by a
+function that--given a parameter $t$--returns a location $\mathbf{P}(t)$:
 
   $$ \mathbf{P}(t) = \mathbf{A} + t \mathbf{b} $$
 
@@ -479,7 +472,7 @@ ray hits the plane $x = x_0$ at the parameter $t$ that satisfies this equation:
 
   $$ x_0 = A_x + t_0 b_x $$
 
-Thus $t$ at that hitpoint is:
+So $t$ at the intersection is given by
 
   $$ t_0 = \frac{x_0 - A_x}{b_x} $$
 
@@ -488,11 +481,16 @@ We get the similar expression for $x_1$:
   $$ t_1 = \frac{x_1 - A_x}{b_x} $$
 
 <div class='together'>
-The key observation to turn that 1D math into a hit test is that for a hit, the $t$-intervals need
-to overlap. For example, in 2D the green and blue overlapping only happens if there is a hit:
+The key observation to turn that 1D math into a 2D or 3D hit test is this: if a ray intersects the
+box bounded by all pairs of planes, then all $t$-intervals will overlap. For example, in 2D the
+green and blue overlapping only happens if the ray intersects the bounded box:
 
   ![Figure [ray-slab-interval]: Ray-slab $t$-interval overlap
   ](../images/fig-2.04-ray-slab-interval.jpg)
+
+In this figure, the upper ray intervals to not overlap, so we know the ray does _not_ hit the 2D box
+bounded by the green and blue planes. The lower ray intervals _do_ overlap, so we know the lower ray
+_does_ hit the bounded box.
 
 </div>
 
@@ -502,41 +500,38 @@ Ray Intersection with an AABB
 The following pseudocode determines whether the $t$ intervals in the slab overlap:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    compute (tx0, tx1)
-    compute (ty0, ty1)
-    return overlap?( (tx0, tx1), (ty0, ty1))
+    interval_x &LeftArrow; compute_intersection_x (ray, x0, x1)
+    interval_y &LeftArrow; compute_intersection_y (ray, y0, y1)
+    return overlaps(interval_x, interval_y)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 <div class='together'>
-That is awesomely simple, and the fact that the 3D version also works is why people love the
-slab method:
+That is awesomely simple, and the fact that the 3D version trivially extends the above is why people
+love the slab method:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    compute (tx0, tx1)
-    compute (ty0, ty1)
-    compute (tz0, tz1)
-    return overlap ? ((tx0, tx1), (ty0, ty1), (tz0, tz1))
+    interval_x &LeftArrow; compute_intersection_x (ray, x0, x1)
+    interval_y &LeftArrow; compute_intersection_y (ray, y0, y1)
+    interval_z &LeftArrow; compute_intersection_z (ray, z0, z1)
+    return overlaps(interval_x, interval_y, interval_z)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 </div>
 
-There are some caveats that make this less pretty than it first appears. First, suppose the ray is
-travelling in the negative $\mathbf{x}$ direction. The interval $(t_{x0}, t_{x1})$ as computed above
-might be reversed, _e.g._ something like $(7, 3)$. Second, the divide in there could give us
-infinities. And if the ray origin is on one of the slab boundaries, we can get a `NaN`. There are
-many ways these issues are dealt with in various ray tracers’ AABB. (There are also vectorization
-issues like SIMD which we will not discuss here. Ingo Wald’s papers are a great place to start if
-you want to go the extra mile in vectorization for speed.) For our purposes, this is unlikely to be
-a major bottleneck as long as we make it reasonably fast, so let’s go for simplest, which is often
-fastest anyway! First let’s look at computing the intervals:
+There are some caveats that make this less pretty than it first appears. Consider again the 1D
+equations for $t_0$ and $t_1$:
 
-  $$ t_{x0} = \frac{x_0 - A_x}{b_x} $$
-  $$ t_{x1} = \frac{x_1 - A_x}{b_x} $$
+  $$ t_0 = \frac{x_0 - A_x}{b_x} $$
+  $$ t_1 = \frac{x_1 - A_x}{b_x} $$
 
-One troublesome thing is that perfectly valid rays will have $b_x = 0$, causing division by zero.
-Some of those rays are inside the slab, and some are not. Also, the zero will have a ± sign when
-using IEEE floating point. The good news for $b_x = 0$ is that $t_{x0}$ and $t_{x1}$ will both be +∞
-or both be -∞ if not between $x_0$ and $x_1$. So, using min and max should get us the right answers:
+First, suppose the ray is traveling in the negative $\mathbf{x}$ direction. The interval $(t_{x0},
+t_{x1})$ as computed above might be reversed, like $(7, 3)$ for example. Second, the denominator
+$b_x$ could be zero, yielding infinite values. And if the ray origin lies on one of the slab
+boundaries, we can get a `NaN`, since both the numerator and the denominator can be zero. Also, the
+zero will have a ± sign when using IEEE floating point.
+
+The good news for $b_x = 0$ is that $t_{x0}$ and $t_{x1}$ will be equal: both +∞ or -∞, if not
+between $x_0$ and $x_1$. So, using min and max should get us the right answers:
 
   $$ t_{x0} = \min(
      \frac{x_0 - A_x}{b_x},
@@ -548,25 +543,29 @@ or both be -∞ if not between $x_0$ and $x_1$. So, using min and max should get
      \frac{x_1 - A_x}{b_x})
   $$
 
-The remaining troublesome case if we do that is if $b_x = 0$ and either $x_0 - A_x = 0$ or $x_1 -
-A_x = 0$ so we get a `NaN`. In that case we can probably accept either hit or no hit answer, but
-we’ll revisit that later.
+The remaining troublesome case if we do that is if $b_x = 0$ and either $x_0 - A_x = 0$ or
+$x_1 - A_x = 0$ so we get a `NaN`. In that case we can arbitrarily interpret that as either hit or
+no hit, but we’ll revisit that later.
 
-Now, let’s look at that overlap function. Suppose we can assume the intervals are not reversed (so
-the first value is less than the second value in the interval) and we want to return true in that
-case. The boolean overlap that also computes the overlap interval $(f, F)$ of intervals $(d, D)$ and
-$(e, E)$ would be:
+Now, let’s look at the pseudo-function `overlaps`. Suppose we can assume the intervals are not
+reversed, and we want to return true when the intervals overlap. The boolean `overlaps()` function
+computes the overlap of the $t$ intervals `t_interval1` and `t_interval2`, and uses that to
+determine if that overlap is non-empty:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    bool overlap(d, D, e, E, f, F)
-        f = max(d, e)
-        F = min(D, E)
-        return (f < F)
+    bool overlaps(t_interval1, t_interval2)
+        t_min &LeftArrow; max(t_interval1.min, t_interval2.min)
+        t_max &LeftArrow; min(t_interval1.max, t_interval2.max)
+        return t_min < t_max
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If there are any `NaN`s running around there, the compare will return false so we need to be sure
-our bounding boxes have a little padding if we care about grazing cases (and we probably should
-because in a ray tracer all cases come up eventually). Here's the implementation:
+If there are any `NaN`s running around there, the compare will return false, so we need to be sure
+our bounding boxes have a little padding if we care about grazing cases (and we probably _should_
+because in a ray tracer all cases come up eventually).
+
+<div class='together'>
+To accomplish this, we'll first add a new `interval` function `expand`, which pads an interval by a
+given amount:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class interval {
@@ -576,15 +575,23 @@ because in a ray tracer all cases come up eventually). Here's the implementation
             return max - min;
         }
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         interval expand(double delta) const {
             auto padding = delta/2;
             return interval(min - padding, max + padding);
         }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [interval-contains]: <kbd>interval.h</kbd> interval::expand() method]
+    [Listing [interval-expand]: <kbd>[interval.h]</kbd> interval::expand() method]
 
+</div>
+
+<div class='together'>
+Now we have everything we need to implment the new AABB class.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef AABB_H
@@ -599,7 +606,10 @@ because in a ray tracer all cases come up eventually). Here's the implementation
         aabb() {} // The default AABB is empty, since intervals are empty by default.
 
         aabb(const interval& ix, const interval& iy, const interval& iz)
-          : x(ix), y(iy), z(iz) { }
+          : x(ix), y(iy), z(iz)
+        {
+            pad_to_minimums();
+        }
 
         aabb(const point3& a, const point3& b) {
             // Treat the two points a and b as extrema for the bounding box, so we don't require a
@@ -607,6 +617,8 @@ because in a ray tracer all cases come up eventually). Here's the implementation
             x = interval(fmin(a[0],b[0]), fmax(a[0],b[0]));
             y = interval(fmin(a[1],b[1]), fmax(a[1],b[1]));
             z = interval(fmin(a[2],b[2]), fmax(a[2],b[2]));
+
+            pad_to_minimums();
         }
 
         const interval& axis(int n) const {
@@ -628,11 +640,24 @@ because in a ray tracer all cases come up eventually). Here's the implementation
             }
             return true;
         }
+
+    private:
+
+      void pad_to_minimums() {
+          // Adjust the AABB so that no side is narrower than some delta, padding if necessary.
+
+          double delta = 0.0001;
+          if (x.size() < delta) x = x.expand(delta);
+          if (y.size() < delta) y = y.expand(delta);
+          if (z.size() < delta) z = z.expand(delta);
+      }
     };
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [aabb]: <kbd>[aabb.h]</kbd> Axis-aligned bounding box class]
+
+</div>
 
 
 An Optimized AABB Hit Method
@@ -667,7 +692,7 @@ as my go-to method:
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [aabb-hit]: <kbd>[aabb.h]</kbd> Axis-aligned bounding box hit function]
+    [Listing [aabb-hit]: <kbd>[aabb.h]</kbd> Optional optimized AABB hit function]
 
 
 Constructing Bounding Boxes for Hittables
@@ -711,7 +736,7 @@ For a stationary sphere, the `bounding_box` function is easy:
       public:
         // Stationary Sphere
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        sphere(point3 _center, double _radius, shared_ptr<material> _material)
+        sphere(const point3& _center, double _radius, shared_ptr<material> _material)
           : center1(_center), radius(_radius), mat(_material), is_moving(false)
         {
             auto rvec = vec3(radius, radius, radius);
@@ -746,7 +771,8 @@ two boxes.
       public:
         ...
         // Moving Sphere
-        sphere(point3 _center1, point3 _center2, double _radius, shared_ptr<material> _material)
+        sphere(const point3& _center1, const point3& _center2, double _radius,
+               shared_ptr<material> _material)
           : center1(_center1), radius(_radius), mat(_material), is_moving(true)
         {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -764,16 +790,22 @@ two boxes.
     [Listing [moving-sphere-bbox]: <kbd>[sphere.h]</kbd> Moving sphere with bounding box]
 
 <div class='together'>
-Now we need a new `aabb` constructor that takes two boxes as input.
-First, we'll add a new interval constructor that takes two intervals as input:
+Now we need a new `aabb` constructor that takes two boxes as input. First, we'll add a new interval
+constructor that takes two intervals as input:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class interval {
       public:
         ...
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         interval(const interval& a, const interval& b)
           : min(fmin(a.min, b.min)), max(fmax(a.max, b.max)) {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        double size() const {
+        ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [interval-from-intervals]: <kbd>[interval.h]</kbd>
         Interval constructor from two intervals
@@ -873,7 +905,7 @@ I am a fan of the one class design when feasible. Here is such a class:
         }
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-            if (!box.hit(r, ray_t))
+            if (!bbox.hit(r, ray_t))
                 return false;
 
             bool hit_left = left->hit(r, ray_t, rec);
@@ -910,7 +942,6 @@ list along one axis. I’ll go for simplicity:
   2. sort the primitives (`using std::sort`)
   3. put half in each subtree
 
-
 When the list coming in is two elements, I put one in each subtree and end the recursion. The
 traversal algorithm should be smooth and not have to check for null pointers, so if I just have one
 element I duplicate it in each subtree. Checking explicitly for three elements and just following
@@ -925,12 +956,13 @@ we haven't yet defined.
       public:
         ...
         bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
-            auto objects = src_objects; // Create a modifiable array of the source scene objects
-
             int axis = random_int(0,2);
+
             auto comparator = (axis == 0) ? box_x_compare
                             : (axis == 1) ? box_y_compare
                                           : box_z_compare;
+
+            auto objects = src_objects; // A modifiable array of the source scene objects
 
             size_t object_span = end - start;
 
@@ -965,7 +997,7 @@ This uses a new function: `random_int()`:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     inline int random_int(int min, int max) {
         // Returns a random integer in [min,max].
-        return static_cast<int>(random_double(min, max+1));
+        return int(random_double(min, max+1));
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-int]: <kbd>[rtweekend.h]</kbd> A function to return random integers in a range]
@@ -1037,6 +1069,111 @@ At this point, we're ready to use our new BVH code. Let's use it on our random s
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-spheres-bvh]: <kbd>[main.cc]</kbd> Random spheres, using BVH]
 
+The rendered image should be identical to the non-BVH version shown in
+[image 1](#image-bouncing-spheres). However, if you time the two versions, the BVH version should be
+faster. I see a speedup of almost _six and a half times_ the prior version.
+
+
+Another BVH Optimization
+-------------------------
+We can speed up the BVH optimization a bit more. Instead of choosing a random splitting axis, let's
+split the longest axis of the enclosing bounding box to get the most subdivision. The change is
+straight-forward, but we'll add a few things to the `aabb` class in the process.
+
+The first task is to construct an axis-aligned bounding box of the span of objects in the BVH
+constructor. Basically, we'll construct the `bvh_node`s bounding box from this span by initializing
+the bounding box to empty, and then augmenting it with each bounding box in the span of objects.
+
+We don't have a way yet to express an empty bounding box, so we'll imagine one for now and
+implementing it shortly.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class bvh_node : public hittable {
+      public:
+        ...
+        bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            // Build the bounding box of the span of source objects.
+            bbox = aabb::empty;
+            for (int object_index=start; object_index < end; object_index++)
+                bbox = aabb(bbox, src_objects[object_index]->bounding_box());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [object-span-bbox]: <kbd>[bvh.h]</kbd> Building the bbox for the span of BVH objects]
+
+Now that we have the bounding box, set the splitting axis to the one with the longest side. Again,
+we'll imagine a function that does that for us: `aabb::longest_axis()`. Finally, since we're
+computing the bounding box of the object span up front, we can delete the original line that
+computed it as the union of the left and right sides.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class bvh_node : public hittable {
+      public:
+        ...
+        bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
+            // Build the bounding box of the span of source objects.
+            bbox = aabb::empty;
+            for (int object_index=start; object_index < end; object_index++)
+                bbox = aabb(bbox, src_objects[object_index]->bounding_box());
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            int axis = bbox.longest_axis();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            auto comparator = (axis == 0) ? box_x_compare
+                            : (axis == 1) ? box_y_compare
+                                          : box_z_compare;
+
+            ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+            bbox = aabb(left->bounding_box(), right->bounding_box());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+
+        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [object-span-bbox]: <kbd>[bvh.h]</kbd> Building the bbox for the span of BVH objects]
+
+Now to implement the empty `aabb` code and the new `aabb::longest_axis()` function:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class aabb {
+      public:
+        ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        int longest_axis() const {
+            // Returns the index of the longest axis of the bounding box.
+
+            if (x.size() > y.size())
+                return x.size() > z.size() ? 0 : 2;
+            else
+                return y.size() > z.size() ? 1 : 2;
+        }
+
+        static const aabb empty, universe;
+    };
+
+    const aabb aabb::empty    = aabb(interval::empty,    interval::empty,    interval::empty);
+    const aabb aabb::universe = aabb(interval::universe, interval::universe, interval::universe);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    ...
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [aabb-empty-and-axis]: <kbd>[aabb.h]</kbd>
+    New aabb constants and longest_axis() function]
+
+As before, you should see identical results to [image 1](#image-bouncing-spheres), but rendering a
+little bit faster. On my system, this yields something like an additional 18% render speedup. Not
+bad for a little extra work.
+
 
 
 Texture Mapping
@@ -1087,7 +1224,7 @@ Constant Color Texture
 
     class solid_color : public texture {
       public:
-        solid_color(color c) : color_value(c) {}
+        solid_color(const color& c) : color_value(c) {}
 
         solid_color(double red, double green, double blue) : solid_color(color(red,green,blue)) {}
 
@@ -1142,10 +1279,9 @@ parameter.
 To accomplish the checkered pattern, we'll first compute the floor of each component of the input
 point. We could truncate the coordinates, but that would pull values toward zero, which would give
 us the same color on both sides of zero. The floor function will always shift values to the integer
-value on the left (toward negative infinity). Given these three integer results
-($\lfloor x \rfloor, \lfloor y \rfloor, \lfloor z \rfloor$) we take their sum and compute the
-result modulo two, which gives us either 0 or 1. Zero maps to the even color, and one to the odd
-color.
+value on the left (toward negative infinity). Given these three integer results ($\lfloor x \rfloor,
+\lfloor y \rfloor, \lfloor z \rfloor$) we take their sum and compute the result modulo two, which
+gives us either 0 or 1. Zero maps to the even color, and one to the odd color.
 
 Finally, we add a scaling factor to the texture, to allow us to control the size of the checker
 pattern in the scene.
@@ -1156,16 +1292,16 @@ pattern in the scene.
         checker_texture(double _scale, shared_ptr<texture> _even, shared_ptr<texture> _odd)
           : inv_scale(1.0 / _scale), even(_even), odd(_odd) {}
 
-        checker_texture(double _scale, color c1, color c2)
+        checker_texture(double _scale, const color& c1, const color& c2)
           : inv_scale(1.0 / _scale),
             even(make_shared<solid_color>(c1)),
             odd(make_shared<solid_color>(c2))
         {}
 
         color value(double u, double v, const point3& p) const override {
-            auto xInteger = static_cast<int>(std::floor(inv_scale * p.x()));
-            auto yInteger = static_cast<int>(std::floor(inv_scale * p.y()));
-            auto zInteger = static_cast<int>(std::floor(inv_scale * p.z()));
+            auto xInteger = int(std::floor(inv_scale * p.x()));
+            auto yInteger = int(std::floor(inv_scale * p.y()));
+            auto zInteger = int(std::floor(inv_scale * p.z()));
 
             bool isEven = (xInteger + yInteger + zInteger) % 2 == 0;
 
@@ -1182,6 +1318,47 @@ pattern in the scene.
 
 Those checker odd/even parameters can point to a constant texture or to some other procedural
 texture. This is in the spirit of shader networks introduced by Pat Hanrahan back in the 1980s.
+
+<div class='together'>
+To support procedural textures, we'll extend the `lambertian` class to work with textures instead of
+colors:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "texture.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    ...
+    class lambertian : public material {
+      public:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
+        lambertian(shared_ptr<texture> a) : albedo(a) {}
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
+        const override {
+            auto scatter_direction = rec.normal + random_unit_vector();
+
+            // Catch degenerate scatter direction
+            if (scatter_direction.near_zero())
+                scatter_direction = rec.normal;
+
+            scattered = ray(rec.p, scatter_direction, r_in.time());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            attenuation = albedo->value(rec.u, rec.v, rec.p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            return true;
+        }
+
+      private:
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        shared_ptr<texture> albedo;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [lambertian-textured]: <kbd>[material.h]</kbd> Lambertian material with texture]
+
+</div>
 
 <div class='together'>
 If we add this to our `random_scene()` function’s base sphere:
@@ -1212,7 +1389,7 @@ If we add this to our `random_scene()` function’s base sphere:
 </div>
 
 <div class='together'>
-We get:
+we get:
 
   ![<span class='num'>Image 2:</span> Spheres on checkered ground
   ](../images/img-2.02-checker-ground.png class='pixel')
@@ -1445,49 +1622,9 @@ Update the `sphere::hit()` function to use this function to update the hit recor
 
 </div>
 
-<div class='together'>
-Now we can make textured materials by replacing the `const color& a` with a texture pointer:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    #include "texture.h"
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-    ...
-    class lambertian : public material {
-      public:
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
-        lambertian(shared_ptr<texture> a) : albedo(a) {}
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
-        const override {
-            auto scatter_direction = rec.normal + random_unit_vector();
-
-            // Catch degenerate scatter direction
-            if (scatter_direction.near_zero())
-                scatter_direction = rec.normal;
-
-            scattered = ray(rec.p, scatter_direction, r_in.time());
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            attenuation = albedo->value(rec.u, rec.v, rec.p);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            return true;
-        }
-
-      private:
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        shared_ptr<texture> albedo;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [lambertian-textured]: <kbd>[material.h]</kbd> Lambertian material with texture]
-
-</div>
-
 From the hitpoint $\mathbf{P}$, we compute the surface coordinates $(u,v)$. We then use these to
-index into our procedural solid texture (like marble). We can also read in an image and use the
-2D $(u,v)$ texture coordinate to index into the image.
+index into our procedural solid texture (like marble). We can also read in an image and use the 2D
+$(u,v)$ texture coordinate to index into the image.
 
 A direct way to use scaled $(u,v)$ in an image is to round the $u$ and $v$ to integers, and use that
 as $(i,j)$ pixels. This is awkward, because we don’t want to have to change the code when we change
@@ -1558,7 +1695,7 @@ Adjust according to your directory structure.
 
         ~rtw_image() { STBI_FREE(data); }
 
-        bool load(const std::string filename) {
+        bool load(const std::string& filename) {
             // Loads image data from the given file name. Returns true if the load succeeded.
             auto n = bytes_per_pixel; // Dummy out parameter: original components per pixel
             data = stbi_load(filename.c_str(), &image_width, &image_height, &n, bytes_per_pixel);
@@ -1614,7 +1751,6 @@ The `image_texture` class uses the `rtw_image` class:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "rtw_stb_image.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "perlin.h"
 
     ...
 
@@ -1631,8 +1767,8 @@ The `image_texture` class uses the `rtw_image` class:
             u = interval(0,1).clamp(u);
             v = 1.0 - interval(0,1).clamp(v);  // Flip V to image coordinates
 
-            auto i = static_cast<int>(u * image.width());
-            auto j = static_cast<int>(v * image.height());
+            auto i = int(u * image.width());
+            auto j = int(v * image.height());
             auto pixel = image.pixel_data(i,j);
 
             auto color_scale = 1.0 / 255.0;
@@ -1752,7 +1888,7 @@ code to make it all happen:
       public:
         perlin() {
             ranfloat = new double[point_count];
-            for (int i = 0; i < point_count; ++i) {
+            for (int i = 0; i < point_count; i++) {
                 ranfloat[i] = random_double();
             }
 
@@ -1769,9 +1905,9 @@ code to make it all happen:
         }
 
         double noise(const point3& p) const {
-            auto i = static_cast<int>(4*p.x()) & 255;
-            auto j = static_cast<int>(4*p.y()) & 255;
-            auto k = static_cast<int>(4*p.z()) & 255;
+            auto i = int(4*p.x()) & 255;
+            auto j = int(4*p.y()) & 255;
+            auto k = int(4*p.z()) & 255;
 
             return ranfloat[perm_x[i] ^ perm_y[j] ^ perm_z[k]];
         }
@@ -1813,9 +1949,13 @@ code to make it all happen:
 <div class='together'>
 Now if we create an actual texture that takes these floats between 0 and 1 and creates grey colors:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "perlin.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
+    ...
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     class noise_texture : public texture {
       public:
         noise_texture() {}
@@ -1902,9 +2042,9 @@ To make it smooth, we can linearly interpolate:
             auto v = p.y() - floor(p.y());
             auto w = p.z() - floor(p.z());
 
-            auto i = static_cast<int>(floor(p.x()));
-            auto j = static_cast<int>(floor(p.y()));
-            auto k = static_cast<int>(floor(p.z()));
+            auto i = int(floor(p.x()));
+            auto j = int(floor(p.y()));
+            auto k = int(floor(p.z()));
             double c[2][2][2];
 
             for (int di=0; di < 2; di++)
@@ -1970,9 +2110,9 @@ a Hermite cubic to round off the interpolation:
             w = w*w*(3-2*w);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            auto i = static_cast<int>(floor(p.x()));
-            auto j = static_cast<int>(floor(p.y()));
-            auto k = static_cast<int>(floor(p.z()));
+            auto i = int(floor(p.x()));
+            auto j = int(floor(p.y()));
+            auto k = int(floor(p.z()));
             ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-smoothed]: <kbd>[perlin.h]</kbd> Perlin smoothed]
@@ -2059,7 +2199,7 @@ reasonable set of irregular directions, and I won't bother to make them exactly 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             ranvec = new vec3[point_count];
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            for (int i = 0; i < point_count; ++i) {
+            for (int i = 0; i < point_count; i++) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 ranvec[i] = unit_vector(vec3::random(-1,1));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2106,9 +2246,9 @@ The Perlin class `noise()` method is now:
             auto v = p.y() - floor(p.y());
             auto w = p.z() - floor(p.z());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            auto i = static_cast<int>(floor(p.x()));
-            auto j = static_cast<int>(floor(p.y()));
-            auto k = static_cast<int>(floor(p.z()));
+            auto i = int(floor(p.x()));
+            auto j = int(floor(p.y()));
+            auto k = int(floor(p.z()));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 c[2][2][2];
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2144,8 +2284,15 @@ And the interpolation becomes a bit more complicated:
       ...
       private:
         ...
-        static double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+        static double trilinear_interp(double c[2][2][2], double u, double v, double w) {
+            ...
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        static double perlin_interp(const vec3 c[2][2][2], double u, double v, double w) {
             auto uu = u*u*(3-2*u);
             auto vv = v*v*(3-2*v);
             auto ww = w*w*(3-2*w);
@@ -2162,18 +2309,17 @@ And the interpolation becomes a bit more complicated:
                     }
 
             return accum;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
-        ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-interp]: <kbd>[perlin.h]</kbd> Perlin interpolation function so far]
 
 </div>
 
-The output of the perlin interpretation can return negative values. These negative values will be
-passed to the `sqrt()` function of our gamma function and get turned into `NaN`s. We will cast the
-perlin output back to between 0 and 1.
+The output of the Perlin interpolation function can return negative values. These negative values
+will be passed to our `linear_to_gamma()` color function, which expects only positive inputs. To
+mitigate this, we'll map the $[-1,+1]$ range of values to $[0,1]$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class noise_texture : public texture {
@@ -2214,7 +2360,7 @@ turbulence, and is a sum of repeated calls to noise:
       ...
       public:
         ...
-        double turb(const point3& p, int depth=7) const {
+        double turb(const point3& p, int depth) const {
             auto accum = 0.0;
             auto temp_p = p;
             auto weight = 1.0;
@@ -2243,7 +2389,7 @@ Here `fabs()` is the absolute value function defined in `<cmath>`.
         color value(double u, double v, const point3& p) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto s = scale * p;
-            return color(1,1,1) * noise.turb(s);
+            return color(1,1,1) * noise.turb(s, 7);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
@@ -2281,7 +2427,7 @@ effect is:
         color value(double u, double v, const point3& p) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto s = scale * p;
-            return color(1,1,1) * 0.5 * (1 + sin(s.z() + 10*noise.turb(s)));
+            return color(1,1,1) * 0.5 * (1 + sin(s.z() + 10*noise.turb(s, 7)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
@@ -2601,10 +2747,64 @@ so that
 
   $$ \mathbf{P} = \mathbf{Q} + \alpha \mathbf{u} + \beta \mathbf{v} $$
 
-If $\mathbf{u}$ and $\mathbf{v}$ were guaranteed to be orthogonal to each other (forming a 90°
-angle between them), then this would be a simple matter of using the dot product to project
-$\mathbf{P}$ onto each of the basis vectors $\mathbf{u}$ and $\mathbf{v}$. However, since we are not
-restricting $\mathbf{u}$ and $\mathbf{v}$ to be orthogonal, the math's a little bit trickier.
+Pulling a rabbit out of my hat, the planar coordinates $\alpha$ and $\beta$ are given by the
+following equations:
+
+  $$ \alpha = \mathbf{w} \cdot (\mathbf{p} \times \mathbf{v}) $$
+  $$ \beta  = \mathbf{w} \cdot (\mathbf{u} \times \mathbf{p}) $$
+
+where
+
+  $$ \mathbf{w} = \frac{\mathbf{n}}{\mathbf{n} \cdot (\mathbf{u} \times \mathbf{v})}
+                = \frac{\mathbf{n}}{\mathbf{n} \cdot \mathbf{n}}$$
+
+The vector $\mathbf{w}$ is constant for a given quadrilateral, so we'll cache that value.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class quad : public hittable {
+      public:
+        quad(const point3& _Q, const vec3& _u, const vec3& _v, shared_ptr<material> m)
+          : Q(_Q), u(_u), v(_v), mat(m)
+        {
+            auto n = cross(u, v);
+            normal = unit_vector(n);
+            D = dot(normal, Q);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            w = n / dot(n,n);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            set_bounding_box();
+        }
+        ...
+
+      private:
+        point3 Q;
+        vec3 u, v;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        vec3 w;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        shared_ptr<material> mat;
+        aabb bbox;
+        vec3 normal;
+        double D;
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [quad-w]: <kbd>[quad.h]</kbd> Caching the quadrilateral's w value]
+
+
+Deriving the Planar Coordinates
+--------------------------------
+
+(This section covers the derivation of the equations above. Feel free to skip to the next section if
+you're not interested.)
+
+Refer back to figure [ray-plane]. If the planar basis vectors $\mathbf{u}$ and $\mathbf{v}$ were
+guaranteed to be orthogonal to each other (forming a 90° angle between them), then solving for
+$\alpha$ and $\beta$ would be a simple matter of using the dot product to project $\mathbf{P}$ onto
+each of the basis vectors $\mathbf{u}$ and $\mathbf{v}$. However, since we are not restricting
+$\mathbf{u}$ and $\mathbf{v}$ to be orthogonal, the math's a little bit trickier.
+
+To set things up, consider that
 
   $$ \mathbf{P} = \mathbf{Q} + \alpha \mathbf{u} + \beta \mathbf{v}$$
 
@@ -2613,7 +2813,7 @@ restricting $\mathbf{u}$ and $\mathbf{v}$ to be orthogonal, the math's a little 
 Here, $\mathbf{P}$ is the _point_ of intersection, and $\mathbf{p}$ is the _vector_ from
 $\mathbf{Q}$ to $\mathbf{P}$.
 
-Cross the above equation with $\mathbf{u}$ and $\mathbf{v}$, respectively:
+Cross the equation for $\mathbf{p}$ with $\mathbf{u}$ and $\mathbf{v}$, respectively:
 
   $$ \begin{align*}
      \mathbf{u} \times \mathbf{p} &= \mathbf{u} \times (\alpha \mathbf{u} + \beta \mathbf{v}) \\
@@ -2671,44 +2871,11 @@ for the plane's basis frame, for any planar point $\mathbf{P}$:
   $$ \alpha = \mathbf{w} \cdot (\mathbf{p} \times \mathbf{v}) $$
   $$ \beta  = \mathbf{w} \cdot (\mathbf{u} \times \mathbf{p}) $$
 
-The vector $\mathbf{w}$ is constant for a given quadrilateral, so we'll cache that value.
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class quad : public hittable {
-      public:
-        quad(const point3& _Q, const vec3& _u, const vec3& _v, shared_ptr<material> m)
-          : Q(_Q), u(_u), v(_v), mat(m)
-        {
-            auto n = cross(u, v);
-            normal = unit_vector(n);
-            D = dot(normal, Q);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            w = n / dot(n,n);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-            set_bounding_box();
-        }
-        ...
-
-      private:
-        point3 Q;
-        vec3 u, v;
-        shared_ptr<material> mat;
-        aabb bbox;
-        vec3 normal;
-        double D;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        vec3 w;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [quad-w]: <kbd>[quad.h]</kbd> Caching the quadrilateral's w value]
-
 
 Interior Testing of The Intersection Using UV Coordinates
 ----------------------------------------------------------
-Now that we have the intersection point's planar coordinates $\alpha$ and $\beta$, we can easily
-use these to determine if the intersection point is inside the quadrilateral -- that is, if the ray
+Now that we have the intersection point's planar coordinates $\alpha$ and $\beta$, we can easily use
+these to determine if the intersection point is inside the quadrilateral -- that is, if the ray
 actually hit the quadrilateral.
 
 <div class='together'>
@@ -2725,14 +2892,6 @@ just needs to meet the following criteria:
   2. $ 0 \leq \beta \leq 1 $
 
 That's the last piece needed to implement quadrilateral primitives.
-
-Pause a bit here and consider that if you use the $(\alpha,\beta)$ coordinates to determine if a
-point lies inside a quadrilateral (parallelogram), it's not too hard to imagine using these same 2D
-coordinates to determine if the intersection point lies inside _any_ other 2D (planar) primitive!
-
-We'll leave these additional 2D shape possibilities as an exercise to the reader, depending on your
-desire to explore. Consider triangles, disks, and rings (all of these are surprisingly easy). You
-could even create cut-out stencils based on the pixels of a texture map, or a Mandelbrot shape!
 
 In order to make such experimentation a bit easier, we'll factor out the $(\alpha,\beta)$ interior
 test method from the hit method.
@@ -2866,6 +3025,23 @@ And now we add a new scene to demonstrate our new `quad` primitive:
   ![<span class='num'>Image 16:</span> Quads](../images/img-2.16-quads.png class='pixel')
 
 
+Additional 2D Primitives
+-------------------------
+Pause a bit here and consider that if you use the $(\alpha,\beta)$ coordinates to determine if a
+point lies inside a quadrilateral (parallelogram), it's not too hard to imagine using these same 2D
+coordinates to determine if the intersection point lies inside _any_ other 2D (planar) primitive!
+
+For example, suppose we change the `is_interior()` function to return true if `sqrt(a*a + b*b) < r`.
+This would then implement disk primitives of radius `r`. For triangles, try
+`a > 0 && b > 0 && a + b < 1`.
+
+We'll leave additional 2D shape possibilities as an exercise to the reader, depending on your desire
+to explore. You could even create cut-out stencils based on the pixels of a texture map, or a
+Mandelbrot shape! As a little Easter egg, check out the `alternate-2D-primitves` tag in the source
+repository. This has solutions for triangles, ellipses and annuli (rings) in
+`src/TheNextWeek/quad.h`
+
+
 
 Lights
 ====================================================================================================
@@ -2885,7 +3061,7 @@ the ray what color it is and performs no reflection. It’s very simple:
     class diffuse_light : public material {
       public:
         diffuse_light(shared_ptr<texture> a) : emit(a) {}
-        diffuse_light(color c) : emit(make_shared<solid_color>(c)) {}
+        diffuse_light(const color& c) : emit(make_shared<solid_color>(c)) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
@@ -3284,14 +3460,14 @@ This gives:
 </div>
 
 Now that we have boxes, we need to rotate them a bit to have them match the _real_ Cornell box. In
-ray tracing, this is usually done with an _instance_. An instance is a copy of a geometric
-primitive that has been placed into the scene. This instance is entirely independent of the other
-copies of the primitive and can be moved or rotated. In this case, our geometric primitive is our
-hittable `box` object, and we want to rotate it. This is especially easy in ray tracing because we
-don’t actually need to move objects in the scene; instead we move the rays in the opposite
-direction. For example, consider a _translation_ (often called a _move_). We could take the pink box
-at the origin and add two to all its x components, or (as we almost always do in ray tracing) leave
-the box where it is, but in its hit routine subtract two off the x-component of the ray origin.
+ray tracing, this is usually done with an _instance_. An instance is a copy of a geometric primitive
+that has been placed into the scene. This instance is entirely independent of the other copies of
+the primitive and can be moved or rotated. In this case, our geometric primitive is our hittable
+`box` object, and we want to rotate it. This is especially easy in ray tracing because we don’t
+actually need to move objects in the scene; instead we move the rays in the opposite direction. For
+example, consider a _translation_ (often called a _move_). We could take the pink box at the origin
+and add two to all its x components, or (as we almost always do in ray tracing) leave the box where
+it is, but in its hit routine subtract two off the x-component of the ray origin.
 
   ![Figure [ray-box]: Ray-box intersection with moved ray vs box](../images/fig-2.08-ray-box.jpg)
 
@@ -3377,8 +3553,8 @@ make this happen.
 </div>
 
 We also need to remember to offset the bounding box, otherwise the incident ray might be looking in
-  the wrong place and trivially reject the intersection.
-The expression `object->bounding_box() + offset` above requires some additional support.
+the wrong place and trivially reject the intersection. The expression `object->bounding_box() +
+offset` above requires some additional support.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class aabb {
@@ -3431,9 +3607,9 @@ don’t depend on z.
 
   ![Figure [rot-z]: Rotation about the Z axis](../images/fig-2.09-rot-z.jpg)
 
-This involves some basic trigonometry that uses formulas that I will not cover here. That gives you
-the correct impression it’s a little involved, but it is straightforward, and you can find it in any
-graphics text and in many lecture notes. The result for rotating counter-clockwise about z is:
+This involves some basic trigonometry using formulas that I will not cover here. It’s a little
+involved, but it is straightforward, and you can find it in any graphics text and in many lecture
+notes. The result for rotating counter-clockwise about z is:
 
   $$ x' = \cos(\theta) \cdot x - \sin(\theta) \cdot y $$
   $$ y' = \sin(\theta) \cdot x + \cos(\theta) \cdot y $$
@@ -3460,15 +3636,15 @@ coordinates.
 
 The pseudocode for the `translate::hit` function above describes the function in terms of _moving_:
 
-1. Move the ray backwards by the offset
-2. Determine whether an intersection exists along the offset ray (and if so, where)
-3. Move the intersection point forwards by the offset
+  1. Move the ray backwards by the offset
+  2. Determine whether an intersection exists along the offset ray (and if so, where)
+  3. Move the intersection point forwards by the offset
 
 But this can also be thought of in terms of a _changing of coordinates_:
 
-1. Change the ray from world space to object space
-2. Determine whether an intersection exists in object space (and if so, where)
-3. Change the intersection point from object space to world space
+  1. Change the ray from world space to object space
+  2. Determine whether an intersection exists in object space (and if so, where)
+  3. Change the intersection point from object space to world space
 
 Rotating an object will not only change the point of intersection, but will also change the surface
 normal vector, which will change the direction of reflections and refractions. So we need to change
@@ -3514,7 +3690,7 @@ We can now create a class for y-rotation:
             p[2] = -sin_theta*rec.p[0] + cos_theta*rec.p[2];
 
             // Change the normal from object space to world space
-            auto normal = rec.normal
+            auto normal = rec.normal;
             normal[0] =  cos_theta*rec.normal[0] + sin_theta*rec.normal[2];
             normal[2] = -sin_theta*rec.normal[0] + cos_theta*rec.normal[2];
 
@@ -3677,7 +3853,7 @@ The resulting class is:
           : boundary(b), neg_inv_density(-1/d), phase_function(make_shared<isotropic>(a))
         {}
 
-        constant_medium(shared_ptr<hittable> b, double d, color c)
+        constant_medium(shared_ptr<hittable> b, double d, const color& c)
           : boundary(b), neg_inv_density(-1/d), phase_function(make_shared<isotropic>(c))
         {}
 
@@ -3748,7 +3924,7 @@ The scattering function of isotropic picks a uniform random direction:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class isotropic : public material {
       public:
-        isotropic(color c) : albedo(make_shared<solid_color>(c)) {}
+        isotropic(const color& c) : albedo(make_shared<solid_color>(c)) {}
         isotropic(shared_ptr<texture> a) : albedo(a) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
@@ -4005,8 +4181,8 @@ Basic Data
   - **Title (series)**: “Ray Tracing in One Weekend Series”
   - **Title (book)**: “Ray Tracing: The Next Week”
   - **Author**: Peter Shirley, Trevor David Black, Steve Hollasch
-  - **Version/Edition**: v4.0.0-alpha.1
-  - **Date**: 2023-08-06
+  - **Version/Edition**: v4.0.0-alpha.2
+  - **Date**: 2023-XX-XX
   - **URL (series)**: https://raytracing.github.io/
   - **URL (book)**: https://raytracing.github.io/books/RayTracingTheNextWeek.html
 
@@ -4033,7 +4209,7 @@ Snippets
        title = {Ray Tracing: The Next Week},
        author = {Peter Shirley, Trevor David Black, Steve Hollasch},
        year = {2023},
-       month = {August},
+       month = {XXX},
        note = {\small \texttt{https://raytracing.github.io/books/RayTracingTheNextWeek.html}},
        url = {https://raytracing.github.io/books/RayTracingTheNextWeek.html}
     }
@@ -4049,7 +4225,7 @@ Snippets
        title = {Ray Tracing: The Next Week},
        author = {Peter Shirley, Trevor David Black, Steve Hollasch},
        year = {2023},
-       month = {August},
+       month = {XXX},
        url = {https://raytracing.github.io/books/RayTracingTheNextWeek.html}
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -4060,7 +4236,7 @@ Snippets
     (accessed MMM. DD, YYYY)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  ### MLA:
+  ### MLA
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Ray Tracing: The Next Week. raytracing.github.io/books/RayTracingTheNextWeek.html
     Accessed DD MMM. YYYY.

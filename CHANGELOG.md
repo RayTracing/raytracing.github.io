@@ -1,6 +1,38 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
+# v4.0.0-alpha.2 (In Progress)
+
+This will likely change to the official v4.0.0 release, but we _might_ put out another alpha before
+then.
+
+### Common
+  - Fix - Fix references from `random_in_hemisphere()` to `random_on_hemisphere()` (#1198)
+  - Change - We've removed the few cases where we used C++ default constructors. Instead, we either
+             require all parameters, or use operator overloading to use default values.
+  - Change - Increase compile warning levels for MSVC.
+  - Change - For clarity across audiences with broad programming backgrounds, we now use `double(x)`
+             instead of `static_cast<double>(x)`, and similarly for other types.
+
+### In One Weekend
+  - Change - Update reference to "Fundamentals of Interactive Computer Graphics" to "Computer
+             Graphics: Principles and Practice". This is the name used by newer editions of the
+             book.
+  - Change - New BVH optimization splits the bounds according to the longest bounding box dimension,
+             yielding a 15-20% speedup (#1007)
+
+### The Next Week
+  - Change - `perlin::turb()` no longer defaults the value for the depth parameter.
+  - Change - AABB automatically pads to mininmum size for any dimension; no longer requires
+             primitives to call aabb::pad() function.
+  - Change - Reworked the AABB chapter (#1236)
+  - New - add section on alternative 2D primitives such as triangle, ellipse and annulus (#1204,
+          #1205)
+
+### The Rest of Your Life
+
+
+----------------------------------------------------------------------------------------------------
 # v4.0.0-alpha.1 (2023-08-06)
 
 It's been quite a while since our last release of v3.2.3 at the end of 2020. For this cycle, we've

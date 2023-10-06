@@ -18,7 +18,7 @@ class perlin {
   public:
     perlin() {
         ranvec = new vec3[point_count];
-        for (int i = 0; i < point_count; ++i) {
+        for (int i = 0; i < point_count; i++) {
             ranvec[i] = unit_vector(vec3::random(-1,1));
         }
 
@@ -38,9 +38,9 @@ class perlin {
         auto u = p.x() - floor(p.x());
         auto v = p.y() - floor(p.y());
         auto w = p.z() - floor(p.z());
-        auto i = static_cast<int>(floor(p.x()));
-        auto j = static_cast<int>(floor(p.y()));
-        auto k = static_cast<int>(floor(p.z()));
+        auto i = int(floor(p.x()));
+        auto j = int(floor(p.y()));
+        auto k = int(floor(p.z()));
         vec3 c[2][2][2];
 
         for (int di=0; di < 2; di++)
@@ -55,7 +55,7 @@ class perlin {
         return perlin_interp(c, u, v, w);
     }
 
-    double turb(const point3& p, int depth=7) const {
+    double turb(const point3& p, int depth) const {
         auto accum = 0.0;
         auto temp_p = p;
         auto weight = 1.0;
@@ -96,7 +96,7 @@ class perlin {
         }
     }
 
-    static double perlin_interp(vec3 c[2][2][2], double u, double v, double w) {
+    static double perlin_interp(const vec3 c[2][2][2], double u, double v, double w) {
         auto uu = u*u*(3-2*u);
         auto vv = v*v*(3-2*v);
         auto ww = w*w*(3-2*w);

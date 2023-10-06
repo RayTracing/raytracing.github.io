@@ -22,11 +22,11 @@
 
 class camera {
   public:
-    double aspect_ratio      = 1.0;    // Ratio of image width over height
-    int    image_width       = 100;    // Rendered image width in pixel count
-    int    samples_per_pixel = 10;     // Count of random samples for each pixel
-    int    max_depth         = 10;     // Maximum number of ray bounces into scene
-    color  background;                 // Scene background color
+    double aspect_ratio      = 1.0;  // Ratio of image width over height
+    int    image_width       = 100;  // Rendered image width in pixel count
+    int    samples_per_pixel = 10;   // Count of random samples for each pixel
+    int    max_depth         = 10;   // Maximum number of ray bounces into scene
+    color  background;               // Scene background color
 
     double vfov     = 90;              // Vertical view angle (field of view)
     point3 lookfrom = point3(0,0,-1);  // Point camera is looking from
@@ -41,11 +41,11 @@ class camera {
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        for (int j = 0; j < image_height; ++j) {
+        for (int j = 0; j < image_height; j++) {
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-            for (int i = 0; i < image_width; ++i) {
+            for (int i = 0; i < image_width; i++) {
                 color pixel_color(0,0,0);
-                for (int sample = 0; sample < samples_per_pixel; ++sample) {
+                for (int sample = 0; sample < samples_per_pixel; sample++) {
                     ray r = get_ray(i, j);
                     pixel_color += ray_color(r, max_depth, world);
                 }
@@ -67,7 +67,7 @@ class camera {
     vec3   defocus_disk_v;  // Defocus disk vertical radius
 
     void initialize() {
-        image_height = static_cast<int>(image_width / aspect_ratio);
+        image_height = int(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
 
         center = lookfrom;
@@ -76,7 +76,7 @@ class camera {
         auto theta = degrees_to_radians(vfov);
         auto h = tan(theta/2);
         auto viewport_height = 2 * h * focus_dist;
-        auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
+        auto viewport_width = viewport_height * (double(image_width)/image_height);
 
         // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
         w = unit_vector(lookfrom - lookat);

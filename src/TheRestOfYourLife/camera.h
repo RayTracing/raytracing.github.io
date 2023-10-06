@@ -41,12 +41,12 @@ class camera {
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        for (int j = 0; j < image_height; ++j) {
+        for (int j = 0; j < image_height; j++) {
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-            for (int i = 0; i < image_width; ++i) {
+            for (int i = 0; i < image_width; i++) {
                 color pixel_color(0,0,0);
-                for (int s_j = 0; s_j < sqrt_spp; ++s_j) {
-                    for (int s_i = 0; s_i < sqrt_spp; ++s_i) {
+                for (int s_j = 0; s_j < sqrt_spp; s_j++) {
+                    for (int s_i = 0; s_i < sqrt_spp; s_i++) {
                         ray r = get_ray(i, j, s_i, s_j);
                         pixel_color += ray_color(r, max_depth, world, lights);
                     }
@@ -71,7 +71,7 @@ class camera {
     vec3   defocus_disk_v;  // Defocus disk vertical radius
 
     void initialize() {
-        image_height = static_cast<int>(image_width / aspect_ratio);
+        image_height = int(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
 
         center = lookfrom;
@@ -80,9 +80,9 @@ class camera {
         auto theta = degrees_to_radians(vfov);
         auto h = tan(theta/2);
         auto viewport_height = 2 * h * focus_dist;
-        auto viewport_width = viewport_height * (static_cast<double>(image_width)/image_height);
+        auto viewport_width = viewport_height * (double(image_width)/image_height);
 
-        sqrt_spp = static_cast<int>(sqrt(samples_per_pixel));
+        sqrt_spp = int(sqrt(samples_per_pixel));
         recip_sqrt_spp = 1.0 / sqrt_spp;
 
         // Calculate the u,v,w unit basis vectors for the camera coordinate frame.

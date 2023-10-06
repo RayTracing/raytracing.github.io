@@ -19,10 +19,13 @@ using color = vec3;
 
 inline double linear_to_gamma(double linear_component)
 {
-    return sqrt(linear_component);
+    if (linear_component > 0)
+        return sqrt(linear_component);
+
+    return 0;
 }
 
-void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
+void write_color(std::ostream& out, const color& pixel_color, int samples_per_pixel) {
     auto r = pixel_color.x();
     auto g = pixel_color.y();
     auto b = pixel_color.z();
@@ -40,9 +43,9 @@ void write_color(std::ostream &out, color pixel_color, int samples_per_pixel) {
 
     // Write the translated [0,255] value of each color component.
     static const interval intensity(0.000, 0.999);
-    out << static_cast<int>(256 * intensity.clamp(r)) << ' '
-        << static_cast<int>(256 * intensity.clamp(g)) << ' '
-        << static_cast<int>(256 * intensity.clamp(b)) << '\n';
+    out << int(256 * intensity.clamp(r)) << ' '
+        << int(256 * intensity.clamp(g)) << ' '
+        << int(256 * intensity.clamp(b)) << '\n';
 }
 
 

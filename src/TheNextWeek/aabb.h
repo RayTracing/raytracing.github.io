@@ -21,7 +21,10 @@ class aabb {
     aabb() {} // The default AABB is empty, since intervals are empty by default.
 
     aabb(const interval& ix, const interval& iy, const interval& iz)
-      : x(ix), y(iy), z(iz) { }
+      : x(ix), y(iy), z(iz)
+    {
+        pad_to_minimums();
+    }
 
     aabb(const point3& a, const point3& b) {
         // Treat the two points a and b as extrema for the bounding box, so we don't require a
@@ -29,22 +32,14 @@ class aabb {
         x = interval(fmin(a[0],b[0]), fmax(a[0],b[0]));
         y = interval(fmin(a[1],b[1]), fmax(a[1],b[1]));
         z = interval(fmin(a[2],b[2]), fmax(a[2],b[2]));
+
+        pad_to_minimums();
     }
 
     aabb(const aabb& box0, const aabb& box1) {
         x = interval(box0.x, box1.x);
         y = interval(box0.y, box1.y);
         z = interval(box0.z, box1.z);
-    }
-
-    aabb pad() {
-        // Return an AABB that has no side narrower than some delta, padding if necessary.
-        double delta = 0.0001;
-        interval new_x = (x.size() >= delta) ? x : x.expand(delta);
-        interval new_y = (y.size() >= delta) ? y : y.expand(delta);
-        interval new_z = (z.size() >= delta) ? z : z.expand(delta);
-
-        return aabb(new_x, new_y, new_z);
     }
 
     const interval& axis(int n) const {
@@ -72,7 +67,32 @@ class aabb {
         }
         return true;
     }
+
+    int longest_axis() const {
+        // Returns the index of the longest axis of the bounding box.
+
+        if (x.size() > y.size())
+            return x.size() > z.size() ? 0 : 2;
+        else
+            return y.size() > z.size() ? 1 : 2;
+    }
+
+    static const aabb empty, universe;
+
+  private:
+
+    void pad_to_minimums() {
+        // Adjust the AABB so that no side is narrower than some delta, padding if necessary.
+
+        double delta = 0.0001;
+        if (x.size() < delta) x = x.expand(delta);
+        if (y.size() < delta) y = y.expand(delta);
+        if (z.size() < delta) z = z.expand(delta);
+    }
 };
+
+const aabb aabb::empty    = aabb(interval::empty,    interval::empty,    interval::empty);
+const aabb aabb::universe = aabb(interval::universe, interval::universe, interval::universe);
 
 aabb operator+(const aabb& bbox, const vec3& offset) {
     return aabb(bbox.x + offset.x(), bbox.y + offset.y(), bbox.z + offset.z());

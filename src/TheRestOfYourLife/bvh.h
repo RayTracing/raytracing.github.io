@@ -13,6 +13,7 @@
 
 #include "rtweekend.h"
 
+#include "aabb.h"
 #include "hittable.h"
 #include "hittable_list.h"
 
@@ -24,12 +25,18 @@ class bvh_node : public hittable {
     bvh_node(const hittable_list& list) : bvh_node(list.objects, 0, list.objects.size()) {}
 
     bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
-        auto objects = src_objects; // Create a modifiable array of the source scene objects
+        // Build the bounding box of the span of source objects.
+        bbox = aabb::empty;
+        for (int object_index=start; object_index < end; object_index++)
+            bbox = aabb(bbox, src_objects[object_index]->bounding_box());
 
-        int axis = random_int(0,2);
+        int axis = bbox.longest_axis();
+
         auto comparator = (axis == 0) ? box_x_compare
                         : (axis == 1) ? box_y_compare
                                       : box_z_compare;
+
+        auto objects = src_objects; // A modifiable array of the source scene objects
 
         size_t object_span = end - start;
 
@@ -50,8 +57,6 @@ class bvh_node : public hittable {
             left = make_shared<bvh_node>(objects, start, mid);
             right = make_shared<bvh_node>(objects, mid, end);
         }
-
-        bbox = aabb(left->bounding_box(), right->bounding_box());
     }
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {

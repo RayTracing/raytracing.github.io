@@ -20,7 +20,7 @@
 class sphere : public hittable {
   public:
     // Stationary Sphere
-    sphere(point3 _center, double _radius, shared_ptr<material> _material)
+    sphere(const point3& _center, double _radius, shared_ptr<material> _material)
       : center1(_center), radius(_radius), mat(_material), is_moving(false)
     {
         auto rvec = vec3(radius, radius, radius);
@@ -28,7 +28,8 @@ class sphere : public hittable {
     }
 
     // Moving Sphere
-    sphere(point3 _center1, point3 _center2, double _radius, shared_ptr<material> _material)
+    sphere(const point3& _center1, const point3& _center2, double _radius,
+           shared_ptr<material> _material)
       : center1(_center1), radius(_radius), mat(_material), is_moving(true)
     {
         auto rvec = vec3(radius, radius, radius);
@@ -41,20 +42,20 @@ class sphere : public hittable {
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         point3 center = is_moving ? sphere_center(r.time()) : center1;
-        vec3 oc = r.origin() - center;
+        vec3 oc = center - r.origin();
         auto a = r.direction().length_squared();
-        auto half_b = dot(oc, r.direction());
+        auto h = dot(r.direction(), oc);
         auto c = oc.length_squared() - radius*radius;
 
-        auto discriminant = half_b*half_b - a*c;
+        auto discriminant = h*h - a*c;
         if (discriminant < 0)
             return false;
 
         // Find the nearest root that lies in the acceptable range.
         auto sqrtd = sqrt(discriminant);
-        auto root = (-half_b - sqrtd) / a;
+        auto root = (h - sqrtd) / a;
         if (!ray_t.surrounds(root)) {
-            root = (-half_b + sqrtd) / a;
+            root = (h + sqrtd) / a;
             if (!ray_t.surrounds(root))
                 return false;
         }
@@ -71,21 +72,21 @@ class sphere : public hittable {
 
     aabb bounding_box() const override { return bbox; }
 
-    double pdf_value(const point3& o, const vec3& v) const override {
+    double pdf_value(const point3& origin, const vec3& direction) const override {
         // This method only works for stationary spheres.
 
         hit_record rec;
-        if (!this->hit(ray(o, v), interval(0.001, infinity), rec))
+        if (!this->hit(ray(origin, direction), interval(0.001, infinity), rec))
             return 0;
 
-        auto cos_theta_max = sqrt(1 - radius*radius/(center1 - o).length_squared());
+        auto cos_theta_max = sqrt(1 - radius*radius/(center1 - origin).length_squared());
         auto solid_angle = 2*pi*(1-cos_theta_max);
 
         return  1 / solid_angle;
     }
 
-    vec3 random(const point3& o) const override {
-        vec3 direction = center1 - o;
+    vec3 random(const point3& origin) const override {
+        vec3 direction = center1 - origin;
         auto distance_squared = direction.length_squared();
         onb uvw;
         uvw.build_from_w(direction);
