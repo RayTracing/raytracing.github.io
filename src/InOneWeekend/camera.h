@@ -16,7 +16,11 @@
 #include "color.h"
 #include "hittable.h"
 #include "material.h"
-
+#include <cstring>
+#include <sys/mman.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <iostream>
 
 
@@ -40,22 +44,53 @@ class camera {
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-        for (int j = 0; j < image_height; ++j) {
-            std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-            for (int i = 0; i < image_width; ++i) {
-                color pixel_color(0,0,0);
-                for (int sample = 0; sample < samples_per_pixel; ++sample) {
-                    ray r = get_ray(i, j);
-                    pixel_color += ray_color(r, max_depth, world);
+        int iter = 0;
+        pid_t pid = 1;
+        while(pid != 0 && iter < NUM_FORKS){
+            pid = fork();
+            iter++;
+        }
+        const int FORK_ID = iter-1;
+
+        int image_size_in_bytes = sizeof(color) * image_width * image_height;
+        color *rendered_image = (color *) mmap(nullptr, image_size_in_bytes,
+                                               PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+        if(pid > 0) {
+            std::cout << "Hello";
+        }
+        if(pid == 0){
+            for (int j = FORK_ID; j < image_height; j += NUM_FORKS) {
+                renderLine(j, world, rendered_image);
+            }
+            exit(0);
+        } else if(pid >0){
+            while((pid = wait(NULL)>0));
+            //pid = wait(NULL);
+
+            if(pid == -1){
+                exit(-1);
+            } else{
+                /*
+                for(int i = 0; i < image_size_in_bytes; i++){
+                    color pixel_color = rendered_image[i];
+                    write_color(std::cout, pixel_color, samples_per_pixel);
                 }
-                write_color(std::cout, pixel_color, samples_per_pixel);
+                 */
+                int i = 0;
+                color *mapPoint = rendered_image;
+                while(i<(image_size_in_bytes/sizeof(color))){
+                    write_color(std::cout, *mapPoint, samples_per_pixel);
+                    std::clog << "\rColor:" << (*mapPoint).x() << "\n" << std::flush;
+                    mapPoint++;
+                    i++;
+                }
             }
         }
-
         std::clog << "\rDone.                 \n";
     }
 
   private:
+    const int NUM_FORKS = 12;
     int    image_height;    // Rendered image height
     point3 center;          // Camera center
     point3 pixel00_loc;     // Location of pixel 0, 0
