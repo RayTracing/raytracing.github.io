@@ -100,6 +100,22 @@ class camera {
     vec3   defocus_disk_u;  // Defocus disk horizontal radius
     vec3   defocus_disk_v;  // Defocus disk vertical radius
 
+    void renderLine(int numLine, const hittable& world, color* memMap){
+        int size_of_line = image_width;
+        //std::clog << "\rScanlines remaining: " << (image_height - numLine) << ' ' << std::flush;
+        int currentPointer = size_of_line * numLine;
+        for (int i = 0; i < image_width; ++i) {
+            color pixel_color(0,0,0);
+            for (int sample = 0; sample < samples_per_pixel; ++sample) {
+                ray r = get_ray(i, numLine);
+                pixel_color += ray_color(r, max_depth, world);
+            }
+            std::clog << "\rWriting Color: X " << pixel_color.x() << std::flush;
+            memMap[currentPointer] = pixel_color;
+            currentPointer++;
+        }
+    }
+
     void initialize() {
         image_height = static_cast<int>(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
