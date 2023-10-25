@@ -43,7 +43,10 @@ class camera {
         initialize();
 
         std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
-
+        
+        int image_size_in_bytes = sizeof(color) * image_width * image_height;
+        color *rendered_image = (color *) mmap(nullptr, image_size_in_bytes,
+                                               PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
         int iter = 0;
         pid_t pid = 1;
         while(pid != 0 && iter < NUM_FORKS){
@@ -52,12 +55,6 @@ class camera {
         }
         const int FORK_ID = iter-1;
 
-        int image_size_in_bytes = sizeof(color) * image_width * image_height;
-        color *rendered_image = (color *) mmap(nullptr, image_size_in_bytes,
-                                               PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-        if(pid > 0) {
-            std::cout << "Hello";
-        }
         if(pid == 0){
             for (int j = FORK_ID; j < image_height; j += NUM_FORKS) {
                 renderLine(j, world, rendered_image);
@@ -65,7 +62,6 @@ class camera {
             exit(0);
         } else if(pid >0){
             while((pid = wait(NULL)>0));
-            //pid = wait(NULL);
 
             if(pid == -1){
                 exit(-1);
@@ -80,7 +76,7 @@ class camera {
                 color *mapPoint = rendered_image;
                 while(i<(image_size_in_bytes/sizeof(color))){
                     write_color(std::cout, *mapPoint, samples_per_pixel);
-                    std::clog << "\rColor:" << (*mapPoint).x() << "\n" << std::flush;
+                    // std::clog << "\rColor:" << (*mapPoint).x() << "\n" << std::flush;
                     mapPoint++;
                     i++;
                 }
@@ -90,7 +86,7 @@ class camera {
     }
 
   private:
-    const int NUM_FORKS = 12;
+    const int NUM_FORKS = 4;
     int    image_height;    // Rendered image height
     point3 center;          // Camera center
     point3 pixel00_loc;     // Location of pixel 0, 0
@@ -102,7 +98,7 @@ class camera {
 
     void renderLine(int numLine, const hittable& world, color* memMap){
         int size_of_line = image_width;
-        //std::clog << "\rScanlines remaining: " << (image_height - numLine) << ' ' << std::flush;
+        std::clog << "\rScanlines remaining: " << (image_height - numLine) << ' ' << std::flush;
         int currentPointer = size_of_line * numLine;
         for (int i = 0; i < image_width; ++i) {
             color pixel_color(0,0,0);
@@ -110,7 +106,7 @@ class camera {
                 ray r = get_ray(i, numLine);
                 pixel_color += ray_color(r, max_depth, world);
             }
-            std::clog << "\rWriting Color: X " << pixel_color.x() << std::flush;
+            // std::clog << "\rWriting Color: X " << pixel_color.x() << std::flush;
             memMap[currentPointer] = pixel_color;
             currentPointer++;
         }
