@@ -2387,15 +2387,12 @@ depth, returning no light contribution at the maximum depth:
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         color ray_color(const ray& r, int depth, const hittable& world) const {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            hit_record rec;
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             // If we've exceeded the ray bounce limit, no more light is gathered.
             if (depth <= 0)
                 return color(0,0,0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            hit_record rec;
 
             if (world.hit(r, interval(0, infinity), rec)) {
                 vec3 direction = random_on_hemisphere(rec.normal);
@@ -2462,11 +2459,11 @@ to address this is just to ignore hits that are very close to the calculated int
       private:
         ...
         color ray_color(const ray& r, int depth, const hittable& world) const {
-            hit_record rec;
-
             // If we've exceeded the ray bounce limit, no more light is gathered.
             if (depth <= 0)
                 return color(0,0,0);
+
+            hit_record rec;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2533,11 +2530,11 @@ The change is actually fairly minimal:
     class camera {
         ...
         color ray_color(const ray& r, int depth, const hittable& world) const {
-            hit_record rec;
-
             // If we've exceeded the ray bounce limit, no more light is gathered.
             if (depth <= 0)
                 return color(0,0,0);
+
+            hit_record rec;
 
             if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2594,11 +2591,11 @@ the `ray_color` function from `0.5` (50%) to `0.1` (10%):
 class camera {
     ...
     color ray_color(const ray& r, int depth, const hittable& world) const {
-        hit_record rec;
-
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if (depth <= 0)
             return color(0,0,0);
+
+        hit_record rec;
 
         if (world.hit(r, interval(0.001, infinity), rec)) {
             vec3 direction = rec.normal + random_unit_vector();
@@ -2983,11 +2980,11 @@ We need to modify the `ray_color()` function for all of our changes:
       private:
         ...
         color ray_color(const ray& r, int depth, const hittable& world) const {
-            hit_record rec;
-
             // If we've exceeded the ray bounce limit, no more light is gathered.
             if (depth <= 0)
                 return color(0,0,0);
+
+            hit_record rec;
 
             if (world.hit(r, interval(0.001, infinity), rec)) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
