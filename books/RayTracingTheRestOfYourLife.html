@@ -2251,17 +2251,17 @@ We can rewrite our Lambertian material using this to get:
     class lambertian : public material {
       public:
         ...
-
-        bool scatter(
-            const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
-        ) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        bool scatter(
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
+        ) const override {
             onb uvw;
             uvw.build_from_w(rec.normal);
             auto scatter_direction = uvw.local(random_cosine_direction());
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
             scattered = ray(rec.p, unit_vector(scatter_direction), r_in.time());
-            alb = albedo->value(rec.u, rec.v, rec.p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            attenuation = albedo->value(rec.u, rec.v, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             pdf = dot(uvw.w(), scattered.direction()) / pi;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2297,9 +2297,9 @@ But first, let's quickly update the `isotropic` material:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         bool scatter(
-            const ray& r_in, const hit_record& rec, color& alb, ray& scattered, double& pdf
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
         ) const override {
-            alb = albedo->value(rec.u, rec.v, rec.p);
+            attenuation = albedo->value(rec.u, rec.v, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             scattered = ray(rec.p, random_unit_vector(), r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -3267,9 +3267,10 @@ and dielectric materials are easy to fix.
             srec.attenuation = albedo;
             srec.pdf_ptr = nullptr;
             srec.skip_pdf = true;
+
             vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
-            srec.skip_pdf_ray =
-                ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
+            srec.skip_pdf_ray = ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
+
             return true;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
