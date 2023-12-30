@@ -205,8 +205,8 @@ _**please review the [CONTRIBUTING][] document for the most effective way to pro
 [PRINTING.md]:     PRINTING.md
 [v3.2.3]:          https://github.com/RayTracing/raytracing.github.io/releases/tag/v3.2.3
 [web1]:            https://raytracing.github.io/books/RayTracingInOneWeekend.html
-[web1-v3]:         https://raytracing.github.io/books/v3/RayTracingInOneWeekend.html
 [web2]:            https://raytracing.github.io/books/RayTracingTheNextWeek.html
-[web2-v3]:         https://raytracing.github.io/books/v3/RayTracingTheNextWeek.html
 [web3]:            https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html
-[web3-v3]:         https://raytracing.github.io/books/v3/RayTracingTheRestOfYourLife.html
+[web1-v3]:         https://raytracing.github.io/v3/books/RayTracingInOneWeekend.html
+[web2-v3]:         https://raytracing.github.io/v3/books/RayTracingTheNextWeek.html
+[web3-v3]:         https://raytracing.github.io/v3/books/RayTracingTheRestOfYourLife.html
