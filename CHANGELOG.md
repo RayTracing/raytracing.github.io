@@ -5,7 +5,7 @@ Change Log -- Ray Tracing in One Weekend
 
 It's been quite a while since our last release of v3.2.3 at the end of 2020. For this cycle, we've
 tackled a load of significant backlog items, including rewrites of much of our underlying code. As
-always, the primary idea isn't to provide the best or most optimal implemntation, but instead to put
+always, the primary idea isn't to provide the best or most optimal implementation, but instead to put
 out simple, sometimes crude first approximations of the main components of writing a ray tracer.
 
 Highlights include large rewrites and expansions of the book text, a large refactoring of our camera
