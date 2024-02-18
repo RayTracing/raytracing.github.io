@@ -22,12 +22,15 @@
 
 class bvh_node : public hittable {
   public:
-    bvh_node(const hittable_list& list) : bvh_node(list.objects, 0, list.objects.size()) {}
+    bvh_node(const hittable_list& list) : bvh_node(list.objects) {}
 
-    bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
+    bvh_node(const std::vector<shared_ptr<hittable>>& src_objects) {
         // Build the bounding box of the span of source objects.
         bbox = aabb::empty;
-        for (size_t object_index=start; object_index < end; object_index++)
+
+        size_t size = src_objects.size ();
+
+        for (size_t object_index=0; object_index < size; object_index++)
             bbox = aabb(bbox, src_objects[object_index]->bounding_box());
 
         int axis = bbox.longest_axis();
@@ -38,24 +41,25 @@ class bvh_node : public hittable {
 
         auto objects = src_objects; // A modifiable array of the source scene objects
 
-        size_t object_span = end - start;
-
-        if (object_span == 1) {
-            left = right = objects[start];
-        } else if (object_span == 2) {
-            if (comparator(objects[start], objects[start+1])) {
-                left = objects[start];
-                right = objects[start+1];
+        if (size == 1) {
+            left = right = objects[0];
+        } else if (size == 2) {
+            if (comparator(objects[0], objects[1])) {
+                left = objects[0];
+                right = objects[1];
             } else {
-                left = objects[start+1];
-                right = objects[start];
+                left = objects[1];
+                right = objects[0];
             }
         } else {
-            std::sort(objects.begin() + start, objects.begin() + end, comparator);
+            std::sort(objects.begin(), objects.end(), comparator);
+            
+            auto mid = size/2;
+            auto objects_left = std::vector<std::shared_ptr<hittable>>(objects.begin(), objects.begin()+mid);
+            auto objects_right = std::vector<std::shared_ptr<hittable>>(objects.begin()+mid, objects.end());
 
-            auto mid = start + object_span/2;
-            left = make_shared<bvh_node>(objects, start, mid);
-            right = make_shared<bvh_node>(objects, mid, end);
+            left = make_shared<bvh_node>(objects_left);
+            right = make_shared<bvh_node>(objects_right);
         }
     }
 
