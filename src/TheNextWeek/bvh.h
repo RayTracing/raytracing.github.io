@@ -52,9 +52,9 @@ class bvh_node : public hittable {
                 right = objects[0];
             }
         } else {
-            std::sort(objects.begin(), objects.end(), comparator);
-            
             auto mid = size/2;
+            std::nth_element(objects.begin(), objects.begin() + mid, objects.end(), comparator);
+            
             auto objects_left = std::vector<std::shared_ptr<hittable>>(objects.begin(), objects.begin()+mid);
             auto objects_right = std::vector<std::shared_ptr<hittable>>(objects.begin()+mid, objects.end());
 
