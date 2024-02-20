@@ -364,7 +364,7 @@ void final_scene(int image_width, int samples_per_pixel, int max_depth) {
 
     auto emat = make_shared<lambertian>(make_shared<image_texture>("earthmap.jpg"));
     world.add(make_shared<sphere>(point3(400,200,400), 100, emat));
-    auto pertext = make_shared<noise_texture>(0.1);
+    auto pertext = make_shared<noise_texture>(0.20);
     world.add(make_shared<sphere>(point3(220,280,300), 80, make_shared<lambertian>(pertext)));
 
     hittable_list boxes2;
