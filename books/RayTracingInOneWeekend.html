@@ -1984,9 +1984,9 @@ pixel and average the resulting light (color) values together.
 
 First we'll update the `write_color()` function to account for the number of samples we use: we need
 to find the average across all of the samples that we take. To do this, we'll add the full color
-from each iteration, and then finish with a single division (by the number of samples) at the end,
-before writing out the color. To ensure that the color components of the final result remain within
-the proper $[0,1]$ bounds, we'll add and use a small helper function: `interval::clamp(x)`.
+from each iteration, and then finish with a single division (by the number of samples in the unit square)
+at the end, before writing out the color. To ensure that the color components of the final result remain
+within the proper $[0,1]$ bounds, we'll add and use a small helper function: `interval::clamp(x)`.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class interval {
@@ -2011,19 +2011,18 @@ the proper $[0,1]$ bounds, we'll add and use a small helper function: `interval:
     [Listing [clamp]: <kbd>[interval.h]</kbd> The interval::clamp() utility function]
 
 And here's the updated `write_color()` function that takes the sum total of all light for the pixel
-and the number of samples involved:
+and a sampling scale value:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    void write_color(std::ostream& out, const color& pixel_color, int samples_per_pixel) {
+    void write_color(std::ostream& out, const color& pixel_color, double spp_scale) {
         auto r = pixel_color.x();
         auto g = pixel_color.y();
         auto b = pixel_color.z();
 
-        // Divide the color by the number of samples.
-        auto scale = 1.0 / samples_per_pixel;
-        r *= scale;
-        g *= scale;
-        b *= scale;
+        // Divide the color by the sampling scale.
+        r *= spp_scale;
+        g *= spp_scale;
+        b *= spp_scale;
 
         // Write the translated [0,255] value of each color component.
         static const interval intensity(0.000, 0.999);
@@ -2059,11 +2058,13 @@ we're currently sampling.
                 for (int i = 0; i < image_width; i++) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                     color pixel_color(0,0,0);
-                    for (int sample = 0; sample < samples_per_pixel; sample++) {
-                        ray r = get_ray(i, j);
-                        pixel_color += ray_color(r, world);
+                    for(int s_j = 0; s_j < sqrt_spp; s_j++){
+                        for(int s_i = 0; s_i < sqrt_spp; s_i++){
+                            ray r = get_ray(i, j);
+                            pixel_color += ray_color(r, max_depth, world);
+                        }
                     }
-                    write_color(std::cout, pixel_color, samples_per_pixel);
+                    write_color(std::cout, pixel_color, spp_scale);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 }
             }
@@ -2072,8 +2073,21 @@ we're currently sampling.
         }
         ...
       private:
-        ...
+        int    image_height;    // Rendered image height
+        point3 center;          // Camera center
+        point3 pixel00_loc;     // Location of pixel 0, 0
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        int    sqrt_spp;        // Square Root of random samples for each pixel
+        double spp_scale;       // Scale value for the random samples for each pixel
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         void initialize() {
+          image_height = int(image_width / aspect_ratio);
+          image_height = (image_height < 1) ? 1 : image_height;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+          sqrt_spp = int(sqrt(samples_per_pixel));
+          spp_scale = 1.0 / (sqrt_spp * sqrt_spp);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
           ...
         }
 
@@ -2372,11 +2386,13 @@ depth, returning no light contribution at the maximum depth:
                 std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
                 for (int i = 0; i < image_width; i++) {
                     color pixel_color(0,0,0);
-                    for (int sample = 0; sample < samples_per_pixel; sample++) {
-                        ray r = get_ray(i, j);
+                    for (int s_j = 0; s_j < sqrt_spp; s_j++) {
+                        for (int s_i = 0; s_i < sqrt_spp; s_i++) {
+                            ray r = get_ray(i, j);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                        pixel_color += ray_color(r, max_depth, world);
+                            pixel_color += ray_color(r, max_depth, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                        }
                     }
                     write_color(std::cout, pixel_color, samples_per_pixel);
                 }
@@ -3682,6 +3698,8 @@ angles.
         int    image_height;   // Rendered image height
         point3 center;         // Camera center
         point3 pixel00_loc;    // Location of pixel 0, 0
+        int    sqrt_spp;       // Square Root of random samples for each pixel
+        double spp_scale;      // Scale value for the random samples for each pixel
         vec3   pixel_delta_u;  // Offset to pixel to the right
         vec3   pixel_delta_v;  // Offset to pixel below
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -3925,6 +3943,8 @@ Now let's update the camera to originate rays from the defocus disk:
         int    image_height;    // Rendered image height
         point3 center;          // Camera center
         point3 pixel00_loc;     // Location of pixel 0, 0
+        int    sqrt_spp;        // Square Root of random samples for each pixel
+        double spp_scale;       // Scale value for the random samples for each pixel
         vec3   pixel_delta_u;   // Offset to pixel to the right
         vec3   pixel_delta_v;   // Offset to pixel below
         vec3   u, v, w;         // Camera frame basis vectors
