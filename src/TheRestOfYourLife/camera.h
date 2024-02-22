@@ -51,7 +51,7 @@ class camera {
                         pixel_color += ray_color(r, max_depth, world, lights);
                     }
                 }
-                write_color(std::cout, pixel_color, samples_per_pixel);
+                write_color(std::cout, pixel_color, spp_scale);
             }
         }
 
@@ -62,6 +62,7 @@ class camera {
     int    image_height;    // Rendered image height
     int    sqrt_spp;        // Square root of number of samples per pixel
     double recip_sqrt_spp;  // 1 / sqrt_spp
+    double spp_scale;       // Scale value for the random samples for each pixel
     point3 center;          // Camera center
     point3 pixel00_loc;     // Location of pixel 0, 0
     vec3   pixel_delta_u;   // Offset to pixel to the right
@@ -83,6 +84,7 @@ class camera {
         auto viewport_width = viewport_height * (double(image_width)/image_height);
 
         sqrt_spp = int(sqrt(samples_per_pixel));
+        spp_scale = 1.0 / (sqrt_spp * sqrt_spp);
         recip_sqrt_spp = 1.0 / sqrt_spp;
 
         // Calculate the u,v,w unit basis vectors for the camera coordinate frame.

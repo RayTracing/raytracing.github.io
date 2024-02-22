@@ -45,11 +45,13 @@ class camera {
             std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
             for (int i = 0; i < image_width; i++) {
                 color pixel_color(0,0,0);
-                for (int sample = 0; sample < samples_per_pixel; sample++) {
-                    ray r = get_ray(i, j);
-                    pixel_color += ray_color(r, max_depth, world);
+                for (int s_j = 0; s_j < sqrt_spp; s_j++) {
+                    for (int s_i = 0; s_i < sqrt_spp; s_i++) {
+                        ray r = get_ray(i, j);
+                        pixel_color += ray_color(r, max_depth, world);
+                    }
                 }
-                write_color(std::cout, pixel_color, samples_per_pixel);
+                write_color(std::cout, pixel_color, spp_scale);
             }
         }
 
@@ -60,6 +62,8 @@ class camera {
     int    image_height;    // Rendered image height
     point3 center;          // Camera center
     point3 pixel00_loc;     // Location of pixel 0, 0
+    int    sqrt_spp;        // Square Root of random samples for each pixel
+    double spp_scale;       // Scale value for the random samples for each pixel
     vec3   pixel_delta_u;   // Offset to pixel to the right
     vec3   pixel_delta_v;   // Offset to pixel below
     vec3   u, v, w;         // Camera frame basis vectors
@@ -69,6 +73,9 @@ class camera {
     void initialize() {
         image_height = int(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
+
+        sqrt_spp = int(sqrt(samples_per_pixel));
+        spp_scale = 1.0 / (sqrt_spp * sqrt_spp);
 
         center = lookfrom;
 
