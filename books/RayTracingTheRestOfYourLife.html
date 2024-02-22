@@ -332,8 +332,29 @@ location.
         }
         ...
       private:
-        ...
+        int    image_height;    // Rendered image height
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        int    sqrt_spp;        // Square root of number of samples per pixel
+        double recip_sqrt_spp;  // 1 / sqrt_spp
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        point3 center;          // Camera center
+        ...
+        void initialize() {
+            ...
+            auto viewport_width = viewport_height * (double(image_width)/image_height);
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            sqrt_spp = int(sqrt(samples_per_pixel));
+            recip_sqrt_spp = 1.0 / sqrt_spp;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
+            w = unit_vector(lookfrom - lookat);
+            ...
+        }
+        ...
         ray get_ray(int i, int j, int s_i, int s_j) const {
             // Get a randomly-sampled camera ray for the pixel at location i,j, originating from
             // the camera defocus disk, and randomly sampled around the pixel location.
@@ -2802,7 +2823,6 @@ Add a `lights` parameter to the camera `render()` function:
 
             std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-            int sqrt_spp = int(sqrt(samples_per_pixel));
             for (int j = 0; j < image_height; j++) {
                 std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
                 for (int i = 0; i < image_width; i++) {
