@@ -61,8 +61,8 @@ class camera {
   private:
     int    image_height;    // Rendered image height
     int    sqrt_spp;        // Square root of number of samples per pixel
-    double recip_sqrt_spp;  // 1 / sqrt_spp
     double spp_scale;       // Scale value for the random samples for each pixel
+    double recip_sqrt_spp;  // 1 / sqrt_spp
     point3 center;          // Camera center
     point3 pixel00_loc;     // Location of pixel 0, 0
     vec3   pixel_delta_u;   // Offset to pixel to the right

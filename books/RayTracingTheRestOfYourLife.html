@@ -307,8 +307,9 @@ location.
     class camera {
       private:
         int    image_height;    // Rendered image height
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         int    sqrt_spp;        // Square root of number of samples per pixel
+        double spp_scale;       // Scale value for the random samples for each pixel
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double recip_sqrt_spp;  // 1 / sqrt_spp
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         point3 center;          // Camera center
@@ -317,9 +318,9 @@ location.
             ...
             auto viewport_width = viewport_height * (double(image_width)/image_height);
 
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             sqrt_spp = int(sqrt(samples_per_pixel));
+            spp_scale = 1.0 / (sqrt_spp * sqrt_spp);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             recip_sqrt_spp = 1.0 / sqrt_spp;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
