@@ -592,7 +592,7 @@ given amount:
 </div>
 
 <div class='together'>
-Now we have everything we need to implment the new AABB class.
+Now we have everything we need to implement the new AABB class.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef AABB_H
@@ -607,10 +607,7 @@ Now we have everything we need to implment the new AABB class.
         aabb() {} // The default AABB is empty, since intervals are empty by default.
 
         aabb(const interval& _x, const interval& _y, const interval& _z)
-          : x(_x), y(_y), z(_z)
-        {
-            pad_to_minimums();
-        }
+          : x(_x), y(_y), z(_z) {}
 
         aabb(const point3& a, const point3& b) {
             // Treat the two points a and b as extrema for the bounding box, so we don't require a
@@ -618,8 +615,6 @@ Now we have everything we need to implment the new AABB class.
             x = interval(fmin(a[0],b[0]), fmax(a[0],b[0]));
             y = interval(fmin(a[1],b[1]), fmax(a[1],b[1]));
             z = interval(fmin(a[2],b[2]), fmax(a[2],b[2]));
-
-            pad_to_minimums();
         }
 
         const interval& axis(int n) const {
@@ -641,17 +636,6 @@ Now we have everything we need to implment the new AABB class.
             }
             return true;
         }
-
-    private:
-
-      void pad_to_minimums() {
-          // Adjust the AABB so that no side is narrower than some delta, padding if necessary.
-
-          double delta = 0.0001;
-          if (x.size() < delta) x = x.expand(delta);
-          if (y.size() < delta) y = y.expand(delta);
-          if (z.size() < delta) z = z.expand(delta);
-      }
     };
 
     #endif
@@ -827,7 +811,7 @@ Now we can use this to construct an axis-aligned bounding box from two input box
             y = interval(box0.y, box1.y);
             z = interval(box0.z, box1.z);
         }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1161,8 +1145,11 @@ Now to implement the empty `aabb` code and the new `aabb::longest_axis()` functi
         }
 
         static const aabb empty, universe;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     const aabb aabb::empty    = aabb(interval::empty,    interval::empty,    interval::empty);
     const aabb aabb::universe = aabb(interval::universe, interval::universe, interval::universe);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2486,36 +2473,57 @@ The following figure illustrates the quadrilateral components.
 
 <div class='together'>
 Quads are flat, so their axis-aligned bounding box will have zero thickness in one dimension if the
-quad lies in the XY, YZ, or ZX plane. This can lead to numerical problems with ray intersection, but
+quad lies in the XY, YZ, or XZ plane. This can lead to numerical problems with ray intersection, but
 we can address this by padding any zero-sized dimensions of the bounding box. Padding is fine
 because we aren't changing the intersection of the quad; we're only expanding its bounding box to
 remove the possibility of numerical problems, and the bounds are just a rough approximation to the
-actual shape anyway. To this end, we add a new `aabb::pad()` method that remedies this situation:
+actual shape anyway. To remedy this situation, we insert a small padding to ensure that newly
+constructed AABBs always have a non-zero volume:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
     class aabb {
       public:
         ...
-        aabb(const aabb& box0, const aabb& box1) {
-            x = interval(box0.x, box1.x);
-            y = interval(box0.y, box1.y);
-            z = interval(box0.z, box1.z);
+        aabb(const interval& _x, const interval& _y, const interval& _z)
+          : x(_x), y(_y), z(_z)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        {
+            pad_to_minimums();
         }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+
+        aabb(const point3& a, const point3& b) {
+            // Treat the two points a and b as extrema for the bounding box, so we don't require a
+            // particular minimum/maximum coordinate order.
+            x = interval(fmin(a[0],b[0]), fmax(a[0],b[0]));
+            y = interval(fmin(a[1],b[1]), fmax(a[1],b[1]));
+            z = interval(fmin(a[2],b[2]), fmax(a[2],b[2]));
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            pad_to_minimums();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        }
+        ...
+        static const aabb empty, universe;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        aabb pad() {
-            // Return an AABB that has no side narrower than some delta, padding if necessary.
-            double delta = 0.0001;
-            interval new_x = (x.size() >= delta) ? x : x.expand(delta);
-            interval new_y = (y.size() >= delta) ? y : y.expand(delta);
-            interval new_z = (z.size() >= delta) ? z : z.expand(delta);
+      private:
 
-            return aabb(new_x, new_y, new_z);
+        void pad_to_minimums() {
+            // Adjust the AABB so that no side is narrower than some delta, padding if necessary.
+
+            double delta = 0.0001;
+            if (x.size() < delta) x = x.expand(delta);
+            if (y.size() < delta) y = y.expand(delta);
+            if (z.size() < delta) z = z.expand(delta);
         }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [aabb]: <kbd>[aabb.h]</kbd> New aabb::pad() method]
+    [Listing [aabb]: <kbd>[aabb.h]</kbd> New aabb::pad_to_minimums() method]
 
 </div>
 
@@ -2539,7 +2547,7 @@ Now we're ready for the first sketch of the new `quad` class:
         }
 
         virtual void set_bounding_box() {
-            bbox = aabb(Q, Q + u + v).pad();
+            bbox = aabb(Q, Q + u + v);
         }
 
         aabb bounding_box() const override { return bbox; }
