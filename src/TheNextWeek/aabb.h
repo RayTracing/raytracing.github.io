@@ -40,8 +40,6 @@ class aabb {
         x = interval(box0.x, box1.x);
         y = interval(box0.y, box1.y);
         z = interval(box0.z, box1.z);
-
-        pad_to_minimums();
     }
 
     const interval& axis(int n) const {
