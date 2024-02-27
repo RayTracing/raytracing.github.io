@@ -28,7 +28,9 @@ class quad : public hittable {
     }
 
     virtual void set_bounding_box() {
-        bbox = aabb(Q, Q + u + v);
+        aabb bbox1 = aabb(Q, Q + u + v);
+        aabb bbox2 = aabb(Q + u, Q + v);
+        bbox = aabb(bbox1, bbox2);
     }
 
     aabb bounding_box() const override { return bbox; }
