@@ -1031,7 +1031,7 @@ function.
 At this point, we're ready to use our new BVH code. Let's use it on our random spheres scene.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    #include "bvh.h" 
+    #include "bvh.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
 
@@ -2547,7 +2547,9 @@ Now we're ready for the first sketch of the new `quad` class:
         }
 
         virtual void set_bounding_box() {
-            bbox = aabb(Q, Q + u + v);
+            aabb bbox1 = aabb(Q, Q + u + v);
+            aabb bbox2 = aabb(Q + u, Q + v);
+            bbox = aabb(bbox1, bbox2)
         }
 
         aabb bounding_box() const override { return bbox; }
@@ -3580,7 +3582,7 @@ offset` above requires some additional support.
     const aabb aabb::empty    = aabb(interval::empty,    interval::empty,    interval::empty);
     const aabb aabb::universe = aabb(interval::universe, interval::universe, interval::universe);
 
-    
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     aabb operator+(const aabb& bbox, const vec3& offset) {
         return aabb(bbox.x + offset.x(), bbox.y + offset.y(), bbox.z + offset.z());
