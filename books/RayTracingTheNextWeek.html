@@ -2528,7 +2528,7 @@ constructed AABBs always have a non-zero volume:
 </div>
 
 <div class='together'>
-A quad's bounding box should be calculated based on its 4 points. While ordering of these points doesn’t matter, we decide to calculate the bounding boxes for each of the two diagonals, and then combine them. Now we're ready for the first sketch of the new `quad` class:
+Now we're ready for the first sketch of the new `quad` class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef QUAD_H
@@ -2547,9 +2547,10 @@ A quad's bounding box should be calculated based on its 4 points. While ordering
         }
 
         virtual void set_bounding_box() {
-            aabb bbox1 = aabb(Q, Q + u + v);
-            aabb bbox2 = aabb(Q + u, Q + v);
-            bbox = aabb(bbox1, bbox2);
+            // Compute the bounding box of all four vertices.
+            auto bbox_diagonal1 = aabb(Q, Q + u + v);
+            auto bbox_diagonal2 = aabb(Q + u, Q + v);
+            bbox = aabb(bbox_diagonal1, bbox_diagonal2);
         }
 
         aabb bounding_box() const override { return bbox; }
