@@ -899,7 +899,7 @@ I am a fan of the one class design when feasible. Here is such a class:
 
     class bvh_node : public hittable {
       public:
-        bvh_node(hittable_list& list) : bvh_node(list.objects, 0, list.objects.size()) {}
+        bvh_node(hittable_list list) : bvh_node(list.objects, 0, list.objects.size()) {}
 
         bvh_node(std::vector<shared_ptr<hittable>>& objects, size_t start, size_t end) {
             // To be implemented later.
@@ -968,8 +968,8 @@ we haven't yet defined.
             if (object_span == 1) {
                 left = right = objects[start];
             } else if (object_span == 2) {
-				left = objects[start];
-				right = objects[start+1];              
+                left = objects[start];
+                right = objects[start+1];
             } else {
                 std::sort(objects.begin() + start, objects.begin() + end, comparator);
 
