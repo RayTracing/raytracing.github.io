@@ -22,6 +22,7 @@ then.
              yielding a 15-20% speedup (#1007)
 
 ### The Next Week
+  - Change - BBox for `quad` now considers all 4 points (#1402)
   - Change - `perlin::turb()` no longer defaults the value for the depth parameter.
   - Change - AABB automatically pads to mininmum size for any dimension; no longer requires
              primitives to call aabb::pad() function.
@@ -622,4 +623,3 @@ typesetting and source-code cleanup.
 # v1.42.0  (2018-08-26)
 
   - New - First GitHub release of _Ray Tracing: The Next Week_.
-

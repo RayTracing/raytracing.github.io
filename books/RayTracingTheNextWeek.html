@@ -1031,7 +1031,7 @@ function.
 At this point, we're ready to use our new BVH code. Let's use it on our random spheres scene.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    #include "bvh.h" 
+    #include "bvh.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
 
@@ -2452,7 +2452,7 @@ Though we'll name our new primitive a `quad`, it will technically be a parallelo
 are parallel) instead of a general quadrilateral. For our purposes, we'll use three geometric
 entities to define a quad:
 
-  1. $\mathbf{Q}$, the lower-left corner.
+  1. $\mathbf{Q}$, the starting corner.
   2. $\mathbf{u}$, a vector representing the first side.
      $\mathbf{Q} + \mathbf{u}$ gives one of the corners adjacent to $\mathbf{Q}$.
   3. $\mathbf{v}$, a vector representing the second side.
@@ -2547,7 +2547,10 @@ Now we're ready for the first sketch of the new `quad` class:
         }
 
         virtual void set_bounding_box() {
-            bbox = aabb(Q, Q + u + v);
+            // Compute the bounding box of all four vertices.
+            auto bbox_diagonal1 = aabb(Q, Q + u + v);
+            auto bbox_diagonal2 = aabb(Q + u, Q + v);
+            bbox = aabb(bbox_diagonal1, bbox_diagonal2);
         }
 
         aabb bounding_box() const override { return bbox; }
@@ -3580,7 +3583,7 @@ offset` above requires some additional support.
     const aabb aabb::empty    = aabb(interval::empty,    interval::empty,    interval::empty);
     const aabb aabb::universe = aabb(interval::universe, interval::universe, interval::universe);
 
-    
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     aabb operator+(const aabb& bbox, const vec3& offset) {
         return aabb(bbox.x + offset.x(), bbox.y + offset.y(), bbox.z + offset.z());
