@@ -883,7 +883,12 @@ I am a fan of the one class design when feasible. Here is such a class:
 
     class bvh_node : public hittable {
       public:
-        bvh_node(hittable_list list) : bvh_node(list.objects, 0, list.objects.size()) {}
+        bvh_node(hittable_list list) : bvh_node(list.objects, 0, list.objects.size()) {
+            // There's a C++ subtlety here. This constructor (taking a hittable list without span
+            // indices) creates an implicit copy of the hittable list, which we will modify. The
+            // lifetime of this copied list only extends until this constructor exits, but that's OK
+            // because all we need to persist is the resulting bounding volume hierarchy.
+        }
 
         bvh_node(std::vector<shared_ptr<hittable>>& objects, size_t start, size_t end) {
             // To be implemented later.
