@@ -883,9 +883,9 @@ I am a fan of the one class design when feasible. Here is such a class:
 
     class bvh_node : public hittable {
       public:
-        bvh_node(const hittable_list& list) : bvh_node(list.objects, 0, list.objects.size()) {}
+        bvh_node(hittable_list list) : bvh_node(list.objects, 0, list.objects.size()) {}
 
-        bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
+        bvh_node(std::vector<shared_ptr<hittable>>& objects, size_t start, size_t end) {
             // To be implemented later.
         }
 
@@ -940,27 +940,20 @@ we haven't yet defined.
     class bvh_node : public hittable {
       public:
         ...
-        bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
+        bvh_node(std::vector<shared_ptr<hittable>>& objects, size_t start, size_t end) {
             int axis = random_int(0,2);
 
             auto comparator = (axis == 0) ? box_x_compare
                             : (axis == 1) ? box_y_compare
                                           : box_z_compare;
 
-            auto objects = src_objects; // A modifiable array of the source scene objects
-
             size_t object_span = end - start;
 
             if (object_span == 1) {
                 left = right = objects[start];
             } else if (object_span == 2) {
-                if (comparator(objects[start], objects[start+1])) {
-                    left = objects[start];
-                    right = objects[start+1];
-                } else {
-                    left = objects[start+1];
-                    right = objects[start];
-                }
+                left = objects[start];
+                right = objects[start+1];
             } else {
                 std::sort(objects.begin() + start, objects.begin() + end, comparator);
 
@@ -1078,12 +1071,12 @@ implementing it shortly.
     class bvh_node : public hittable {
       public:
         ...
-        bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
+        bvh_node(std::vector<shared_ptr<hittable>>& objects, size_t start, size_t end) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             // Build the bounding box of the span of source objects.
             bbox = aabb::empty;
-            for (int object_index=start; object_index < end; object_index++)
-                bbox = aabb(bbox, src_objects[object_index]->bounding_box());
+            for (size_t object_index=start; object_index < end; object_index++)
+                bbox = aabb(bbox, objects[object_index]->bounding_box());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             ...
@@ -1099,11 +1092,11 @@ computed it as the union of the left and right sides.
     class bvh_node : public hittable {
       public:
         ...
-        bvh_node(const std::vector<shared_ptr<hittable>>& src_objects, size_t start, size_t end) {
+        bvh_node(std::vector<shared_ptr<hittable>>& objects, size_t start, size_t end) {
             // Build the bounding box of the span of source objects.
             bbox = aabb::empty;
-            for (int object_index=start; object_index < end; object_index++)
-                bbox = aabb(bbox, src_objects[object_index]->bounding_box());
+            for (size_t object_index=start; object_index < end; object_index++)
+                bbox = aabb(bbox, objects[object_index]->bounding_box());
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
