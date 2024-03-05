@@ -51,7 +51,7 @@ class camera {
                         pixel_color += ray_color(r, max_depth, world, lights);
                     }
                 }
-                write_color(std::cout, pixel_color, samples_per_pixel);
+                write_color(std::cout, pixel_sample_scale * pixel_color);
             }
         }
 
@@ -59,20 +59,25 @@ class camera {
     }
 
   private:
-    int    image_height;    // Rendered image height
-    int    sqrt_spp;        // Square root of number of samples per pixel
-    double recip_sqrt_spp;  // 1 / sqrt_spp
-    point3 center;          // Camera center
-    point3 pixel00_loc;     // Location of pixel 0, 0
-    vec3   pixel_delta_u;   // Offset to pixel to the right
-    vec3   pixel_delta_v;   // Offset to pixel below
-    vec3   u, v, w;         // Camera frame basis vectors
-    vec3   defocus_disk_u;  // Defocus disk horizontal radius
-    vec3   defocus_disk_v;  // Defocus disk vertical radius
+    int    image_height;        // Rendered image height
+    double pixel_sample_scale;  // Color scale factor for a pixel sample
+    int    sqrt_spp;            // Square root of number of samples per pixel
+    double recip_sqrt_spp;      // 1 / sqrt_spp
+    point3 center;              // Camera center
+    point3 pixel00_loc;         // Location of pixel 0, 0
+    vec3   pixel_delta_u;       // Offset to pixel to the right
+    vec3   pixel_delta_v;       // Offset to pixel below
+    vec3   u, v, w;             // Camera frame basis vectors
+    vec3   defocus_disk_u;      // Defocus disk horizontal radius
+    vec3   defocus_disk_v;      // Defocus disk vertical radius
 
     void initialize() {
         image_height = int(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
+
+        sqrt_spp = int(sqrt(samples_per_pixel));
+        pixel_sample_scale = 1.0 / (sqrt_spp * sqrt_spp);
+        recip_sqrt_spp = 1.0 / sqrt_spp;
 
         center = lookfrom;
 
@@ -81,9 +86,6 @@ class camera {
         auto h = tan(theta/2);
         auto viewport_height = 2 * h * focus_dist;
         auto viewport_width = viewport_height * (double(image_width)/image_height);
-
-        sqrt_spp = int(sqrt(samples_per_pixel));
-        recip_sqrt_spp = 1.0 / sqrt_spp;
 
         // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
         w = unit_vector(lookfrom - lookat);

@@ -324,7 +324,7 @@ location.
                         }
                     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-                    write_color(std::cout, pixel_color, samples_per_pixel);
+                    write_color(std::cout, pixel_sample_scale * pixel_color);
                 }
             }
 
@@ -332,25 +332,27 @@ location.
         }
         ...
       private:
-        int    image_height;    // Rendered image height
+        int    image_height;        // Rendered image height
+        double pixel_sample_scale;  // Color scale factor for a pixel sample
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        int    sqrt_spp;        // Square root of number of samples per pixel
-        double recip_sqrt_spp;  // 1 / sqrt_spp
+        int    sqrt_spp;            // Square root of number of samples per pixel
+        double recip_sqrt_spp;      // 1 / sqrt_spp
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        point3 center;          // Camera center
+        point3 center;              // Camera center
         ...
+
         void initialize() {
-            ...
-            auto viewport_width = viewport_height * (double(image_width)/image_height);
+            image_height = int(image_width / aspect_ratio);
+            image_height = (image_height < 1) ? 1 : image_height;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             sqrt_spp = int(sqrt(samples_per_pixel));
+            pixel_sample_scale = 1.0 / (sqrt_spp * sqrt_spp);
             recip_sqrt_spp = 1.0 / sqrt_spp;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
-            w = unit_vector(lookfrom - lookat);
+            center = lookfrom;
             ...
         }
         ...
@@ -2834,7 +2836,7 @@ Add a `lights` parameter to the camera `render()` function:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                         }
                     }
-                    write_color(std::cout, pixel_color, samples_per_pixel);
+                    write_color(std::cout, pixel_sample_scale * pixel_color);
                 }
             }
 
@@ -3686,7 +3688,7 @@ always remember for `NaN`s is that a `NaN` does not equal itself. Using this tri
 `write_color()` function to replace any `NaN` components with zero:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void write_color(std::ostream& out, const color& pixel_color, int samples_per_pixel) {
+    void write_color(std::ostream& out, const color& pixel_color) {
         auto r = pixel_color.x();
         auto g = pixel_color.y();
         auto b = pixel_color.z();
@@ -3699,17 +3701,19 @@ always remember for `NaN`s is that a `NaN` does not equal itself. Using this tri
         if (b != b) b = 0.0;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        // Divide the color by the number of samples and gamma-correct for gamma=2.0.
-        auto scale = 1.0 / samples_per_pixel;
-        r = sqrt(scale * r);
-        g = sqrt(scale * g);
-        b = sqrt(scale * b);
+        // Apply a linear to gamma transform for gamma 2
+        r = linear_to_gamma(r);
+        g = linear_to_gamma(g);
+        b = linear_to_gamma(b);
 
-        // Write the translated [0,255] value of each color component.
+        // Translate the [0,1] component values to the byte range [0,255].
         static const interval intensity(0.000, 0.999);
-        out << int(256 * intensity.clamp(r)) << ' '
-            << int(256 * intensity.clamp(g)) << ' '
-            << int(256 * intensity.clamp(b)) << '\n';
+        int rbyte = int(256 * intensity.clamp(r));
+        int gbyte = int(256 * intensity.clamp(g));
+        int bbyte = int(256 * intensity.clamp(b));
+
+        // Write out the pixel color components.
+        out << rbyte << ' ' << gbyte << ' ' << bbyte << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-nan]: <kbd>[color.h]</kbd> NaN-tolerant write_color function]
