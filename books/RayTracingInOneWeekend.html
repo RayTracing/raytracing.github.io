@@ -424,10 +424,17 @@ that writes a single pixel's color out to the standard output stream.
     using color = vec3;
 
     void write_color(std::ostream& out, const color& pixel_color) {
-        // Write the translated [0,255] value of each color component.
-        out << int(255.999 * pixel_color.x()) << ' '
-            << int(255.999 * pixel_color.y()) << ' '
-            << int(255.999 * pixel_color.z()) << '\n';
+        auto r = pixel_color.x();
+        auto g = pixel_color.y();
+        auto b = pixel_color.z();
+
+        // Translate the [0,1] component values to the byte range [0,255].
+        int rbyte = int(255.999 * r);
+        int gbyte = int(255.999 * g);
+        int bbyte = int(255.999 * b);
+
+        // Write out the pixel color components.
+        out << rbyte << ' ' << gbyte << ' ' << bbyte << '\n';
     }
 
     #endif
@@ -2010,26 +2017,24 @@ the proper $[0,1]$ bounds, we'll add and use a small helper function: `interval:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [clamp]: <kbd>[interval.h]</kbd> The interval::clamp() utility function]
 
-And here's the updated `write_color()` function that takes the sum total of all light for the pixel
-and the number of samples involved:
+Here's the updated `write_color()` function that incorporates the interval clamping function:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    void write_color(std::ostream& out, const color& pixel_color, int samples_per_pixel) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    void write_color(std::ostream& out, const color& pixel_color) {
         auto r = pixel_color.x();
         auto g = pixel_color.y();
         auto b = pixel_color.z();
 
-        // Divide the color by the number of samples.
-        auto scale = 1.0 / samples_per_pixel;
-        r *= scale;
-        g *= scale;
-        b *= scale;
-
-        // Write the translated [0,255] value of each color component.
+        // Translate the [0,1] component values to the byte range [0,255].
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         static const interval intensity(0.000, 0.999);
-        out << int(256 * intensity.clamp(r)) << ' '
-            << int(256 * intensity.clamp(g)) << ' '
-            << int(256 * intensity.clamp(b)) << '\n';
+        int rbyte = int(256 * intensity.clamp(r));
+        int gbyte = int(256 * intensity.clamp(g));
+        int bbyte = int(256 * intensity.clamp(b));
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        // Write out the pixel color components.
+        out << rbyte << ' ' << gbyte << ' ' << bbyte << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-clamped]: <kbd>[color.h]</kbd> The multi-sample write_color() function]
@@ -2063,7 +2068,7 @@ we're currently sampling.
                         ray r = get_ray(i, j);
                         pixel_color += ray_color(r, world);
                     }
-                    write_color(std::cout, pixel_color, samples_per_pixel);
+                    write_color(std::cout, pixel_sample_scale * pixel_color);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 }
             }
@@ -2072,9 +2077,24 @@ we're currently sampling.
         }
         ...
       private:
+        int    image_height;        // Rendered image height
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        double pixel_sample_scale;  // Color scale factor for a pixel sample
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        point3 center;              // Camera center
         ...
+
         void initialize() {
-          ...
+            image_height = int(image_width / aspect_ratio);
+            image_height = (image_height < 1) ? 1 : image_height;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            pixel_sample_scale = 1.0 / samples_per_pixel;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            center = point3(0, 0, 0);
+            ...
         }
 
 
@@ -2378,7 +2398,7 @@ depth, returning no light contribution at the maximum depth:
                         pixel_color += ray_color(r, max_depth, world);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                     }
-                    write_color(std::cout, pixel_color, samples_per_pixel);
+                    write_color(std::cout, pixel_sample_scale * pixel_color);
                 }
             }
 
@@ -2651,30 +2671,27 @@ robustly handle negative inputs.
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-    void write_color(std::ostream& out, const color& pixel_color, int samples_per_pixel) {
+    void write_color(std::ostream& out, const color& pixel_color) {
         auto r = pixel_color.x();
         auto g = pixel_color.y();
         auto b = pixel_color.z();
 
-        // Divide the color by the number of samples.
-        auto scale = 1.0 / samples_per_pixel;
-        r *= scale;
-        g *= scale;
-        b *= scale;
-
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        // Apply the linear to gamma transform.
+        // Apply a linear to gamma transform for gamma 2
         r = linear_to_gamma(r);
         g = linear_to_gamma(g);
         b = linear_to_gamma(b);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        // Write the translated [0,255] value of each color component.
+        // Translate the [0,1] component values to the byte range [0,255].
         static const interval intensity(0.000, 0.999);
-        out << int(256 * intensity.clamp(r)) << ' '
-            << int(256 * intensity.clamp(g)) << ' '
-            << int(256 * intensity.clamp(b)) << '\n';
+        int rbyte = int(256 * intensity.clamp(r));
+        int gbyte = int(256 * intensity.clamp(g));
+        int bbyte = int(256 * intensity.clamp(b));
+
+        // Write out the pixel color components.
+        out << rbyte << ' ' << gbyte << ' ' << bbyte << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [write-color-gamma]: <kbd>[color.h]</kbd> write_color(), with gamma correction]
@@ -3555,6 +3572,8 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
             image_height = int(image_width / aspect_ratio);
             image_height = (image_height < 1) ? 1 : image_height;
 
+            pixel_sample_scale = 1.0 / samples_per_pixel;
+
             center = point3(0, 0, 0);
 
             // Determine viewport dimensions.
@@ -3679,18 +3698,21 @@ angles.
         ...
 
       private:
-        int    image_height;   // Rendered image height
-        point3 center;         // Camera center
-        point3 pixel00_loc;    // Location of pixel 0, 0
-        vec3   pixel_delta_u;  // Offset to pixel to the right
-        vec3   pixel_delta_v;  // Offset to pixel below
+        int    image_height;        // Rendered image height
+        double pixel_sample_scale;  // Color scale factor for a pixel sample
+        point3 center;              // Camera center
+        point3 pixel00_loc;         // Location of pixel 0, 0
+        vec3   pixel_delta_u;       // Offset to pixel to the right
+        vec3   pixel_delta_v;       // Offset to pixel below
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        vec3   u, v, w;        // Camera frame basis vectors
+        vec3   u, v, w;             // Camera frame basis vectors
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         void initialize() {
             image_height = int(image_width / aspect_ratio);
             image_height = (image_height < 1) ? 1 : image_height;
+
+            pixel_sample_scale = 1.0 / samples_per_pixel;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -3922,20 +3944,23 @@ Now let's update the camera to originate rays from the defocus disk:
         ...
 
       private:
-        int    image_height;    // Rendered image height
-        point3 center;          // Camera center
-        point3 pixel00_loc;     // Location of pixel 0, 0
-        vec3   pixel_delta_u;   // Offset to pixel to the right
-        vec3   pixel_delta_v;   // Offset to pixel below
-        vec3   u, v, w;         // Camera frame basis vectors
+        int    image_height;        // Rendered image height
+        double pixel_sample_scale;  // Color scale factor for a pixel sample
+        point3 center;              // Camera center
+        point3 pixel00_loc;         // Location of pixel 0, 0
+        vec3   pixel_delta_u;       // Offset to pixel to the right
+        vec3   pixel_delta_v;       // Offset to pixel below
+        vec3   u, v, w;             // Camera frame basis vectors
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        vec3   defocus_disk_u;  // Defocus disk horizontal radius
-        vec3   defocus_disk_v;  // Defocus disk vertical radius
+        vec3   defocus_disk_u;      // Defocus disk horizontal radius
+        vec3   defocus_disk_v;      // Defocus disk vertical radius
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         void initialize() {
             image_height = int(image_width / aspect_ratio);
             image_height = (image_height < 1) ? 1 : image_height;
+
+            pixel_sample_scale = 1.0 / samples_per_pixel;
 
             center = lookfrom;
 
