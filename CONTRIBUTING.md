@@ -61,9 +61,9 @@ To contribute a change to the project, *please follow these steps*:
 
   6. Ensure that the change is complete:
 
-     - Update all relevant code for all three books (`src/*`). Since the code is developed as the
-       books proceed, you may need to update many historical code listings as well, _and this may
-       then require corresponding updates to the book text_.
+     - Update all relevant source code for all three books (`src/*`). Since the code is developed as
+       the books proceed, you may need to update many historical code listings as well, _and this
+       may require corresponding updates to the book text_.
 
      - Update all relevant code listings and text in all three books (`books/RayTracing*.html`).
        Follow existing style for the Markdeep source (for example, text should be wrapped to 100
@@ -76,7 +76,7 @@ To contribute a change to the project, *please follow these steps*:
        multiple such lines if applicable.
 
      - Include a one-line summary change at the bottom of the current development section in the
-       changelog. Include a reference to the associated GitHub issue.
+       changelog (`CHANGELOG.md`). Include a reference to the associated GitHub issue.
 
      - For an example of the above, see
        [issue #1262](https://github.com/RayTracing/raytracing.github.io/issues/1262) and
