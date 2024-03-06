@@ -37,9 +37,9 @@ all kinds, even better ways to present something -- just go to the [issues page]
    code: please include the file, function/class, and line number(s) if that applies.
 
 4. Finally, _please keep issues focused on a single problem or suggestion_. If discussion prompts
-   you to think of related issue, create a _new_ issue for that topic, and add a link back to the
-   discussion or related issue (just use the "#NNN" syntax for issue/discussion/pull-request NNN --
-   GitHub will automatically make this a link).
+   you to think of a related issue, create a separate issue for that topic and add a link back to
+   the original discussion or issue (just use the "#NNN" syntax for issue/discussion/pull-request
+   NNN -- GitHub will automatically make this a link).
 
 
 Pull Requests
