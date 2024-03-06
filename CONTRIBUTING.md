@@ -16,7 +16,7 @@ We use `release` as our release branch. _Generally, changes should never go dire
 branch_. All ongoing development work (and all of the latest changes) will be in the `dev` branch.
 However, we may want changes in other development branches (for example, in a `dev-patch` branch for
 a quick patch release). The appropriate target branch for any pull requests you want to make will be
-determined in the associated issue first (all PRs should have an associated issue).
+determined in the associated issue first (all pull requests should have an associated issue).
 
 
 Issues
@@ -70,15 +70,19 @@ To contribute a change to the project, *please follow these steps*:
        characters).
 
      - Provide clear and full commit descriptions: title line (50 characters max), followed by a
-       blank line, and then a descriptive body with lines not exceeding 72 characters. If your PR is
-       expected to completely resolve an outstanding issue, add a line "Resolves #NNN" to the bottom
-       of your commit message, where NNN is the existing GitHub issue number. You may provide
+       blank line, and then a descriptive body with lines not exceeding 72 characters. If a commit
+       is expected to completely resolve an outstanding issue, add a line "Resolves #NNN" to the
+       bottom of your commit message, where NNN is the existing GitHub issue number. You may provide
        multiple such lines if applicable.
 
      - Include a one-line summary change at the bottom of the current development section in the
        changelog. Include a reference to the associated GitHub issue.
 
-  7. When ready, create your pull request and request a review from "rt-reviewers".
+     - For an example of the above, see
+       [issue #1262](https://github.com/RayTracing/raytracing.github.io/issues/1262) and
+       [PR #1263](https://github.com/RayTracing/raytracing.github.io/pull/1263).
+
+  7. When ready, create your pull request (PR) and request a review from "rt-reviewers".
 
   8. Congratulate yourself for having been part of the 1% of contributors who actually read and
      followed these guidelines.
