@@ -24,40 +24,61 @@ Issues
 The easiest way to help out is to log any issues you find in the books. Unclear passages, errors of
 all kinds, even better ways to present something -- just go to the [issues page][].
 
-**Before creating a new issue**, please review existing issues to see if someone has already
-submitted the same one. Chances are you're not the first to encounter something, so a little quick
-research can save everyone some hassle. It's also a good idea to verify that problems still exist in
-the development branch (`dev`) when creating new issues.
+1. First ensure that the issue is still outstanding in the current development branch (`dev`). Often
+   the issue has already been addressed or no longer applies to the latest in-development version.
 
-When entering a new issue, please include all relevant information. For content issues, include the
-book or books this applies to, and specific locations that should be reviewed. Similarly for code:
-please include the file, function/class, and line number(s) if that applies.
+2. **Before creating a new issue**, please review existing issues to see if someone has already
+   submitted the same one. Chances are you're not the first to encounter something, so a little
+   quick research can save everyone some hassle. If you have new information, please continue the
+   thread in the existing issue.
 
-Finally, _please keep issues focused on a single problem or suggestion_. If discussion prompts you
-to think of another related issue, create a new issue for that topic.
+3. When entering a new issue, please include all relevant information. For content issues, include
+   the book or books this applies to, and specific locations that should be reviewed. Similarly for
+   code: please include the file, function/class, and line number(s) if that applies.
+
+4. Finally, _please keep issues focused on a single problem or suggestion_. If discussion prompts
+   you to think of related issue, create a _new_ issue for that topic, and add a link back to the
+   discussion or related issue (just use the "#NNN" syntax for issue/discussion/pull-request NNN --
+   GitHub will automatically make this a link).
 
 
 Pull Requests
 --------------
 To contribute a change to the project, *please follow these steps*:
 
-  1. [Create a GitHub issue](https://github.com/RayTracing/raytracing.github.io/issues).
+  1. [Create a new GitHub issue](https://github.com/RayTracing/raytracing.github.io/issues).
 
-  2. Let us know whether you're willing to make the fix yourself.
+  2. Let us know if you're willing to make the fix yourself.
 
   3. Participate in the discussion as needed. We'll ensure that the work doesn't conflict with or
      duplicate other work planned or in progress, and decide which development branch is correct
      for the release type and release schedule.
 
-  4. Create your changes in a feature branch (or fork) from the assigned development branch (usually
-     `dev`).
+  4. Once you've received instructions to proceed with your change, create a new feature branch (or
+     fork) from the assigned development branch (usually `dev`).
 
   5. Follow the existing code style.
 
-  6. Include a one-line summary change at the bottom of the current development section in the
-     changelog. Include a reference to the associated GitHub issue.
+  6. Ensure that the change is complete:
 
-  7. When ready, create your pull request and request a review from "rt-contributors".
+     - Update all relevant code for all three books (`src/*`). Since the code is developed as the
+       books proceed, you may need to update many historical code listings as well, _and this may
+       then require corresponding updates to the book text_.
+
+     - Update all relevant code listings and text in all three books (`books/RayTracing*.html`).
+       Follow existing style for the Markdeep source (for example, text should be wrapped to 100
+       characters).
+
+     - Provide clear and full commit descriptions: title line (50 characters max), followed by a
+       blank line, and then a descriptive body with lines not exceeding 72 characters. If your PR is
+       expected to completely resolve an outstanding issue, add a line "Resolves #NNN" to the bottom
+       of your commit message, where NNN is the existing GitHub issue number. You may provide
+       multiple such lines if applicable.
+
+     - Include a one-line summary change at the bottom of the current development section in the
+       changelog. Include a reference to the associated GitHub issue.
+
+  7. When ready, create your pull request and request a review from "rt-reviewers".
 
   8. Congratulate yourself for having been part of the 1% of contributors who actually read and
      followed these guidelines.
