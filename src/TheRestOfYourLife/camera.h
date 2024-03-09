@@ -51,7 +51,7 @@ class camera {
                         pixel_color += ray_color(r, max_depth, world, lights);
                     }
                 }
-                write_color(std::cout, pixel_sample_scale * pixel_color);
+                write_color(std::cout, pixel_samples_scale * pixel_color);
             }
         }
 
@@ -59,24 +59,24 @@ class camera {
     }
 
   private:
-    int    image_height;        // Rendered image height
-    double pixel_sample_scale;  // Color scale factor for a pixel sample
-    int    sqrt_spp;            // Square root of number of samples per pixel
-    double recip_sqrt_spp;      // 1 / sqrt_spp
-    point3 center;              // Camera center
-    point3 pixel00_loc;         // Location of pixel 0, 0
-    vec3   pixel_delta_u;       // Offset to pixel to the right
-    vec3   pixel_delta_v;       // Offset to pixel below
-    vec3   u, v, w;             // Camera frame basis vectors
-    vec3   defocus_disk_u;      // Defocus disk horizontal radius
-    vec3   defocus_disk_v;      // Defocus disk vertical radius
+    int    image_height;         // Rendered image height
+    double pixel_samples_scale;  // Color scale factor for a sum of pixel samples
+    int    sqrt_spp;             // Square root of number of samples per pixel
+    double recip_sqrt_spp;       // 1 / sqrt_spp
+    point3 center;               // Camera center
+    point3 pixel00_loc;          // Location of pixel 0, 0
+    vec3   pixel_delta_u;        // Offset to pixel to the right
+    vec3   pixel_delta_v;        // Offset to pixel below
+    vec3   u, v, w;              // Camera frame basis vectors
+    vec3   defocus_disk_u;       // Defocus disk horizontal radius
+    vec3   defocus_disk_v;       // Defocus disk vertical radius
 
     void initialize() {
         image_height = int(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
 
         sqrt_spp = int(sqrt(samples_per_pixel));
-        pixel_sample_scale = 1.0 / (sqrt_spp * sqrt_spp);
+        pixel_samples_scale = 1.0 / (sqrt_spp * sqrt_spp);
         recip_sqrt_spp = 1.0 / sqrt_spp;
 
         center = lookfrom;
@@ -114,8 +114,10 @@ class camera {
         // Get a randomly-sampled camera ray for the pixel at location i,j, originating from
         // the camera defocus disk, and randomly sampled around the pixel location.
 
-        auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
-        auto pixel_sample = pixel_center + pixel_sample_square(s_i, s_j);
+        auto offset = sample_square_stratified(s_i, s_j);
+        auto pixel_sample = pixel00_loc
+                          + ((i + offset.x()) * pixel_delta_u)
+                          + ((j + offset.y()) * pixel_delta_v);
 
         auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
         auto ray_direction = pixel_sample - ray_origin;
@@ -124,18 +126,24 @@ class camera {
         return ray(ray_origin, ray_direction, ray_time);
     }
 
-    vec3 pixel_sample_square(int s_i, int s_j) const {
-        // Returns a random point in the square surrounding a pixel at the origin, given
-        // the two subpixel indices.
-        auto px = -0.5 + recip_sqrt_spp * (s_i + random_double());
-        auto py = -0.5 + recip_sqrt_spp * (s_j + random_double());
-        return (px * pixel_delta_u) + (py * pixel_delta_v);
+    vec3 sample_square_stratified(int s_i, int s_j) const {
+        // Returns the vector to a random point in the square sub-pixel specified by grid
+        // indices s_i and s_j, for an idealized unit square pixel [-.5,-.5] to [+.5,+.5].
+
+        auto px = ((s_i + random_double()) * recip_sqrt_spp) - 0.5;
+        auto py = ((s_j + random_double()) * recip_sqrt_spp) - 0.5;
+
+        return vec3(px, py, 0);
     }
 
-    vec3 pixel_sample_disk(double radius) const {
-        // Generate a sample from the disk of given radius around a pixel at the origin.
-        auto p = radius * random_in_unit_disk();
-        return (p[0] * pixel_delta_u) + (p[1] * pixel_delta_v);
+    vec3 sample_square() const {
+        // Returns a random point in the square surrounding a pixel at the origin.
+        return vec3(random_double() - 0.5, random_double() - 0.5, 0);
+    }
+
+    vec3 sample_disk(double radius) const {
+        // Returns a random point in the unit (radius 0.5) disk centered at the origin.
+        return radius * random_in_unit_disk();
     }
 
     point3 defocus_disk_sample() const {
