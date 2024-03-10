@@ -28,8 +28,8 @@ class camera {
     int    max_depth         = 10;   // Maximum number of ray bounces into scene
 
     double vfov     = 90;              // Vertical view angle (field of view)
-    point3 lookfrom = point3(0,0,-1);  // Point camera is looking from
-    point3 lookat   = point3(0,0,0);   // Point camera is looking at
+    point3 lookfrom = point3(0,0,0);   // Point camera is looking from
+    point3 lookat   = point3(0,0,-1);  // Point camera is looking at
     vec3   vup      = vec3(0,1,0);     // Camera-relative "up" direction
 
     double defocus_angle = 0;  // Variation angle of rays through each pixel
