@@ -3056,7 +3056,7 @@ Now let’s add some metal spheres to our scene:
         auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2));
 
         world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
-        world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
+        world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.2),   0.5, material_center));
         world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
         world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3277,17 +3277,18 @@ And the dielectric material that always refracts is:
 </div>
 
 <div class='together'>
-Now we'll update the scene to change the left and center spheres to glass:
+Now we'll update the scene to illustrate refraction by changing the left sphere to glass, which has
+an index of refraction of approximately 1.5.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    auto material_center = make_shared<dielectric>(1.5);
     auto material_left   = make_shared<dielectric>(1.5);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [two-glass]: <kbd>[main.cc]</kbd> Changing left and center spheres to glass]
+    [Listing [two-glass]: <kbd>[main.cc]</kbd> Changing the left sphere to glass]
 
 </div>
 
@@ -3302,9 +3303,11 @@ This gives us the following result:
 
 Total Internal Reflection
 --------------------------
-That definitely doesn't look right. One troublesome practical issue is that when the ray is in the
-material with the higher refractive index, there is no real solution to Snell’s law, and thus there
-is no refraction possible. If we refer back to Snell's law and the derivation of $\sin\theta'$:
+One troublesome practical issue with refraction is that there are ray angles for which no solution
+is possible using Snell's law. This happens when the ray goes into a medium of lower index of
+refraction, and the angle between the ray and the surface is glancing enough that ray in the new
+medium refracts to an angle greater than 90&deg;. If we refer back to Snell's law and the derivation
+of $\sin\theta'$:
 
   $$ \sin\theta' = \frac{\eta}{\eta'} \cdot \sin\theta $$
 
@@ -3334,8 +3337,10 @@ solution does not exist, the glass cannot refract, and therefore must reflect th
 </div>
 
 Here all the light is reflected, and because in practice that is usually inside solid objects, it is
-called “total internal reflection”. This is why sometimes the water-air boundary acts as a perfect
-mirror when you are submerged.
+called _total internal reflection_. This is why sometimes the water-to-air boundary acts as a
+perfect mirror when you are submerged -- if you're under water looking up, you can see things above
+the water, but when you are close to the surface and looking sideways, the water surface looks like
+a mirror.
 
 We can solve for `sin_theta` using the trigonometric qualities:
 
@@ -3400,25 +3405,42 @@ And the dielectric material that always refracts (when possible) is:
 
 </div>
 
-<div class='together'>
-Attenuation is always 1 -- the glass surface absorbs nothing. If we try that out with these
-parameters:
+Attenuation is always 1 -- the glass surface absorbs nothing.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
+If we render the prior scene with the new `dielectric::scatter()` function, we see … no change. Huh?
+
+Well, it turns out that given a sphere of material with an index of refraction greater than air,
+there's no incident angle that will yield total internal reflection -- neither for rays entering the
+sphere, nor for rays exiting. This is due to the geometry of spheres, as a grazing incoming ray will
+always be bent to a smaller angle, and then bent back to the original angle on exit.
+
+So how can we illustrate total internal reflection? Well, if the sphere has an index of refraction
+_less_ than the medium it's in, then we can hit it with grazing angles that end up with total
+_external_ reflection. That should be good enough.
+
+We'll consider the world filled with water (index of refraction approximately 1.33), and change the
+sphere material to air (index of refraction 1.00) -- an air bubble! To do this, change the left
+sphere material's index of refraction to
+
+  $$\frac{\text{index of refraction of air}}{\text{index of refraction of water}}$$
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
     auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
-    auto material_left   = make_shared<dielectric>(1.5);
-    auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    auto material_left   = make_shared<dielectric>(1.00 / 1.33);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [scene-dielectric]: <kbd>[main.cc]</kbd> Scene with dielectric and shiny sphere]
-
-</div>
+    [Listing [two-glass]: <kbd>[main.cc]</kbd> Left sphere is an air bubble in water]
 
 <div class='together'>
-We get:
+This change yields the following render:
 
-  ![<span class='num'>Image 17:</span> Glass sphere that sometimes refracts
-  ](../images/img-1.17-glass-sometimes-refract.png class='pixel')
+  ![<span class='num'>Image 17:</span> Air bubble sometimes refracts, sometimes reflects
+  ](../images/img-1.17-air-bubble-total-reflection.png class='pixel')
+
+Here you can see that more-or-less direct rays refract, while glancing rays reflect.
 
 </div>
 
@@ -3509,7 +3531,7 @@ this, add a second _inverted_ glass sphere inside the original glass sphere:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
     world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
-    world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
+    world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.2),   0.5, material_center));
     world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),  -0.4, material_left));
@@ -3776,7 +3798,7 @@ We'll change back to the prior scene, and use the new viewpoint:
         auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
 
         world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
-        world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
+        world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.2),   0.5, material_center));
         world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
         world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),  -0.4, material_left));
         world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
