@@ -105,8 +105,8 @@ class camera {
     }
 
     ray get_ray(int i, int j) const {
-        // Get a randomly-sampled camera ray for the pixel at location i,j, originating from
-        // the camera defocus disk, and randomly sampled around the pixel location.
+        // Construct a camera ray originating from the defocus disk and directed at a randomly
+        // sampled point around the pixel location i, j.
 
         auto offset = sample_square();
         auto pixel_sample = pixel00_loc
