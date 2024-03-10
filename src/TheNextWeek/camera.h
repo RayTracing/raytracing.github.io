@@ -49,7 +49,7 @@ class camera {
                     ray r = get_ray(i, j);
                     pixel_color += ray_color(r, max_depth, world);
                 }
-                write_color(std::cout, pixel_sample_scale * pixel_color);
+                write_color(std::cout, pixel_samples_scale * pixel_color);
             }
         }
 
@@ -57,21 +57,21 @@ class camera {
     }
 
   private:
-    int    image_height;        // Rendered image height
-    double pixel_sample_scale;  // Color scale factor for a pixel sample
-    point3 center;              // Camera center
-    point3 pixel00_loc;         // Location of pixel 0, 0
-    vec3   pixel_delta_u;       // Offset to pixel to the right
-    vec3   pixel_delta_v;       // Offset to pixel below
-    vec3   u, v, w;             // Camera frame basis vectors
-    vec3   defocus_disk_u;      // Defocus disk horizontal radius
-    vec3   defocus_disk_v;      // Defocus disk vertical radius
+    int    image_height;         // Rendered image height
+    double pixel_samples_scale;  // Color scale factor for a sum of pixel samples
+    point3 center;               // Camera center
+    point3 pixel00_loc;          // Location of pixel 0, 0
+    vec3   pixel_delta_u;        // Offset to pixel to the right
+    vec3   pixel_delta_v;        // Offset to pixel below
+    vec3   u, v, w;              // Camera frame basis vectors
+    vec3   defocus_disk_u;       // Defocus disk horizontal radius
+    vec3   defocus_disk_v;       // Defocus disk vertical radius
 
     void initialize() {
         image_height = int(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
 
-        pixel_sample_scale = 1.0 / samples_per_pixel;
+        pixel_samples_scale = 1.0 / samples_per_pixel;
 
         center = lookfrom;
 
@@ -105,11 +105,13 @@ class camera {
     }
 
     ray get_ray(int i, int j) const {
-        // Get a randomly-sampled camera ray for the pixel at location i,j, originating from
-        // the camera defocus disk.
+        // Construct a camera ray originating from the defocus disk and directed at a randomly
+        // sampled point around the pixel location i, j.
 
-        auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
-        auto pixel_sample = pixel_center + pixel_sample_square();
+        auto offset = sample_square();
+        auto pixel_sample = pixel00_loc
+                          + ((i + offset.x()) * pixel_delta_u)
+                          + ((j + offset.y()) * pixel_delta_v);
 
         auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
         auto ray_direction = pixel_sample - ray_origin;
@@ -118,17 +120,14 @@ class camera {
         return ray(ray_origin, ray_direction, ray_time);
     }
 
-    vec3 pixel_sample_square() const {
+    vec3 sample_square() const {
         // Returns a random point in the square surrounding a pixel at the origin.
-        auto px = -0.5 + random_double();
-        auto py = -0.5 + random_double();
-        return (px * pixel_delta_u) + (py * pixel_delta_v);
+        return vec3(random_double() - 0.5, random_double() - 0.5, 0);
     }
 
-    vec3 pixel_sample_disk(double radius) const {
-        // Generate a sample from the disk of given radius around a pixel at the origin.
-        auto p = radius * random_in_unit_disk();
-        return (p[0] * pixel_delta_u) + (p[1] * pixel_delta_v);
+    vec3 sample_disk(double radius) const {
+        // Returns a random point in the unit (radius 0.5) disk centered at the origin.
+        return radius * random_in_unit_disk();
     }
 
     point3 defocus_disk_sample() const {
