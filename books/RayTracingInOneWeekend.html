@@ -1114,7 +1114,7 @@ And here’s the sphere:
 
     class sphere : public hittable {
       public:
-        sphere(const point3& center, double radius) : center(center), radius(radius) {}
+        sphere(const point3& center, double radius) : center(center), radius(fmax(0,radius)) {}
 
         bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override {
             vec3 oc = center - r.origin();
@@ -2795,7 +2795,7 @@ To achieve this, `hit_record` needs to be told the material that is assigned to 
       public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         sphere(const point3& center, double radius, shared_ptr<material> mat)
-          : center(center), radius(radius), mat(mat) {}
+          : center(center), radius(fmax(0,radius)), mat(mat) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
@@ -3477,42 +3477,39 @@ material:
 
 Modeling a Hollow Glass Sphere
 -------------------------------
-An interesting and easy trick with dielectric spheres is to note that if you use a negative radius,
-the geometry is unaffected, but the surface normal points inward.
+Let's model a hollow glass sphere. This is a sphere of some thickness with another sphere of air
+inside it. If you think about the path of a ray going through such an object, it will hit the outer
+sphere, refract, hit the inner sphere (assuming we do hit it), refract a second time, and travel
+through the air inside. Then it will continue on, hit the inside surface of the inner sphere,
+refract back, then hit the inside surface of the outer sphere, and finally refract and exit back
+into the scene atmosphere.
 
-However, properly handling negative radii can be tricky. Recall the line from `sphere::hit()` in
-listing [sphere-material] that calculates the outward normal:
+The outer sphere is just modeled with a standard glass sphere, with an index of refraction of around
+1.50. The inner sphere is a bit different, because _its_ index of refraction will now be relative to
+the "glass atmosphere" of the outer sphere. This is actually simple to specify, as our
+index-of-refraction parameter to the dielectric material can be interpreted as the ratio of the
+index of refraction of the object over the index of refraction of the enclosing medium.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 outward_normal = (rec.p - center) / radius;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [proper-invert-sphere-normal]: Proper normal handling for spheres with negative radii]
+In this case, the inner sphere would have an index of refraction of air (the inner sphere material)
+over the index of refraction of glass (the enclosing medium), or $1.00/1.50 = 0.67$.
 
-In your own implementation, you might have been tempted to instead do something like this:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 outward_normal = (rec.p - center).unit_vector();
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [improper-invert-sphere-normal]:
-        Problematic normal calculation for spheres with negative radii
-    ]
-
-If you do that, spheres with negative radii won't work properly. Since a sphere with a negative
-radius is a _bubble_, its interior is the infinite space outside the sphere. Its exterior is the
-finite bubble inside the sphere, so the outward normal needs to point toward the sphere center.
-Dividing by the (negative) radius flips the normal as we want. If you implmented your code like the
-second example above, you'll want to fix that now.
-
-Let's use this hollow sphere hack to model the interior of a sphere with a given thickness. To do
-this, add a second _inverted_ glass sphere inside the original glass sphere:
+Here's the code:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
+    auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
+    auto material_left   = make_shared<dielectric>(1.50);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    auto material_bubble = make_shared<dielectric>(0.67);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
+
     world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
     world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
     world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),  -0.4, material_left));
+    world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.4, material_bubble));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
     ...
@@ -3520,7 +3517,7 @@ this, add a second _inverted_ glass sphere inside the original glass sphere:
     [Listing [scene-hollow-glass]: <kbd>[main.cc]</kbd> Scene with hollow glass sphere]
 
 <div class='together'>
-This gives:
+And here's the result:
 
   ![<span class='num'>Image 18:</span> A hollow glass sphere
   ](../images/img-1.18-glass-hollow.png class='pixel')
@@ -3772,13 +3769,14 @@ We'll change back to the prior scene, and use the new viewpoint:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
         auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
-        auto material_left   = make_shared<dielectric>(1.5);
+        auto material_left   = make_shared<dielectric>(1.50);
+        auto material_bubble = make_shared<dielectric>(0.67);
         auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
 
         world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
         world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
         world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
-        world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),  -0.4, material_left));
+        world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.4, material_bubble));
         world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
