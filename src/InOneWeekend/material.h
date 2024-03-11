@@ -28,7 +28,7 @@ class material {
 
 class lambertian : public material {
   public:
-    lambertian(const color& a) : albedo(a) {}
+    lambertian(const color& c) : c(c) {}
 
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
     const override {
@@ -39,41 +39,42 @@ class lambertian : public material {
             scatter_direction = rec.normal;
 
         scattered = ray(rec.p, scatter_direction);
-        attenuation = albedo;
+        attenuation = c;
         return true;
     }
 
   private:
-    color albedo;
+    color c;
 };
 
 
 class metal : public material {
   public:
-    metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
+    metal(const color& c, double fuzz) : c(c), fuzz(fuzz < 1 ? fuzz : 1) {}
 
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
     const override {
         vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
         scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());
-        attenuation = albedo;
+        attenuation = c;
+
         return (dot(scattered.direction(), rec.normal) > 0);
     }
 
   private:
-    color albedo;
+    color c;
     double fuzz;
 };
 
 
 class dielectric : public material {
   public:
-    dielectric(double index_of_refraction) : ir(index_of_refraction) {}
+    dielectric(double ior) : ior(ior) {}
 
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
     const override {
         attenuation = color(1.0, 1.0, 1.0);
-        double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
+        double refraction_ratio = rec.front_face ? (1.0/ior) : ior;
 
         vec3 unit_direction = unit_vector(r_in.direction());
         double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
@@ -92,7 +93,7 @@ class dielectric : public material {
     }
 
   private:
-    double ir; // Index of Refraction
+    double ior; // Index of Refraction
 
     static double reflectance(double cosine, double ref_idx) {
         // Use Schlick's approximation for reflectance.

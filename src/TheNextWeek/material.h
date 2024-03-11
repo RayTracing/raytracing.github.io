@@ -33,8 +33,8 @@ class material {
 
 class lambertian : public material {
   public:
-    lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
-    lambertian(shared_ptr<texture> a) : albedo(a) {}
+    lambertian(const color& c) : tex(make_shared<solid_color>(c)) {}
+    lambertian(shared_ptr<texture> tex) : tex(tex) {}
 
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
     const override {
@@ -45,41 +45,42 @@ class lambertian : public material {
             scatter_direction = rec.normal;
 
         scattered = ray(rec.p, scatter_direction, r_in.time());
-        attenuation = albedo->value(rec.u, rec.v, rec.p);
+        attenuation = tex->value(rec.u, rec.v, rec.p);
         return true;
     }
 
   private:
-    shared_ptr<texture> albedo;
+    shared_ptr<texture> tex;
 };
 
 
 class metal : public material {
   public:
-    metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
+    metal(const color& c, double fuzz) : c(c), fuzz(fuzz < 1 ? fuzz : 1) {}
 
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
     const override {
         vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
         scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
-        attenuation = albedo;
+        attenuation = c;
+
         return (dot(scattered.direction(), rec.normal) > 0);
     }
 
   private:
-    color albedo;
+    color c;
     double fuzz;
 };
 
 
 class dielectric : public material {
   public:
-    dielectric(double index_of_refraction) : ir(index_of_refraction) {}
+    dielectric(double ior) : ior(ior) {}
 
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
     const override {
         attenuation = color(1.0, 1.0, 1.0);
-        double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
+        double refraction_ratio = rec.front_face ? (1.0/ior) : ior;
 
         vec3 unit_direction = unit_vector(r_in.direction());
         double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
@@ -98,7 +99,7 @@ class dielectric : public material {
     }
 
   private:
-    double ir; // Index of Refraction
+    double ior; // Index of Refraction
 
     static double reflectance(double cosine, double ref_idx) {
         // Use Schlick's approximation for reflectance.
@@ -111,8 +112,8 @@ class dielectric : public material {
 
 class diffuse_light : public material {
   public:
-    diffuse_light(shared_ptr<texture> a) : emit(a) {}
-    diffuse_light(const color& c) : emit(make_shared<solid_color>(c)) {}
+    diffuse_light(shared_ptr<texture> tex) : tex(tex) {}
+    diffuse_light(const color& c) : tex(make_shared<solid_color>(c)) {}
 
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
     const override {
@@ -120,28 +121,28 @@ class diffuse_light : public material {
     }
 
     color emitted(double u, double v, const point3& p) const override {
-        return emit->value(u, v, p);
+        return tex->value(u, v, p);
     }
 
   private:
-    shared_ptr<texture> emit;
+    shared_ptr<texture> tex;
 };
 
 
 class isotropic : public material {
   public:
-    isotropic(const color& c) : albedo(make_shared<solid_color>(c)) {}
-    isotropic(shared_ptr<texture> a) : albedo(a) {}
+    isotropic(const color& c) : tex(make_shared<solid_color>(c)) {}
+    isotropic(shared_ptr<texture> tex) : tex(tex) {}
 
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
     const override {
         scattered = ray(rec.p, random_unit_vector(), r_in.time());
-        attenuation = albedo->value(rec.u, rec.v, rec.p);
+        attenuation = tex->value(rec.u, rec.v, rec.p);
         return true;
     }
 
   private:
-    shared_ptr<texture> albedo;
+    shared_ptr<texture> tex;
 };
 
 

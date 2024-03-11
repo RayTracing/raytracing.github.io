@@ -15,7 +15,7 @@ class interval {
 
     interval() : min(+infinity), max(-infinity) {} // Default interval is empty
 
-    interval(double _min, double _max) : min(_min), max(_max) {}
+    interval(double min, double max) : min(min), max(max) {}
 
     double size() const {
         return max - min;

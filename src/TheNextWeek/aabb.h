@@ -20,8 +20,8 @@ class aabb {
 
     aabb() {} // The default AABB is empty, since intervals are empty by default.
 
-    aabb(const interval& _x, const interval& _y, const interval& _z)
-      : x(_x), y(_y), z(_z)
+    aabb(const interval& x, const interval& y, const interval& z)
+      : x(x), y(y), z(z)
     {
         pad_to_minimums();
     }
