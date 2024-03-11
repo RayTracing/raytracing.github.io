@@ -266,7 +266,7 @@ for the time of intersection:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             scattered = ray(rec.p, scatter_direction, r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            attenuation = c;
+            attenuation = albedo;
             return true;
         }
         ...
@@ -280,7 +280,7 @@ for the time of intersection:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            attenuation = c;
+            attenuation = albedo;
             return (dot(scattered.direction(), rec.normal) > 0);
         }
         ...
@@ -1215,7 +1215,7 @@ Constant Color Texture
 
     class solid_color : public texture {
       public:
-        solid_color(const color& c) : color_value(c) {}
+        solid_color(const color& albedo) : color_value(albedo) {}
 
         solid_color(double red, double green, double blue) : solid_color(color(red,green,blue)) {}
 
@@ -1322,7 +1322,7 @@ colors:
     class lambertian : public material {
       public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        lambertian(const color& c) : tex(make_shared<solid_color>(c)) {}
+        lambertian(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
         lambertian(shared_ptr<texture> tex) : tex(tex) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -3079,7 +3079,7 @@ the ray what color it is and performs no reflection. It’s very simple:
     class diffuse_light : public material {
       public:
         diffuse_light(shared_ptr<texture> tex) : tex(tex) {}
-        diffuse_light(const color& c) : tex(make_shared<solid_color>(c)) {}
+        diffuse_light(const color& emit) : tex(make_shared<solid_color>(emit)) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {

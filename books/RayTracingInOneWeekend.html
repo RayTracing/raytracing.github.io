@@ -2844,18 +2844,18 @@ class:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     class lambertian : public material {
       public:
-        lambertian(const color& c) : c(c) {}
+        lambertian(const color& albedo) : albedo(albedo) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
             auto scatter_direction = rec.normal + random_unit_vector();
             scattered = ray(rec.p, scatter_direction);
-            attenuation = c;
+            attenuation = albedo;
             return true;
         }
 
       private:
-        color c;
+        color albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [lambertian-initial]: <kbd>[material.h]</kbd> The new lambertian material class]
@@ -2896,7 +2896,7 @@ the vector is very close to zero in all dimensions.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
       public:
-        lambertian(const color& c) : c(c) {}
+        lambertian(const color& albedo) : albedo(albedo) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
@@ -2910,12 +2910,12 @@ the vector is very close to zero in all dimensions.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             scattered = ray(rec.p, scatter_direction);
-            attenuation = c;
+            attenuation = albedo;
             return true;
         }
 
       private:
-        color c;
+        color albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [lambertian-catch-zero]: <kbd>[material.h]</kbd> Lambertian scatter, bullet-proof]
@@ -2964,18 +2964,18 @@ The metal material just reflects rays using that formula:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     class metal : public material {
       public:
-        metal(const color& c) : c(c) {}
+        metal(const color& albedo) : albedo(albedo) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
             vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
             scattered = ray(rec.p, reflected);
-            attenuation = c;
+            attenuation = albedo;
             return true;
         }
 
       private:
-        color c;
+        color albedo;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [metal-material]: <kbd>[material.h]</kbd> Metal material with reflectance function]
@@ -3099,7 +3099,7 @@ those.
     class metal : public material {
       public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        metal(const color& c, double fuzz) : c(c), fuzz(fuzz < 1 ? fuzz : 1) {}
+        metal(const color& albedo, double fuzz) : albedo(albedo), fuzz(fuzz < 1 ? fuzz : 1) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
@@ -3108,14 +3108,14 @@ those.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             scattered = ray(rec.p, reflected + fuzz*random_unit_vector());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            attenuation = c;
+            attenuation = albedo;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             return (dot(scattered.direction(), rec.normal) > 0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
       private:
-        color c;
+        color albedo;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double fuzz;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3252,12 +3252,12 @@ And the dielectric material that always refracts is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     class dielectric : public material {
       public:
-        dielectric(double ior) : ior(ior) {}
+        dielectric(double ref_index) : ref_index(ref_index) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
             attenuation = color(1.0, 1.0, 1.0);
-            double refraction_ratio = rec.front_face ? (1.0/ior) : ior;
+            double refraction_ratio = rec.front_face ? (1.0/ref_index) : ref_index;
 
             vec3 unit_direction = unit_vector(r_in.direction());
             vec3 refracted = refract(unit_direction, rec.normal, refraction_ratio);
@@ -3267,7 +3267,8 @@ And the dielectric material that always refracts is:
         }
 
       private:
-        double ior; // Index of Refraction
+        double ref_index;  // Refractive index in vacuum or air, or the ratio of the material's
+                           // refractive index over the refractive index of the enclosing media
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [dielectric-always-refract]: <kbd>[material.h]</kbd>
@@ -3365,12 +3366,12 @@ And the dielectric material that always refracts (when possible) is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class dielectric : public material {
       public:
-        dielectric(double ior) : ior(ior) {}
+        dielectric(double ref_index) : ref_index(ref_index) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
             attenuation = color(1.0, 1.0, 1.0);
-            double refraction_ratio = rec.front_face ? (1.0/ior) : ior;
+            double refraction_ratio = rec.front_face ? (1.0/ref_index) : ref_index;
 
             vec3 unit_direction = unit_vector(r_in.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -3391,7 +3392,8 @@ And the dielectric material that always refracts (when possible) is:
         }
 
       private:
-        double ior; // Index of Refraction
+        double ref_index;  // Refractive index in vacuum or air, or the ratio of the material's
+                           // refractive index over the refractive index of the enclosing media
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [dielectric-with-refraction]: <kbd>[material.h]</kbd>
@@ -3433,12 +3435,12 @@ material:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class dielectric : public material {
       public:
-        dielectric(double ior) : ior(ior) {}
+        dielectric(double ref_index) : ref_index(ref_index) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
             attenuation = color(1.0, 1.0, 1.0);
-            double refraction_ratio = rec.front_face ? (1.0/ior) : ior;
+            double refraction_ratio = rec.front_face ? (1.0/ref_index) : ref_index;
 
             vec3 unit_direction = unit_vector(r_in.direction());
             double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
@@ -3459,7 +3461,8 @@ material:
         }
 
       private:
-        double ior; // Index of Refraction
+        double ref_index;  // Refractive index in vacuum or air, or the ratio of the material's
+                           // refractive index over the refractive index of the enclosing media
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight

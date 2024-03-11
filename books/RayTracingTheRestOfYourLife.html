@@ -1666,7 +1666,7 @@ And the `lambertian` material becomes:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
       public:
-        lambertian(const color& c) : tex(make_shared<solid_color>(c)) {}
+        lambertian(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
         lambertian(shared_ptr<texture> tex) : tex(tex) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
@@ -1836,7 +1836,7 @@ PDF:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
       public:
-        lambertian(const color& c) : tex(make_shared<solid_color>(c)) {}
+        lambertian(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
         lambertian(shared_ptr<texture> tex) : tex(tex) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
@@ -2326,7 +2326,7 @@ But first, let's quickly update the `isotropic` material:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class isotropic : public material {
       public:
-        isotropic(const color& c) : tex(make_shared<solid_color>(c)) {}
+        isotropic(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
         isotropic(shared_ptr<texture> tex) : tex(tex) {}
 
 
@@ -3170,7 +3170,7 @@ The `lambertian` material becomes simpler:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
       public:
-        lambertian(const color& c) : tex(make_shared<solid_color>(c)) {}
+        lambertian(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
         lambertian(shared_ptr<texture> tex) : tex(tex) {}
 
 
@@ -3202,7 +3202,7 @@ As does the `isotropic` material:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class isotropic : public material {
       public:
-        isotropic(const color& c) : tex(make_shared<solid_color>(c)) {}
+        isotropic(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
         isotropic(shared_ptr<texture> tex) : tex(tex) {}
 
 
@@ -3294,12 +3294,12 @@ and dielectric materials are easy to fix.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class metal : public material {
       public:
-        metal(const color& c, double fuzz) : c(c), fuzz(fuzz < 1 ? fuzz : 1) {}
+        metal(const color& albedo, double fuzz) : albedo(albedo), fuzz(fuzz < 1 ? fuzz : 1) {}
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
-            srec.attenuation = c;
+            srec.attenuation = albedo;
             srec.pdf_ptr = nullptr;
             srec.skip_pdf = true;
 
@@ -3311,7 +3311,7 @@ and dielectric materials are easy to fix.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
       private:
-        color c;
+        color albedo;
         double fuzz;
     };
 
@@ -3319,7 +3319,7 @@ and dielectric materials are easy to fix.
 
     class dielectric : public material {
       public:
-        dielectric(double ior) : ior(ior) {}
+        dielectric(double ref_index) : ref_index(ref_index) {}
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -3328,7 +3328,7 @@ and dielectric materials are easy to fix.
             srec.pdf_ptr = nullptr;
             srec.skip_pdf = true;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            double refraction_ratio = rec.front_face ? (1.0/ior) : ior;
+            double refraction_ratio = rec.front_face ? (1.0/ref_index) : ref_index;
 
             vec3 unit_direction = unit_vector(r_in.direction());
             double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
