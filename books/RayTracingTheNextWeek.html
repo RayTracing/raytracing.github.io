@@ -179,12 +179,12 @@ interval, so it really can be sampled at any time.)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // Stationary Sphere
         sphere(const point3& center, double radius, shared_ptr<material> mat)
-          : center1(center), radius(radius), mat(mat), is_moving(false) {}
+          : center1(center), radius(fmax(0,radius)), mat(mat), is_moving(false) {}
 
         // Moving Sphere
         sphere(const point3& center1, const point3& center2, double radius,
                shared_ptr<material> mat)
-          : center1(center1), radius(radius), mat(mat), is_moving(true)
+          : center1(center1), radius(fmax(0,radius)), mat(mat), is_moving(true)
         {
             center_vec = center2 - center1;
         }
@@ -724,7 +724,7 @@ For a stationary sphere, the `bounding_box` function is easy:
         // Stationary Sphere
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         sphere(const point3& center, double radius, shared_ptr<material> mat)
-          : center1(center), radius(radius), mat(mat), is_moving(false)
+          : center1(center), radius(fmax(0,radius)), mat(mat), is_moving(false)
         {
             auto rvec = vec3(radius, radius, radius);
             bbox = aabb(center1 - rvec, center1 + rvec);
@@ -760,7 +760,7 @@ two boxes.
         // Moving Sphere
         sphere(const point3& center1, const point3& center2, double radius,
                shared_ptr<material> mat)
-          : center1(center1), radius(radius), mat(mat), is_moving(true)
+          : center1(center1), radius(fmax(0,radius)), mat(mat), is_moving(true)
         {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto rvec = vec3(radius, radius, radius);
