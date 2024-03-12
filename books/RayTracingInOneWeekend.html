@@ -3503,14 +3503,16 @@ through the air inside. Then it will continue on, hit the inside surface of the 
 refract back, then hit the inside surface of the outer sphere, and finally refract and exit back
 into the scene atmosphere.
 
-The outer sphere is just modeled with a standard glass sphere, with an index of refraction of around
-1.50. The inner sphere is a bit different, because _its_ index of refraction should be relative to
-the "glass atmosphere" of the surrounding outer sphere. This is actually simple to specify, as our
-index-of-refraction parameter to the dielectric material can be interpreted as the ratio of the
-index of refraction of the object over the index of refraction of the enclosing medium.
+The outer sphere is just modeled with a standard glass sphere, with a refractive index of around
+1.50 (modeling a refraction from the outside air into glass). The inner sphere is a bit different
+because _its_ refractive index should be relative to the "glass atmosphere" of the surrounding outer
+sphere, thus modeling a transition from glass into the inner air.
 
-In this case, the inner sphere would have an index of refraction of air (the inner sphere material)
-over the index of refraction of glass (the enclosing medium), or $1.00/1.50 = 0.67$.
+This is actually simple to specify, as the `ref_index` parameter to the dielectric material can be
+interpreted as the _ratio_ of the refractive index of the object divided by the refractive index of
+the enclosing medium. In this case, the inner sphere would have an refractive index of air (the
+inner sphere material) over the index of refraction of glass (the enclosing medium), or $1.00/1.50 =
+0.67$.
 
 Here's the code:
 
