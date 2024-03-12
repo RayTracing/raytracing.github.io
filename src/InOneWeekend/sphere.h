@@ -18,8 +18,8 @@
 
 class sphere : public hittable {
   public:
-    sphere(const point3& _center, double _radius, shared_ptr<material> _material)
-      : center(_center), radius(_radius), mat(_material) {}
+    sphere(const point3& center, double radius, shared_ptr<material> mat)
+      : center(center), radius(radius), mat(mat) {}
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         vec3 oc = center - r.origin();

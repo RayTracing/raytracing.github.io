@@ -27,27 +27,27 @@ class texture {
 
 class solid_color : public texture {
   public:
-    solid_color(const color& c) : color_value(c) {}
+    solid_color(const color& albedo) : albedo(albedo) {}
 
     solid_color(double red, double green, double blue)
       : solid_color(color(red,green,blue)) {}
 
     color value(double u, double v, const point3& p) const override {
-        return color_value;
+        return albedo;
     }
 
   private:
-    color color_value;
+    color albedo;
 };
 
 
 class checker_texture : public texture {
   public:
-    checker_texture(double _scale, shared_ptr<texture> _even, shared_ptr<texture> _odd)
-      : inv_scale(1.0 / _scale), even(_even), odd(_odd) {}
+    checker_texture(double scale, shared_ptr<texture> even, shared_ptr<texture> odd)
+      : inv_scale(1.0 / scale), even(even), odd(odd) {}
 
-    checker_texture(double _scale, const color& c1, const color& c2)
-      : inv_scale(1.0 / _scale),
+    checker_texture(double scale, const color& c1, const color& c2)
+      : inv_scale(1.0 / scale),
         even(make_shared<solid_color>(c1)),
         odd(make_shared<solid_color>(c2))
     {}
@@ -73,7 +73,7 @@ class noise_texture : public texture {
   public:
     noise_texture() {}
 
-    noise_texture(double sc) : scale(sc) {}
+    noise_texture(double scale) : scale(scale) {}
 
     color value(double u, double v, const point3& p) const override {
         return color(.5, .5, .5) * (1 + sin(scale * p.z() + 10 * noise.turb(p, 7)));

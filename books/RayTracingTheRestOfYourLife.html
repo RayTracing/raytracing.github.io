@@ -1666,8 +1666,8 @@ And the `lambertian` material becomes:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
       public:
-        lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
-        lambertian(shared_ptr<texture> a) : albedo(a) {}
+        lambertian(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
+        lambertian(shared_ptr<texture> tex) : tex(tex) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
@@ -1678,7 +1678,7 @@ And the `lambertian` material becomes:
                 scatter_direction = rec.normal;
 
             scattered = ray(rec.p, scatter_direction, r_in.time());
-            attenuation = albedo->value(rec.u, rec.v, rec.p);
+            attenuation = tex->value(rec.u, rec.v, rec.p);
             return true;
         }
 
@@ -1691,7 +1691,7 @@ And the `lambertian` material becomes:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
       private:
-        shared_ptr<texture> albedo;
+        shared_ptr<texture> tex;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [class-lambertian-impsample]: <kbd>[material.h]</kbd>
@@ -1836,8 +1836,8 @@ PDF:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
       public:
-        lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
-        lambertian(shared_ptr<texture> a) : albedo(a) {}
+        lambertian(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
+        lambertian(shared_ptr<texture> tex) : tex(tex) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
@@ -1850,7 +1850,7 @@ PDF:
                 scatter_direction = rec.normal;
 
             scattered = ray(rec.p, scatter_direction, r_in.time());
-            attenuation = albedo->value(rec.u, rec.v, rec.p);
+            attenuation = tex->value(rec.u, rec.v, rec.p);
             return true;
         }
 
@@ -2296,7 +2296,7 @@ We can rewrite our Lambertian material using this to get:
 
             scattered = ray(rec.p, unit_vector(scatter_direction), r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            attenuation = albedo->value(rec.u, rec.v, rec.p);
+            attenuation = tex->value(rec.u, rec.v, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             pdf = dot(uvw.w(), scattered.direction()) / pi;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2326,15 +2326,15 @@ But first, let's quickly update the `isotropic` material:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class isotropic : public material {
       public:
-        isotropic(const color& c) : albedo(make_shared<solid_color>(c)) {}
-        isotropic(shared_ptr<texture> a) : albedo(a) {}
+        isotropic(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
+        isotropic(shared_ptr<texture> tex) : tex(tex) {}
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         bool scatter(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
         ) const override {
-            attenuation = albedo->value(rec.u, rec.v, rec.p);
+            attenuation = tex->value(rec.u, rec.v, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             scattered = ray(rec.p, random_unit_vector(), r_in.time());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2352,7 +2352,7 @@ But first, let's quickly update the `isotropic` material:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
       private:
-        shared_ptr<texture> albedo;
+        shared_ptr<texture> tex;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [class-isotropic-impsample]: <kbd>[material.h]</kbd>
@@ -2707,8 +2707,8 @@ Now we can try sampling directions toward a `hittable`, like the light.
     ...
     class hittable_pdf : public pdf {
       public:
-        hittable_pdf(const hittable& _objects, const point3& _origin)
-          : objects(_objects), origin(_origin)
+        hittable_pdf(const hittable& objects, const point3& origin)
+          : objects(objects), origin(origin)
         {}
 
         double value(const vec3& direction) const override {
@@ -2759,8 +2759,8 @@ And then we change `quad` to implement those functions:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class quad : public hittable {
       public:
-        quad(const point3& _Q, const vec3& _u, const vec3& _v, shared_ptr<material> m)
-          : Q(_Q), u(_u), v(_v), mat(m)
+        quad(const point3& Q, const vec3& u, const vec3& v, shared_ptr<material> mat)
+          : Q(Q), u(u), v(v), mat(mat)
         {
             auto n = cross(u, v);
             normal = unit_vector(n);
@@ -3170,13 +3170,13 @@ The `lambertian` material becomes simpler:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
       public:
-        lambertian(const color& a) : albedo(make_shared<solid_color>(a)) {}
-        lambertian(shared_ptr<texture> a) : albedo(a) {}
+        lambertian(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
+        lambertian(shared_ptr<texture> tex) : tex(tex) {}
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
-            srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
+            srec.attenuation = tex->value(rec.u, rec.v, rec.p);
             srec.pdf_ptr = make_shared<cosine_pdf>(rec.normal);
             srec.skip_pdf = false;
             return true;
@@ -3189,7 +3189,7 @@ The `lambertian` material becomes simpler:
         }
 
       private:
-        shared_ptr<texture> albedo;
+        shared_ptr<texture> tex;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [lambertian-scatter]: <kbd>[material.h]</kbd> New lambertian scatter() method]
@@ -3202,13 +3202,13 @@ As does the `isotropic` material:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class isotropic : public material {
       public:
-        isotropic(const color& c) : albedo(make_shared<solid_color>(c)) {}
-        isotropic(shared_ptr<texture> a) : albedo(a) {}
+        isotropic(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
+        isotropic(shared_ptr<texture> tex) : tex(tex) {}
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
-            srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
+            srec.attenuation = tex->value(rec.u, rec.v, rec.p);
             srec.pdf_ptr = make_shared<sphere_pdf>();
             srec.skip_pdf = false;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3221,7 +3221,7 @@ As does the `isotropic` material:
         }
 
       private:
-        shared_ptr<texture> albedo;
+        shared_ptr<texture> tex;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [isotropic-scatter]: <kbd>[material.h]</kbd> New isotropic scatter() method]
@@ -3294,7 +3294,7 @@ and dielectric materials are easy to fix.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class metal : public material {
       public:
-        metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
+        metal(const color& albedo, double fuzz) : albedo(albedo), fuzz(fuzz < 1 ? fuzz : 1) {}
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -3319,7 +3319,7 @@ and dielectric materials are easy to fix.
 
     class dielectric : public material {
       public:
-        dielectric(double index_of_refraction) : ir(index_of_refraction) {}
+        dielectric(double ref_index) : ref_index(ref_index) {}
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -3328,7 +3328,7 @@ and dielectric materials are easy to fix.
             srec.pdf_ptr = nullptr;
             srec.skip_pdf = true;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
+            double refraction_ratio = rec.front_face ? (1.0/ref_index) : ref_index;
 
             vec3 unit_direction = unit_vector(r_in.direction());
             double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
