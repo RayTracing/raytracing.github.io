@@ -21,6 +21,11 @@ class interval {
         return max - min;
     }
 
+    interval expand(double delta) const {
+        auto padding = delta/2;
+        return interval(min - padding, max + padding);
+    }
+
     bool contains(double x) const {
         return min <= x && x <= max;
     }
