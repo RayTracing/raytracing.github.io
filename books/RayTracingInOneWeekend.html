@@ -3152,6 +3152,25 @@ Clear materials such as water, glass, and diamond are dielectrics. When a light 
 splits into a reflected ray and a refracted (transmitted) ray. We’ll handle that by randomly
 choosing between reflection and refraction, only generating one scattered ray per interaction.
 
+As a quick review of terms, a _reflected_ ray hits a surface and then "bounces" off in a new
+direction.
+
+A _refracted_ ray bends as it transitions from a material's surroundings into the material itself
+(as with glass or water). This is why a pencil looks bent when partially inserted in water.
+
+The amount that a refracted ray bends is determined by the material's _refractive index_. Generally,
+this is a single value that describes how much light bends when entering a material from a vacuum.
+Glass has a refractive index of something like 1.5&ndash;1.7, and air has a small refractive index
+of 1.000293.
+
+When a transparent material is embedded in a different transparent material, you can describe the
+refraction with a relative refraction index: the refractive index of the object's material divided
+by the refractive index of the surrounding material. For example, if you want to render a glass ball
+under water, then the glass ball would have an effective refractive index of 1.125. This is given by
+the refractive index of glass (1.5) divided by the refractive index of water (1.333).
+
+You can find the refractive index of most common materials with a quick internet search.
+
 
 Refraction
 -----------
@@ -3485,8 +3504,8 @@ refract back, then hit the inside surface of the outer sphere, and finally refra
 into the scene atmosphere.
 
 The outer sphere is just modeled with a standard glass sphere, with an index of refraction of around
-1.50. The inner sphere is a bit different, because _its_ index of refraction will now be relative to
-the "glass atmosphere" of the outer sphere. This is actually simple to specify, as our
+1.50. The inner sphere is a bit different, because _its_ index of refraction should be relative to
+the "glass atmosphere" of the surrounding outer sphere. This is actually simple to specify, as our
 index-of-refraction parameter to the dielectric material can be interpreted as the ratio of the
 index of refraction of the object over the index of refraction of the enclosing medium.
 
