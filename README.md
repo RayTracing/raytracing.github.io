@@ -140,8 +140,14 @@ You can specify the target with the `--target <program>` option, where the progr
 `inOneWeekend`, `theNextWeek`, `theRestOfYourLife`, or any of the demonstration programs. By default
 (with no `--target` option), CMake will build all targets.
 
-On Windows, you can build either `debug` (the default) or `release` (the optimized version). To
+    $ cmake --build build --target inOneWeekend
+
+You can build either `debug` (the default) or `release` (the optimized version). To
 specify this, use the `--config <debug|release>` option.
+
+    $ cmake --build build --config release
+
+We recommend building the `release` version before the final render for fastest results.
 
 ### CMake GUI on Windows
 You may choose to use the CMake GUI when building on windows.
