@@ -2829,11 +2829,16 @@ To achieve this, `hit_record` needs to be told the material that is assigned to 
 
 Modeling Light Scatter and Reflectance
 ---------------------------------------
-For the Lambertian (diffuse) case we already have, it can either always scatter and attenuate by its
+Here and throughout these books we will use the term _albedo_ (Latin for "whiteness"). Albedo is a
+precise technical term in some disciplines, but in all cases it is used to define some form of
+_fractional reflectance_. Albedo will vary with material color and (as we will later implement for
+glass materials) can also vary with incident viewing direction (the direction of the incoming ray).
+
+Lambertian (diffuse) reflectance can either always scatter and attenuate light according to its
 reflectance $R$, or it can sometimes scatter (with probabilty $1-R$) with no attenuation (where a
 ray that isn't scattered is just absorbed into the material). It could also be a mixture of both
-those strategies. We will choose to always scatter, so Lambertian materials become this simple
-class:
+those strategies. We will choose to always scatter, so implementing Lambertian materials becomes a
+simple task:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material {
