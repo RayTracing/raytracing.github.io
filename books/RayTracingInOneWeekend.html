@@ -1114,7 +1114,7 @@ And here’s the sphere:
 
     class sphere : public hittable {
       public:
-        sphere(const point3& center, double radius) : center(center), radius(radius) {}
+        sphere(const point3& center, double radius) : center(center), radius(fmax(0,radius)) {}
 
         bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override {
             vec3 oc = center - r.origin();
@@ -2795,7 +2795,7 @@ To achieve this, `hit_record` needs to be told the material that is assigned to 
       public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         sphere(const point3& center, double radius, shared_ptr<material> mat)
-          : center(center), radius(radius), mat(mat) {}
+          : center(center), radius(fmax(0,radius)), mat(mat) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
@@ -3157,6 +3157,25 @@ Clear materials such as water, glass, and diamond are dielectrics. When a light 
 splits into a reflected ray and a refracted (transmitted) ray. We’ll handle that by randomly
 choosing between reflection and refraction, only generating one scattered ray per interaction.
 
+As a quick review of terms, a _reflected_ ray hits a surface and then "bounces" off in a new
+direction.
+
+A _refracted_ ray bends as it transitions from a material's surroundings into the material itself
+(as with glass or water). This is why a pencil looks bent when partially inserted in water.
+
+The amount that a refracted ray bends is determined by the material's _refractive index_. Generally,
+this is a single value that describes how much light bends when entering a material from a vacuum.
+Glass has a refractive index of something like 1.5&ndash;1.7, and air has a small refractive index
+of 1.000293.
+
+When a transparent material is embedded in a different transparent material, you can describe the
+refraction with a relative refraction index: the refractive index of the object's material divided
+by the refractive index of the surrounding material. For example, if you want to render a glass ball
+under water, then the glass ball would have an effective refractive index of 1.125. This is given by
+the refractive index of glass (1.5) divided by the refractive index of water (1.333).
+
+You can find the refractive index of most common materials with a quick internet search.
+
 
 Refraction
 -----------
@@ -3257,23 +3276,24 @@ And the dielectric material that always refracts is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     class dielectric : public material {
       public:
-        dielectric(double ref_index) : ref_index(ref_index) {}
+        dielectric(double refraction_index) : refraction_index(refraction_index) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
             attenuation = color(1.0, 1.0, 1.0);
-            double refraction_ratio = rec.front_face ? (1.0/ref_index) : ref_index;
+            double ri = rec.front_face ? (1.0/refraction_index) : refraction_index;
 
             vec3 unit_direction = unit_vector(r_in.direction());
-            vec3 refracted = refract(unit_direction, rec.normal, refraction_ratio);
+            vec3 refracted = refract(unit_direction, rec.normal, ri);
 
             scattered = ray(rec.p, refracted);
             return true;
         }
 
       private:
-        double ref_index;  // Refractive index in vacuum or air, or the ratio of the material's
-                           // refractive index over the refractive index of the enclosing media
+        // Refractive index in vacuum or air, or the ratio of the material's refractive index over
+        // the refractive index of the enclosing media
+        double refraction_index;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [dielectric-always-refract]: <kbd>[material.h]</kbd>
@@ -3327,7 +3347,7 @@ the equality between the two sides of the equation is broken, and a solution can
 solution does not exist, the glass cannot refract, and therefore must reflect the ray:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    if (refraction_ratio * sin_theta > 1.0) {
+    if (ri * sin_theta > 1.0) {
         // Must Reflect
         ...
     } else {
@@ -3355,7 +3375,7 @@ and
     double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
     double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
 
-    if (refraction_ratio * sin_theta > 1.0) {
+    if (ri * sin_theta > 1.0) {
         // Must Reflect
         ...
     } else {
@@ -3371,25 +3391,25 @@ And the dielectric material that always refracts (when possible) is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class dielectric : public material {
       public:
-        dielectric(double ref_index) : ref_index(ref_index) {}
+        dielectric(double refraction_index) : refraction_index(refraction_index) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
             attenuation = color(1.0, 1.0, 1.0);
-            double refraction_ratio = rec.front_face ? (1.0/ref_index) : ref_index;
+            double ri = rec.front_face ? (1.0/refraction_index) : refraction_index;
 
             vec3 unit_direction = unit_vector(r_in.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
             double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
 
-            bool cannot_refract = refraction_ratio * sin_theta > 1.0;
+            bool cannot_refract = ri * sin_theta > 1.0;
             vec3 direction;
 
             if (cannot_refract)
                 direction = reflect(unit_direction, rec.normal);
             else
-                direction = refract(unit_direction, rec.normal, refraction_ratio);
+                direction = refract(unit_direction, rec.normal, ri);
 
             scattered = ray(rec.p, direction);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3397,8 +3417,9 @@ And the dielectric material that always refracts (when possible) is:
         }
 
       private:
-        double ref_index;  // Refractive index in vacuum or air, or the ratio of the material's
-                           // refractive index over the refractive index of the enclosing media
+        // Refractive index in vacuum or air, or the ratio of the material's refractive index over
+        // the refractive index of the enclosing media
+        double refraction_index;
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [dielectric-with-refraction]: <kbd>[material.h]</kbd>
@@ -3440,40 +3461,41 @@ material:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class dielectric : public material {
       public:
-        dielectric(double ref_index) : ref_index(ref_index) {}
+        dielectric(double refraction_index) : refraction_index(refraction_index) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
             attenuation = color(1.0, 1.0, 1.0);
-            double refraction_ratio = rec.front_face ? (1.0/ref_index) : ref_index;
+            double ri = rec.front_face ? (1.0/refraction_index) : refraction_index;
 
             vec3 unit_direction = unit_vector(r_in.direction());
             double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
             double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
 
-            bool cannot_refract = refraction_ratio * sin_theta > 1.0;
+            bool cannot_refract = ri * sin_theta > 1.0;
             vec3 direction;
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            if (cannot_refract || reflectance(cos_theta, refraction_ratio) > random_double())
+            if (cannot_refract || reflectance(cos_theta, ri) > random_double())
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 direction = reflect(unit_direction, rec.normal);
             else
-                direction = refract(unit_direction, rec.normal, refraction_ratio);
+                direction = refract(unit_direction, rec.normal, ri);
 
             scattered = ray(rec.p, direction);
             return true;
         }
 
       private:
-        double ref_index;  // Refractive index in vacuum or air, or the ratio of the material's
-                           // refractive index over the refractive index of the enclosing media
+        // Refractive index in vacuum or air, or the ratio of the material's refractive index over
+        // the refractive index of the enclosing media
+        double refraction_index;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        static double reflectance(double cosine, double ref_idx) {
+        static double reflectance(double cosine, double refraction_index) {
             // Use Schlick's approximation for reflectance.
-            auto r0 = (1-ref_idx) / (1+ref_idx);
+            auto r0 = (1-refraction_index) / (1+refraction_index);
             r0 = r0*r0;
             return r0 + (1-r0)*pow((1 - cosine),5);
         }
@@ -3485,42 +3507,41 @@ material:
 
 Modeling a Hollow Glass Sphere
 -------------------------------
-An interesting and easy trick with dielectric spheres is to note that if you use a negative radius,
-the geometry is unaffected, but the surface normal points inward.
+Let's model a hollow glass sphere. This is a sphere of some thickness with another sphere of air
+inside it. If you think about the path of a ray going through such an object, it will hit the outer
+sphere, refract, hit the inner sphere (assuming we do hit it), refract a second time, and travel
+through the air inside. Then it will continue on, hit the inside surface of the inner sphere,
+refract back, then hit the inside surface of the outer sphere, and finally refract and exit back
+into the scene atmosphere.
 
-However, properly handling negative radii can be tricky. Recall the line from `sphere::hit()` in
-listing [sphere-material] that calculates the outward normal:
+The outer sphere is just modeled with a standard glass sphere, with a refractive index of around
+1.50 (modeling a refraction from the outside air into glass). The inner sphere is a bit different
+because _its_ refractive index should be relative to the material of the surrounding outer sphere,
+thus modeling a transition from glass into the inner air.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 outward_normal = (rec.p - center) / radius;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [proper-invert-sphere-normal]: Proper normal handling for spheres with negative radii]
+This is actually simple to specify, as the `refraction_index` parameter to the dielectric material
+can be interpreted as the _ratio_ of the refractive index of the object divided by the refractive
+index of the enclosing medium. In this case, the inner sphere would have an refractive index of air
+(the inner sphere material) over the index of refraction of glass (the enclosing medium), or
+$1.00/1.50 = 0.67$.
 
-In your own implementation, you might have been tempted to instead do something like this:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    vec3 outward_normal = (rec.p - center).unit_vector();
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [improper-invert-sphere-normal]:
-        Problematic normal calculation for spheres with negative radii
-    ]
-
-If you do that, spheres with negative radii won't work properly. Since a sphere with a negative
-radius is a _bubble_, its interior is the infinite space outside the sphere. Its exterior is the
-finite bubble inside the sphere, so the outward normal needs to point toward the sphere center.
-Dividing by the (negative) radius flips the normal as we want. If you implmented your code like the
-second example above, you'll want to fix that now.
-
-Let's use this hollow sphere hack to model the interior of a sphere with a given thickness. To do
-this, add a second _inverted_ glass sphere inside the original glass sphere:
+Here's the code:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
+    auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
+    auto material_left   = make_shared<dielectric>(1.50);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    auto material_bubble = make_shared<dielectric>(0.67);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
+
     world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
     world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
     world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),  -0.4, material_left));
+    world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.4, material_bubble));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
     ...
@@ -3528,7 +3549,7 @@ this, add a second _inverted_ glass sphere inside the original glass sphere:
     [Listing [scene-hollow-glass]: <kbd>[main.cc]</kbd> Scene with hollow glass sphere]
 
 <div class='together'>
-This gives:
+And here's the result:
 
   ![<span class='num'>Image 18:</span> A hollow glass sphere
   ](../images/img-1.18-glass-hollow.png class='pixel')
@@ -3780,13 +3801,14 @@ We'll change back to the prior scene, and use the new viewpoint:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
         auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
-        auto material_left   = make_shared<dielectric>(1.5);
+        auto material_left   = make_shared<dielectric>(1.50);
+        auto material_bubble = make_shared<dielectric>(0.67);
         auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
 
         world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
         world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.5, material_center));
         world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
-        world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),  -0.4, material_left));
+        world.add(make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.4, material_bubble));
         world.add(make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
