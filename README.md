@@ -145,13 +145,34 @@ You can specify the target with the `--target <program>` option, where the progr
 
     $ cmake --build build --target inOneWeekend
 
-You can build either `debug` (the default) or `release` (the optimized version). To specify this,
-use the `--config <debug|release>` option.
+### Optimized Builds
+CMake supports Release and Debug configurations. These require slightly different invocations
+across Windows (MSVC) and Linux/macOS (using GCC or Clang). The following instructions will place
+optimized binaries under `build/Release` and debug binaries (unoptimized and containing debug
+symbols) under `build/Debug`:
 
-    $ cmake --build build --config release
+On Windows:
 
-We recommend building and running the `release` version (especially before the final render) for
-fastest results, unless you need extra debugging information of the (default) debug build.
+```shell
+$ cmake -B build
+$ cmake --build build --config Release  # Create release binaries in `build/Release`
+$ cmake --build build --config Debug    # Create release binaries in `build/Debug`
+```
+
+On Linux / macOS:
+
+```shell
+# Configure and build release binaries under `build/Release`
+$ cmake -B build/Release -DCMAKE_BUILD_TYPE=Release
+$ cmake --build build/Release
+
+# Configure and build debug binaries under `build/Debug`
+$ cmake -B build/Debug -DCMAKE_BUILD_TYPE=Debug
+$ cmake --build build/Debug
+```
+
+We recommend building and running the `Release` version (especially before the final render) for
+the fastest results, unless you need extra debugging information of the (default) debug build.
 
 ### CMake GUI on Windows
 You may choose to use the CMake GUI when building on windows.
