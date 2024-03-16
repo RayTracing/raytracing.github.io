@@ -2934,8 +2934,14 @@ reflected from a metal mirror? Vector math is our friend here:
   ![Figure [reflection]: Ray reflection](../images/fig-1.15-reflection.jpg)
 
 The reflected ray direction in red is just $\mathbf{v} + 2\mathbf{b}$. In our design, $\mathbf{n}$
-is a unit vector, but $\mathbf{v}$ may not be. The length of $\mathbf{b}$ should be $\mathbf{v}
-\cdot \mathbf{n}$. Because $\mathbf{v}$ points in, we will need a minus sign, yielding:
+is a unit vector (length one), but $\mathbf{v}$ may not be. To get the vector $\mathbf{b}$, we scale
+the normal vector by the length of the projection of $\mathbf{v}$ onto $\mathbf{n}$, which is given
+by the dot project $\mathbf{v} \cdot \mathbf{n}$. (If $\mathbf{n}$ were not a unit vector, we would
+also need to divide this dot project by the length of $\mathbf{n}$.) Finally, because $\mathbf{v}$
+points _into_ the surface, and we want $\mathbf{b}$ to point _out_ of the surface, we need to negate
+this projection length.
+
+Putting everything together, we get the following computation of the reflected vector:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
@@ -2973,7 +2979,7 @@ The metal material just reflects rays using that formula:
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
-            vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+            vec3 reflected = reflect(r_in.direction(), rec.normal);
             scattered = ray(rec.p, reflected);
             attenuation = albedo;
             return true;
@@ -3109,7 +3115,7 @@ those.
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
-            vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+            vec3 reflected = reflect(r_in.direction(), rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             scattered = ray(rec.p, reflected + fuzz*random_unit_vector());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
