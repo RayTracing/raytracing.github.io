@@ -84,6 +84,8 @@ include_directories(src)
 # different compiler or want to set different compiler options.
 
 message (STATUS "Compiler ID: " ${CMAKE_CXX_COMPILER_ID})
+message (STATUS "Release flags: " ${CMAKE_CXX_FLAGS_RELEASE})
+message (STATUS "Debug flags: " ${CMAKE_CXX_FLAGS_DEBUG})
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # /wd #### - Disable warning
