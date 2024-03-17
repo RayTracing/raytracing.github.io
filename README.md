@@ -156,7 +156,7 @@ On Windows:
 ```shell
 $ cmake -B build
 $ cmake --build build --config Release  # Create release binaries in `build/Release`
-$ cmake --build build --config Debug    # Create release binaries in `build/Debug`
+$ cmake --build build --config Debug    # Create debug binaries in `build/Debug`
 ```
 
 On Linux / macOS:
