@@ -615,9 +615,9 @@ Now we have everything we need to implement the new AABB class.
             // Treat the two points a and b as extrema for the bounding box, so we don't require a
             // particular minimum/maximum coordinate order.
 
-            x = span(a[0],b[0]);
-            y = span(a[1],b[1]);
-            z = span(a[2],b[2]);
+            x = (a[0] <= b[0]) ? interval(a[0], b[0]) : interval(b[0], a[0]);
+            y = (a[1] <= b[1]) ? interval(a[1], b[1]) : interval(b[1], a[1]);
+            z = (a[2] <= b[2]) ? interval(a[2], b[2]) : interval(b[2], a[2]);
         }
 
         const interval& axis_interval(int n) const {
@@ -634,12 +634,18 @@ Now we have everything we need to implement the new AABB class.
                 const interval& ax = axis_interval(axis);
                 const double adinv = 1.0 / ray_dir[axis];
 
-                auto s = (ax.min - ray_orig[axis]) * adinv;
-                auto t = (ax.max - ray_orig[axis]) * adinv;
+                auto t0 = (ax.min - ray_orig[axis]) * adinv;
+                auto t1 = (ax.max - ray_orig[axis]) * adinv;
 
-                ray_t = ray_t.intersect(span(s,t));
+                if (t0 < t1) {
+                    if (t0 > ray_t.min) ray_t.min = t0;
+                    if (t1 < ray_t.max) ray_t.max = t1;
+                } else {
+                    if (t1 > ray_t.min) ray_t.min = t1;
+                    if (t0 < ray_t.max) ray_t.max = t0;
+                }
 
-                if (ray_t.is_empty())
+                if (ray_t.max <= ray_t.min)
                     return false;
             }
             return true;
@@ -652,67 +658,6 @@ Now we have everything we need to implement the new AABB class.
 
 </div>
 
-<div class='together'>
-The new code above relies on three new interval functions we need to write: `interval::is_empty()`,
-`interval::intersect()`, and `span()`.
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class interval {
-      public:
-        double min, max;
-
-        interval() : min(+infinity), max(-infinity) {} // Default interval is empty
-
-        interval(double _min, double _max) : min(_min), max(_max) {}
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
-        bool is_empty() const {
-            // Returns false if the interval is empty (inside out), or if either bound is a
-            // floating-point NaN (not a number).
-            return !(min <= max);
-        }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        ...
-
-        interval expand(double delta) const {
-            auto padding = delta/2;
-            return interval(min - padding, max + padding);
-        }
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        interval intersect(const interval& other) const {
-            double a = min >= other.min ? min : other.min;
-            double b = max <= other.max ? max : other.max;
-            return interval(a,b);
-        }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-        static const interval empty, universe;
-    };
-
-    ...
-
-    interval operator+(double displacement, const interval& ival) {
-        return ival + displacement;
-    }
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
-    inline interval span(double a, double b) {
-        // Return the non-empty interval between a and b, regardless of their order.
-        if (a > b)
-            return interval(b, a);
-        return interval(a, b);
-    }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [new-interval-funcs]: <kbd>[interval.h]</kbd>
-        New interval functions is_empty(), intersect() and span()
-    ]
-
-</div>
 
 
 Constructing Bounding Boxes for Hittables

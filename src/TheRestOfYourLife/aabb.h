@@ -30,9 +30,9 @@ class aabb {
         // Treat the two points a and b as extrema for the bounding box, so we don't require a
         // particular minimum/maximum coordinate order.
 
-        x = span(a[0],b[0]);
-        y = span(a[1],b[1]);
-        z = span(a[2],b[2]);
+        x = (a[0] <= b[0]) ? interval(a[0], b[0]) : interval(b[0], a[0]);
+        y = (a[1] <= b[1]) ? interval(a[1], b[1]) : interval(b[1], a[1]);
+        z = (a[2] <= b[2]) ? interval(a[2], b[2]) : interval(b[2], a[2]);
 
         pad_to_minimums();
     }
@@ -57,12 +57,18 @@ class aabb {
             const interval& ax = axis_interval(axis);
             const double adinv = 1.0 / ray_dir[axis];
 
-            auto s = (ax.min - ray_orig[axis]) * adinv;
-            auto t = (ax.max - ray_orig[axis]) * adinv;
+            auto t0 = (ax.min - ray_orig[axis]) * adinv;
+            auto t1 = (ax.max - ray_orig[axis]) * adinv;
 
-            ray_t = ray_t.intersect(span(s,t));
+            if (t0 < t1) {
+                if (t0 > ray_t.min) ray_t.min = t0;
+                if (t1 < ray_t.max) ray_t.max = t1;
+            } else {
+                if (t1 > ray_t.min) ray_t.min = t1;
+                if (t0 < ray_t.max) ray_t.max = t0;
+            }
 
-            if (ray_t.is_empty())
+            if (ray_t.max <= ray_t.min)
                 return false;
         }
         return true;
