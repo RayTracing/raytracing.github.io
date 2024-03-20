@@ -13,17 +13,12 @@
 
 #include "rtweekend.h"
 
-#include "hittable.h"
-#include "texture.h"
+#include "hittable_list.h"
 
 
 class material {
   public:
     virtual ~material() = default;
-
-    virtual color emitted(double u, double v, const point3& p) const {
-        return color(0,0,0);
-    }
 
     virtual bool scatter(
         const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
@@ -33,8 +28,7 @@ class material {
 
 class lambertian : public material {
   public:
-    lambertian(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
-    lambertian(shared_ptr<texture> tex) : tex(tex) {}
+    lambertian(const color& albedo) : albedo(albedo) {}
 
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
     const override {
@@ -44,13 +38,13 @@ class lambertian : public material {
         if (scatter_direction.near_zero())
             scatter_direction = rec.normal;
 
-        scattered = ray(rec.p, scatter_direction, r_in.time());
-        attenuation = tex->value(rec.u, rec.v, rec.p);
+        scattered = ray(rec.p, scatter_direction);
+        attenuation = albedo;
         return true;
     }
 
   private:
-    shared_ptr<texture> tex;
+    color albedo;
 };
 
 
@@ -61,7 +55,7 @@ class metal : public material {
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
     const override {
         vec3 reflected = reflect(r_in.direction(), rec.normal);
-        scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
+        scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());
         attenuation = albedo;
 
         return (dot(scattered.direction(), rec.normal) > 0);
@@ -94,7 +88,7 @@ class dielectric : public material {
         else
             direction = refract(unit_direction, rec.normal, ri);
 
-        scattered = ray(rec.p, direction, r_in.time());
+        scattered = ray(rec.p, direction);
         return true;
     }
 
@@ -109,42 +103,6 @@ class dielectric : public material {
         r0 = r0*r0;
         return r0 + (1-r0)*pow((1 - cosine),5);
     }
-};
-
-
-class diffuse_light : public material {
-  public:
-    diffuse_light(shared_ptr<texture> tex) : tex(tex) {}
-    diffuse_light(const color& emit) : tex(make_shared<solid_color>(emit)) {}
-
-    bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
-    const override {
-        return false;
-    }
-
-    color emitted(double u, double v, const point3& p) const override {
-        return tex->value(u, v, p);
-    }
-
-  private:
-    shared_ptr<texture> tex;
-};
-
-
-class isotropic : public material {
-  public:
-    isotropic(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
-    isotropic(shared_ptr<texture> tex) : tex(tex) {}
-
-    bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
-    const override {
-        scattered = ray(rec.p, random_unit_vector(), r_in.time());
-        attenuation = tex->value(rec.u, rec.v, rec.p);
-        return true;
-    }
-
-  private:
-    shared_ptr<texture> tex;
 };
 
 
