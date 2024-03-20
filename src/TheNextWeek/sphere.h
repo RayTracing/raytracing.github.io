@@ -31,6 +31,11 @@ class sphere : public hittable {
            shared_ptr<material> mat)
       : center1(center1), radius(fmax(0,radius)), mat(mat), is_moving(true)
     {
+        auto rvec = vec3(radius, radius, radius);
+        aabb box1(center1 - rvec, center1 + rvec);
+        aabb box2(center2 - rvec, center2 + rvec);
+        bbox = aabb(box1, box2);
+        
         center_vec = center2 - center1;
     }
 
