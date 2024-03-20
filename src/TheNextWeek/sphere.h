@@ -31,6 +31,7 @@ class sphere : public hittable {
     }
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+        point3 center = is_moving ? sphere_center(r.time()) : center1;
         vec3 oc = center - r.origin();
         auto a = r.direction().length_squared();
         auto h = dot(r.direction(), oc);
