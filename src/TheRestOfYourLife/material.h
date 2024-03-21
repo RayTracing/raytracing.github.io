@@ -16,6 +16,8 @@
 #include "pdf.h"
 #include "texture.h"
 
+class hit_record;
+
 
 class scatter_record {
   public:

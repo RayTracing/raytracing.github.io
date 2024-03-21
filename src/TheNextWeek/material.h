@@ -13,8 +13,9 @@
 
 #include "rtweekend.h"
 
-#include "hittable.h"
 #include "texture.h"
+
+class hit_record;
 
 
 class material {
