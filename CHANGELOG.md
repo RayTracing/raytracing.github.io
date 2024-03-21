@@ -3,38 +3,98 @@ Change Log -- Ray Tracing in One Weekend
 
 # v4.0.0-alpha.2 (In Progress)
 
-This will likely change to the official v4.0.0 release, but we might put out another alpha before
-then.
+This alpha wraps up most of the major changes we expect to make to book 2 for the impending v4.0.0
+release. Since the alpha.1 release last August, we've been happy to have onboarded two new
+contributors: Arman Uguray and Nate Rupsis. They've been helping out a ton with this release, and
+Arman is also developing his GPU Ray Tracing book at the same time!
+
+Our plan is to get the final v4.0.0 release out the door by SIGGRAPH 2024, targeting July 28. With
+that, here are the latest changes since our alpha.1 release:
 
 ### Common
-  - Fix - Fix references from `random_in_hemisphere()` to `random_on_hemisphere()` (#1198)
-  - Change - We've removed the few cases where we used C++ default constructors. Instead, we either
-             require all parameters, or use operator overloading to use default values.
-  - Change - Increase compile warning levels for MSVC.
-  - Change - For clarity across audiences with broad programming backgrounds, we now use `double(x)`
-             instead of `static_cast<double>(x)`, and similarly for other types.
+  - Delete -- Removed `rtw_stb_image.h` header from book 1 source, as it's unused there.
+  - Change -- Increase compile warning levels for MSVC, and corrected newly-flagged code.
+  - Change -- Default to using post-increment everywhere
+  - Change -- We've removed the few cases where we used C++ default constructors. Instead, we either
+              require all parameters, or use operator overloading to use default values.
+  - Change -- For clarity across audiences with broad programming backgrounds, we now use
+              `double(x)` instead of `static_cast<double>(x)`, and similarly for other types, for
+              easier readability for non-C++ programmers.
+  - Change -- The `ray` class constructors no longer use C++ default parameter values
+  - Change -- Remove pixel sampling knowledge from `write_color()`. This simplifies `write_color()`
+              to take only the desired output color, and made each phase in color computation easier
+              to understand.
+  - Change -- `ray::origin()` and `ray::direction()` getters now return const references, avoiding
+              unnecessary copies.
+  - Change -- Cleaned up the use of the `hit_record` class in `material.h`
+  - Change -- All books now point to the project wiki instead of the in1weekend blog for further
+              reading links.
+  - Change -- New BVH optimization splits the bounds according to the longest bounding box
+              dimension, yielding a 15-20% speedup (#1007)
+  - Change -- Reversed the ray-sphere direction and calculations throughout equations and code for
+              all books. This ended up simplifying equations and code in several places (#1191)
+  - Change -- Pass `vec3`, `point3`, `ray`, and `color` parameters by const reference where
+              possible (#1250)
+  - Change -- Changed BVH construction (removed const qualifer for objects vector) so sorting is
+              done in place, and copying of vector is avoided, yielding better BVH build performance
+              (#1327, #1388, #1391)
+  - Change -- Ray reflection no longer performs unnecessary length normalization (#1340)
+  - Change -- Implement hollow spheres using refraction index instead of negative radii.
+              Additionally, we now block negative radius spheres. This fixes a bunch of corner
+              cases with inverted spheres (#1420)
+  - Change -- Refactor pixel subsampling to make the sampling functions simpler and better focused
+              in scope (#1421)
+  - Change -- All constructor parameter names now match their member names if assigned directly. C++
+              can handle this without ambiguity, and it means we don't have to come up with
+              alternate names for everything (#1427)
+  - Fix    -- Fixed section describing total internal reflection. It turns out that spheres with
+              refraction index greater than the surrounding atmosphere cannot exhibit total internal
+              reflection. Changed example to instead model a bubble of air in water, and updated the
+              rendered images to match (#900)
+  - Fix    -- Fix references from `random_in_hemisphere()` to `random_on_hemisphere()` (#1198)
+  - Fix    -- The `linear_to_gamma()` function has been hardened against negative inputs (#1202)
+  - Fix    -- Fixed default camera look-from and look-at values (#1341)
+  - Fix    -- The `quad` bounding box now considers all four vertices instead of erroneously only
+              using two (#1402)
+  - New    -- Added PRINTING.md to give information about how to print these books to PDF or paper.
+              We will also be including PDFs of each book with each new GitHub release going
+              forward.
 
 ### In One Weekend
-  - Change - Update reference to "Fundamentals of Interactive Computer Graphics" to "Computer
-             Graphics: Principles and Practice". This is the name used by newer editions of the
-             book.
-  - Change - New BVH optimization splits the bounds according to the longest bounding box dimension,
-             yielding a 15-20% speedup (#1007)
+  - Fix    -- Fix code listing ordering bug with `lambertian` texture support (#1258)
+  - Change -- Update reference to "Fundamentals of Interactive Computer Graphics" to "Computer
+              Graphics: Principles and Practice". This is the name used by newer editions of the
+              book.
+  - Change -- Updated the "Next Steps" section at the end of book 1 (#1209)
+  - New    -- Improved help for the very first build and run.
+  - New    -- Define albedo prior to first use (#1430)
 
 ### The Next Week
-  - Change - BBox for `quad` now considers all 4 points (#1402)
-  - Change - `perlin::turb()` no longer defaults the value for the depth parameter.
-  - Change - AABB automatically pads to mininmum size for any dimension; no longer requires
-             primitives to call aabb::pad() function.
-  - Change - Reworked the AABB chapter (#1236)
-  - New - add section on alternative 2D primitives such as triangle, ellipse and annulus (#1204,
-          #1205)
-  - Change - changed bvh construction (removed const qualifer for objects vector) so sorting is done
-             in place and copying of vector is avoided, better bvh build performance (#1388, #1391)
-  - Change - Refactor AABB class. Renamed `aabb:axis()` to `aabb::axis_interval()`. Minor
-             refactoring of `aabb::hit()` function. (#927, #1270)
+  - Change -- Lots of miscellaneous edits and clarifications to book two as we encountered them.
+              This also includes various improvements to code listings to provide better context and
+              address discrepancies between the listings and the actual source code.
+  - Change -- `perlin::turb()` no longer defaults the value for the depth parameter.
+  - Change -- AABB automatically pads to mininmum size for any dimension; no longer requires
+              primitives to call aabb::pad() function.
+  - Change -- Switch from ray = A + tb to ray = Q + td in AABB text.
+  - Change -- Update checker scale to 0.32
+  - Change -- Refactor AABB class. Renamed `aabb:axis()` to `aabb::axis_interval()`. Minor
+              refactoring of `aabb::hit()` function. (#927, #1270)
+  - Change -- Reworked the AABB chapter. Created skippable sections for planar coordinates
+              derivation (#1236)
+  - Fix    -- Updated book 2 images to match the latest code.
+  - Fix    -- Images loaded for texture mapping are now converted from their original gamma to
+              linear color space for use. Rendered images are still gamma corrected to 2.0 on
+              output (#842)
+  - Fix    -- Fix regression in calls to Perlin `turb()` functions with scaled points (these should
+              be unscaled). (#1286)
+  - New    -- Add section on alternative 2D primitives such as triangle, ellipse and annulus (#1204,
+              #1205)
 
 ### The Rest of Your Life
+  - Fix    -- Add missing backslash for LaTeX `operatorname` (#1311)
+  - Fix    -- Fix LaTeX functions with underscore (#1330)
+
 
 
 ----------------------------------------------------------------------------------------------------
