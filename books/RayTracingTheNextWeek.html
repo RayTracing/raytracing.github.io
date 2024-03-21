@@ -1292,6 +1292,7 @@ ray-object hit point.
         double v;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         bool front_face;
+
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hit-record-uv]: <kbd>[hittable.h]</kbd> Adding $u,v$ coordinates to the `hit_record`]
@@ -1360,11 +1361,16 @@ texture. This is in the spirit of shader networks introduced by Pat Hanrahan bac
 To support procedural textures, we'll extend the `lambertian` class to work with textures instead of
 colors:
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "texture.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     ...
+
     class lambertian : public material {
       public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1398,16 +1404,23 @@ colors:
 </div>
 
 <div class='together'>
-If we add this to our `random_scene()` function’s base sphere:
+If we add this to our main scene:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
+
+    #include "bvh.h"
+    #include "camera.h"
+    #include "color.h"
+    #include "hittable_list.h"
+    #include "material.h"
+    #include "sphere.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "texture.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 
-    void random_spheres() {
+    int main() {
         hittable_list world;
 
 
@@ -1419,7 +1432,6 @@ If we add this to our `random_scene()` function’s base sphere:
         for (int a = -11; a < 11; a++) {
         ...
     }
-    ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [checker-example]: <kbd>[main.cc]</kbd> Checkered texture in use]
 
@@ -1444,7 +1456,7 @@ command-line arguments.
 
 <div class='together'>
 Here's what our main.cc looks like after refactoring for our single random spheres scene. Rename
-`main()` to `random_spheres()`, and add a new `main()` function to call it:
+`main()` to `bouncing_spheres()`, and add a new `main()` function to call it:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -1456,7 +1468,11 @@ Here's what our main.cc looks like after refactoring for our single random spher
     #include "sphere.h"
 
 
-    void random_spheres() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+    int main() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    void bouncing_spheres() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         hittable_list world;
 
         auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
@@ -1467,8 +1483,10 @@ Here's what our main.cc looks like after refactoring for our single random spher
         cam.render(world);
     }
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     int main() {
-        random_spheres();
+        bouncing_spheres();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-scenes]: <kbd>[main.cc]</kbd> Main dispatching to selected scene]
@@ -1488,7 +1506,7 @@ Now add a scene with two checkered spheres, one atop the other.
     #include "sphere.h"
 
 
-    void random_spheres() {
+    void bouncing_spheres() {
         ...
     }
 
@@ -1523,8 +1541,8 @@ Now add a scene with two checkered spheres, one atop the other.
     int main() {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (2) {
-            case 1: random_spheres(); break;
-            case 2: two_spheres();    break;
+            case 1: bouncing_spheres(); break;
+            case 2: two_spheres();      break;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
@@ -1858,10 +1876,10 @@ Here's the code to read an image from a file and then assign it to a diffuse mat
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (3) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            case 1:  random_spheres(); break;
-            case 2:  two_spheres();    break;
+            case 1:  bouncing_spheres(); break;
+            case 2:  two_spheres();      break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            case 3:  earth();          break;
+            case 3:  earth();            break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
     }
@@ -2042,7 +2060,7 @@ We can use that texture on some spheres:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (4) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            case 1:  random_spheres();     break;
+            case 1:  bouncing_spheres();   break;
             case 2:  two_spheres();        break;
             case 3:  earth();              break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -3073,7 +3091,7 @@ And now we add a new scene to demonstrate our new `quad` primitive:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (5) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            case 1:  random_spheres();     break;
+            case 1:  bouncing_spheres();   break;
             case 2:  two_spheres();        break;
             case 3:  earth();              break;
             case 4:  two_perlin_spheres(); break;
@@ -3225,7 +3243,7 @@ the new `color_from_emission` value.
 `main()` is updated to set the background color for the prior scenes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void random_spheres() {
+    void bouncing_spheres() {
         ...
         camera cam;
 
@@ -3343,7 +3361,7 @@ If we set up a rectangle as a light:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (6) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            case 1:  random_spheres();     break;
+            case 1:  bouncing_spheres();   break;
             case 2:  two_spheres();        break;
             case 3:  earth();              break;
             case 4:  two_perlin_spheres(); break;
@@ -3429,7 +3447,7 @@ Let’s make the 5 walls and the light of the box:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (7) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            case 1:  random_spheres();     break;
+            case 1:  bouncing_spheres();   break;
             case 2:  two_spheres();        break;
             case 3:  earth();              break;
             case 4:  two_perlin_spheres(); break;
@@ -4082,7 +4100,7 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (8) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            case 1:  random_spheres();     break;
+            case 1:  bouncing_spheres();   break;
             case 2:  two_spheres();        break;
             case 3:  earth();              break;
             case 4:  two_perlin_spheres(); break;
@@ -4205,7 +4223,7 @@ testing.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (0) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            case 1:  random_spheres();            break;
+            case 1:  bouncing_spheres();          break;
             case 2:  two_spheres();               break;
             case 3:  earth();                     break;
             case 4:  two_perlin_spheres();        break;
