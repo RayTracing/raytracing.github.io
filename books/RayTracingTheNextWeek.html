@@ -1461,11 +1461,13 @@ Here's what our main.cc looks like after refactoring for our single random spher
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
 
+    #include "bvh.h"
     #include "camera.h"
     #include "color.h"
     #include "hittable_list.h"
     #include "material.h"
     #include "sphere.h"
+    #include "texture.h"
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
@@ -1499,11 +1501,13 @@ Now add a scene with two checkered spheres, one atop the other.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
 
+    #include "bvh.h"
     #include "camera.h"
     #include "color.h"
     #include "hittable_list.h"
     #include "material.h"
     #include "sphere.h"
+    #include "texture.h"
 
 
     void bouncing_spheres() {
@@ -1512,7 +1516,7 @@ Now add a scene with two checkered spheres, one atop the other.
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    void two_spheres() {
+    void checkered_spheres() {
         hittable_list world;
 
         auto checker = make_shared<checker_texture>(0.32, color(.2, .3, .1), color(.9, .9, .9));
@@ -1541,8 +1545,8 @@ Now add a scene with two checkered spheres, one atop the other.
     int main() {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (2) {
-            case 1: bouncing_spheres(); break;
-            case 2: two_spheres();      break;
+            case 1: bouncing_spheres();  break;
+            case 2: checkered_spheres(); break;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
@@ -1876,10 +1880,10 @@ Here's the code to read an image from a file and then assign it to a diffuse mat
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (3) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            case 1:  bouncing_spheres(); break;
-            case 2:  two_spheres();      break;
+            case 1:  bouncing_spheres();  break;
+            case 2:  checkered_spheres(); break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            case 3:  earth();            break;
+            case 3:  earth();             break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
     }
@@ -2031,7 +2035,7 @@ Now if we create an actual texture that takes these floats between 0 and 1 and c
 We can use that texture on some spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    void two_perlin_spheres() {
+    void perlin_spheres() {
         hittable_list world;
 
         auto pertext = make_shared<noise_texture>();
@@ -2061,10 +2065,10 @@ We can use that texture on some spheres:
         switch (4) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             case 1:  bouncing_spheres();   break;
-            case 2:  two_spheres();        break;
+            case 2:  checkered_spheres();  break;
             case 3:  earth();              break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            case 4:  two_perlin_spheres(); break;
+            case 4:  perlin_spheres();     break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
     }
@@ -2211,10 +2215,10 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
     [Listing [perlin-smoothed-2]: <kbd>[texture.h]</kbd> Perlin smoothed, higher frequency]
 
 <div class='together'>
-We then add that scale to the `two_perlin_spheres()` scene description:
+We then add that scale to the `perlin_spheres()` scene description:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void two_perlin_spheres() {
+    void perlin_spheres() {
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto pertext = make_shared<noise_texture>(4);
@@ -3092,9 +3096,9 @@ And now we add a new scene to demonstrate our new `quad` primitive:
         switch (5) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             case 1:  bouncing_spheres();   break;
-            case 2:  two_spheres();        break;
+            case 2:  checkered_spheres();  break;
             case 3:  earth();              break;
-            case 4:  two_perlin_spheres(); break;
+            case 4:  perlin_spheres();     break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             case 5:  quads();              break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3257,7 +3261,7 @@ the new `color_from_emission` value.
         ...
     }
 
-    void two_spheres() {
+    void checkered_spheres() {
         ...
         camera cam;
 
@@ -3285,7 +3289,7 @@ the new `color_from_emission` value.
         ...
     }
 
-    void two_perlin_spheres() {
+    void perlin_spheres() {
         ...
         camera cam;
 
@@ -3362,9 +3366,9 @@ If we set up a rectangle as a light:
         switch (6) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             case 1:  bouncing_spheres();   break;
-            case 2:  two_spheres();        break;
+            case 2:  checkered_spheres();  break;
             case 3:  earth();              break;
-            case 4:  two_perlin_spheres(); break;
+            case 4:  perlin_spheres();     break;
             case 5:  quads();              break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             case 6:  simple_light();       break;
@@ -3448,9 +3452,9 @@ Let’s make the 5 walls and the light of the box:
         switch (7) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             case 1:  bouncing_spheres();   break;
-            case 2:  two_spheres();        break;
+            case 2:  checkered_spheres();  break;
             case 3:  earth();              break;
-            case 4:  two_perlin_spheres(); break;
+            case 4:  perlin_spheres();     break;
             case 5:  quads();              break;
             case 6:  simple_light();       break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -4101,9 +4105,9 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
         switch (8) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             case 1:  bouncing_spheres();   break;
-            case 2:  two_spheres();        break;
+            case 2:  checkered_spheres();  break;
             case 3:  earth();              break;
-            case 4:  two_perlin_spheres(); break;
+            case 4:  perlin_spheres();     break;
             case 5:  quads();              break;
             case 6:  simple_light();       break;
             case 7:  cornell_box();        break;
@@ -4224,9 +4228,9 @@ testing.
         switch (0) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             case 1:  bouncing_spheres();          break;
-            case 2:  two_spheres();               break;
+            case 2:  checkered_spheres();         break;
             case 3:  earth();                     break;
-            case 4:  two_perlin_spheres();        break;
+            case 4:  perlin_spheres();            break;
             case 5:  quads();                     break;
             case 6:  simple_light();              break;
             case 7:  cornell_box();               break;
