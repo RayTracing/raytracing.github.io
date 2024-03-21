@@ -190,9 +190,7 @@ interval, so it really can be sampled at any time.)
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-            ...
-        }
+        ...
 
       private:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -677,6 +675,11 @@ we've designed our interval class, the math all works out.
 Finally, recall that some objects may be animated. Such objects should return their bounds over the
 entire range of motion, from time=0 to time=1.
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+    #include "rtweekend.h"
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "aabb.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -684,17 +687,17 @@ entire range of motion, from time=0 to time=1.
 
     class hittable {
       public:
-        ...
+        virtual ~hittable() = default;
+
         virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         virtual aabb bounding_box() const = 0;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [hittable-bbox]: <kbd>[hittable.h]</kbd> Hittable class with bounding-box]
+    [Listing [hittable-bbox]: <kbd>[hittable.h]</kbd> Hittable class with bounding box]
 
 For a stationary sphere, the `bounding_box` function is easy:
 
@@ -710,7 +713,10 @@ For a stationary sphere, the `bounding_box` function is easy:
             bbox = aabb(center1 - rvec, center1 + rvec);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         aabb bounding_box() const override { return bbox; }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -724,6 +730,7 @@ For a stationary sphere, the `bounding_box` function is easy:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         aabb bbox;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -737,6 +744,7 @@ two boxes.
     class sphere : public hittable {
       public:
         ...
+
         // Moving Sphere
         sphere(const point3& center1, const point3& center2, double radius,
                shared_ptr<material> mat)
@@ -744,13 +752,14 @@ two boxes.
         {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto rvec = vec3(radius, radius, radius);
-            aabb box1(_center1 - rvec, _center1 + rvec);
-            aabb box2(_center2 - rvec, _center2 + rvec);
+            aabb box1(center1 - rvec, center1 + rvec);
+            aabb box2(center2 - rvec, center2 + rvec);
             bbox = aabb(box1, box2);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             center_vec = _center2 - _center1;
         }
+
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -822,11 +831,16 @@ Now we'll update the `hittable_list` object, computing the bounds of its childre
 bounding box incrementally as each new child is added.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
+    #include "rtweekend.h"
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "aabb.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
+    #include "hittable.h"
+
+    #include <memory>
+    #include <vector>
 
     class hittable_list : public hittable {
       public:
@@ -873,9 +887,9 @@ I am a fan of the one class design when feasible. Here is such a class:
 
     #include "rtweekend.h"
 
+    #include "aabb.h"
     #include "hittable.h"
     #include "hittable_list.h"
-
 
     class bvh_node : public hittable {
       public:
@@ -936,12 +950,23 @@ The following code uses three methods--`box_x_compare`, `box_y_compare_`, and `b
 we haven't yet defined.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+    #include "aabb.h"
+    #include "hittable.h"
+    #include "hittable_list.h"
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include <algorithm>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     class bvh_node : public hittable {
       public:
         ...
+
         bvh_node(std::vector<shared_ptr<hittable>>& objects, size_t start, size_t end) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             int axis = random_int(0,2);
 
             auto comparator = (axis == 0) ? box_x_compare
@@ -964,7 +989,9 @@ we haven't yet defined.
             }
 
             bbox = aabb(left->bounding_box(), right->bounding_box());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
+
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -974,10 +1001,22 @@ we haven't yet defined.
 This uses a new function: `random_int()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+
+    inline double random_double(double min, double max) {
+        // Returns a random real in [min,max).
+        return min + (max-min)*random_double();
+    }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     inline int random_int(int min, int max) {
         // Returns a random integer in [min,max].
         return int(random_double(min, max+1));
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-int]: <kbd>[rtweekend.h]</kbd> A function to return random integers in a range]
 
@@ -998,9 +1037,14 @@ function.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class bvh_node : public hittable {
       ...
-      private:
-        ...
 
+      private:
+        shared_ptr<hittable> left;
+        shared_ptr<hittable> right;
+        aabb bbox;
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         static bool box_compare(
             const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis_index
         ) {
@@ -1020,16 +1064,25 @@ function.
         static bool box_z_compare (const shared_ptr<hittable> a, const shared_ptr<hittable> b) {
             return box_compare(a, b, 2);
         }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [bvh-x-comp]: <kbd>[bvh.h]</kbd> BVH comparison function, X-axis]
 
 At this point, we're ready to use our new BVH code. Let's use it on our random spheres scene.
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "bvh.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
+    #include "camera.h"
+    #include "color.h"
+    #include "hittable_list.h"
+    #include "material.h"
+    #include "sphere.h"
 
     int main() {
         ...
@@ -1074,6 +1127,7 @@ implementing it shortly.
     class bvh_node : public hittable {
       public:
         ...
+
         bvh_node(std::vector<shared_ptr<hittable>>& objects, size_t start, size_t end) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             // Build the bounding box of the span of source objects.
@@ -1148,10 +1202,6 @@ Now to implement the empty `aabb` code and the new `aabb::longest_axis()` functi
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     const aabb aabb::empty    = aabb(interval::empty,    interval::empty,    interval::empty);
     const aabb aabb::universe = aabb(interval::universe, interval::universe, interval::universe);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-    ...
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [aabb-empty-and-axis]: <kbd>[aabb.h]</kbd>
         New aabb constants and longest_axis() function
@@ -1242,12 +1292,13 @@ ray-object hit point.
         double v;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         bool front_face;
+
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [hit-record-uv]: <kbd>[hittable.h]</kbd> Adding $u,v$ coordinates to the `hit_record`]
 
-We will also need to compute $(u,v)$ texture coordinates for a given point on each type of
-`hittable`.
+In the future, we'll need to compute $(u,v)$ texture coordinates for a given point on each type of
+`hittable`. More on that later.
 
 
 Solid Textures: A Checker Texture
@@ -1310,11 +1361,16 @@ texture. This is in the spirit of shader networks introduced by Pat Hanrahan bac
 To support procedural textures, we'll extend the `lambertian` class to work with textures instead of
 colors:
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "texture.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     ...
+
     class lambertian : public material {
       public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1348,16 +1404,23 @@ colors:
 </div>
 
 <div class='together'>
-If we add this to our `random_scene()` function’s base sphere:
+If we add this to our main scene:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
+
+    #include "bvh.h"
+    #include "camera.h"
+    #include "color.h"
+    #include "hittable_list.h"
+    #include "material.h"
+    #include "sphere.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "texture.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 
-    void random_spheres() {
+    int main() {
         hittable_list world;
 
 
@@ -1369,7 +1432,6 @@ If we add this to our `random_scene()` function’s base sphere:
         for (int a = -11; a < 11; a++) {
         ...
     }
-    ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [checker-example]: <kbd>[main.cc]</kbd> Checkered texture in use]
 
@@ -1394,19 +1456,25 @@ command-line arguments.
 
 <div class='together'>
 Here's what our main.cc looks like after refactoring for our single random spheres scene. Rename
-`main()` to `random_spheres()`, and add a new `main()` function to call it:
+`main()` to `bouncing_spheres()`, and add a new `main()` function to call it:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
 
+    #include "bvh.h"
     #include "camera.h"
     #include "color.h"
     #include "hittable_list.h"
     #include "material.h"
     #include "sphere.h"
+    #include "texture.h"
 
 
-    void random_spheres() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+    int main() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    void bouncing_spheres() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         hittable_list world;
 
         auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
@@ -1417,8 +1485,10 @@ Here's what our main.cc looks like after refactoring for our single random spher
         cam.render(world);
     }
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     int main() {
-        random_spheres();
+        bouncing_spheres();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [main-scenes]: <kbd>[main.cc]</kbd> Main dispatching to selected scene]
@@ -1431,20 +1501,22 @@ Now add a scene with two checkered spheres, one atop the other.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
 
+    #include "bvh.h"
     #include "camera.h"
     #include "color.h"
     #include "hittable_list.h"
     #include "material.h"
     #include "sphere.h"
+    #include "texture.h"
 
 
-    void random_spheres() {
+    void bouncing_spheres() {
         ...
     }
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    void two_spheres() {
+    void checkered_spheres() {
         hittable_list world;
 
         auto checker = make_shared<checker_texture>(0.32, color(.2, .3, .1), color(.9, .9, .9));
@@ -1473,13 +1545,13 @@ Now add a scene with two checkered spheres, one atop the other.
     int main() {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (2) {
-            case 1: random_spheres(); break;
-            case 2: two_spheres();    break;
+            case 1: bouncing_spheres();  break;
+            case 2: checkered_spheres(); break;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [main-two-spheres]: <kbd>[main.cc]</kbd> Two textured spheres]
+    [Listing [main-two-spheres]: <kbd>[main.cc]</kbd> Two checkered spheres]
 
 </div>
 
@@ -1559,6 +1631,8 @@ points on the unit sphere centered at the origin, and computes $u$ and $v$:
       ...
       private:
         ...
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         static void get_sphere_uv(const point3& p, double& u, double& v) {
             // p: a given point on the sphere of radius one, centered at the origin.
@@ -1735,11 +1809,18 @@ The `image_texture` class uses the `rtw_image` class:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "rtw_stb_image.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     ...
+
+    class checker_texture : public texture {
+        ...
+    };
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     class image_texture : public texture {
@@ -1808,10 +1889,10 @@ Here's the code to read an image from a file and then assign it to a diffuse mat
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (3) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            case 1:  random_spheres(); break;
-            case 2:  two_spheres();    break;
+            case 1:  bouncing_spheres();  break;
+            case 2:  checkered_spheres(); break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            case 3:  earth();          break;
+            case 3:  earth();             break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
     }
@@ -1963,7 +2044,7 @@ Now if we create an actual texture that takes these floats between 0 and 1 and c
 We can use that texture on some spheres:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    void two_perlin_spheres() {
+    void perlin_spheres() {
         hittable_list world;
 
         auto pertext = make_shared<noise_texture>();
@@ -1992,11 +2073,11 @@ We can use that texture on some spheres:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (4) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            case 1:  random_spheres();     break;
-            case 2:  two_spheres();        break;
+            case 1:  bouncing_spheres();   break;
+            case 2:  checkered_spheres();  break;
             case 3:  earth();              break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            case 4:  two_perlin_spheres(); break;
+            case 4:  perlin_spheres();     break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
     }
@@ -2143,10 +2224,10 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
     [Listing [perlin-smoothed-2]: <kbd>[texture.h]</kbd> Perlin smoothed, higher frequency]
 
 <div class='together'>
-We then add that scale to the `two_perlin_spheres()` scene description:
+We then add that scale to the `perlin_spheres()` scene description:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void two_perlin_spheres() {
+    void perlin_spheres() {
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         auto pertext = make_shared<noise_texture>(4);
@@ -3023,10 +3104,10 @@ And now we add a new scene to demonstrate our new `quad` primitive:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (5) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            case 1:  random_spheres();     break;
-            case 2:  two_spheres();        break;
+            case 1:  bouncing_spheres();   break;
+            case 2:  checkered_spheres();  break;
             case 3:  earth();              break;
-            case 4:  two_perlin_spheres(); break;
+            case 4:  perlin_spheres();     break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             case 5:  quads();              break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3175,7 +3256,7 @@ the new `color_from_emission` value.
 `main()` is updated to set the background color for the prior scenes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    void random_spheres() {
+    void bouncing_spheres() {
         ...
         camera cam;
 
@@ -3189,7 +3270,7 @@ the new `color_from_emission` value.
         ...
     }
 
-    void two_spheres() {
+    void checkered_spheres() {
         ...
         camera cam;
 
@@ -3217,7 +3298,7 @@ the new `color_from_emission` value.
         ...
     }
 
-    void two_perlin_spheres() {
+    void perlin_spheres() {
         ...
         camera cam;
 
@@ -3293,10 +3374,10 @@ If we set up a rectangle as a light:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (6) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            case 1:  random_spheres();     break;
-            case 2:  two_spheres();        break;
+            case 1:  bouncing_spheres();   break;
+            case 2:  checkered_spheres();  break;
             case 3:  earth();              break;
-            case 4:  two_perlin_spheres(); break;
+            case 4:  perlin_spheres();     break;
             case 5:  quads();              break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             case 6:  simple_light();       break;
@@ -3379,10 +3460,10 @@ Let’s make the 5 walls and the light of the box:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (7) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            case 1:  random_spheres();     break;
-            case 2:  two_spheres();        break;
+            case 1:  bouncing_spheres();   break;
+            case 2:  checkered_spheres();  break;
             case 3:  earth();              break;
-            case 4:  two_perlin_spheres(); break;
+            case 4:  perlin_spheres();     break;
             case 5:  quads();              break;
             case 6:  simple_light();       break;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -4032,10 +4113,10 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (8) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            case 1:  random_spheres();     break;
-            case 2:  two_spheres();        break;
+            case 1:  bouncing_spheres();   break;
+            case 2:  checkered_spheres();  break;
             case 3:  earth();              break;
-            case 4:  two_perlin_spheres(); break;
+            case 4:  perlin_spheres();     break;
             case 5:  quads();              break;
             case 6:  simple_light();       break;
             case 7:  cornell_box();        break;
@@ -4155,10 +4236,10 @@ testing.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         switch (0) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            case 1:  random_spheres();            break;
-            case 2:  two_spheres();               break;
+            case 1:  bouncing_spheres();          break;
+            case 2:  checkered_spheres();         break;
             case 3:  earth();                     break;
-            case 4:  two_perlin_spheres();        break;
+            case 4:  perlin_spheres();            break;
             case 5:  quads();                     break;
             case 6:  simple_light();              break;
             case 7:  cornell_box();               break;

@@ -22,7 +22,7 @@
 #include "texture.h"
 
 
-void random_spheres() {
+void bouncing_spheres() {
     hittable_list world;
 
     auto checker = make_shared<checker_texture>(0.32, color(.2, .3, .1), color(.9, .9, .9));
@@ -88,7 +88,7 @@ void random_spheres() {
 }
 
 
-void two_spheres() {
+void checkered_spheres() {
     hittable_list world;
 
     auto checker = make_shared<checker_texture>(0.32, color(.2, .3, .1), color(.9, .9, .9));
@@ -139,7 +139,7 @@ void earth() {
 }
 
 
-void two_perlin_spheres() {
+void perlin_spheres() {
     hittable_list world;
 
     auto pertext = make_shared<noise_texture>(4);
@@ -402,10 +402,10 @@ void final_scene(int image_width, int samples_per_pixel, int max_depth) {
 
 int main() {
     switch (0) {
-        case 1:  random_spheres();            break;
-        case 2:  two_spheres();               break;
+        case 1:  bouncing_spheres();          break;
+        case 2:  checkered_spheres();         break;
         case 3:  earth();                     break;
-        case 4:  two_perlin_spheres();        break;
+        case 4:  perlin_spheres();            break;
         case 5:  quads();                     break;
         case 6:  simple_light();              break;
         case 7:  cornell_box();               break;
