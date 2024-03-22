@@ -47,6 +47,7 @@ that, here are the latest changes since our alpha.1 release:
   - Change -- All constructor parameter names now match their member names if assigned directly. C++
               can handle this without ambiguity, and it means we don't have to come up with
               alternate names for everything (#1427)
+  - Change -- `material::scatter()` gets a trivial default implementation (#1455)
   - Fix    -- Fixed section describing total internal reflection. It turns out that spheres with
               refraction index greater than the surrounding atmosphere cannot exhibit total internal
               reflection. Changed example to instead model a bubble of air in water, and updated the
