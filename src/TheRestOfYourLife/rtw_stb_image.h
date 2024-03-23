@@ -58,7 +58,10 @@ class rtw_image {
 
     bool load(const std::string& filename) {
         // Loads the linear (gamma=1) image data from the given file name. Returns true if the
-        // load succeeded.
+        // load succeeded. The resulting data buffer contains the three [0.0, 1.0]
+        // floating-point values for the first pixel (red, then green, then blue). Pixels are
+        // contiguous, going left to right for the width of the image, followed by the next row
+        // below, for the full height of the image.
 
         auto n = bytes_per_pixel; // Dummy out parameter: original components per pixel
         fdata = stbi_loadf(filename.c_str(), &image_width, &image_height, &n, bytes_per_pixel);
@@ -73,7 +76,8 @@ class rtw_image {
     int height() const { return (fdata == nullptr) ? 0 : image_height; }
 
     const unsigned char* pixel_data(int x, int y) const {
-        // Return the address of the three bytes of the pixel at x,y (or magenta if no data).
+        // Return the address of the three RGB bytes of the pixel at x,y. If there is no image
+        // data, returns magenta.
         static unsigned char magenta[] = { 255, 0, 255 };
         if (bdata == nullptr) return magenta;
 
@@ -105,8 +109,8 @@ class rtw_image {
         int total_bytes = image_width * image_height * bytes_per_pixel;
         bdata = new unsigned char[total_bytes];
 
-        // Iterate through all pixel components, converting from linear float values to unsigned
-        // byte values.
+        // Iterate through all pixel components, converting from [0.0, 1.0] float values to
+        // unsigned [0, 255] byte values.
 
         auto *bptr = bdata;
         auto *fptr = fdata;
