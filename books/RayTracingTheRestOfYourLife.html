@@ -2487,7 +2487,7 @@ Switching to Unidirectional Light
 ----------------------------------
 The noisy pops around the light on the ceiling are because the light is two-sided and there is a
 small space between light and ceiling. We probably want to have the light just emit down. We can do
-that by letting the emitted member function of hittable take extra information:
+that by letting the `hittable::emitted()` function take extra information:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material {
@@ -2523,6 +2523,28 @@ that by letting the emitted member function of hittable take extra information:
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [emitted-directional]: <kbd>[material.h]</kbd> Material emission, directional]
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class camera {
+      ...
+      private:
+        color ray_color(const ray& r, int depth, const hittable& world) const {
+            ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+            ...
+        }
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [emitted-ray-color]: <kbd>[camera.h]</kbd>
+        Material emission, camera::ray_color() changes
+    ]
+
 
 <div class='together'>
 This gives us:
