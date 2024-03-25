@@ -82,7 +82,7 @@ void bouncing_spheres() {
     cam.vup      = vec3(0,1,0);
 
     cam.defocus_angle = 0.02;
-    cam.focus_dist    = 10.0;
+    cam.focus_dist    = 10;
 
     cam.render(world);
 }
