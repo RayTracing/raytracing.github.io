@@ -255,7 +255,7 @@ because it is a little bit too complicated to cover, but there is a lot of inter
 currently happening in this space.
 
 As an intermediary, we'll be stratifying the locations of the sampling positions around each pixel
-location.
+location. Let's start with our familiar Cornell box scene.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -317,11 +317,13 @@ location.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estpi-3]: <kbd>[main.cc]</kbd> Stratifying the samples inside pixels]
 
+Run this program to generate an un-stratified render and save for comparison.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
         ...
+
         void render(const hittable& world) {
             initialize();
 
@@ -345,7 +347,7 @@ location.
 
             std::clog << "\rDone.                 \n";
         }
-        ...
+
       private:
         int    image_height;         // Rendered image height
         double pixel_samples_scale;  // Color scale factor for a sum of pixel samples
@@ -370,9 +372,10 @@ location.
             center = lookfrom;
             ...
         }
-        ...
-        ray get_ray(int i, int j, int s_i, int s_j) const {
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        ray get_ray(int i, int j, int s_i, int s_j) const {
             // Construct a camera ray originating from the defocus disk and directed at a randomly
             // sampled point around the pixel location i, j for stratified sample square s_i, s_j.
 
@@ -409,7 +412,7 @@ location.
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [render-estpi-3]: <kbd>[camera.h]</kbd> Stratifying the samples inside pixels (render)]
+    [Listing [render-estpi-3]: <kbd>[camera.h]</kbd> Stratifying the samples inside pixels]
 
 <div class='together'>
 If we compare the results from without stratification:
