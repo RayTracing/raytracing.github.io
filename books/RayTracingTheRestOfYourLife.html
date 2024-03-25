@@ -117,6 +117,7 @@ centered at the origin:
 
         int inside_circle = 0;
         int N = 100000;
+
         for (int i = 0; i < N; i++) {
             auto x = random_double(-1,1);
             auto y = random_double(-1,1);
@@ -127,7 +128,7 @@ centered at the origin:
         std::cout << "Estimate of Pi = " << (4.0 * inside_circle) / N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [estpi-1]: <kbd>[pi.cc]</kbd> Estimating π]
+    [Listing [estpi-1]: <kbd>[pi.cc]</kbd> Estimating π -- version one]
 
 The answer of $\pi$ found will vary from computer to computer based on the initial random seed. On
 my computer, this gives me the answer `Estimate of Pi = 3.143760000000`.
@@ -204,6 +205,7 @@ because we need to know the grid. Let’s take a million and try it both ways:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         int inside_circle_stratified = 0;
         int sqrt_N = 1000;
+
         for (int i = 0; i < sqrt_N; i++) {
             for (int j = 0; j < sqrt_N; j++) {
                 auto x = random_double(-1,1);
@@ -474,27 +476,19 @@ We choose a circle with radius $r = 1$ and get:
 
 <div class='together'>
 Our work above is equally valid as a means to solve for $pi$ as it is a means to solve for the area
-of a circle:
+of a circle. So we could make the following substitution in the first version of our program:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-
-    #include <iostream>
-    #include <iomanip>
-    #include <math.h>
-    #include <stdlib.h>
-
+    ...
     int main() {
-        int N = 100000;
-        int inside_circle = 0;
-        for (int i = 0; i < N; i++) {
-            auto x = random_double(-1,1);
-            auto y = random_double(-1,1);
-            if (x*x + y*y < 1)
-                inside_circle++;
-        }
-        std::cout << std::fixed << std::setprecision(12);
+        ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+        std::cout << "Estimate of Pi = "                << (4.0 * inside_circle) / N << '\n';
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         std::cout << "Estimated area of unit circle = " << (4.0 * inside_circle) / N << '\n';
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estunitcircle]: <kbd>[pi.cc]</kbd> Estimating area of unit circle]
