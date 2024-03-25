@@ -163,7 +163,7 @@ If we change the program to run forever and just print out a running estimate:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             if (runs % 100000 == 0)
-                std::cout << "Estimate of Pi = " << (4.0 * inside_circle) / runs << '\n';
+                std::cout << "\rEstimate of Pi = " << (4.0 * inside_circle) / runs;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
@@ -195,9 +195,13 @@ because we need to know the grid. Let’s take a million and try it both ways:
 
     #include <iostream>
     #include <iomanip>
+    #include <stdlib.h>
 
     int main() {
+        std::cout << std::fixed << std::setprecision(12);
+
         int inside_circle = 0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         int inside_circle_stratified = 0;
         int sqrt_N = 1000;
         for (int i = 0; i < sqrt_N; i++) {
@@ -206,6 +210,7 @@ because we need to know the grid. Let’s take a million and try it both ways:
                 auto y = random_double(-1,1);
                 if (x*x + y*y < 1)
                     inside_circle++;
+
                 x = 2*((i + random_double()) / sqrt_N) - 1;
                 y = 2*((j + random_double()) / sqrt_N) - 1;
                 if (x*x + y*y < 1)
@@ -213,15 +218,15 @@ because we need to know the grid. Let’s take a million and try it both ways:
             }
         }
 
-        std::cout << std::fixed << std::setprecision(12);
         std::cout
             << "Regular    Estimate of Pi = "
             << (4.0 * inside_circle) / (sqrt_N*sqrt_N) << '\n'
             << "Stratified Estimate of Pi = "
             << (4.0 * inside_circle_stratified) / (sqrt_N*sqrt_N) << '\n';
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [estpi-3]: <kbd>[pi.cc]</kbd> Estimating π, v3]
+    [Listing [estpi-3]: <kbd>[pi.cc]</kbd> Estimating π -- version three]
 
 </div>
 
