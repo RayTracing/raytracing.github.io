@@ -1669,7 +1669,8 @@ that. Remember Monte Carlo basics: $\int f(x) \approx \sum f(r)/p(r)$. For the L
 let’s sample like we do now: $p(\omega_o) = \cos(\theta_o) / \pi$.
 
 <div class='together'>
-We modify the base-class `material` to enable this importance sampling:
+We modify the base-class `material` to enable this importance sampling, and define the scattering
+PDF function for Lambertian materials:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material {
@@ -1684,17 +1685,7 @@ We modify the base-class `material` to enable this importance sampling:
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [class-material]: <kbd>[material.h]</kbd>
-        The material class, adding importance sampling
-    ]
 
-</div>
-
-<div class='together'>
-And the `lambertian` material becomes:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
       public:
         lambertian(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
@@ -1702,20 +1693,13 @@ And the `lambertian` material becomes:
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
-            auto scatter_direction = rec.normal + random_unit_vector();
-
-            // Catch degenerate scatter direction
-            if (scatter_direction.near_zero())
-                scatter_direction = rec.normal;
-
-            scattered = ray(rec.p, scatter_direction, r_in.time());
-            attenuation = tex->value(rec.u, rec.v, rec.p);
-            return true;
+            ...
         }
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
+        double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
+        const override {
             auto cos_theta = dot(rec.normal, unit_vector(scattered.direction()));
             return cos_theta < 0 ? 0 : cos_theta/pi;
         }
