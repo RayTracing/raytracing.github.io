@@ -19,12 +19,12 @@ set ( CMAKE_CXX_EXTENSIONS        OFF )
 set ( SOURCE_ONE_WEEKEND
   main.cc
 #   src/InOneWeekend/camera.h
-#   src/InOneWeekend/color.h
+ color.h
 #   src/InOneWeekend/hittable.h
 #   src/InOneWeekend/hittable_list.h
 #   src/InOneWeekend/interval.h
 #   src/InOneWeekend/material.h
-#   src/InOneWeekend/ray.h
+  ray.h
 #   src/InOneWeekend/rtweekend.h
 #   src/InOneWeekend/sphere.h
   vec3.h
