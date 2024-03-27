@@ -1120,46 +1120,26 @@ split the longest axis of the enclosing bounding box to get the most subdivision
 straight-forward, but we'll add a few things to the `aabb` class in the process.
 
 The first task is to construct an axis-aligned bounding box of the span of objects in the BVH
-constructor. Basically, we'll construct the `bvh_node`s bounding box from this span by initializing
-the bounding box to empty, and then augmenting it with each bounding box in the span of objects.
+constructor. Basically, we'll construct the bounding box of the `bvh_node` from this span by
+initializing the bounding box to empty (we'll define `aabb::empty` shortly), and then augment it
+with each bounding box in the span of objects.
 
-We don't have a way yet to express an empty bounding box, so we'll imagine one for now and
-implementing it shortly.
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class bvh_node : public hittable {
-      public:
-        ...
-
-        bvh_node(std::vector<shared_ptr<hittable>>& objects, size_t start, size_t end) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            // Build the bounding box of the span of source objects.
-            bbox = aabb::empty;
-            for (size_t object_index=start; object_index < end; object_index++)
-                bbox = aabb(bbox, objects[object_index]->bounding_box());
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-            ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [object-span-bbox]: <kbd>[bvh.h]</kbd> Building the bbox for the span of BVH objects]
-
-Now that we have the bounding box, set the splitting axis to the one with the longest side. Again,
-we'll imagine a function that does that for us: `aabb::longest_axis()`. Finally, since we're
-computing the bounding box of the object span up front, we can delete the original line that
-computed it as the union of the left and right sides.
+Once we have the bounding box, set the splitting axis to the one with the longest side. We'll
+imagine a function that does that for us: `aabb::longest_axis()`. Finally, since we're computing the
+bounding box of the object span up front, we can delete the original line that computed it as the
+union of the left and right sides.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class bvh_node : public hittable {
       public:
         ...
         bvh_node(std::vector<shared_ptr<hittable>>& objects, size_t start, size_t end) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             // Build the bounding box of the span of source objects.
             bbox = aabb::empty;
             for (size_t object_index=start; object_index < end; object_index++)
                 bbox = aabb(bbox, objects[object_index]->bounding_box());
 
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             int axis = bbox.longest_axis();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
