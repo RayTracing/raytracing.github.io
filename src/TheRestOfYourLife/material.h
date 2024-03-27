@@ -13,6 +13,7 @@
 
 #include "rtweekend.h"
 
+#include "onb.h"
 #include "texture.h"
 
 class hit_record;
@@ -27,7 +28,7 @@ class material {
     }
 
     virtual bool scatter(
-        const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered
+        const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
     ) const {
         return false;
     }
@@ -44,16 +45,16 @@ class lambertian : public material {
     lambertian(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
     lambertian(shared_ptr<texture> tex) : tex(tex) {}
 
-    bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
-    const override {
-        auto scatter_direction = random_on_hemisphere(rec.normal);
+    bool scatter(
+        const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
+    ) const override {
+        onb uvw;
+        uvw.build_from_w(rec.normal);
+        auto scatter_direction = uvw.local(random_cosine_direction());
 
-        // Catch degenerate scatter direction
-        if (scatter_direction.near_zero())
-            scatter_direction = rec.normal;
-
-        scattered = ray(rec.p, scatter_direction, r_in.time());
+        scattered = ray(rec.p, unit_vector(scatter_direction), r_in.time());
         attenuation = tex->value(rec.u, rec.v, rec.p);
+        pdf = dot(uvw.w(), scattered.direction()) / pi;
         return true;
     }
 
