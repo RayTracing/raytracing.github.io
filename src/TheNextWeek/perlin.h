@@ -72,15 +72,21 @@ class perlin {
         }
     }
 
-    static double trilinear_interp(double c[2][2][2], double u, double v, double w) {
+    static double perlin_interp(const vec3 c[2][2][2], double u, double v, double w) {
+        auto uu = u*u*(3-2*u);
+        auto vv = v*v*(3-2*v);
+        auto ww = w*w*(3-2*w);
         auto accum = 0.0;
+
         for (int i=0; i < 2; i++)
             for (int j=0; j < 2; j++)
-                for (int k=0; k < 2; k++)
-                    accum += (i*u + (1-i)*(1-u))
-                           * (j*v + (1-j)*(1-v))
-                           * (k*w + (1-k)*(1-w))
-                           * c[i][j][k];
+                for (int k=0; k < 2; k++) {
+                    vec3 weight_v(u-i, v-j, w-k);
+                    accum += (i*uu + (1-i)*(1-uu))
+                           * (j*vv + (1-j)*(1-vv))
+                           * (k*ww + (1-k)*(1-ww))
+                           * dot(c[i][j][k], weight_v);
+                }
 
         return accum;
     }
