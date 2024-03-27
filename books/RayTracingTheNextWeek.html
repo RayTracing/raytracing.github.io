@@ -683,6 +683,9 @@ entire range of motion, from time=0 to time=1.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "aabb.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    class material;
+
     ...
 
     class hittable {
@@ -1117,46 +1120,26 @@ split the longest axis of the enclosing bounding box to get the most subdivision
 straight-forward, but we'll add a few things to the `aabb` class in the process.
 
 The first task is to construct an axis-aligned bounding box of the span of objects in the BVH
-constructor. Basically, we'll construct the `bvh_node`s bounding box from this span by initializing
-the bounding box to empty, and then augmenting it with each bounding box in the span of objects.
+constructor. Basically, we'll construct the bounding box of the `bvh_node` from this span by
+initializing the bounding box to empty (we'll define `aabb::empty` shortly), and then augment it
+with each bounding box in the span of objects.
 
-We don't have a way yet to express an empty bounding box, so we'll imagine one for now and
-implementing it shortly.
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class bvh_node : public hittable {
-      public:
-        ...
-
-        bvh_node(std::vector<shared_ptr<hittable>>& objects, size_t start, size_t end) {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            // Build the bounding box of the span of source objects.
-            bbox = aabb::empty;
-            for (size_t object_index=start; object_index < end; object_index++)
-                bbox = aabb(bbox, objects[object_index]->bounding_box());
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-            ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [object-span-bbox]: <kbd>[bvh.h]</kbd> Building the bbox for the span of BVH objects]
-
-Now that we have the bounding box, set the splitting axis to the one with the longest side. Again,
-we'll imagine a function that does that for us: `aabb::longest_axis()`. Finally, since we're
-computing the bounding box of the object span up front, we can delete the original line that
-computed it as the union of the left and right sides.
+Once we have the bounding box, set the splitting axis to the one with the longest side. We'll
+imagine a function that does that for us: `aabb::longest_axis()`. Finally, since we're computing the
+bounding box of the object span up front, we can delete the original line that computed it as the
+union of the left and right sides.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class bvh_node : public hittable {
       public:
         ...
         bvh_node(std::vector<shared_ptr<hittable>>& objects, size_t start, size_t end) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             // Build the bounding box of the span of source objects.
             bbox = aabb::empty;
             for (size_t object_index=start; object_index < end; object_index++)
                 bbox = aabb(bbox, objects[object_index]->bounding_box());
 
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             int axis = bbox.longest_axis();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -1182,6 +1165,10 @@ Now to implement the empty `aabb` code and the new `aabb::longest_axis()` functi
     class aabb {
       public:
         ...
+
+        bool hit(const ray& r, interval ray_t) const {
+            ...
+        }
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1368,6 +1355,8 @@ colors:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "texture.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    class hit_record;
 
     ...
 
@@ -1821,7 +1810,7 @@ header into a folder called `external`. Adjust according to your directory struc
             auto *bptr = bdata;
             auto *fptr = fdata;
             for (auto i=0; i < total_bytes; i++, fptr++, bptr++)
-                *bptr = static_cast<unsigned char>(*fptr * 256.0);
+                *bptr = static_cast< unsigned char >(*fptr * 256.0);
         }
     };
 
@@ -1930,7 +1919,7 @@ Here's the code to read an image from a file and then assign it to a diffuse mat
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [stbi-load-use]: <kbd>[main.cc]</kbd> Using stbi_load() to load an image]
+    [Listing [stbi-load-use]: <kbd>[main.cc]</kbd> Rendering with a texture map of Earth]
 
 </div>
 
@@ -1988,9 +1977,9 @@ code to make it all happen:
     class perlin {
       public:
         perlin() {
-            ranfloat = new double[point_count];
+            randfloat = new double[point_count];
             for (int i = 0; i < point_count; i++) {
-                ranfloat[i] = random_double();
+                randfloat[i] = random_double();
             }
 
             perm_x = perlin_generate_perm();
@@ -1999,7 +1988,7 @@ code to make it all happen:
         }
 
         ~perlin() {
-            delete[] ranfloat;
+            delete[] randfloat;
             delete[] perm_x;
             delete[] perm_y;
             delete[] perm_z;
@@ -2010,12 +1999,12 @@ code to make it all happen:
             auto j = int(4*p.y()) & 255;
             auto k = int(4*p.z()) & 255;
 
-            return ranfloat[perm_x[i] ^ perm_y[j] ^ perm_z[k]];
+            return randfloat[perm_x[i] ^ perm_y[j] ^ perm_z[k]];
         }
 
       private:
         static const int point_count = 256;
-        double* ranfloat;
+        double* randfloat;
         int* perm_x;
         int* perm_y;
         int* perm_z;
@@ -2050,9 +2039,14 @@ code to make it all happen:
 <div class='together'>
 Now if we create an actual texture that takes these floats between 0 and 1 and creates grey colors:
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "perlin.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtw_stb_image.h"
 
     ...
 
@@ -2137,6 +2131,7 @@ To make it smooth, we can linearly interpolate:
     class perlin {
       public:
         ...
+
         double noise(const point3& p) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto u = p.x() - floor(p.x());
@@ -2151,7 +2146,7 @@ To make it smooth, we can linearly interpolate:
             for (int di=0; di < 2; di++)
                 for (int dj=0; dj < 2; dj++)
                     for (int dk=0; dk < 2; dk++)
-                        c[di][dj][dk] = ranfloat[
+                        c[di][dj][dk] = randfloat[
                             perm_x[(i+di) & 255] ^
                             perm_y[(j+dj) & 255] ^
                             perm_z[(k+dk) & 255]
@@ -2160,19 +2155,27 @@ To make it smooth, we can linearly interpolate:
             return trilinear_interp(c, u, v, w);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
+
         ...
 
       private:
         ...
+
+        static void permute(int* p, int n) {
+            ...
+        }
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         static double trilinear_interp(double c[2][2][2], double u, double v, double w) {
             auto accum = 0.0;
             for (int i=0; i < 2; i++)
                 for (int j=0; j < 2; j++)
                     for (int k=0; k < 2; k++)
-                        accum += (i*u + (1-i)*(1-u))*
-                                (j*v + (1-j)*(1-v))*
-                                (k*w + (1-k)*(1-w))*c[i][j][k];
+                        accum += (i*u + (1-i)*(1-u))
+                               * (j*v + (1-j)*(1-v))
+                               * (k*w + (1-k)*(1-w))
+                               * c[i][j][k];
 
             return accum;
         }
@@ -2216,7 +2219,7 @@ a Hermite cubic to round off the interpolation:
             auto k = int(floor(p.z()));
             ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [perlin-smoothed]: <kbd>[perlin.h]</kbd> Perlin smoothed]
+    [Listing [perlin-smoothed]: <kbd>[perlin.h]</kbd> Perlin with Hermitian smoothing]
 
 <div class='together'>
 This gives a smoother looking image:
@@ -2298,11 +2301,11 @@ reasonable set of irregular directions, and I won't bother to make them exactly 
       public:
         perlin() {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            ranvec = new vec3[point_count];
+            randvec = new vec3[point_count];
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             for (int i = 0; i < point_count; i++) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                ranvec[i] = unit_vector(vec3::random(-1,1));
+                randvec[i] = unit_vector(vec3::random(-1,1));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
@@ -2313,18 +2316,19 @@ reasonable set of irregular directions, and I won't bother to make them exactly 
 
         ~perlin() {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            delete[] ranvec;
+            delete[] randvec;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             delete[] perm_x;
             delete[] perm_y;
             delete[] perm_z;
         }
+
         ...
 
       private:
         static const int point_count = 256;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        vec3* ranvec;
+        vec3* randvec;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         int* perm_x;
         int* perm_y;
@@ -2350,6 +2354,7 @@ The Perlin class `noise()` method is now:
             v = v*v*(3-2*v);
             w = w*w*(3-2*w);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
             auto i = int(floor(p.x()));
             auto j = int(floor(p.y()));
             auto k = int(floor(p.z()));
@@ -2361,18 +2366,19 @@ The Perlin class `noise()` method is now:
                 for (int dj=0; dj < 2; dj++)
                     for (int dk=0; dk < 2; dk++)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                        c[di][dj][dk] = ranvec[
+                        c[di][dj][dk] = randvec[
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                             perm_x[(i+di) & 255] ^
                             perm_y[(j+dj) & 255] ^
                             perm_z[(k+dk) & 255]
                         ];
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             return perlin_interp(c, u, v, w);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
+
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2464,6 +2470,13 @@ turbulence, and is a sum of repeated calls to noise:
       ...
       public:
         ...
+
+        double noise(const point3& p) const {
+            ...
+        }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double turb(const point3& p, int depth) const {
             auto accum = 0.0;
             auto temp_p = p;
@@ -2477,11 +2490,14 @@ turbulence, and is a sum of repeated calls to noise:
 
             return fabs(accum);
         }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-turb]: <kbd>[perlin.h]</kbd> Turbulence function]
 
-Here `fabs()` is the absolute value function defined in `<cmath>`.
+Here `fabs()` is the absolute value function defined in `<cmath>`. Now we'll use the new Perlin
+turbulence function to update our Perlin sphere:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class noise_texture : public texture {
