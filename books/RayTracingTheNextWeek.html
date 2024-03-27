@@ -2039,9 +2039,14 @@ code to make it all happen:
 <div class='together'>
 Now if we create an actual texture that takes these floats between 0 and 1 and creates grey colors:
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "perlin.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtw_stb_image.h"
 
     ...
 
@@ -2126,6 +2131,7 @@ To make it smooth, we can linearly interpolate:
     class perlin {
       public:
         ...
+
         double noise(const point3& p) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto u = p.x() - floor(p.x());
@@ -2149,19 +2155,27 @@ To make it smooth, we can linearly interpolate:
             return trilinear_interp(c, u, v, w);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
+
         ...
 
       private:
         ...
+
+        static void permute(int* p, int n) {
+            ...
+        }
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         static double trilinear_interp(double c[2][2][2], double u, double v, double w) {
             auto accum = 0.0;
             for (int i=0; i < 2; i++)
                 for (int j=0; j < 2; j++)
                     for (int k=0; k < 2; k++)
-                        accum += (i*u + (1-i)*(1-u))*
-                                (j*v + (1-j)*(1-v))*
-                                (k*w + (1-k)*(1-w))*c[i][j][k];
+                        accum += (i*u + (1-i)*(1-u))
+                               * (j*v + (1-j)*(1-v))
+                               * (k*w + (1-k)*(1-w))
+                               * c[i][j][k];
 
             return accum;
         }
