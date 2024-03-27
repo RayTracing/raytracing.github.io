@@ -20,7 +20,7 @@
 #include "texture.h"
 
 
-int main() {
+void bouncing_spheres() {
     hittable_list world;
 
     auto checker = make_shared<checker_texture>(0.32, color(.2, .3, .1), color(.9, .9, .9));
@@ -82,4 +82,8 @@ int main() {
     cam.focus_dist    = 10.0;
 
     cam.render(world);
+}
+
+int main() {
+    bouncing_spheres();
 }
