@@ -38,6 +38,7 @@ class perlin {
         auto u = p.x() - floor(p.x());
         auto v = p.y() - floor(p.y());
         auto w = p.z() - floor(p.z());
+
         auto i = int(floor(p.x()));
         auto j = int(floor(p.y()));
         auto k = int(floor(p.z()));
