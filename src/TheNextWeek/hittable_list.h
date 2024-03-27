@@ -13,7 +13,6 @@
 
 #include "rtweekend.h"
 
-#include "aabb.h"
 #include "hittable.h"
 
 #include <memory>
@@ -31,7 +30,6 @@ class hittable_list : public hittable {
 
     void add(shared_ptr<hittable> object) {
         objects.push_back(object);
-        bbox = aabb(bbox, object->bounding_box());
     }
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
@@ -49,11 +47,6 @@ class hittable_list : public hittable {
 
         return hit_anything;
     }
-
-    aabb bounding_box() const override { return bbox; }
-
-  private:
-    aabb bbox;
 };
 
 
