@@ -62,7 +62,6 @@ class camera {
 
         // Determine viewport dimensions.
         auto focal_length = (lookfrom - lookat).length();
-        auto focal_length = 1.0;
         auto theta = degrees_to_radians(vfov);
         auto h = tan(theta/2);
         auto viewport_height = 2 * h * focal_length;
