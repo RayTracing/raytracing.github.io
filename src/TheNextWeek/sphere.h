@@ -20,13 +20,22 @@ class sphere : public hittable {
   public:
     // Stationary Sphere
     sphere(const point3& center, double radius, shared_ptr<material> mat)
-      : center1(center), radius(fmax(0,radius)), mat(mat), is_moving(false) {}
+      : center1(center), radius(fmax(0,radius)), mat(mat), is_moving(false)
+    {
+        auto rvec = vec3(radius, radius, radius);
+        bbox = aabb(center1 - rvec, center1 + rvec);
+    }
 
     // Moving Sphere
     sphere(const point3& center1, const point3& center2, double radius,
            shared_ptr<material> mat)
       : center1(center1), radius(fmax(0,radius)), mat(mat), is_moving(true)
     {
+        auto rvec = vec3(radius, radius, radius);
+        aabb box1(center1 - rvec, center1 + rvec);
+        aabb box2(center2 - rvec, center2 + rvec);
+        bbox = aabb(box1, box2);
+
         center_vec = center2 - center1;
     }
 
@@ -59,12 +68,15 @@ class sphere : public hittable {
         return true;
     }
 
+    aabb bounding_box() const override { return bbox; }
+
   private:
     point3 center1;
     double radius;
     shared_ptr<material> mat;
     bool is_moving;
     vec3 center_vec;
+    aabb bbox;
 
     point3 sphere_center(double time) const {
         // Linearly interpolate from center1 to center2 according to time, where t=0 yields
