@@ -58,8 +58,6 @@ class camera {
 
         center = lookfrom;
 
-        center = point3(0, 0, 0);
-
         // Determine viewport dimensions.
         auto focal_length = (lookfrom - lookat).length();
         auto theta = degrees_to_radians(vfov);
