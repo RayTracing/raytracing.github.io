@@ -2608,8 +2608,8 @@ constructed AABBs always have a non-zero volume:
       public:
         ...
         aabb(const interval& x, const interval& y, const interval& z)
-          : x(x), y(y), z(z)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+          : x(x), y(y), z(z)
         {
             pad_to_minimums();
         }
@@ -2623,6 +2623,7 @@ constructed AABBs always have a non-zero volume:
             x = interval(fmin(a[0],b[0]), fmax(a[0],b[0]));
             y = interval(fmin(a[1],b[1]), fmax(a[1],b[1]));
             z = interval(fmin(a[2],b[2]), fmax(a[2],b[2]));
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             pad_to_minimums();
@@ -2825,6 +2826,7 @@ our quadrilateral.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class quad : public hittable {
         ...
+
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto denom = dot(normal, r.direction());
@@ -2848,6 +2850,7 @@ our quadrilateral.
             return true;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
+
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [quad-plane2]: <kbd>[quad.h]</kbd> hit() method for the infinite plane]
@@ -3036,11 +3039,6 @@ In order to make such experimentation a bit easier, we'll factor out the $(\alph
 test method from the hit method.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    #include <cmath>
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
     class quad : public hittable {
       public:
         ...
@@ -3060,7 +3058,9 @@ test method from the hit method.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             // Determine the hit point lies within the planar shape using its plane coordinates.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             auto intersection = r.at(t);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 planar_hitpt_vector = intersection - Q;
             auto alpha = dot(w, cross(planar_hitpt_vector, v));
             auto beta = dot(w, cross(u, planar_hitpt_vector));
@@ -3093,7 +3093,15 @@ test method from the hit method.
             return true;
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        ...
+
+      private:
+        point3 Q;
+        vec3 u, v;
+        vec3 w;
+        shared_ptr<material> mat;
+        aabb bbox;
+        vec3 normal;
+        double D;
     };
 
     #endif
@@ -3103,12 +3111,23 @@ test method from the hit method.
 <div class='together'>
 And now we add a new scene to demonstrate our new `quad` primitive:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+    #include "bvh.h"
+    #include "camera.h"
+    #include "color.h"
+    #include "hittable_list.h"
+    #include "material.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "quad.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "sphere.h"
+    #include "texture.h"
+
     ...
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     void quads() {
         hittable_list world;
@@ -3199,6 +3218,12 @@ it to `hit_record` instead -- that’s a matter of design taste). Like the backg
 the ray what color it is and performs no reflection. It’s very simple:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class dielectric : public material {
+        ...
+    }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     class diffuse_light : public material {
       public:
         diffuse_light(shared_ptr<texture> tex) : tex(tex) {}
@@ -3305,7 +3330,7 @@ the new `color_from_emission` value.
         cam.aspect_ratio      = 16.0 / 9.0;
         cam.image_width       = 400;
         cam.samples_per_pixel = 100;
-        cam.max_depth         = 50;
+        cam.max_depth         = 20;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         cam.background        = color(0.70, 0.80, 1.00);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3522,7 +3547,7 @@ We get:
   ![<span class='num'>Image 19:</span> Empty Cornell box
   ](../images/img-2.19-cornell-empty.png class='pixel')
 
-This image is very noisy because the light is small.
+This image is very noisy because the light is small, so most random rays don't hit the light source.
 
 </div>
 
@@ -3534,9 +3559,18 @@ The Cornell Box usually has two blocks in it. These are rotated relative to the 
 create a function that returns a box, by creating a `hittable_list` of six rectangles:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
+    #include "rtweekend.h"
+
+    #include "hittable.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "hittable_list.h"
-    ...
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    class quad : public hittable {
+    };
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     inline shared_ptr<hittable_list> box(const point3& a, const point3& b, shared_ptr<material> mat)
     {
         // Returns the 3D box (six sides) that contains the two opposite vertices a & b.
@@ -3623,6 +3657,12 @@ the intersection would be in the path of the offset ray, which isn't correct. Le
 make this happen.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class hittable {
+        ...
+    };
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     class translate : public hittable {
       public:
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
@@ -3661,17 +3701,7 @@ make this happen.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-            // Move the ray backwards by the offset
-            ray offset_r(r.origin() - offset, r.direction(), r.time());
-
-            // Determine where (if any) an intersection occurs along the offset ray
-            if (!object->hit(offset_r, ray_t, rec))
-                return false;
-
-            // Move the intersection point forwards by the offset
-            rec.p += offset;
-
-            return true;
+            ...
         }
 
 
@@ -3807,6 +3837,12 @@ rotating by $-\theta$.
 We can now create a class for y-rotation. Let's tackle the hit function first:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class translate : public hittable {
+        ...
+    };
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     class rotate_y : public hittable {
       public:
 
@@ -4065,6 +4101,12 @@ The resulting class is:
 The scattering function of isotropic picks a uniform random direction:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class diffuse_light : public material {
+        ...
+    };
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     class isotropic : public material {
       public:
         isotropic(const color& c) : tex(make_shared<solid_color>(c)) {}
@@ -4101,10 +4143,24 @@ Rendering a Cornell Box with Smoke and Fog Boxes
 If we replace the two blocks with smoke and fog (dark and light particles), and make the light
 bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
 
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+    #include "bvh.h"
+    #include "camera.h"
+    #include "color.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "constant_medium.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "hittable_list.h"
+    #include "material.h"
+    #include "quad.h"
+    #include "sphere.h"
+    #include "texture.h"
+
     ...
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     void cornell_smoke() {
         hittable_list world;
@@ -4190,9 +4246,6 @@ why we get caustics and subsurface for free. It’s a double-edged design decisi
 Also note that we'll parameterize this final scene to support a lower quality render for quick
 testing.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     void final_scene(int image_width, int samples_per_pixel, int max_depth) {
         hittable_list boxes1;
@@ -4276,7 +4329,7 @@ testing.
 
     int main() {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        switch (0) {
+        switch (9) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             case 1:  bouncing_spheres();          break;
             case 2:  checkered_spheres();         break;
