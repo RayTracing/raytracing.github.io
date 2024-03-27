@@ -110,23 +110,24 @@ centered at the origin:
 
     #include <iostream>
     #include <iomanip>
-    #include <math.h>
-    #include <stdlib.h>
 
     int main() {
-        int N = 100000;
+        std::cout << std::fixed << std::setprecision(12);
+
         int inside_circle = 0;
+        int N = 100000;
+
         for (int i = 0; i < N; i++) {
             auto x = random_double(-1,1);
             auto y = random_double(-1,1);
             if (x*x + y*y < 1)
                 inside_circle++;
         }
-        std::cout << std::fixed << std::setprecision(12);
+
         std::cout << "Estimate of Pi = " << (4.0 * inside_circle) / N << '\n';
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [estpi-1]: <kbd>[pi.cc]</kbd> Estimating π]
+    [Listing [estpi-1]: <kbd>[pi.cc]</kbd> Estimating π -- version one]
 
 The answer of $\pi$ found will vary from computer to computer based on the initial random seed. On
 my computer, this gives me the answer `Estimate of Pi = 3.143760000000`.
@@ -143,28 +144,35 @@ If we change the program to run forever and just print out a running estimate:
 
     #include <iostream>
     #include <iomanip>
-    #include <math.h>
-    #include <stdlib.h>
 
     int main() {
-        int inside_circle = 0;
-        int runs = 0;
         std::cout << std::fixed << std::setprecision(12);
+
+        int inside_circle = 0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        int runs = 0;
         while (true) {
             runs++;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             auto x = random_double(-1,1);
             auto y = random_double(-1,1);
             if (x*x + y*y < 1)
                 inside_circle++;
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             if (runs % 100000 == 0)
-                std::cout << "Estimate of Pi = "
-                          << (4.0 * inside_circle) / runs
-                          << '\n';
+                std::cout << "\rEstimate of Pi = " << (4.0 * inside_circle) / runs;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+        std::cout << "Estimate of Pi = " << (4.0 * inside_circle) / N << '\n';
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [estpi-2]: <kbd>[pi.cc]</kbd> Estimating π, v2]
+    [Listing [estpi-2]: <kbd>[pi.cc]</kbd> Estimating π -- version two]
 
 
 Stratified Samples (Jittering)
@@ -188,15 +196,20 @@ because we need to know the grid. Let’s take a million and try it both ways:
     #include <iomanip>
 
     int main() {
+        std::cout << std::fixed << std::setprecision(12);
+
         int inside_circle = 0;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         int inside_circle_stratified = 0;
         int sqrt_N = 1000;
+
         for (int i = 0; i < sqrt_N; i++) {
             for (int j = 0; j < sqrt_N; j++) {
                 auto x = random_double(-1,1);
                 auto y = random_double(-1,1);
                 if (x*x + y*y < 1)
                     inside_circle++;
+
                 x = 2*((i + random_double()) / sqrt_N) - 1;
                 y = 2*((j + random_double()) / sqrt_N) - 1;
                 if (x*x + y*y < 1)
@@ -204,15 +217,15 @@ because we need to know the grid. Let’s take a million and try it both ways:
             }
         }
 
-        std::cout << std::fixed << std::setprecision(12);
         std::cout
             << "Regular    Estimate of Pi = "
             << (4.0 * inside_circle) / (sqrt_N*sqrt_N) << '\n'
             << "Stratified Estimate of Pi = "
             << (4.0 * inside_circle_stratified) / (sqrt_N*sqrt_N) << '\n';
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [estpi-3]: <kbd>[pi.cc]</kbd> Estimating π, v3]
+    [Listing [estpi-3]: <kbd>[pi.cc]</kbd> Estimating π -- version three]
 
 </div>
 
@@ -241,7 +254,7 @@ because it is a little bit too complicated to cover, but there is a lot of inter
 currently happening in this space.
 
 As an intermediary, we'll be stratifying the locations of the sampling positions around each pixel
-location.
+location. Let's start with our familiar Cornell box scene.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -303,11 +316,13 @@ location.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estpi-3]: <kbd>[main.cc]</kbd> Stratifying the samples inside pixels]
 
+Run this program to generate an un-stratified render and save for comparison.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
       public:
         ...
+
         void render(const hittable& world) {
             initialize();
 
@@ -331,7 +346,7 @@ location.
 
             std::clog << "\rDone.                 \n";
         }
-        ...
+
       private:
         int    image_height;         // Rendered image height
         double pixel_samples_scale;  // Color scale factor for a sum of pixel samples
@@ -356,9 +371,10 @@ location.
             center = lookfrom;
             ...
         }
-        ...
-        ray get_ray(int i, int j, int s_i, int s_j) const {
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        ray get_ray(int i, int j, int s_i, int s_j) const {
             // Construct a camera ray originating from the defocus disk and directed at a randomly
             // sampled point around the pixel location i, j for stratified sample square s_i, s_j.
 
@@ -395,7 +411,7 @@ location.
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [render-estpi-3]: <kbd>[camera.h]</kbd> Stratifying the samples inside pixels (render)]
+    [Listing [render-estpi-3]: <kbd>[camera.h]</kbd> Stratifying the samples inside pixels]
 
 <div class='together'>
 If we compare the results from without stratification:
@@ -457,27 +473,19 @@ We choose a circle with radius $r = 1$ and get:
 
 <div class='together'>
 Our work above is equally valid as a means to solve for $pi$ as it is a means to solve for the area
-of a circle:
+of a circle. So we could make the following substitution in the first version of our program:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-
-    #include <iostream>
-    #include <iomanip>
-    #include <math.h>
-    #include <stdlib.h>
-
+    ...
     int main() {
-        int N = 100000;
-        int inside_circle = 0;
-        for (int i = 0; i < N; i++) {
-            auto x = random_double(-1,1);
-            auto y = random_double(-1,1);
-            if (x*x + y*y < 1)
-                inside_circle++;
-        }
-        std::cout << std::fixed << std::setprecision(12);
+        ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+        std::cout << "Estimate of Pi = "                << (4.0 * inside_circle) / N << '\n';
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         std::cout << "Estimated area of unit circle = " << (4.0 * inside_circle) / N << '\n';
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estunitcircle]: <kbd>[pi.cc]</kbd> Estimating area of unit circle]
@@ -614,18 +622,18 @@ The Monte Carlo approach:
 
     #include <iostream>
     #include <iomanip>
-    #include <math.h>
-    #include <stdlib.h>
 
     int main() {
         int a = 0;
         int b = 2;
         int N = 1000000;
         auto sum = 0.0;
+
         for (int i = 0; i < N; i++) {
             auto x = random_double(a, b);
             sum += x*x;
         }
+
         std::cout << std::fixed << std::setprecision(12);
         std::cout << "I = " << (b - a) * (sum / N) << '\n';
     }
@@ -635,11 +643,11 @@ The Monte Carlo approach:
 </div>
 
 <div class='together'>
-This, as expected, produces approximately the exact answer we get with integration, _i.e._ $I =
-8/3$. You could rightly point to this example and say that the integration is actually a lot less
-work than the Monte Carlo. That might be true in the case where the function is $f(x) = x^2$, but
-there exist many functions where it might be simpler to solve for the Monte Carlo than for the
-integration, like $f(x) = sin^5(x)$.
+This, as expected, produces approximately the exact answer we get with integration, _i.e._
+$I = 2.666… = \frac{8}{3}$. You could rightly point to this example and say that the integration is
+actually a lot less work than the Monte Carlo. That might be true in the case where the function is
+$f(x) = x^2$, but there exist many functions where it might be simpler to solve for the Monte Carlo
+than for the integration, like $f(x) = sin^5(x)$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         for (int i = 0; i < N; i++) {
@@ -920,9 +928,6 @@ have an area that is half of the total. From $0$ to $2\pi$ for example:
     #include <vector>
     #include <iostream>
     #include <iomanip>
-    #include <math.h>
-    #include <cmath>
-    #include <stdlib.h>
 
     struct sample {
         double x;
@@ -937,23 +942,25 @@ have an area that is half of the total. From $0$ to $2\pi$ for example:
         unsigned int N = 10000;
         double sum = 0.0;
 
-        // iterate through all of our samples
+        // Iterate through all of our samples.
+
         std::vector<sample> samples;
         for (unsigned int i = 0; i < N; i++) {
-            // Get the area under the curve
+            // Get the area under the curve.
             auto x = random_double(0, 2*pi);
             auto sin_x = sin(x);
             auto p_x = exp(-x / (2*pi)) * sin_x * sin_x;
             sum += p_x;
-            // store this sample
+
+            // Store this sample.
             sample this_sample = {x, p_x};
             samples.push_back(this_sample);
         }
 
-        // Sort the samples by x
+        // Sort the samples by x.
         std::sort(samples.begin(), samples.end(), compare_by_x);
 
-        // Find out the sample at which we have half of our area
+        // Find out the sample at which we have half of our area.
         double half_sum = sum / 2.0;
         double halfway_point = 0.0;
         double accum = 0.0;
@@ -1156,8 +1163,6 @@ means the CDF is $P(x) = x/2$, so $f(d) = 2d$. Knowing this, we can make this un
 
     #include <iostream>
     #include <iomanip>
-    #include <math.h>
-    #include <stdlib.h>
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1171,6 +1176,10 @@ means the CDF is $P(x) = x/2$, so $f(d) = 2d$. Knowing this, we can make this un
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
     int main() {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+        int a = 0;
+        int b = 2;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         int N = 1000000;
         auto sum = 0.0;
         for (int i = 0; i < N; i++) {
@@ -1181,7 +1190,7 @@ means the CDF is $P(x) = x/2$, so $f(d) = 2d$. Knowing this, we can make this un
         }
         std::cout << std::fixed << std::setprecision(12);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        std::cout << "I = " << sum / N << '\n';
+        std::cout << "I = " << (sum / N) << '\n';
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1211,23 +1220,34 @@ We can try to solve for the integral using the linear PDF $p(r) = \frac{r}{2}$, 
 able to solve for the CDF and its inverse. To do that, all we need to do is replace the functions
 $f = \sqrt{4d}$ and $pdf = x/2$.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     double f(double d) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         return sqrt(4.0 * d);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
 
     double pdf(double x) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         return x / 2.0;
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    }
 
     int main() {
         int N = 1000000;
         auto sum = 0.0;
+
         for (int i = 0; i < N; i++) {
-            auto x = f(random_double());
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            auto z = random_double();
+            if (z == 0.0)  // Ignore zero to avoid NaNs
+                continue;
+
+            auto x = f(z);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             sum += x*x / pdf(x);
         }
+
         std::cout << std::fixed << std::setprecision(12);
         std::cout << "I = " << sum / N << '\n';
     }
@@ -1275,23 +1295,31 @@ and
 <div class='together'>
 For just one sample we get:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     double f(double d) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         return 8.0 * pow(d, 1.0/3.0);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
 
     double pdf(double x) {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         return (3.0/8.0) * x*x;
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    }
 
     int main() {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         int N = 1;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         auto sum = 0.0;
+
         for (int i = 0; i < N; i++) {
-            auto x = f(random_double()));
+            auto z = random_double();
+            if (z == 0.0)  // Ignore zero to avoid NaNs
+                continue;
+
+            auto x = f(z);
             sum += x*x / pdf(x);
         }
         std::cout << std::fixed << std::setprecision(12);
@@ -1300,7 +1328,7 @@ For just one sample we get:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-xsq-5]: <kbd>[integrate_x_sq.cc]</kbd> Integrating $x^2$, final version]
 
-This always returns the exact answer. Which, honestly, feels a bit like magic.
+This always returns the exact answer.
 
 </div>
 
@@ -1379,6 +1407,11 @@ sphere, which is $1/(4\pi)$. If the integrand is $\cos^2(\theta)$, and $\theta$ 
 the $z$ axis:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+    #include <iostream>
+    #include <iomanip>
+
     double f(const vec3& d) {
         auto cosine_squared = d.z()*d.z();
         return cosine_squared;
@@ -1404,18 +1437,18 @@ the $z$ axis:
         Generating importance-sampled points on the unit sphere
     ]
 
-The analytic answer is $\frac{4}{3} \pi$ -- if you remember enough advanced calc, check me! And the
-code above produces that. The key point here is that all of the integrals and the probability and
-everything else is over the unit sphere. The way to represent a single direction in 3D is its
-associated point on the unit sphere. The way to represent a range of directions in 3D is the amount
-of area on the unit sphere that those directions travel through. Call it direction, area, or _solid
-angle_ -- it’s all the same thing. Solid angle is the term that you'll usually find in the
-literature. You have radians (r) in $\theta$ over one dimension, and you have _steradians_ (sr) in
-$\theta$ _and_ $\phi$ over two dimensions (the unit sphere is a three dimensional object, but its
-surface is only two dimensional). Solid Angle is just the two dimensional extension of angles. If
-you are comfortable with a two dimensional angle, great! If not, do what I do and imagine the area
-on the unit sphere that a set of directions goes through. The solid angle $\omega$ and the projected
-area $A$ on the unit sphere are the same thing.
+The analytic answer is $\frac{4}{3} \pi = 4.188790204786391$ -- if you remember enough advanced
+calc, check me! And the code above produces that. The key point here is that all of the integrals
+and the probability and everything else is over the unit sphere. The way to represent a single
+direction in 3D is its associated point on the unit sphere. The way to represent a range of
+directions in 3D is the amount of area on the unit sphere that those directions travel through. Call
+it direction, area, or _solid angle_ -- it’s all the same thing. Solid angle is the term that you'll
+usually find in the literature. You have radians (r) in $\theta$ over one dimension, and you have
+_steradians_ (sr) in $\theta$ _and_ $\phi$ over two dimensions (the unit sphere is a three
+dimensional object, but its surface is only two dimensional). Solid Angle is just the two
+dimensional extension of angles. If you are comfortable with a two dimensional angle, great! If not,
+do what I do and imagine the area on the unit sphere that a set of directions goes through. The
+solid angle $\omega$ and the projected area $A$ on the unit sphere are the same thing.
 
   ![Figure [solid-angle]: Solid angle / projected area of a sphere
   ](../images/fig-3.09-solid-angle.jpg)
@@ -1613,7 +1646,7 @@ Let’s adjust some parameters for the Cornell box:
     int main() {
         ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        cam.samples_per_pixel = 100;
+        cam.samples_per_pixel = 1000;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         ...
     }
@@ -1636,7 +1669,8 @@ that. Remember Monte Carlo basics: $\int f(x) \approx \sum f(r)/p(r)$. For the L
 let’s sample like we do now: $p(\omega_o) = \cos(\theta_o) / \pi$.
 
 <div class='together'>
-We modify the base-class `material` to enable this importance sampling:
+We modify the base-class `material` to enable this importance sampling, and define the scattering
+PDF function for Lambertian materials:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class material {
@@ -1651,17 +1685,7 @@ We modify the base-class `material` to enable this importance sampling:
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [class-material]: <kbd>[material.h]</kbd>
-        The material class, adding importance sampling
-    ]
 
-</div>
-
-<div class='together'>
-And the `lambertian` material becomes:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class lambertian : public material {
       public:
         lambertian(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
@@ -1669,20 +1693,13 @@ And the `lambertian` material becomes:
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
-            auto scatter_direction = rec.normal + random_unit_vector();
-
-            // Catch degenerate scatter direction
-            if (scatter_direction.near_zero())
-                scatter_direction = rec.normal;
-
-            scattered = ray(rec.p, scatter_direction, r_in.time());
-            attenuation = tex->value(rec.u, rec.v, rec.p);
-            return true;
+            ...
         }
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
+        double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
+        const override {
             auto cos_theta = dot(rec.normal, unit_vector(scattered.direction()));
             return cos_theta < 0 ? 0 : cos_theta/pi;
         }
@@ -1853,7 +1870,8 @@ PDF:
         }
 
 
-        double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
+        double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
+        const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             return 1 / (2*pi);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2021,7 +2039,6 @@ $f()/p() = \cos^3(\theta) / \frac{1}{2\pi}$, and we can test this:
 
     #include <iostream>
     #include <iomanip>
-    #include <math.h>
 
     double f(double r2) {
         // auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
@@ -2101,7 +2118,6 @@ Here's a function that generates random vectors weighted by this PDF:
 
     #include <iostream>
     #include <iomanip>
-    #include <math.h>
 
     double f(const vec3& d) {
         auto cos_theta = d.z();
@@ -2222,7 +2238,7 @@ $\mathbf{s}$ are both unit vectors, their cross product $\mathbf{t}$ will be als
 ONB of $\mathbf{s}$, $\mathbf{t}$, and $\mathbf{n}$, and we have a random $(x,y,z)$ relative to the
 $z$ axis, we can get the vector relative to $\mathbf{n}$ with:
 
-    $$ \mathit{Random vector} = x \mathbf{s} + y \mathbf{t} + z \mathbf{n} $$
+    $$ \text{random vector} = x \mathbf{s} + y \mathbf{t} + z \mathbf{n} $$
 
 If you remember, we used similar math to produce rays from a camera. You can think of that as a
 change to the camera’s natural coordinate system.
@@ -2281,9 +2297,35 @@ class because it won't really be more complicated than utility functions:
 We can rewrite our Lambertian material using this to get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "onb.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "texture.h"
+
+    class hit_record;
+
+    class material {
+        ...
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        virtual bool scatter(
+            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
+        ) const {
+            return false;
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+        ...
+    };
+
     class lambertian : public material {
       public:
         ...
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         bool scatter(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
