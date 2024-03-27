@@ -24,6 +24,8 @@ class hit_record {
     vec3 normal;
     shared_ptr<material> mat;
     double t;
+    double u;
+    double v;
     bool front_face;
 
     void set_face_normal(const ray& r, const vec3& outward_normal) {
