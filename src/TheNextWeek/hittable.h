@@ -91,17 +91,15 @@ class rotate_y : public hittable {
         point3 min( infinity,  infinity,  infinity);
         point3 max(-infinity, -infinity, -infinity);
 
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 2; j++) {
-                for (int k = 0; k < 2; k++) {
-                    auto x = i*bbox.x.max + (1-i)*bbox.x.min;
-                    auto y = j*bbox.y.max + (1-j)*bbox.y.min;
-                    auto z = k*bbox.z.max + (1-k)*bbox.z.min;
+        for (auto x : { bbox.x.min, bbox.x.max }) {
+            for (auto y : { bbox.y.min, bbox.y.max }) {
+                for (auto z : { bbox.z.min, bbox.z.max }) {
 
-                    auto newx =  cos_theta*x + sin_theta*z;
-                    auto newz = -sin_theta*x + cos_theta*z;
-
-                    vec3 tester(newx, y, newz);
+                    vec3 tester {
+                         cos_theta*x + sin_theta*z,
+                         y,
+                        -sin_theta*x + cos_theta*z
+                    };
 
                     for (int c = 0; c < 3; c++) {
                         min[c] = fmin(min[c], tester[c]);
