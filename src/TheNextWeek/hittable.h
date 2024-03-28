@@ -116,14 +116,17 @@ class rotate_y : public hittable {
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         // Change the ray from world space to object space
-        auto origin = r.origin();
-        auto direction = r.direction();
+        point3 origin {
+            cos_theta*r.origin().x() - sin_theta*r.origin().z(),
+            r.origin().y(),
+            sin_theta*r.origin().x() + cos_theta*r.origin().z()
+        };
 
-        origin[0] = cos_theta*r.origin()[0] - sin_theta*r.origin()[2];
-        origin[2] = sin_theta*r.origin()[0] + cos_theta*r.origin()[2];
-
-        direction[0] = cos_theta*r.direction()[0] - sin_theta*r.direction()[2];
-        direction[2] = sin_theta*r.direction()[0] + cos_theta*r.direction()[2];
+        vec3 direction {
+            cos_theta*r.direction().x() - sin_theta*r.direction().z(),
+            r.direction().y(),
+            sin_theta*r.direction().x() + cos_theta*r.direction().z()
+        };
 
         ray rotated_r(origin, direction, r.time());
 
@@ -132,14 +135,18 @@ class rotate_y : public hittable {
             return false;
 
         // Change the intersection point from object space to world space
-        auto p = rec.p;
-        p[0] =  cos_theta*rec.p[0] + sin_theta*rec.p[2];
-        p[2] = -sin_theta*rec.p[0] + cos_theta*rec.p[2];
+        point3 p {
+             cos_theta*rec.p.x() + sin_theta*rec.p.z(),
+             rec.p.y(),
+            -sin_theta*rec.p.x() + cos_theta*rec.p.z()
+        };
 
         // Change the normal from object space to world space
-        auto normal = rec.normal;
-        normal[0] =  cos_theta*rec.normal[0] + sin_theta*rec.normal[2];
-        normal[2] = -sin_theta*rec.normal[0] + cos_theta*rec.normal[2];
+        vec3 normal {
+             cos_theta*rec.normal.x() + sin_theta*rec.normal.z(),
+             rec.normal.y(),
+            -sin_theta*rec.normal.x() + cos_theta*rec.normal.z()
+        };
 
         rec.p = p;
         rec.normal = normal;
