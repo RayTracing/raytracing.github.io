@@ -11,11 +11,12 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 #include <limits>
 #include <memory>
 
 
-// Usings
+// C++ Std Usings
 
 using std::shared_ptr;
 using std::make_shared;

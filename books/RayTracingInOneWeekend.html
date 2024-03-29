@@ -1391,19 +1391,20 @@ Common Constants and Utility Functions
 We need some math constants that we conveniently define in their own header file. For now we only
 need infinity, but we will also throw our own definition of pi in there, which we will need later.
 There is no standard portable definition of pi, so we just define our own constant for it. We'll
-throw common useful constants and future utility functions in `rtweekend.h`, our general main header
-file.
+also throw common useful constants and future utility functions in `rtweekend.h`, our general main
+header file.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef RTWEEKEND_H
     #define RTWEEKEND_H
 
     #include <cmath>
+    #include <iostream>
     #include <limits>
     #include <memory>
 
 
-    // Usings
+    // C++ Std Usings
 
     using std::shared_ptr;
     using std::make_shared;
@@ -1429,8 +1430,56 @@ file.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [rtweekend-initial]: <kbd>[rtweekend.h]</kbd> The rtweekend.h common header]
 
+For all main program files, we will include `rtweekend.h` first, so most other header files (where
+the bulk of our code will reside) can assume that they are free to assume that these definitions are
+already available. (Headers included inside `rtweekend.h` still need to include any of their
+dependencies.) Because of this, we'll make some updates with this assumption in mind.
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+    #include "vec3.h"
+
+    #include <iostream>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [assume-rtw-color]: <kbd>[color.h]</kbd> Assume rtweekend.h in color.h]
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+    #include "ray.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [assume-rtw-hittable]: <kbd>[hittable.h]</kbd> Assume rtweekend.h in hittable.h]
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+    #include <memory>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include <vector>
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+    using std::shared_ptr;
+    using std::make_shared;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [assume-rtw-hittable-list]: <kbd>[hittable_list.h]</kbd>
+        Assume rtweekend.h in hittable_list.h
+    ]
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+    #include "vec3.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [assume-rtw-sphere]: <kbd>[sphere.h]</kbd> Assume rtweekend.h in sphere.h]
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+    #include <cmath>
+    #include <iostream>
+
+    using std::sqrt;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [assume-rtw-vec3]: <kbd>[vec3.h]</kbd> Assume rtweekend.h in vec3.h]
+
 <div class='together'>
-And the new main:
+And now the new main:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "rtweekend.h"
@@ -1443,7 +1492,10 @@ And the new main:
     #include "sphere.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
     #include <iostream>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
@@ -2883,6 +2935,15 @@ NaNs), so we need to intercept the condition before we pass it on.
 
 In service of this, we'll create a new vector method -- `vec3::near_zero()` -- that returns true if
 the vector is very close to zero in all dimensions.
+
+We'll need to use the C++ standard library function `std::fabs`, which returns the absolute value of
+its input. We'll add this to `rtweekend.h` since we'll need this in several locations as we proceed.
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    XXXX
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [declare-fabs]: <kbd>rtweekend.h</kbd> Declaring std::fabs()
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class vec3 {

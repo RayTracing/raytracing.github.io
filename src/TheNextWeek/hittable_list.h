@@ -16,7 +16,6 @@
 #include "aabb.h"
 #include "hittable.h"
 
-#include <memory>
 #include <vector>
 
 

@@ -11,10 +11,6 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
-#include <cmath>
-#include <iostream>
-
-using std::sqrt;
 using std::fabs;
 
 class vec3 {
