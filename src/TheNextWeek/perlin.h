@@ -17,9 +17,9 @@
 class perlin {
   public:
     perlin() {
-        ranvec = new vec3[point_count];
+        randvec = new vec3[point_count];
         for (int i = 0; i < point_count; i++) {
-            ranvec[i] = unit_vector(vec3::random(-1,1));
+            randvec[i] = unit_vector(vec3::random(-1,1));
         }
 
         perm_x = perlin_generate_perm();
@@ -28,7 +28,7 @@ class perlin {
     }
 
     ~perlin() {
-        delete[] ranvec;
+        delete[] randvec;
         delete[] perm_x;
         delete[] perm_y;
         delete[] perm_z;
@@ -38,6 +38,7 @@ class perlin {
         auto u = p.x() - floor(p.x());
         auto v = p.y() - floor(p.y());
         auto w = p.z() - floor(p.z());
+
         auto i = int(floor(p.x()));
         auto j = int(floor(p.y()));
         auto k = int(floor(p.z()));
@@ -46,7 +47,7 @@ class perlin {
         for (int di=0; di < 2; di++)
             for (int dj=0; dj < 2; dj++)
                 for (int dk=0; dk < 2; dk++)
-                    c[di][dj][dk] = ranvec[
+                    c[di][dj][dk] = randvec[
                         perm_x[(i+di) & 255] ^
                         perm_y[(j+dj) & 255] ^
                         perm_z[(k+dk) & 255]
@@ -71,7 +72,7 @@ class perlin {
 
   private:
     static const int point_count = 256;
-    vec3* ranvec;
+    vec3* randvec;
     int* perm_x;
     int* perm_y;
     int* perm_z;
