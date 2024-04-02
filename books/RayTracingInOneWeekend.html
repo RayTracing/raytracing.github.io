@@ -1390,9 +1390,8 @@ Common Constants and Utility Functions
 ---------------------------------------
 We need some math constants that we conveniently define in their own header file. For now we only
 need infinity, but we will also throw our own definition of pi in there, which we will need later.
-There is no standard portable definition of pi, so we just define our own constant for it. We'll
-also throw common useful constants and future utility functions in `rtweekend.h`, our general main
-header file.
+We'll also throw common useful constants and future utility functions in here. This new header,
+`rtweekend.h`, will be our general main header file.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef RTWEEKEND_H
@@ -1431,22 +1430,24 @@ header file.
     [Listing [rtweekend-initial]: <kbd>[rtweekend.h]</kbd> The rtweekend.h common header]
 
 All main program files will include `rtweekend.h` first, so most other header files (where the bulk
-of our code will reside) can assume that these definitions are already available. (Headers included
-inside `rtweekend.h` still need to include any of their dependencies.) We'll make some updates with
-this assumption in mind.
+of our code will reside) can assume these definitions are already available. Headers included inside
+`rtweekend.h` still need to include any of their dependencies. We'll make some updates with this
+assumption in mind.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
     #include "vec3.h"
 
     #include <iostream>
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [assume-rtw-color]: <kbd>[color.h]</kbd> Assume rtweekend.h in color.h]
+    [Listing [assume-rtw-color]: <kbd>[color.h]</kbd> Assume rtweekend.h inclusion for color.h]
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
     #include "ray.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [assume-rtw-hittable]: <kbd>[hittable.h]</kbd> Assume rtweekend.h in hittable.h]
+    [Listing [assume-rtw-hittable]: <kbd>[hittable.h]</kbd>
+        Assume rtweekend.h inclusion for hittable.h
+    ]
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
@@ -1460,14 +1461,14 @@ this assumption in mind.
     using std::make_shared;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [assume-rtw-hittable-list]: <kbd>[hittable_list.h]</kbd>
-        Assume rtweekend.h in hittable_list.h
+        Assume rtweekend.h inclusion for hittable_list.h
     ]
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
     #include "vec3.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [assume-rtw-sphere]: <kbd>[sphere.h]</kbd> Assume rtweekend.h in sphere.h]
+    [Listing [assume-rtw-sphere]: <kbd>[sphere.h]</kbd> Assume rtweekend.h inclusion for sphere.h]
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
@@ -1476,7 +1477,7 @@ this assumption in mind.
 
     using std::sqrt;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [assume-rtw-vec3]: <kbd>[vec3.h]</kbd> Assume rtweekend.h in vec3.h]
+    [Listing [assume-rtw-vec3]: <kbd>[vec3.h]</kbd> Assume rtweekend.h inclusion for vec3.h]
 
 <div class='together'>
 And now the new main:
@@ -2936,9 +2937,8 @@ NaNs), so we need to intercept the condition before we pass it on.
 In service of this, we'll create a new vector method -- `vec3::near_zero()` -- that returns true if
 the vector is very close to zero in all dimensions.
 
-We'll need to use the C++ standard library function `std::fabs`, which returns the absolute value of
-its input. We'll add this to `rtweekend.h` since we'll use this in several future locations.
-
+The following changes will use the C++ standard library function `std::fabs`, which returns the
+absolute value of its input, so add this to our standard header.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     // C++ Std Usings
@@ -2951,7 +2951,7 @@ its input. We'll add this to `rtweekend.h` since we'll use this in several futur
     using std::shared_ptr;
     using std::sqrt;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [declare-fabs]: <kbd>rtweekend.h</kbd> Declaring std::fabs()
+    [Listing [declare-fabs]: <kbd>rtweekend.h</kbd> Declaring std::fabs()]
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class vec3 {
