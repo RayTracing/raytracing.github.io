@@ -82,7 +82,7 @@ class metal : public material {
         srec.skip_pdf = true;
 
         vec3 reflected = reflect(r_in.direction(), rec.normal);
-        srec.skip_pdf_ray = ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
+        srec.skip_pdf_ray = ray(rec.p, reflected + fuzz*random_unit_vector(), r_in.time());
 
         return true;
     }

@@ -13,11 +13,8 @@
 
 #include "rtweekend.h"
 
-#include "color.h"
 #include "hittable.h"
 #include "material.h"
-
-#include <iostream>
 
 
 class camera {

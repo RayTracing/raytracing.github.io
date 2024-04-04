@@ -32,4 +32,5 @@ class ray {
     vec3 dir;
 };
 
+
 #endif
