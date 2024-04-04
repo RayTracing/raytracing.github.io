@@ -3198,10 +3198,14 @@ endpoint, scaled by the fuzz factor.
 
   ![Figure [reflect-fuzzy]: Generating fuzzed reflection rays](../images/fig-1.16-reflect-fuzzy.jpg)
 
-The bigger the sphere, the fuzzier the reflections will be. This suggests adding a fuzziness
+The bigger the fuzz sphere, the fuzzier the reflections will be. This suggests adding a fuzziness
 parameter that is just the radius of the sphere (so zero is no perturbation). The catch is that for
 big spheres or grazing rays, we may scatter below the surface. We can just have the surface absorb
 those.
+
+Also note that in order for the fuzz sphere to make sense, it needs to be consistently scaled
+compared to the reflection vector, which can vary in length arbitrarily. To address this, we need to
+normalize the reflected ray.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class metal : public material {
@@ -3214,8 +3218,9 @@ those.
         const override {
             vec3 reflected = reflect(r_in.direction(), rec.normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            scattered = ray(rec.p, reflected + fuzz*random_unit_vector());
+            reflected = unit_vector(reflected) + (fuzz * random_unit_vector());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            scattered = ray(rec.p, reflected);
             attenuation = albedo;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             return (dot(scattered.direction(), rec.normal) > 0);

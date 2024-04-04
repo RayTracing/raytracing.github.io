@@ -77,12 +77,13 @@ class metal : public material {
     metal(const color& albedo, double fuzz) : albedo(albedo), fuzz(fuzz < 1 ? fuzz : 1) {}
 
     bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const override {
+        vec3 reflected = reflect(r_in.direction(), rec.normal);
+        reflected = unit_vector(reflected) + (fuzz * random_unit_vector());
+
         srec.attenuation = albedo;
         srec.pdf_ptr = nullptr;
         srec.skip_pdf = true;
-
-        vec3 reflected = reflect(r_in.direction(), rec.normal);
-        srec.skip_pdf_ray = ray(rec.p, reflected + fuzz*random_in_unit_sphere(), r_in.time());
+        srec.skip_pdf_ray = ray(rec.p, reflected, r_in.time());
 
         return true;
     }
