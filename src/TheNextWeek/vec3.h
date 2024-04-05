@@ -11,8 +11,6 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
-using std::fabs;
-
 class vec3 {
   public:
     double e[3];

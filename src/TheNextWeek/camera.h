@@ -13,11 +13,8 @@
 
 #include "rtweekend.h"
 
-#include "color.h"
 #include "hittable.h"
 #include "material.h"
-
-#include <iostream>
 
 
 class camera {
@@ -90,7 +87,7 @@ class camera {
         vec3 viewport_u = viewport_width * u;    // Vector across viewport horizontal edge
         vec3 viewport_v = viewport_height * -v;  // Vector down viewport vertical edge
 
-        // Calculate the horizontal and vertical delta vectors to the next pixel.
+        // Calculate the horizontal and vertical delta vectors from pixel to pixel.
         pixel_delta_u = viewport_u / image_width;
         pixel_delta_v = viewport_v / image_height;
 
@@ -121,7 +118,7 @@ class camera {
     }
 
     vec3 sample_square() const {
-        // Returns a random point in the square surrounding a pixel at the origin.
+        // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
         return vec3(random_double() - 0.5, random_double() - 0.5, 0);
     }
 

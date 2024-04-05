@@ -1128,7 +1128,9 @@ And here’s the sphere:
             auto c = oc.length_squared() - radius*radius;
 
             auto discriminant = h*h - a*c;
-            if (discriminant < 0) return false;
+            if (discriminant < 0)
+                return false;
+
             auto sqrtd = sqrt(discriminant);
 
             // Find the nearest root that lies in the acceptable range.
@@ -1436,8 +1438,6 @@ of our code will reside) can assume these definitions are already available. Hea
 assumption in mind.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
-    #include "vec3.h"
-
     #include <iostream>
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [assume-rtw-color]: <kbd>[color.h]</kbd> Assume rtweekend.h inclusion for color.h]
@@ -1490,6 +1490,8 @@ And now the new main:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
     #include "color.h"
+    #include "ray.h"
+    #include "vec3.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "hittable.h"
     #include "hittable_list.h"
@@ -2042,7 +2044,9 @@ want to use this, you can obtain a random number with the conditions we need as 
         return distribution(generator);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-double-alt]: <kbd>[rtweekend.h]</kbd> random_double(), alternate implemenation]
+    [Listing [random-double-alt]: <kbd>[rtweekend.h]</kbd>
+        random_double(), alternate implementation
+    ]
 
 
 Generating Pixels with Multiple Samples
@@ -3147,6 +3151,7 @@ Now let’s add some metal spheres to our scene:
     #include "rtweekend.h"
 
     #include "camera.h"
+    #include "hittable.h"
     #include "hittable_list.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "material.h"
@@ -3417,7 +3422,7 @@ an index of refraction of approximately 1.5.
     auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
     auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    auto material_left   = make_shared<dielectric>(1.5);
+    auto material_left   = make_shared<dielectric>(1.50);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 1.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3660,9 +3665,9 @@ Here's the code:
     ...
     auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
     auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
-    auto material_left   = make_shared<dielectric>(1.50);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    auto material_bubble = make_shared<dielectric>(0.67);
+    auto material_left   = make_shared<dielectric>(1.50);
+    auto material_bubble = make_shared<dielectric>(1.00 / 1.50);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
 
@@ -3931,8 +3936,8 @@ We'll change back to the prior scene, and use the new viewpoint:
         auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
         auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
         auto material_left   = make_shared<dielectric>(1.50);
-        auto material_bubble = make_shared<dielectric>(0.67);
-        auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.0);
+        auto material_bubble = make_shared<dielectric>(1.00 / 1.50);
+        auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 1.0);
 
         world.add(make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
         world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.2),   0.5, material_center));
@@ -3949,8 +3954,8 @@ We'll change back to the prior scene, and use the new viewpoint:
         cam.max_depth         = 50;
 
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         cam.vfov     = 90;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         cam.lookfrom = point3(-2,2,1);
         cam.lookat   = point3(0,0,-1);
         cam.vup      = vec3(0,1,0);
@@ -4206,7 +4211,7 @@ Now let's update the camera to originate rays from the defocus disk:
         }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [camera-dof]: <kbd>[camera.h]</kbd> Camera with adjustable depth-of-field (dof)]
+    [Listing [camera-dof]: <kbd>[camera.h]</kbd> Camera with adjustable depth-of-field]
 
 <div class='together'>
 Using a large aperture:

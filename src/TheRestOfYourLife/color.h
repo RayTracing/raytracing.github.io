@@ -11,6 +11,9 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
+#include "interval.h"
+#include "vec3.h"
+
 using color = vec3;
 
 inline double linear_to_gamma(double linear_component)

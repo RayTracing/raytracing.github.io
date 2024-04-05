@@ -39,4 +39,5 @@ class ray {
     double tm;
 };
 
+
 #endif

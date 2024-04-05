@@ -11,8 +11,6 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
-#include "rtweekend.h"
-
 #include "hittable.h"
 #include "onb.h"
 
@@ -51,8 +49,9 @@ class sphere : public hittable {
         if (discriminant < 0)
             return false;
 
-        // Find the nearest root that lies in the acceptable range.
         auto sqrtd = sqrt(discriminant);
+
+        // Find the nearest root that lies in the acceptable range.
         auto root = (h - sqrtd) / a;
         if (!ray_t.surrounds(root)) {
             root = (h + sqrtd) / a;
