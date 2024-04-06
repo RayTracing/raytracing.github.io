@@ -102,6 +102,14 @@ class rtw_image {
         return high - 1;
     }
 
+    static unsigned char float_to_byte(float value) {
+        if (value <= 0.0)
+            return 0;
+        if (1.0 <= value)
+            return 255;
+        return static_cast< unsigned char >(256.0 * value);
+    }
+
     void convert_to_bytes() {
         // Convert the linear floating point pixel data to bytes, storing the resulting byte
         // data in the `bdata` member.
@@ -115,7 +123,7 @@ class rtw_image {
         auto *bptr = bdata;
         auto *fptr = fdata;
         for (auto i=0; i < total_bytes; i++, fptr++, bptr++)
-            *bptr = static_cast<unsigned char>(*fptr * 256.0);
+            *bptr = float_to_byte(*fptr);
     }
 };
 
