@@ -90,7 +90,7 @@ class perlin {
 
     static void permute(int* p, int n) {
         for (int i = n-1; i > 0; i--) {
-            int target = random_int(0,i);
+            int target = random_int(0, i);
             int tmp = p[i];
             p[i] = p[target];
             p[target] = tmp;
@@ -107,9 +107,10 @@ class perlin {
             for (int j=0; j < 2; j++)
                 for (int k=0; k < 2; k++) {
                     vec3 weight_v(u-i, v-j, w-k);
-                    accum += (i*uu + (1-i)*(1-uu))*
-                        (j*vv + (1-j)*(1-vv))*
-                        (k*ww + (1-k)*(1-ww))*dot(c[i][j][k], weight_v);
+                    accum += (i*uu + (1-i)*(1-uu))
+                           * (j*vv + (1-j)*(1-vv))
+                           * (k*ww + (1-k)*(1-ww))
+                           * dot(c[i][j][k], weight_v);
                 }
 
         return accum;

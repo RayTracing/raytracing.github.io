@@ -355,7 +355,7 @@ $t=0$ to $\mathbf{C} + (0, r/2, 0)$ at time $t=1$:
         cam.lookat   = point3(0,0,0);
         cam.vup      = vec3(0,1,0);
 
-        cam.defocus_angle = 0.02;
+        cam.defocus_angle = 0.6;
         cam.focus_dist    = 10.0;
 
         cam.render(world);
@@ -713,8 +713,8 @@ For a stationary sphere, the `bounding_box` function is easy:
     class sphere : public hittable {
       public:
         // Stationary Sphere
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         sphere(const point3& center, double radius, shared_ptr<material> mat)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
           : center1(center), radius(fmax(0,radius)), mat(mat), is_moving(false)
         {
             auto rvec = vec3(radius, radius, radius);
@@ -1086,6 +1086,7 @@ At this point, we're ready to use our new BVH code. Let's use it on our random s
     #include "bvh.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "camera.h"
+    #include "hittable.h"
     #include "hittable_list.h"
     #include "material.h"
     #include "sphere.h"
@@ -1251,16 +1252,16 @@ Constant Color Texture
 
     class solid_color : public texture {
       public:
-        solid_color(const color& albedo) : color_value(albedo) {}
+        solid_color(const color& albedo) : albedo(albedo) {}
 
         solid_color(double red, double green, double blue) : solid_color(color(red,green,blue)) {}
 
         color value(double u, double v, const point3& p) const override {
-            return color_value;
+            return albedo;
         }
 
       private:
-        color color_value;
+        color albedo;
     };
 
     #endif
@@ -1403,6 +1404,7 @@ If we add this to our main scene:
 
     #include "bvh.h"
     #include "camera.h"
+    #include "hittable.h"
     #include "hittable_list.h"
     #include "material.h"
     #include "sphere.h"
@@ -1454,6 +1456,7 @@ Here's what our main.cc looks like after refactoring for our single random spher
 
     #include "bvh.h"
     #include "camera.h"
+    #include "hittable.h"
     #include "hittable_list.h"
     #include "material.h"
     #include "sphere.h"
@@ -1493,6 +1496,7 @@ Now add a scene with two checkered spheres, one atop the other.
 
     #include "bvh.h"
     #include "camera.h"
+    #include "hittable.h"
     #include "hittable_list.h"
     #include "material.h"
     #include "sphere.h"
@@ -2020,7 +2024,7 @@ code to make it all happen:
         static int* perlin_generate_perm() {
             auto p = new int[point_count];
 
-            for (int i = 0; i < perlin::point_count; i++)
+            for (int i = 0; i < point_count; i++)
                 p[i] = i;
 
             permute(p, point_count);
@@ -2491,7 +2495,7 @@ turbulence, and is a sum of repeated calls to noise:
             auto weight = 1.0;
 
             for (int i = 0; i < depth; i++) {
-                accum += weight*noise(temp_p);
+                accum += weight * noise(temp_p);
                 weight *= 0.5;
                 temp_p *= 2;
             }
@@ -3126,7 +3130,7 @@ And now we add a new scene to demonstrate our new `quad` primitive:
 
     #include "bvh.h"
     #include "camera.h"
-    #include "color.h"
+    #include "hittable.h"
     #include "hittable_list.h"
     #include "material.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -3679,7 +3683,7 @@ make this happen.
             // Move the ray backwards by the offset
             ray offset_r(r.origin() - offset, r.direction(), r.time());
 
-            // Determine where (if any) an intersection occurs along the offset ray
+            // Determine whether an intersection exists along the offset ray (and if so, where)
             if (!object->hit(offset_r, ray_t, rec))
                 return false;
 
@@ -3869,7 +3873,7 @@ We can now create a class for y-rotation. Let's tackle the hit function first:
 
             ray rotated_r(origin, direction, r.time());
 
-            // Determine where (if any) an intersection occurs in object space
+            // Determine whether an intersection exists in object space (and if so, where)
             if (!object->hit(rotated_r, ray_t, rec))
                 return false;
 
@@ -4038,12 +4042,14 @@ The resulting class is:
 
     class constant_medium : public hittable {
       public:
-        constant_medium(shared_ptr<hittable> b, double d, shared_ptr<texture> a)
-          : boundary(b), neg_inv_density(-1/d), phase_function(make_shared<isotropic>(a))
+        constant_medium(shared_ptr<hittable> boundary, double density, shared_ptr<texture> tex)
+          : boundary(boundary), neg_inv_density(-1/density),
+            phase_function(make_shared<isotropic>(tex))
         {}
 
-        constant_medium(shared_ptr<hittable> b, double d, const color& c)
-          : boundary(b), neg_inv_density(-1/d), phase_function(make_shared<isotropic>(c))
+        constant_medium(shared_ptr<hittable> boundary, double density, const color& albedo)
+          : boundary(boundary), neg_inv_density(-1/density),
+            phase_function(make_shared<isotropic>(albedo))
         {}
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
@@ -4059,7 +4065,7 @@ The resulting class is:
             if (!boundary->hit(r, interval(rec1.t+0.0001, infinity), rec2))
                 return false;
 
-            if (debugging) std::clog << "\nray_tmin=" << rec1.t << ", ray_tmax=" << rec2.t << '\n';
+            if (debugging) std::clog << "\nt_min=" << rec1.t << ", t_max=" << rec2.t << '\n';
 
             if (rec1.t < ray_t.min) rec1.t = ray_t.min;
             if (rec2.t > ray_t.max) rec2.t = ray_t.max;
@@ -4119,13 +4125,13 @@ The scattering function of isotropic picks a uniform random direction:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     class isotropic : public material {
       public:
-        isotropic(const color& c) : tex(make_shared<solid_color>(c)) {}
+        isotropic(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
         isotropic(shared_ptr<texture> tex) : tex(tex) {}
 
         bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
-            attenuation = tex->value(rec.u, rec.v, rec.p);
             scattered = ray(rec.p, random_unit_vector(), r_in.time());
+            attenuation = tex->value(rec.u, rec.v, rec.p);
             return true;
         }
 
@@ -4158,10 +4164,10 @@ bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
 
     #include "bvh.h"
     #include "camera.h"
-    #include "color.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "constant_medium.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "hittable.h"
     #include "hittable_list.h"
     #include "material.h"
     #include "quad.h"

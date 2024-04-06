@@ -29,8 +29,7 @@ class solid_color : public texture {
   public:
     solid_color(const color& albedo) : albedo(albedo) {}
 
-    solid_color(double red, double green, double blue)
-      : solid_color(color(red,green,blue)) {}
+    solid_color(double red, double green, double blue) : solid_color(color(red,green,blue)) {}
 
     color value(double u, double v, const point3& p) const override {
         return albedo;
