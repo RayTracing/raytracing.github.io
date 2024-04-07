@@ -11,17 +11,17 @@ Getting the Books
 The _Ray Tracing in One Weekend_ series of books are now available to the public for free directly
 from the web.
 
-We are currently hosting both the older v3.2.3 version and the v4.0.0-alpha.1 versions in the same
-project. The older v3 version is provide for readers who are in the middle of going through the
-series so you can maintain continuity. For new readers, or readers newly starting one of the books,
-we strongly recommend that you jump above the v4 train.
+We are currently hosting both the older v3.2.3 version and the latest v4.0.0-alpha.2 versions in the
+same project. The older v3 version (really v3.2.3) is provided for readers who are in the middle of
+going through the series so you can maintain continuity. For new readers, or readers newly starting
+one of the books, we strongly recommend that you jump aboard the v4 train.
 
 ### Version 3.2.3
   - [Ray Tracing in One Weekend][web1-v3]
   - [Ray Tracing: The Next Week][web2-v3]
   - [Ray Tracing: The Rest of Your Life][web3-v3]
 
-### Version 4.0.0-alpha.1
+### Version 4.0.0-alpha.2
 
   - [Ray Tracing in One Weekend][web1]
   - [Ray Tracing: The Next Week][web2]
@@ -31,32 +31,31 @@ These books have been formatted for both screen and print. For more information 
 own copies, or on getting PDFs of the books, see [PRINTING.md][] for more information.
 
 
+Contributing
+-------------
+If you'd like to contribute a PR _**please read our [contribution guidelines][CONTRIBUTING]
+first**_.
+
+
 Project Status
 ---------------
-Phew! We had a great SIGGRAPH in LA, including a birds-of-a-feather session for those interested in
-the book series. We had about 50 people attending. I won't recap everything presented there, but
-there are three main items that everyone should know about.
+Ok, v4.0.0-alpha.2 is finally out the door, and we are now heads down on getting the final v4.0.0
+version complete and shipped by SIGGRAPH 2024, July 28. At present, that means we are largely
+focused on _Ray Tracing: The Rest of Your Life_ — the third book in the series.
 
-**First, v4.0.0-alpha.1 is released.** Book one is largely complete, and we're now focusing on books
-two and three. You can find it at the regular spot: https://raytracing.github.io. We are temporarily
+**v4.0.0-alpha.2 is released.** Books one and two are largely complete, and we're now focusing on
+book three. You can find it at the regular spot: https://raytracing.github.io. We are temporarily
 preserving the final version of v3.2.3 inside the repo, so you can just grab the latest and
 reference both versions.
 
-**Second, Trevor and I are pounding away at the remaining steps to get the final v4.0.0 release done
-and published.** We're planning on finishing this work by the end of 2023. If you'd like to check
-out the latest updates and watch our progress, we're on the `dev` branch. You can also browse our
-release backlog to see what we're planning. Our relevant milestones are
+If you'd like to check out the latest updates and watch our progress, we're on the `dev` branch. You
+can also browse our release backlog to see what we're planning. Our relevant milestones are
 
   - [v4.0.0](https://github.com/RayTracing/raytracing.github.io/milestone/16)
   - [v4.0.0-release](https://github.com/RayTracing/raytracing.github.io/milestone/19)
 
-**Third, we're starting to think about where we go from here.** Top of mind topics include shadow
-rays, triangle mesh geometry, and parallelism, but there are many possible extensions both large and
-small. If you're interested in contributing, email us! You can find our contact info at the head of
-each book.
-
-If you'd like to contribute a PR _**please read our [contribution guidelines][CONTRIBUTING]
-first**_.
+If you're interested in contributing, email us! You can find our contact info at the head of each
+book. Or just start [a new discussion][discussions] or [issue][issues].
 
 
 GitHub Discussions
@@ -231,6 +230,7 @@ _**please review the [CONTRIBUTING][] document for the most effective way to pro
 [GitHub home]:     https://github.com/RayTracing/raytracing.github.io/
 [ImageMagick]:     https://imagemagick.org/
 [implementations]: https://github.com/RayTracing/raytracing.github.io/wiki/Implementations
+[issues]:          https://github.com/RayTracing/raytracing.github.io/issues/
 [milestone 16]:    https://github.com/RayTracing/raytracing.github.io/milestone/16
 [milestone 19]:    https://github.com/RayTracing/raytracing.github.io/milestone/19
 [PRINTING.md]:     PRINTING.md
