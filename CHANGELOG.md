@@ -1,15 +1,25 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
-# v4.0.0-alpha.2 (In Progress)
+# v4.0.0-alpha.2 (2024-04-07)
 
 This alpha wraps up most of the major changes we expect to make to book 2 for the impending v4.0.0
-release. Since the alpha.1 release last August, we've been happy to have onboarded two new
-contributors: Arman Uguray and Nate Rupsis. They've been helping out a ton with this release, and
-Arman is also developing his GPU Ray Tracing book at the same time!
+release, along with a bunch of updates to the other two books. Since the alpha.1 release last
+August, we've been lucky to have onboarded two new contributors: Arman Uguray and Nate Rupsis.
+They've been helping out a ton with this release, and Arman is also developing his GPU Ray Tracing
+book at the same time!
 
-Our plan is to get the final v4.0.0 release out the door by SIGGRAPH 2024, targeting July 28. With
-that, here are the latest changes since our alpha.1 release:
+This release is a bit faster, thanks to some new BVH optimizations. We've eliminated the negative
+radius sphere hack to model hollow spheres, instead accomplishing this with refraction indices. This
+eliminates a bunch of places in the code where we had to accomodate this, and probably a bunch of
+bugs we still haven't found. We now load texture images in linear color space, fixing a long-running
+bug where we were gamma-correcting our textures twice -- you'll notice object texture maps look a
+bit darker and less washed out. Refraction text has gotten a bit of an overhaul, and a better
+example of total internal reflection. Of course, this also includes a load of small fixes, tweaks,
+and improvements.
+
+Our current plan is to get the final v4.0.0 release out the door by SIGGRAPH 2024, targeting July
+28. With that, here are the latest changes since our alpha.1 release:
 
 ### Common
   - Delete -- Removed `rtw_stb_image.h` header from book 1 source, as it's unused there.
@@ -38,7 +48,6 @@ that, here are the latest changes since our alpha.1 release:
   - Change -- Changed BVH construction (removed const qualifer for objects vector) so sorting is
               done in place, and copying of vector is avoided, yielding better BVH build performance
               (#1327, #1388, #1391)
-  - Change -- Ray reflection no longer performs unnecessary length normalization (#1340)
   - Change -- Implement hollow spheres using refraction index instead of negative radii.
               Additionally, we now block negative radius spheres. This fixes a bunch of corner
               cases with inverted spheres (#1420)
@@ -67,7 +76,6 @@ that, here are the latest changes since our alpha.1 release:
               book.
   - Change -- Updated the "Next Steps" section at the end of book 1 (#1209)
   - Change -- Update rtweekend.h header introduction and use (#1473)
-  - Fix    -- Load texture images in proper linear color space (#842)
   - Fix    -- Fix code listing ordering bug with `lambertian` texture support (#1258)
   - New    -- Improved help for the very first build and run.
   - New    -- Define albedo prior to first use (#1430)
@@ -81,7 +89,7 @@ that, here are the latest changes since our alpha.1 release:
               primitives to call aabb::pad() function.
   - Change -- Switch from ray = A + tb to ray = Q + td in AABB text.
   - Change -- Update checker scale to 0.32
-  - Change -- Refactor AABB class. Renamed `aabb:axis()` to `aabb::axis_interval()`. Minor
+  - Change -- Refactor AABB class. Renamed `aabb::axis()` to `aabb::axis_interval()`. Minor
               refactoring of `aabb::hit()` function. (#927, #1270)
   - Change -- Reworked the AABB chapter. Created skippable sections for planar coordinates
               derivation (#1236)
