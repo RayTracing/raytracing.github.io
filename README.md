@@ -155,8 +155,8 @@ On Windows:
 
 ```shell
 $ cmake -B build
-$ cmake --build build --config Release  # Create release binaries in `build/Release`
-$ cmake --build build --config Debug    # Create debug binaries in `build/Debug`
+$ cmake --build build --config Release  # Create release binaries in `build\Release`
+$ cmake --build build --config Debug    # Create debug binaries in `build\Debug`
 ```
 
 On Linux / macOS:
@@ -172,7 +172,8 @@ $ cmake --build build/Debug
 ```
 
 We recommend building and running the `Release` version (especially before the final render) for
-the fastest results, unless you need extra debugging information of the (default) debug build.
+the fastest results, unless you need the extra debug information provided by the (default) debug
+build.
 
 ### CMake GUI on Windows
 You may choose to use the CMake GUI when building on windows.
@@ -196,17 +197,13 @@ operating system to simply print the image to file.
 
 ### Running The Programs
 
-On Linux or OSX, from the terminal, run like this:
+You can run the programs by executing the binaries placed in the build directory:
 
-    $ build/inOneWeekend > image.ppm
+    $ build\Debug\inOneWeekend > image.ppm
 
-On Windows, run like this:
+or, run the optimized version (if you compiled with the release configuration):
 
-    build\debug\inOneWeekend > image.ppm
-
-or, run the optimized version (if you've built with `--config release`):
-
-    build\release\inOneWeekend > image.ppm
+    $ build\Release\inOneWeekend > image.ppm
 
 The generated PPM file can be viewed directly as a regular computer image, if your operating system
 supports this image type. If your system doesn't handle PPM files, then you should be able to find
