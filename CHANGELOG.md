@@ -1,6 +1,24 @@
 Change Log -- Ray Tracing in One Weekend
 ====================================================================================================
 
+# v4.0.0 (In Progress)
+
+### Common
+  - Delete -- <description> (#XXXX)
+  - Change -- <description> (#XXXX)
+  - Fix    -- <description> (#XXXX)
+  - New    -- <description> (#XXXX)
+
+### In One Weekend
+
+### The Next Week
+
+### The Rest of Your Life
+
+
+
+
+----------------------------------------------------------------------------------------------------
 # v4.0.0-alpha.2 (2024-04-07)
 
 This alpha wraps up most of the major changes we expect to make to book 2 for the impending v4.0.0
