@@ -107,7 +107,7 @@ class rtw_image {
             return 0;
         if (1.0 <= value)
             return 255;
-        return static_cast< unsigned char >(256.0 * value);
+        return static_cast<unsigned char>(256.0 * value);
     }
 
     void convert_to_bytes() {
