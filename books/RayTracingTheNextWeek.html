@@ -75,11 +75,11 @@ time for each ray:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        ray(const point3& origin, const vec3& direction)
-          : orig(origin), dir(direction), tm(0) {}
-
         ray(const point3& origin, const vec3& direction, double time)
           : orig(origin), dir(direction), tm(time) {}
+
+        ray(const point3& origin, const vec3& direction)
+          : ray(origin, direction, 0) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         const point3& origin() const  { return orig; }
@@ -1323,10 +1323,7 @@ pattern in the scene.
           : inv_scale(1.0 / scale), even(even), odd(odd) {}
 
         checker_texture(double scale, const color& c1, const color& c2)
-          : inv_scale(1.0 / scale),
-            even(make_shared<solid_color>(c1)),
-            odd(make_shared<solid_color>(c2))
-        {}
+          : checker_texture(scale, make_shared<solid_color>(c1), make_shared<solid_color>(c2)) {}
 
         color value(double u, double v, const point3& p) const override {
             auto xInteger = int(std::floor(inv_scale * p.x()));
@@ -2252,9 +2249,6 @@ It is also a bit low frequency. We can scale the input point to make it vary mor
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class noise_texture : public texture {
       public:
-        noise_texture() {}
-
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         noise_texture(double scale) : scale(scale) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2449,8 +2443,6 @@ mitigate this, we'll map the $[-1,+1]$ range of values to $[0,1]$.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class noise_texture : public texture {
       public:
-        noise_texture() {}
-
         noise_texture(double scale) : scale(scale) {}
 
         color value(double u, double v, const point3& p) const override {
@@ -2515,8 +2507,6 @@ turbulence, and is a sum of repeated calls to noise:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class noise_texture : public texture {
       public:
-        noise_texture() {}
-
         noise_texture(double scale) : scale(scale) {}
 
         color value(double u, double v, const point3& p) const override {
@@ -2552,8 +2542,6 @@ effect is:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class noise_texture : public texture {
       public:
-        noise_texture() {}
-
         noise_texture(double scale) : scale(scale) {}
 
         color value(double u, double v, const point3& p) const override {

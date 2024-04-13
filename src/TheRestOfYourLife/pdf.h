@@ -46,7 +46,7 @@ class cosine_pdf : public pdf {
 
 class sphere_pdf : public pdf {
   public:
-    sphere_pdf() { }
+    sphere_pdf() {}
 
     double value(const vec3& direction) const override {
         return 1/ (4 * pi);

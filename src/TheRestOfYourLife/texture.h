@@ -46,10 +46,7 @@ class checker_texture : public texture {
       : inv_scale(1.0 / scale), even(even), odd(odd) {}
 
     checker_texture(double scale, const color& c1, const color& c2)
-      : inv_scale(1.0 / scale),
-        even(make_shared<solid_color>(c1)),
-        odd(make_shared<solid_color>(c2))
-    {}
+      : checker_texture(scale, make_shared<solid_color>(c1), make_shared<solid_color>(c2)) {}
 
     color value(double u, double v, const point3& p) const override {
         auto xInteger = int(std::floor(inv_scale * p.x()));
@@ -95,8 +92,6 @@ class image_texture : public texture {
 
 class noise_texture : public texture {
   public:
-    noise_texture() {}
-
     noise_texture(double scale) : scale(scale) {}
 
     color value(double u, double v, const point3& p) const override {
