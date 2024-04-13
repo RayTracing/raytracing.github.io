@@ -366,7 +366,7 @@ Run this program to generate an un-stratified render and save for comparison.
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            sqrt_spp = int(sqrt(samples_per_pixel));
+            sqrt_spp = int(std::sqrt(samples_per_pixel));
             pixel_samples_scale = 1.0 / (sqrt_spp * sqrt_spp);
             recip_sqrt_spp = 1.0 / sqrt_spp;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -650,12 +650,12 @@ This, as expected, produces approximately the exact answer we get with integrati
 $I = 2.666… = \frac{8}{3}$. You could rightly point to this example and say that the integration is
 actually a lot less work than the Monte Carlo. That might be true in the case where the function is
 $f(x) = x^2$, but there exist many functions where it might be simpler to solve for the Monte Carlo
-than for the integration, like $f(x) = sin^5(x)$.
+than for the integration, like $f(x) = \sin^5(x)$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         for (int i = 0; i < N; i++) {
             auto x = random_double(a, b);
-            sum += pow(sin(x), 5.0);
+            sum += pow(std::sin(x), 5.0);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-sin5]: Integrating $\sin^5$]
@@ -669,7 +669,7 @@ exist, like $f(x) = \ln(\sin(x))$.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     for (int i = 0; i < N; i++) {
         auto x = random_double(a, b);
-        sum += log(sin(x));
+        sum += std::log(std::sin(x));
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [integ-ln-sin]: Integrating $\ln(\sin)$]
@@ -880,9 +880,9 @@ $[0,\sqrt{2}]$, if `d` is greater than 0.5, it produces a uniform number in $[\s
     double f(double d)
     {
         if (d <= 0.5)
-            return sqrt(2.0) * random_double();
+            return std::sqrt(2.0) * random_double();
         else
-            return sqrt(2.0) + (2 - sqrt(2.0)) * random_double();
+            return std::sqrt(2.0) + (2 - std::sqrt(2.0)) * random_double();
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [crude-approx]: A crude, first-order approximation to nonuniform PDF]
@@ -907,7 +907,7 @@ value. But we could also solve for this 50% value experimentally. There will be 
 either can't or don't want to solve for the integration. In these cases, we can get an experimental
 result close to the real value. Let's take the function:
 
-    $$ p(x) = e^{\frac{-x}{2 \pi}} sin^2(x) $$
+    $$ p(x) = e^{\frac{-x}{2 \pi}} \sin^2(x) $$
 
 <div class='together'>
 Which looks a little something like this:
@@ -952,7 +952,7 @@ have an area that is half of the total. From $0$ to $2\pi$ for example:
         for (unsigned int i = 0; i < N; i++) {
             // Get the area under the curve.
             auto x = random_double(0, 2*pi);
-            auto sin_x = sin(x);
+            auto sin_x = std::sin(x);
             auto p_x = exp(-x / (2*pi)) * sin_x * sin_x;
             sum += p_x;
 
@@ -1040,7 +1040,7 @@ piecewise fashion:
 If you consider what we were trying to do in the previous section, a lot of math revolved around the
 _accumulated_ area (or _accumulated_ probability) from zero. In the case of the function
 
-    $$ f(x) = e^{\frac{-x}{2 \pi}} sin^2(x)  $$
+    $$ f(x) = e^{\frac{-x}{2 \pi}} \sin^2(x)  $$
 
 we cared about the accumulated probability from $0$ to $2\pi$ (100%) and the accumulated probability
 from $0$ to $2.016$ (50%). We can generalize this to an important term, the _Cumulative Distribution
@@ -1227,7 +1227,7 @@ $f = \sqrt{4d}$ and $pdf = x/2$.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     double f(double d) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        return sqrt(4.0 * d);
+        return std::sqrt(4.0 * d);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
 
@@ -1397,7 +1397,7 @@ plane created by mapping the unit sphere to Cartesian coordinates. The same meth
 applies, but now we might have a PDF defined over two dimensions. Suppose we want to integrate this
 function over the surface of the unit sphere:
 
-  $$ f(\theta, \phi) = cos^2(\theta) $$
+  $$ f(\theta, \phi) = \cos^2(\theta) $$
 
 Using Monte Carlo integration, we should just be able to sample $\cos^2(\theta) / p(r)$, where the
 $p(r)$ is now just $p(direction)$. But what is _direction_ in that context? We could make it based
@@ -1558,7 +1558,7 @@ All two dimensional PDFs need to integrate to one over the whole surface (rememb
 $\operatorname{pScatter}$ is a PDF). We set $\operatorname{pScatter}(\theta_o < 0) = 0$ so that we
 don't scatter below the horizon.
 
-    $$ 1 = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} C \cdot cos(\theta) dA $$
+    $$ 1 = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} C \cdot \cos(\theta) dA $$
 
 To integrate over the hemisphere, remember that in spherical coordinates:
 
@@ -1566,7 +1566,7 @@ To integrate over the hemisphere, remember that in spherical coordinates:
 
 So:
 
-    $$ 1 = C \cdot \int_{0}^{2 \pi} \int_{0}^{\pi / 2} cos(\theta) sin(\theta) d\theta d\phi $$
+    $$ 1 = C \cdot \int_{0}^{2 \pi} \int_{0}^{\pi / 2} \cos(\theta) \sin(\theta) d\theta d\phi $$
     $$ 1 = C \cdot 2 \pi \frac{1}{2} $$
     $$ 1 = C \cdot \pi $$
     $$ C = \frac{1}{\pi} $$
@@ -1992,8 +1992,8 @@ We can output some of these:
         for (int i = 0; i < 200; i++) {
             auto r1 = random_double();
             auto r2 = random_double();
-            auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
-            auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
+            auto x = std::cos(2*pi*r1) * 2 * std::sqrt(r2*(1-r2));
+            auto y = std::sin(2*pi*r1) * 2 * std::sqrt(r2*(1-r2));
             auto z = 1 - 2*r2;
             std::cout << x << " " << y << " " << z << '\n';
         }
@@ -2045,8 +2045,8 @@ $f()/p() = \cos^3(\theta) / \frac{1}{2\pi}$, and we can test this:
     #include <iomanip>
 
     double f(double r2) {
-        // auto x = cos(2*pi*r1)*2*sqrt(r2*(1-r2));
-        // auto y = sin(2*pi*r1)*2*sqrt(r2*(1-r2));
+        // auto x = std::cos(2*pi*r1) * 2 * std::sqrt(r2*(1-r2));
+        // auto y = std::sin(2*pi*r1) * 2 * std::sqrt(r2*(1-r2));
         auto z = 1 - r2;
         double cos_theta = z;
         return cos_theta*cos_theta*cos_theta;
@@ -2104,9 +2104,9 @@ Here's a function that generates random vectors weighted by this PDF:
         auto r2 = random_double();
 
         auto phi = 2*pi*r1;
-        auto x = cos(phi)*sqrt(r2);
-        auto y = sin(phi)*sqrt(r2);
-        auto z = sqrt(1-r2);
+        auto x = std::cos(phi) * std::sqrt(r2);
+        auto y = std::sin(phi) * std::sqrt(r2);
+        auto z = std::sqrt(1-r2);
 
         return vec3(x, y, z);
     }
@@ -2219,7 +2219,7 @@ $\mathbf{n}$. So a common method is to pick an arbitrary axis and check to see i
 $\mathbf{n}$ (which we assume to be of unit length), if it is, just use another axis:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    if (fabs(n.x()) > 0.9)
+    if (std::fabs(n.x()) > 0.9)
         a = vec3(0, 1, 0)
     else
         a = vec3(1, 0, 0)
@@ -2280,7 +2280,7 @@ class because it won't really be more complicated than utility functions:
 
         void build_from_w(const vec3& w) {
             vec3 unit_w = unit_vector(w);
-            vec3 a = (fabs(unit_w.x()) > 0.9) ? vec3(0,1,0) : vec3(1,0,0);
+            vec3 a = (std::fabs(unit_w.x()) > 0.9) ? vec3(0,1,0) : vec3(1,0,0);
             vec3 v = unit_vector(cross(unit_w, a));
             vec3 u = cross(unit_w, v);
             axis[0] = u;
@@ -2498,7 +2498,7 @@ check that we got the math and concept right:
                 return color_from_emission;
 
             double light_area = (343-213)*(332-227);
-            auto light_cosine = fabs(to_light.y());
+            auto light_cosine = std::fabs(to_light.y());
             if (light_cosine < 0.000001)
                 return color_from_emission;
 
@@ -2687,7 +2687,7 @@ Next, let’s try a cosine density:
 
         double value(const vec3& direction) const override {
             auto cosine_theta = dot(unit_vector(direction), uvw.w());
-            return fmax(0, cosine_theta/pi);
+            return std::fmax(0, cosine_theta/pi);
         }
 
         vec3 generate() const override {
@@ -2858,7 +2858,7 @@ And then we change `quad` to implement those functions:
                 return 0;
 
             auto distance_squared = rec.t * rec.t * direction.length_squared();
-            auto cosine = fabs(dot(direction, rec.normal) / direction.length());
+            auto cosine = std::fabs(dot(direction, rec.normal) / direction.length());
 
             return distance_squared / (cosine * area);
         }
@@ -3408,8 +3408,8 @@ and dielectric materials are easy to fix.
             double ri = rec.front_face ? (1.0/refraction_index) : refraction_index;
 
             vec3 unit_direction = unit_vector(r_in.direction());
-            double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
-            double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
+            double cos_theta = std::fmin(dot(-unit_direction, rec.normal), 1.0);
+            double sin_theta = std::sqrt(1.0 - cos_theta*cos_theta);
 
             bool cannot_refract = ri * sin_theta > 1.0;
             vec3 direction;
@@ -3543,7 +3543,7 @@ If we solve through the calculus:
 
 So
 
-  $$ cos(\theta) = 1 - \frac{r_2}{2 \pi \cdot C} $$
+  $$ \cos(\theta) = 1 - \frac{r_2}{2 \pi \cdot C} $$
 
 We are constraining our distribution so that the random direction must be less than $\theta_{max}$.
 This means that the integral from 0 to $\theta_{max}$ must be one, and therefore $r_2 = 1$. We can
@@ -3603,7 +3603,7 @@ The sphere class needs the two PDF-related functions:
             if (!this->hit(ray(origin, direction), interval(0.001, infinity), rec))
                 return 0;
 
-            auto cos_theta_max = sqrt(1 - radius*radius/(center1 - origin).length_squared());
+            auto cos_theta_max = std::sqrt(1 - radius*radius/(center1 - origin).length_squared());
             auto solid_angle = 2*pi*(1-cos_theta_max);
 
             return  1 / solid_angle;
@@ -3625,11 +3625,11 @@ The sphere class needs the two PDF-related functions:
         static vec3 random_to_sphere(double radius, double distance_squared) {
             auto r1 = random_double();
             auto r2 = random_double();
-            auto z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
+            auto z = 1 + r2*(std::sqrt(1-radius*radius/distance_squared) - 1);
 
             auto phi = 2*pi*r1;
-            auto x = cos(phi)*sqrt(1-z*z);
-            auto y = sin(phi)*sqrt(1-z*z);
+            auto x = std::cos(phi) * std::sqrt(1-z*z);
+            auto y = std::sin(phi) * std::sqrt(1-z*z);
 
             return vec3(x, y, z);
         }

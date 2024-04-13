@@ -35,13 +35,13 @@ class perlin {
     }
 
     double noise(const point3& p) const {
-        auto u = p.x() - floor(p.x());
-        auto v = p.y() - floor(p.y());
-        auto w = p.z() - floor(p.z());
+        auto u = p.x() - std::floor(p.x());
+        auto v = p.y() - std::floor(p.y());
+        auto w = p.z() - std::floor(p.z());
 
-        auto i = int(floor(p.x()));
-        auto j = int(floor(p.y()));
-        auto k = int(floor(p.z()));
+        auto i = int(std::floor(p.x()));
+        auto j = int(std::floor(p.y()));
+        auto k = int(std::floor(p.z()));
         vec3 c[2][2][2];
 
         for (int di=0; di < 2; di++)
@@ -67,7 +67,7 @@ class perlin {
             temp_p *= 2;
         }
 
-        return fabs(accum);
+        return std::fabs(accum);
     }
 
   private:

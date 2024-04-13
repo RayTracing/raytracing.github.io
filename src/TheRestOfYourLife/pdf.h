@@ -32,7 +32,7 @@ class cosine_pdf : public pdf {
 
     double value(const vec3& direction) const override {
         auto cosine_theta = dot(unit_vector(direction), uvw.w());
-        return fmax(0, cosine_theta/pi);
+        return std::fmax(0, cosine_theta/pi);
     }
 
     vec3 generate() const override {

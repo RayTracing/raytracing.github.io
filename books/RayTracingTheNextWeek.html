@@ -183,12 +183,12 @@ interval, so it really can be sampled at any time.)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // Stationary Sphere
         sphere(const point3& center, double radius, shared_ptr<material> mat)
-          : center1(center), radius(fmax(0,radius)), mat(mat), is_moving(false) {}
+          : center1(center), radius(std::fmax(0,radius)), mat(mat), is_moving(false) {}
 
         // Moving Sphere
         sphere(const point3& center1, const point3& center2, double radius,
                shared_ptr<material> mat)
-          : center1(center1), radius(fmax(0,radius)), mat(mat), is_moving(true)
+          : center1(center1), radius(std::fmax(0,radius)), mat(mat), is_moving(true)
         {
             center_vec = center2 - center1;
         }
@@ -716,7 +716,7 @@ For a stationary sphere, the `bounding_box` function is easy:
         // Stationary Sphere
         sphere(const point3& center, double radius, shared_ptr<material> mat)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-          : center1(center), radius(fmax(0,radius)), mat(mat), is_moving(false)
+          : center1(center), radius(std::fmax(0,radius)), mat(mat), is_moving(false)
         {
             auto rvec = vec3(radius, radius, radius);
             bbox = aabb(center1 - rvec, center1 + rvec);
@@ -757,7 +757,7 @@ two boxes.
         // Moving Sphere
         sphere(const point3& center1, const point3& center2, double radius,
                shared_ptr<material> mat)
-          : center1(center1), radius(fmax(0,radius)), mat(mat), is_moving(true)
+          : center1(center1), radius(std::fmax(0,radius)), mat(mat), is_moving(true)
         {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto rvec = vec3(radius, radius, radius);
@@ -1596,14 +1596,14 @@ with the equations for the corresponding Cartesian coordinates:
   $$
 
 We need to invert these equations to solve for $\theta$ and $\phi$. Because of the lovely `<cmath>`
-function `atan2()`, which takes any pair of numbers proportional to sine and cosine and returns the
-angle, we can pass in $x$ and $z$ (the $\sin(\theta)$ cancel) to solve for $\phi$:
+function `std::atan2()`, which takes any pair of numbers proportional to sine and cosine and returns
+the angle, we can pass in $x$ and $z$ (the $\sin(\theta)$ cancel) to solve for $\phi$:
 
   $$ \phi = \operatorname{atan2}(z, -x) $$
 
-`atan2()` returns values in the range $-\pi$ to $\pi$, but they go from 0 to $\pi$, then flip to
-$-\pi$ and proceed back to zero. While this is mathematically correct, we want $u$ to range from $0$
-to $1$, not from $0$ to $1/2$ and then from $-1/2$ to $0$. Fortunately,
+`std::atan2()` returns values in the range $-\pi$ to $\pi$, but they go from 0 to $\pi$, then flip
+to $-\pi$ and proceed back to zero. While this is mathematically correct, we want $u$ to range from
+$0$ to $1$, not from $0$ to $1/2$ and then from $-1/2$ to $0$. Fortunately,
 
   $$ \operatorname{atan2}(a,b) = \operatorname{atan2}(-a,-b) + \pi, $$
 
@@ -1636,8 +1636,8 @@ points on the unit sphere centered at the origin, and computes $u$ and $v$:
             //     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
             //     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
 
-            auto theta = acos(-p.y());
-            auto phi = atan2(-p.z(), p.x()) + pi;
+            auto theta = std::acos(-p.y());
+            auto phi = std::atan2(-p.z(), p.x()) + pi;
 
             u = phi / (2*pi);
             v = theta / pi;
@@ -2147,13 +2147,13 @@ To make it smooth, we can linearly interpolate:
 
         double noise(const point3& p) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            auto u = p.x() - floor(p.x());
-            auto v = p.y() - floor(p.y());
-            auto w = p.z() - floor(p.z());
+            auto u = p.x() - std::floor(p.x());
+            auto v = p.y() - std::floor(p.y());
+            auto w = p.z() - std::floor(p.z());
 
-            auto i = int(floor(p.x()));
-            auto j = int(floor(p.y()));
-            auto k = int(floor(p.z()));
+            auto i = int(std::floor(p.x()));
+            auto j = int(std::floor(p.y()));
+            auto k = int(std::floor(p.z()));
             double c[2][2][2];
 
             for (int di=0; di < 2; di++)
@@ -2217,9 +2217,9 @@ a Hermite cubic to round off the interpolation:
       public:
         ...
         double noise(const point3& p) const {
-            auto u = p.x() - floor(p.x());
-            auto v = p.y() - floor(p.y());
-            auto w = p.z() - floor(p.z());
+            auto u = p.x() - std::floor(p.x());
+            auto v = p.y() - std::floor(p.y());
+            auto w = p.z() - std::floor(p.z());
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             u = u*u*(3-2*u);
@@ -2227,9 +2227,9 @@ a Hermite cubic to round off the interpolation:
             w = w*w*(3-2*w);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            auto i = int(floor(p.x()));
-            auto j = int(floor(p.y()));
-            auto k = int(floor(p.z()));
+            auto i = int(std::floor(p.x()));
+            auto j = int(std::floor(p.y()));
+            auto k = int(std::floor(p.z()));
             ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [perlin-smoothed]: <kbd>[perlin.h]</kbd> Perlin with Hermitian smoothing]
@@ -2359,18 +2359,18 @@ The Perlin class `noise()` method is now:
       public:
         ...
         double noise(const point3& p) const {
-            auto u = p.x() - floor(p.x());
-            auto v = p.y() - floor(p.y());
-            auto w = p.z() - floor(p.z());
+            auto u = p.x() - std::floor(p.x());
+            auto v = p.y() - std::floor(p.y());
+            auto w = p.z() - std::floor(p.z());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
             u = u*u*(3-2*u);
             v = v*v*(3-2*v);
             w = w*w*(3-2*w);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-            auto i = int(floor(p.x()));
-            auto j = int(floor(p.y()));
-            auto k = int(floor(p.z()));
+            auto i = int(std::floor(p.x()));
+            auto j = int(std::floor(p.y()));
+            auto k = int(std::floor(p.z()));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             vec3 c[2][2][2];
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2501,7 +2501,7 @@ turbulence, and is a sum of repeated calls to noise:
                 temp_p *= 2;
             }
 
-            return fabs(accum);
+            return std::fabs(accum);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -2556,7 +2556,7 @@ effect is:
 
         color value(double u, double v, const point3& p) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            return color(.5, .5, .5) * (1 + sin(scale * p.z() + 10 * noise.turb(p, 7)));
+            return color(.5, .5, .5) * (1 + std::sin(scale * p.z() + 10 * noise.turb(p, 7)));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
@@ -2635,9 +2635,9 @@ constructed AABBs always have a non-zero volume:
             // Treat the two points a and b as extrema for the bounding box, so we don't require a
             // particular minimum/maximum coordinate order.
 
-            x = interval(fmin(a[0],b[0]), fmax(a[0],b[0]));
-            y = interval(fmin(a[1],b[1]), fmax(a[1],b[1]));
-            z = interval(fmin(a[2],b[2]), fmax(a[2],b[2]));
+            x = interval(std::fmin(a[0],b[0]), std::fmax(a[0],b[0]));
+            y = interval(std::fmin(a[1],b[1]), std::fmax(a[1],b[1]));
+            z = interval(std::fmin(a[2],b[2]), std::fmax(a[2],b[2]));
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2847,7 +2847,7 @@ our quadrilateral.
             auto denom = dot(normal, r.direction());
 
             // No hit if the ray is parallel to the plane.
-            if (fabs(denom) < 1e-8)
+            if (std::fabs(denom) < 1e-8)
                 return false;
 
             // Return false if the hit point parameter t is outside the ray interval.
@@ -3062,7 +3062,7 @@ test method from the hit method.
             auto denom = dot(normal, r.direction());
 
             // No hit if the ray is parallel to the plane.
-            if (fabs(denom) < 1e-8)
+            if (std::fabs(denom) < 1e-8)
                 return false;
 
             // Return false if the hit point parameter t is outside the ray interval.
@@ -3593,8 +3593,8 @@ create a function that returns a box, by creating a `hittable_list` of six recta
         auto sides = make_shared<hittable_list>();
 
         // Construct the two opposite vertices with the minimum and maximum coordinates.
-        auto min = point3(fmin(a.x(), b.x()), fmin(a.y(), b.y()), fmin(a.z(), b.z()));
-        auto max = point3(fmax(a.x(), b.x()), fmax(a.y(), b.y()), fmax(a.z(), b.z()));
+        auto min = point3(std::fmin(a.x(),b.x()), std::fmin(a.y(),b.y()), std::fmin(a.z(),b.z()));
+        auto max = point3(std::fmax(a.x(),b.x()), std::fmax(a.y(),b.y()), std::fmax(a.z(),b.z()));
 
         auto dx = vec3(max.x() - min.x(), 0, 0);
         auto dy = vec3(0, max.y() - min.y(), 0);
@@ -3908,8 +3908,8 @@ We can now create a class for y-rotation. Let's tackle the hit function first:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         rotate_y(shared_ptr<hittable> object, double angle) : object(object) {
             auto radians = degrees_to_radians(angle);
-            sin_theta = sin(radians);
-            cos_theta = cos(radians);
+            sin_theta = std::sin(radians);
+            cos_theta = std::cos(radians);
             bbox = object->bounding_box();
 
             point3 min( infinity,  infinity,  infinity);
@@ -3928,8 +3928,8 @@ We can now create a class for y-rotation. Let's tackle the hit function first:
                         vec3 tester(newx, y, newz);
 
                         for (int c = 0; c < 3; c++) {
-                            min[c] = fmin(min[c], tester[c]);
-                            max[c] = fmax(max[c], tester[c]);
+                            min[c] = std::fmin(min[c], tester[c]);
+                            max[c] = std::fmax(max[c], tester[c]);
                         }
                     }
                 }
@@ -4079,7 +4079,7 @@ The resulting class is:
 
             auto ray_length = r.direction().length();
             auto distance_inside_boundary = (rec2.t - rec1.t) * ray_length;
-            auto hit_distance = neg_inv_density * log(random_double());
+            auto hit_distance = neg_inv_density * std::log(random_double());
 
             if (hit_distance > distance_inside_boundary)
                 return false;

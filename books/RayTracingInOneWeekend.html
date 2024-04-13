@@ -310,8 +310,6 @@ vector utility functions in the bottom half:
     #include <cmath>
     #include <iostream>
 
-    using std::sqrt;
-
     class vec3 {
       public:
         double e[3];
@@ -346,7 +344,7 @@ vector utility functions in the bottom half:
         }
 
         double length() const {
-            return sqrt(length_squared());
+            return std::sqrt(length_squared());
         }
 
         double length_squared() const {
@@ -968,7 +966,7 @@ code let us compute and visualize $\mathbf{n}$:
         if (discriminant < 0) {
             return -1.0;
         } else {
-            return (-b - sqrt(discriminant) ) / (2.0*a);
+            return (-b - std::sqrt(discriminant) ) / (2.0*a);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     }
@@ -1013,7 +1011,7 @@ Let’s revisit the ray-sphere function:
         if (discriminant < 0) {
             return -1.0;
         } else {
-            return (-b - sqrt(discriminant) ) / (2.0*a);
+            return (-b - std::sqrt(discriminant) ) / (2.0*a);
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1055,7 +1053,7 @@ Using these observations, we can now simplify the sphere-intersection code to th
             return -1.0;
         } else {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            return (h - sqrt(discriminant)) / a;
+            return (h - std::sqrt(discriminant)) / a;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
     }
@@ -1120,7 +1118,7 @@ And here’s the sphere:
 
     class sphere : public hittable {
       public:
-        sphere(const point3& center, double radius) : center(center), radius(fmax(0,radius)) {}
+        sphere(const point3& center, double radius) : center(center), radius(std::fmax(0,radius)) {}
 
         bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override {
             vec3 oc = center - r.origin();
@@ -1132,7 +1130,7 @@ And here’s the sphere:
             if (discriminant < 0)
                 return false;
 
-            auto sqrtd = sqrt(discriminant);
+            auto sqrtd = std::sqrt(discriminant);
 
             // Find the nearest root that lies in the acceptable range.
             auto root = (h - sqrtd) / a;
@@ -1158,6 +1156,9 @@ And here’s the sphere:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [sphere-initial]: <kbd>[sphere.h]</kbd> The sphere class]
 
+(Note here that we use the C++ standard function `std::fmax()`, which returns the maximum of the two
+floating-point arguments. Similarly, we will later use `std::fmin()`, which returns the minimum of
+the two floating-point arguments.)
 </div>
 
 
@@ -1334,8 +1335,8 @@ that stores a list of `hittable`s:
 
 Some New C++ Features
 ----------------------
-The `hittable_list` class code uses two C++ features that may trip you up if you're not normally a
-C++ programmer: `vector` and `shared_ptr`.
+The `hittable_list` class code uses some C++ features that may trip you up if you're not normally a
+C++ programmer: `vector`, `shared_ptr`, and `make_shared`.
 
 `shared_ptr<type>` is a pointer to some allocated type, with reference-counting semantics. Every
 time you assign its value to another shared pointer (usually with a simple assignment), the
@@ -1410,7 +1411,6 @@ We'll also throw common useful constants and future utility functions in here. T
 
     using std::make_shared;
     using std::shared_ptr;
-    using std::sqrt;
 
     // Constants
 
@@ -1476,8 +1476,6 @@ assumption in mind.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
     #include <cmath>
     #include <iostream>
-
-    using std::sqrt;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [assume-rtw-vec3]: <kbd>[vec3.h]</kbd> Assume rtweekend.h inclusion for vec3.h]
 
@@ -1998,9 +1996,9 @@ We're going to need a random number generator that returns real random numbers. 
 return a canonical random number, which by convention falls in the range $0 ≤ n < 1$. The “less
 than” before the 1 is important, as we will sometimes take advantage of that.
 
-A simple approach to this is to use the `rand()` function that can be found in `<cstdlib>`, which
-returns a random integer in the range 0 and `RAND_MAX`. Hence we can get a real random number as
-desired with the following code snippet, added to `rtweekend.h`:
+A simple approach to this is to use the `std::rand()` function that can be found in `<cstdlib>`,
+which returns a random integer in the range 0 and `RAND_MAX`. Hence we can get a real random number
+as desired with the following code snippet, added to `rtweekend.h`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include <cmath>
@@ -2022,7 +2020,7 @@ desired with the following code snippet, added to `rtweekend.h`:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     inline double random_double() {
         // Returns a random real in [0,1).
-        return rand() / (RAND_MAX + 1.0);
+        return std::rand() / (RAND_MAX + 1.0);
     }
 
     inline double random_double(double min, double max) {
@@ -2742,7 +2740,7 @@ robustly handle negative inputs.
     inline double linear_to_gamma(double linear_component)
     {
         if (linear_component > 0)
-            return sqrt(linear_component);
+            return std::sqrt(linear_component);
 
         return 0;
     }
@@ -2869,7 +2867,7 @@ To achieve this, `hit_record` needs to be told the material that is assigned to 
     class sphere : public hittable {
       public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        sphere(const point3& center, double radius) : center(center), radius(fmax(0,radius)) {
+        sphere(const point3& center, double radius) : center(center), radius(std::fmax(0,radius)) {
             // TODO: Initialize the material pointer `mat`.
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2953,22 +2951,8 @@ In service of this, we'll create a new vector method -- `vec3::near_zero()` -- t
 the vector is very close to zero in all dimensions.
 
 The following changes will use the C++ standard library function `std::fabs`, which returns the
-absolute value of its input, so add this to our standard header.
+absolute value of its input.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    // C++ Std Usings
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    using std::fabs;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    using std::make_shared;
-    using std::shared_ptr;
-    using std::sqrt;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [declare-fabs]: <kbd>[rtweekend.h]</kbd> Declaring std::fabs()]
-
-  
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class vec3 {
         ...
@@ -2982,7 +2966,7 @@ absolute value of its input, so add this to our standard header.
         bool near_zero() const {
             // Return true if the vector is close to zero in all dimensions.
             auto s = 1e-8;
-            return (fabs(e[0]) < s) && (fabs(e[1]) < s) && (fabs(e[2]) < s);
+            return (std::fabs(e[0]) < s) && (std::fabs(e[1]) < s) && (std::fabs(e[2]) < s);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -3135,7 +3119,7 @@ Now we'll update the `sphere` constructor to initialize the material pointer `ma
       public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         sphere(const point3& center, double radius, shared_ptr<material> mat)
-          : center(center), radius(fmax(0,radius)), mat(mat) {}
+          : center(center), radius(std::fmax(0,radius)), mat(mat) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         ...
@@ -3362,18 +3346,15 @@ When we combine them back together, we can write a function to calculate $\mathb
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ Highlight
     inline vec3 refract(const vec3& uv, const vec3& n, double etai_over_etat) {
-        auto cos_theta = fmin(dot(-uv, n), 1.0);
+        auto cos_theta = std::fmin(dot(-uv, n), 1.0);
         vec3 r_out_perp =  etai_over_etat * (uv + cos_theta*n);
-        vec3 r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
+        vec3 r_out_parallel = -std::sqrt(std::fabs(1.0 - r_out_perp.length_squared())) * n;
         return r_out_perp + r_out_parallel;
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [refract]: <kbd>[vec3.h]</kbd> Refraction function]
 
 </div>
-
-(Note here that we use the C++ standard function `fmin()`, which returns the minimum of the two
-arguments. Similarly, we will later use `fmax()`, which returns the maximum of the two arguments.)
 
 <div class='together'>
 And the dielectric material that always refracts is:
@@ -3489,8 +3470,8 @@ and
   $$ \cos\theta = \mathbf{R} \cdot \mathbf{n} $$
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
-    double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
+    double cos_theta = std::fmin(dot(-unit_direction, rec.normal), 1.0);
+    double sin_theta = std::sqrt(1.0 - cos_theta*cos_theta);
 
     if (ri * sin_theta > 1.0) {
         // Must Reflect
@@ -3517,8 +3498,8 @@ And the dielectric material that always refracts (when possible) is:
 
             vec3 unit_direction = unit_vector(r_in.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
-            double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
+            double cos_theta = std::fmin(dot(-unit_direction, rec.normal), 1.0);
+            double sin_theta = std::sqrt(1.0 - cos_theta*cos_theta);
 
             bool cannot_refract = ri * sin_theta > 1.0;
             vec3 direction;
@@ -3603,8 +3584,8 @@ material:
             double ri = rec.front_face ? (1.0/refraction_index) : refraction_index;
 
             vec3 unit_direction = unit_vector(r_in.direction());
-            double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
-            double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
+            double cos_theta = std::fmin(dot(-unit_direction, rec.normal), 1.0);
+            double sin_theta = std::sqrt(1.0 - cos_theta*cos_theta);
 
             bool cannot_refract = ri * sin_theta > 1.0;
             vec3 direction;
@@ -3745,7 +3726,7 @@ This implies $h = \tan(\frac{\theta}{2})$. Our camera now becomes:
             auto focal_length = 1.0;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto theta = degrees_to_radians(vfov);
-            auto h = tan(theta/2);
+            auto h = std::tan(theta/2);
             auto viewport_height = 2 * h * focal_length;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             auto viewport_width = viewport_height * (double(image_width)/image_height);
@@ -3780,7 +3761,7 @@ We'll test out these changes with a simple scene of two touching spheres, using 
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        auto R = cos(pi/4);
+        auto R = std::cos(pi/4);
 
         auto material_left  = make_shared<lambertian>(color(0,0,1));
         auto material_right = make_shared<lambertian>(color(1,0,0));
@@ -3889,7 +3870,7 @@ angles.
             auto focal_length = (lookfrom - lookat).length();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             auto theta = degrees_to_radians(vfov);
-            auto h = tan(theta/2);
+            auto h = std::tan(theta/2);
             auto viewport_height = 2 * h * focal_length;
             auto viewport_width = viewport_height * (double(image_width)/image_height);
 
@@ -4140,7 +4121,7 @@ Now let's update the camera to originate rays from the defocus disk:
             auto focal_length = (lookfrom - lookat).length();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             auto theta = degrees_to_radians(vfov);
-            auto h = tan(theta/2);
+            auto h = std::tan(theta/2);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto viewport_height = 2 * h * focus_dist;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -4168,7 +4149,7 @@ Now let's update the camera to originate rays from the defocus disk:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             // Calculate the camera defocus disk basis vectors.
-            auto defocus_radius = focus_dist * tan(degrees_to_radians(defocus_angle / 2));
+            auto defocus_radius = focus_dist * std::tan(degrees_to_radians(defocus_angle / 2));
             defocus_disk_u = u * defocus_radius;
             defocus_disk_v = v * defocus_radius;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++

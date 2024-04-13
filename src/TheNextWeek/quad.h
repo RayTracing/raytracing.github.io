@@ -40,7 +40,7 @@ class quad : public hittable {
         auto denom = dot(normal, r.direction());
 
         // No hit if the ray is parallel to the plane.
-        if (fabs(denom) < 1e-8)
+        if (std::fabs(denom) < 1e-8)
             return false;
 
         // Return false if the hit point parameter t is outside the ray interval.
@@ -97,8 +97,8 @@ inline shared_ptr<hittable_list> box(const point3& a, const point3& b, shared_pt
     auto sides = make_shared<hittable_list>();
 
     // Construct the two opposite vertices with the minimum and maximum coordinates.
-    auto min = point3(fmin(a.x(), b.x()), fmin(a.y(), b.y()), fmin(a.z(), b.z()));
-    auto max = point3(fmax(a.x(), b.x()), fmax(a.y(), b.y()), fmax(a.z(), b.z()));
+    auto min = point3(std::fmin(a.x(),b.x()), std::fmin(a.y(),b.y()), std::fmin(a.z(),b.z()));
+    auto max = point3(std::fmax(a.x(),b.x()), std::fmax(a.y(),b.y()), std::fmax(a.z(),b.z()));
 
     auto dx = vec3(max.x() - min.x(), 0, 0);
     auto dy = vec3(0, max.y() - min.y(), 0);

@@ -35,7 +35,7 @@ int main() {
     for (unsigned int i = 0; i < N; i++) {
         // Get the area under the curve
         auto x = random_double(0, 2*pi);
-        auto sin_x = sin(x);
+        auto sin_x = std::sin(x);
         auto p_x = exp(-x / (2*pi)) * sin_x * sin_x;
         sum += p_x;
         // store this sample

@@ -19,7 +19,7 @@ class sphere : public hittable {
   public:
     // Stationary Sphere
     sphere(const point3& center, double radius, shared_ptr<material> mat)
-      : center1(center), radius(fmax(0,radius)), mat(mat), is_moving(false)
+      : center1(center), radius(std::fmax(0,radius)), mat(mat), is_moving(false)
     {
         auto rvec = vec3(radius, radius, radius);
         bbox = aabb(center1 - rvec, center1 + rvec);
@@ -28,7 +28,7 @@ class sphere : public hittable {
     // Moving Sphere
     sphere(const point3& center1, const point3& center2, double radius,
            shared_ptr<material> mat)
-      : center1(center1), radius(fmax(0,radius)), mat(mat), is_moving(true)
+      : center1(center1), radius(std::fmax(0,radius)), mat(mat), is_moving(true)
     {
         auto rvec = vec3(radius, radius, radius);
         aabb box1(center1 - rvec, center1 + rvec);
@@ -49,7 +49,7 @@ class sphere : public hittable {
         if (discriminant < 0)
             return false;
 
-        auto sqrtd = sqrt(discriminant);
+        auto sqrtd = std::sqrt(discriminant);
 
         // Find the nearest root that lies in the acceptable range.
         auto root = (h - sqrtd) / a;
@@ -78,7 +78,7 @@ class sphere : public hittable {
         if (!this->hit(ray(origin, direction), interval(0.001, infinity), rec))
             return 0;
 
-        auto cos_theta_max = sqrt(1 - radius*radius/(center1 - origin).length_squared());
+        auto cos_theta_max = std::sqrt(1 - radius*radius/(center1 - origin).length_squared());
         auto solid_angle = 2*pi*(1-cos_theta_max);
 
         return  1 / solid_angle;
@@ -114,8 +114,8 @@ class sphere : public hittable {
         //     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
         //     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
 
-        auto theta = acos(-p.y());
-        auto phi = atan2(-p.z(), p.x()) + pi;
+        auto theta = std::acos(-p.y());
+        auto phi = std::atan2(-p.z(), p.x()) + pi;
 
         u = phi / (2*pi);
         v = theta / pi;
@@ -124,11 +124,11 @@ class sphere : public hittable {
     static vec3 random_to_sphere(double radius, double distance_squared) {
         auto r1 = random_double();
         auto r2 = random_double();
-        auto z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
+        auto z = 1 + r2*(std::sqrt(1-radius*radius/distance_squared) - 1);
 
         auto phi = 2*pi*r1;
-        auto x = cos(phi)*sqrt(1-z*z);
-        auto y = sin(phi)*sqrt(1-z*z);
+        auto x = std::cos(phi) * std::sqrt(1-z*z);
+        auto y = std::sin(phi) * std::sqrt(1-z*z);
 
         return vec3(x, y, z);
     }

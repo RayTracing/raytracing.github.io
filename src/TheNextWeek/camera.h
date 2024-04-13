@@ -74,7 +74,7 @@ class camera {
 
         // Determine viewport dimensions.
         auto theta = degrees_to_radians(vfov);
-        auto h = tan(theta/2);
+        auto h = std::tan(theta/2);
         auto viewport_height = 2 * h * focus_dist;
         auto viewport_width = viewport_height * (double(image_width)/image_height);
 
@@ -96,7 +96,7 @@ class camera {
         pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
         // Calculate the camera defocus disk basis vectors.
-        auto defocus_radius = focus_dist * tan(degrees_to_radians(defocus_angle / 2));
+        auto defocus_radius = focus_dist * std::tan(degrees_to_radians(defocus_angle / 2));
         defocus_disk_u = u * defocus_radius;
         defocus_disk_v = v * defocus_radius;
     }

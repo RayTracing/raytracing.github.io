@@ -84,8 +84,8 @@ class rotate_y : public hittable {
   public:
     rotate_y(shared_ptr<hittable> object, double angle) : object(object) {
         auto radians = degrees_to_radians(angle);
-        sin_theta = sin(radians);
-        cos_theta = cos(radians);
+        sin_theta = std::sin(radians);
+        cos_theta = std::cos(radians);
         bbox = object->bounding_box();
 
         point3 min( infinity,  infinity,  infinity);
@@ -104,8 +104,8 @@ class rotate_y : public hittable {
                     vec3 tester(newx, y, newz);
 
                     for (int c = 0; c < 3; c++) {
-                        min[c] = fmin(min[c], tester[c]);
-                        max[c] = fmax(max[c], tester[c]);
+                        min[c] = std::fmin(min[c], tester[c]);
+                        max[c] = std::fmax(max[c], tester[c]);
                     }
                 }
             }
