@@ -17,7 +17,7 @@
 #include <stdlib.h>
 
 double f(double d) {
-    return 8.0 * pow(d, 1.0/3.0);
+    return 8.0 * std::pow(d, 1.0/3.0);
 }
 
 double pdf(double x) {
