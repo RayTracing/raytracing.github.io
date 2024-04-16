@@ -1989,21 +1989,13 @@ code to make it all happen:
     class perlin {
       public:
         perlin() {
-            randfloat = new double[point_count];
             for (int i = 0; i < point_count; i++) {
                 randfloat[i] = random_double();
             }
 
-            perm_x = perlin_generate_perm();
-            perm_y = perlin_generate_perm();
-            perm_z = perlin_generate_perm();
-        }
-
-        ~perlin() {
-            delete[] randfloat;
-            delete[] perm_x;
-            delete[] perm_y;
-            delete[] perm_z;
+            perlin_generate_perm(perm_x);
+            perlin_generate_perm(perm_y);
+            perlin_generate_perm(perm_z);
         }
 
         double noise(const point3& p) const {
@@ -2016,20 +2008,16 @@ code to make it all happen:
 
       private:
         static const int point_count = 256;
-        double* randfloat;
-        int* perm_x;
-        int* perm_y;
-        int* perm_z;
+        double randfloat[point_count];
+        int perm_x[point_count];
+        int perm_y[point_count];
+        int perm_z[point_count];
 
-        static int* perlin_generate_perm() {
-            auto p = new int[point_count];
-
+        static void perlin_generate_perm(int* p) {
             for (int i = 0; i < point_count; i++)
                 p[i] = i;
 
             permute(p, point_count);
-
-            return p;
         }
 
         static void permute(int* p, int n) {
@@ -2309,27 +2297,15 @@ reasonable set of irregular directions, and I won't bother to make them exactly 
     class perlin {
       public:
         perlin() {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            randvec = new vec3[point_count];
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             for (int i = 0; i < point_count; i++) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
                 randvec[i] = unit_vector(vec3::random(-1,1));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             }
 
-            perm_x = perlin_generate_perm();
-            perm_y = perlin_generate_perm();
-            perm_z = perlin_generate_perm();
-        }
-
-        ~perlin() {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            delete[] randvec;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            delete[] perm_x;
-            delete[] perm_y;
-            delete[] perm_z;
+            perlin_generate_perm(perm_x);
+            perlin_generate_perm(perm_y);
+            perlin_generate_perm(perm_z);
         }
 
         ...
@@ -2337,11 +2313,11 @@ reasonable set of irregular directions, and I won't bother to make them exactly 
       private:
         static const int point_count = 256;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        vec3* randvec;
+        vec3 randvec[point_count];
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-        int* perm_x;
-        int* perm_y;
-        int* perm_z;
+        int perm_x[point_count];
+        int perm_y[point_count];
+        int perm_z[point_count];
         ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

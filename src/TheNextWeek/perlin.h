@@ -17,21 +17,13 @@
 class perlin {
   public:
     perlin() {
-        randvec = new vec3[point_count];
         for (int i = 0; i < point_count; i++) {
             randvec[i] = unit_vector(vec3::random(-1,1));
         }
 
-        perm_x = perlin_generate_perm();
-        perm_y = perlin_generate_perm();
-        perm_z = perlin_generate_perm();
-    }
-
-    ~perlin() {
-        delete[] randvec;
-        delete[] perm_x;
-        delete[] perm_y;
-        delete[] perm_z;
+        perlin_generate_perm(perm_x);
+        perlin_generate_perm(perm_y);
+        perlin_generate_perm(perm_z);
     }
 
     double noise(const point3& p) const {
@@ -72,20 +64,16 @@ class perlin {
 
   private:
     static const int point_count = 256;
-    vec3* randvec;
-    int* perm_x;
-    int* perm_y;
-    int* perm_z;
+    vec3 randvec[point_count];
+    int perm_x[point_count];
+    int perm_y[point_count];
+    int perm_z[point_count];
 
-    static int* perlin_generate_perm() {
-        auto p = new int[point_count];
-
+    static void perlin_generate_perm(int* p) {
         for (int i = 0; i < point_count; i++)
             p[i] = i;
 
         permute(p, point_count);
-
-        return p;
     }
 
     static void permute(int* p, int n) {
