@@ -13,40 +13,42 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>
-#include <math.h>
-#include <cmath>
-#include <stdlib.h>
+
 
 struct sample {
     double x;
     double p_x;
 };
 
+
 bool compare_by_x(const sample& a, const sample& b) {
     return a.x < b.x;
 }
+
 
 int main() {
     unsigned int N = 10000;
     double sum = 0.0;
 
-    // iterate through all of our samples
+    // Iterate through all of our samples.
+
     std::vector<sample> samples;
     for (unsigned int i = 0; i < N; i++) {
-        // Get the area under the curve
+        // Get the area under the curve.
         auto x = random_double(0, 2*pi);
         auto sin_x = std::sin(x);
         auto p_x = exp(-x / (2*pi)) * sin_x * sin_x;
         sum += p_x;
-        // store this sample
+
+        // Store this sample.
         sample this_sample = {x, p_x};
         samples.push_back(this_sample);
     }
 
-    // Sort the samples by x
+    // Sort the samples by x.
     std::sort(samples.begin(), samples.end(), compare_by_x);
 
-    // Find out the sample at which we have half of our area
+    // Find out the sample at which we have half of our area.
     double half_sum = sum / 2.0;
     double halfway_point = 0.0;
     double accum = 0.0;

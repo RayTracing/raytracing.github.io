@@ -14,6 +14,7 @@
 #include "hittable.h"
 #include "hittable_list.h"
 
+
 class quad : public hittable {
   public:
     quad(const point3& Q, const vec3& u, const vec3& v, shared_ptr<material> mat)

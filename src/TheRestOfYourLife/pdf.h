@@ -1,15 +1,5 @@
 #ifndef PDF_H
 #define PDF_H
-//==============================================================================================
-// Originally written in 2016 by Peter Shirley <ptrshrl@gmail.com>
-//
-// To the extent possible under law, the author(s) have dedicated all copyright and related and
-// neighboring rights to this software to the public domain worldwide. This software is
-// distributed without any warranty.
-//
-// You should have received a copy (see file COPYING.txt) of the CC0 Public Domain Dedication
-// along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-//==============================================================================================
 
 #include "rtweekend.h"
 
@@ -23,6 +13,20 @@ class pdf {
 
     virtual double value(const vec3& direction) const = 0;
     virtual vec3 generate() const = 0;
+};
+
+
+class sphere_pdf : public pdf {
+  public:
+    sphere_pdf() {}
+
+    double value(const vec3& direction) const override {
+        return 1/ (4 * pi);
+    }
+
+    vec3 generate() const override {
+        return random_unit_vector();
+    }
 };
 
 
@@ -41,20 +45,6 @@ class cosine_pdf : public pdf {
 
   private:
     onb uvw;
-};
-
-
-class sphere_pdf : public pdf {
-  public:
-    sphere_pdf() {}
-
-    double value(const vec3& direction) const override {
-        return 1/ (4 * pi);
-    }
-
-    vec3 generate() const override {
-        return random_unit_vector();
-    }
 };
 
 

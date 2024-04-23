@@ -13,8 +13,6 @@
 
 #include <iostream>
 #include <iomanip>
-#include <math.h>
-#include <stdlib.h>
 
 
 double f(const vec3& d) {
@@ -22,9 +20,11 @@ double f(const vec3& d) {
     return cosine_squared;
 }
 
+
 double pdf(const vec3& d) {
     return 1 / (4*pi);
 }
+
 
 int main() {
     int N = 1000000;

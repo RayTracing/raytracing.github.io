@@ -13,7 +13,7 @@
 
 #include <iostream>
 #include <iomanip>
-#include <math.h>
+
 
 double f(double r2) {
     // auto x = std::cos(2*pi*r1) * 2 * std::sqrt(r2*(1-r2));
@@ -23,9 +23,11 @@ double f(double r2) {
     return cos_theta*cos_theta*cos_theta;
 }
 
+
 double pdf() {
     return 1.0 / (2.0*pi);
 }
+
 
 int main() {
     int N = 1000000;

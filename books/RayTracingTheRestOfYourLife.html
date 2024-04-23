@@ -317,9 +317,11 @@ location. Let's start with our familiar Cornell box scene.
         cam.render(world);
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [estpi-3]: <kbd>[main.cc]</kbd> Stratifying the samples inside pixels]
+    [Listing [estpi-3]: <kbd>[main.cc]</kbd> Cornell box, revisited]
 
 Run this program to generate an un-stratified render and save for comparison.
+
+Now make the following changes to implement a stratified sampling procedure:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class camera {
@@ -476,20 +478,13 @@ We choose a circle with radius $r = 1$ and get:
 
 <div class='together'>
 Our work above is equally valid as a means to solve for $\pi$ as it is a means to solve for the area
-of a circle. So we could make the following substitution in the first version of our program:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
-    int main() {
-        ...
-
+of a circle. So we could make the following substitution in one of the first versions of our pi
+program:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
         std::cout << "Estimate of Pi = "                << (4.0 * inside_circle) / N << '\n';
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         std::cout << "Estimated area of unit circle = " << (4.0 * inside_circle) / N << '\n';
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [estunitcircle]: <kbd>[pi.cc]</kbd> Estimating area of unit circle]
 
@@ -1186,6 +1181,7 @@ means the CDF is $P(x) = x/2$, so $f(d) = 2d$. Knowing this, we can make this un
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         int N = 1000000;
         auto sum = 0.0;
+
         for (int i = 0; i < N; i++) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             auto x = f(random_double());
@@ -1748,10 +1744,10 @@ And the `camera::ray_color` function gets a minor modification:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
-            double pdf = scattering_pdf;
+            double pdf_value = scattering_pdf;
 
             color color_from_scatter =
-                (attenuation * scattering_pdf * ray_color(scattered, depth-1, world)) / pdf;
+                (attenuation * scattering_pdf * ray_color(scattered, depth-1, world)) / pdf_value;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return color_from_emission + color_from_scatter;
@@ -1765,7 +1761,7 @@ And the `camera::ray_color` function gets a minor modification:
 </div>
 
 You should get exactly the same picture. Which _should make sense_, as the scattered part of
-`ray_color` is getting multiplied by `scattering_pdf / pdf`, and as `pdf` is equal to
+`ray_color` is getting multiplied by `scattering_pdf / pdf_value`, and as `pdf_value` is equal to
 `scattering_pdf` is just the same as multiplying by one.
 
 
@@ -1804,11 +1800,11 @@ a noisier image:
 
             double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            double pdf = 1 / (2*pi);
+            double pdf_value = 1 / (2*pi);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             color color_from_scatter =
-                (attenuation * scattering_pdf * ray_color(scattered, depth-1, world)) / pdf;
+                (attenuation * scattering_pdf * ray_color(scattered, depth-1, world)) / pdf_value;
 
             return color_from_emission + color_from_scatter;
         }
@@ -1830,7 +1826,7 @@ Make sure to return the PDF to the scattering PDF.
 
             double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            double pdf = scattering_pdf;
+            double pdf_value = scattering_pdf;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             ...
@@ -2312,7 +2308,9 @@ We can rewrite our Lambertian material using this to get:
     class hit_record;
 
     class material {
+      public:
         ...
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         virtual bool scatter(
@@ -2351,59 +2349,88 @@ We can rewrite our Lambertian material using this to get:
     };
 
     class metal : public material {
-        public:
-            ...
+      public:
+        ...
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         bool scatter(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
         ) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-             ...
+            ...
         }
-    }; 
+    };
 
     class dielectric : public material {
-        public:
-            ...
+      public:
+        ...
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         bool scatter(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
         ) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-             ...
+            ...
         }
-    }; 
+    };
 
     class diffuse_light : public material {
-        public:
-            ...
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool scatter(
-            const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
-        ) const override {
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-             ...
-        }
-    }; 
+        ...
+    };
 
     class isotropic : public material {
-        public:
-            ...
-            
+      public:
+        ...
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         bool scatter(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
         ) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-             ...
+            ...
         }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [scatter-onb]: <kbd>[material.h]</kbd> Scatter function, with orthonormal basis]
 
 </div>
+
+And here we add the accompanying changes to the camera class:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    class camera {
+      ...
+      private:
+        ...
+
+        color ray_color(const ray& r, int depth, const hittable& world) const {
+            ...
+
+            ray scattered;
+            color attenuation;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            double pdf_value; // TODO: What are we supposed to do with the returned PDF?
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                return color_from_emission;
+
+            ...
+        }
+
+        ...
+    };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [scatter-onb-ray-color]: <kbd>[camera.h]</kbd>
+        Updated ray_color function with returned PDF value
+    ]
 
 <div class='together'>
 Which produces:
@@ -2427,8 +2454,8 @@ But first, let's quickly update the `isotropic` material:
         bool scatter(
             const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered, double& pdf
         ) const override {
-            attenuation = tex->value(rec.u, rec.v, rec.p);
             scattered = ray(rec.p, random_unit_vector(), r_in.time());
+            attenuation = tex->value(rec.u, rec.v, rec.p);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             pdf = 1 / (4 * pi);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2511,6 +2538,8 @@ check that we got the math and concept right:
     class camera {
       ...
       private:
+        ...
+
         color ray_color(const ray& r, int depth, const hittable& world) const {
             // If we've exceeded the ray bounce limit, no more light is gathered.
             if (depth <= 0)
@@ -2524,15 +2553,10 @@ check that we got the math and concept right:
 
             ray scattered;
             color attenuation;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            double pdf;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            double pdf_value; // TODO: What are we supposed to do with the returned PDF?
             color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
 
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf))
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
                 return color_from_emission;
 
 
@@ -2550,14 +2574,14 @@ check that we got the math and concept right:
             if (light_cosine < 0.000001)
                 return color_from_emission;
 
-            pdf = distance_squared / (light_cosine * light_area);
+            pdf_value = distance_squared / (light_cosine * light_area);
             scattered = ray(rec.p, to_light, r.time());
 
             double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             color color_from_scatter =
-                (attenuation * scattering_pdf * ray_color(scattered, depth-1, world)) / pdf;
+                (attenuation * scattering_pdf * ray_color(scattered, depth-1, world)) / pdf_value;
 
             return color_from_emission + color_from_scatter;
         }
@@ -2565,7 +2589,23 @@ check that we got the math and concept right:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [ray-color-lights]: <kbd>[camera.h]</kbd> Ray color with light sampling]
 
-<div class='together'>
+We'll test this scene with just ten samples per pixel:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+        ...
+        cam.aspect_ratio      = 1.0;
+        cam.image_width       = 600;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.samples_per_pixel = 10;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        cam.max_depth         = 50;
+        cam.background        = color(0,0,0);
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [ray-color-lights-10spp]: <kbd>[main.cc]</kbd> Ray color with light sampling at 10spp]
+
 With 10 samples per pixel this yields:
 
   ![<span class='num'>Image 7:</span> Cornell box, sampling only the light, 10 samples per pixel
@@ -2573,8 +2613,6 @@ With 10 samples per pixel this yields:
 
 This is about what we would expect from something that samples only the light sources, so this
 appears to work.
-
-</div>
 
 
 Switching to Unidirectional Light
@@ -2609,7 +2647,7 @@ that by letting the `hittable::emitted()` function take extra information:
         const override {
             if (!rec.front_face)
                 return color(0,0,0);
-            return emit->value(u, v, p);
+            return tex->value(u, v, p);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -2699,7 +2737,7 @@ works, and for `pdf` this implies:
 
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [class-pdf]: <kbd>[pdf.h]</kbd> The abstract pdf class]
+    [Listing [class-pdf]: <kbd>[pdf.h]</kbd> The abstract PDF class]
 
 </div>
 
@@ -2721,7 +2759,7 @@ create a uniform density over the unit sphere:
         }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [class-uni-pdf]: <kbd>[pdf.h]</kbd> The uniform_pdf class]
+    [Listing [class-uni-pdf]: <kbd>[pdf.h]</kbd> The sphere_pdf class]
 
 </div>
 
@@ -2754,10 +2792,13 @@ Next, let’s try a cosine density:
 We can try this cosine PDF in the `ray_color()` function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
 
+    #include "hittable.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "pdf.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "material.h"
 
     class camera {
       ...
@@ -2776,36 +2817,49 @@ We can try this cosine PDF in the `ray_color()` function:
 
             ray scattered;
             color attenuation;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            double pdf_val;
+            double pdf_value; // TODO: What are we supposed to do with the returned PDF?
             color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-    
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_val))
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
                 return color_from_emission;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             cosine_pdf surface_pdf(rec.normal);
             scattered = ray(rec.p, surface_pdf.generate(), r.time());
-            pdf_val = surface_pdf.value(scattered.direction());
+            pdf_value = surface_pdf.value(scattered.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 
             color color_from_scatter =
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-                (attenuation * scattering_pdf * ray_color(scattered, depth-1, world)) / pdf_val;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                (attenuation * scattering_pdf * ray_color(scattered, depth-1, world)) / pdf_value;
 
             return color_from_emission + color_from_scatter;
         }
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [ray-color-cos-pdf]: <kbd>[camera.h]</kbd> The ray_color function, using cosine pdf]
+    [Listing [ray-color-cos-pdf]: <kbd>[camera.h]</kbd> The ray_color function, using cosine PDF]
+
+</div>
+
+<div class='together'>
+And set the render back to 1000 samples per pixel:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    int main() {
+        ...
+        cam.aspect_ratio      = 1.0;
+        cam.image_width       = 600;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.samples_per_pixel = 1000;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        cam.max_depth         = 50;
+        cam.background        = color(0,0,0);
+        ...
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [Listing [cosine-density-1000spp]: <kbd>[main.cc]</kbd> Reset sampling back to 1000spp]
 
 </div>
 
@@ -2824,9 +2878,16 @@ Sampling Directions towards a Hittable
 Now we can try sampling directions toward a `hittable`, like the light.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
+    #include "rtweekend.h"
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "hittable_list.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "onb.h"
+
     ...
+
     class hittable_pdf : public pdf {
       public:
         hittable_pdf(const hittable& objects, const point3& origin)
@@ -2859,7 +2920,11 @@ functions through to subclasses if you want a purely abstract `hittable` interfa
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class hittable {
       public:
-        ...
+        virtual ~hittable() = default;
+
+        virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
+
+        virtual aabb bounding_box() const = 0;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2868,7 +2933,7 @@ functions through to subclasses if you want a purely abstract `hittable` interfa
         }
 
         virtual vec3 random(const point3& origin) const {
-            return vec3(1, 0, 0);
+            return vec3(1,0,0);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
@@ -2896,6 +2961,7 @@ And then we change `quad` to implement those functions:
 
             set_bounding_box();
         }
+
         ...
 
 
@@ -2930,7 +2996,7 @@ And then we change `quad` to implement those functions:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [quad-pdf]: <kbd>[quad.h]</kbd> quad with pdf]
+    [Listing [quad-pdf]: <kbd>[quad.h]</kbd> quad with PDF]
 
 </div>
 
@@ -2946,6 +3012,8 @@ Add a `lights` parameter to the camera `render()` function:
     class camera {
       public:
         ...
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         void render(const hittable& world, const hittable& lights) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -2975,23 +3043,27 @@ Add a `lights` parameter to the camera `render()` function:
         ...
       private:
         ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         color ray_color(const ray& r, int depth, const hittable& world, const hittable& lights)
         const {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             ...
 
             ray scattered;
             color attenuation;
-            double pdf_val;
+            double pdf_value; // TODO: What are we supposed to do with the returned PDF?
             color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
 
-            if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_val))
+            if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
                 return color_from_emission;
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             hittable_pdf light_pdf(light_ptr, rec.p);
             scattered = ray(rec.p, light_pdf.generate(), r.time());
-            pdf_val = light_pdf.value(scattered.direction());
+            pdf_value = light_pdf.value(scattered.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
@@ -2999,7 +3071,7 @@ Add a `lights` parameter to the camera `render()` function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             color sample_color = ray_color(scattered, depth-1, world, lights);
-            color color_from_scatter = (attenuation * scattering_pdf * sample_color) / pdf_val;
+            color color_from_scatter = (attenuation * scattering_pdf * sample_color) / pdf_value;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return color_from_emission + color_from_scatter;
@@ -3101,7 +3173,7 @@ correct, we would have to solve backwards to figure which PDF the direction coul
 honestly sounds like a nightmare, but fortunately we don't need to do that. There are some
 directions that both PDFs could have generated. For example, a direction toward the light could have
 been generated by either $\operatorname{pLight}$ _or_ $\operatorname{pSurface}$. It is sufficient
-for us to solve for the pdf value of $\operatorname{pSurface}$ and of $\operatorname{pLight}$ for a
+for us to solve for the PDF value of $\operatorname{pSurface}$ and of $\operatorname{pLight}$ for a
 random direction and then take the PDF mixture weights to solve for the total PDF value for that
 direction. The mixture density class is actually pretty straightforward:
 
@@ -3141,11 +3213,12 @@ plug it into `ray_color()`:
       ...
       private:
         ...
+
         color ray_color(const ray& r, int depth, const hittable& world, const hittable& lights)
         const {
             ...
 
-            if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_val))
+            if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
                 return color_from_emission;
 
 
@@ -3155,13 +3228,13 @@ plug it into `ray_color()`:
             mixture_pdf mixed_pdf(p0, p1);
 
             scattered = ray(rec.p, mixed_pdf.generate(), r.time());
-            pdf_val = mixed_pdf.value(scattered.direction());
+            pdf_value = mixed_pdf.value(scattered.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 
             color sample_color = ray_color(scattered, depth-1, world, lights);
-            color color_from_scatter = (attenuation * scattering_pdf * sample_color) / pdf_val;
+            color color_from_scatter = (attenuation * scattering_pdf * sample_color) / pdf_value;
 
             return color_from_emission + color_from_scatter;
         }
@@ -3272,6 +3345,7 @@ We can redesign `material` and stuff all the new arguments into a class like we 
       public:
         ...
 
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         virtual bool scatter(const ray& r_in, const hit_record& rec, scatter_record& srec) const {
             return false;
@@ -3289,6 +3363,20 @@ We can redesign `material` and stuff all the new arguments into a class like we 
 The `lambertian` material becomes simpler:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
+    #include "onb.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "pdf.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "texture.h"
+
+    class hit_record;
+
+    ...
+
     class lambertian : public material {
       public:
         lambertian(const color& albedo) : tex(make_shared<solid_color>(albedo)) {}
@@ -3304,9 +3392,12 @@ The `lambertian` material becomes simpler:
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const {
-            auto cosine = dot(rec.normal, unit_vector(scattered.direction()));
-            return cosine < 0 ? 0 : cosine/pi;
+        double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
+        const override {
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            auto cos_theta = dot(rec.normal, unit_vector(scattered.direction()));
+            return cos_theta < 0 ? 0 : cos_theta/pi;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
 
       private:
@@ -3357,6 +3448,7 @@ And `ray_color()` changes are small:
       ...
       private:
         ...
+
         color ray_color(const ray& r, int depth, const hittable& world, const hittable& lights)
         const {
             // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -3387,14 +3479,15 @@ And `ray_color()` changes are small:
             mixture_pdf p(light_ptr, srec.pdf_ptr);
 
             ray scattered = ray(rec.p, p.generate(), r.time());
-            auto pdf_val = p.value(scattered.direction());
+            auto pdf_value = p.value(scattered.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 
             color sample_color = ray_color(scattered, depth-1, world, lights);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            color color_from_scatter = (srec.attenuation * scattering_pdf * sample_color) / pdf_val;
+            color color_from_scatter =
+                (srec.attenuation * scattering_pdf * sample_color) / pdf_value;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             return color_from_emission + color_from_scatter;
@@ -3638,6 +3731,11 @@ Updating the Sphere Code
 The sphere class needs the two PDF-related functions:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "hittable.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include "onb.h"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
     class sphere : public hittable {
       public:
         ...
@@ -3668,6 +3766,7 @@ The sphere class needs the two PDF-related functions:
 
       private:
         ...
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         static vec3 random_to_sphere(double radius, double distance_squared) {

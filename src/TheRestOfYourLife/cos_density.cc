@@ -13,16 +13,18 @@
 
 #include <iostream>
 #include <iomanip>
-#include <math.h>
+
 
 double f(const vec3& d) {
     auto cos_theta = d.z();
     return cos_theta*cos_theta*cos_theta;
 }
 
+
 double pdf(const vec3& d) {
     return d.z() / pi;
 }
+
 
 int main() {
     int N = 1000000;

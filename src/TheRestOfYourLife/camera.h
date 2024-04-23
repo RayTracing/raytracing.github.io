@@ -14,6 +14,7 @@
 #include "rtweekend.h"
 
 #include "hittable.h"
+#include "pdf.h"
 #include "material.h"
 
 
@@ -175,12 +176,13 @@ class camera {
         mixture_pdf p(light_ptr, srec.pdf_ptr);
 
         ray scattered = ray(rec.p, p.generate(), r.time());
-        auto pdf_val = p.value(scattered.direction());
+        auto pdf_value = p.value(scattered.direction());
 
         double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
 
         color sample_color = ray_color(scattered, depth-1, world, lights);
-        color color_from_scatter = (srec.attenuation * scattering_pdf * sample_color) / pdf_val;
+        color color_from_scatter =
+            (srec.attenuation * scattering_pdf * sample_color) / pdf_value;
 
         return color_from_emission + color_from_scatter;
     }

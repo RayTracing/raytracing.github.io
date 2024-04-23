@@ -22,7 +22,6 @@ int main() {
         auto x = std::cos(2*pi*r1) * 2 * std::sqrt(r2*(1-r2));
         auto y = std::sin(2*pi*r1) * 2 * std::sqrt(r2*(1-r2));
         auto z = 1 - 2*r2;
-
         std::cout << x << " " << y << " " << z << '\n';
     }
 }
