@@ -27,12 +27,12 @@ bool compare_by_x(const sample& a, const sample& b) {
 
 
 int main() {
-    unsigned int N = 10000;
+    const unsigned int N = 10000;
+    sample samples[N];
     double sum = 0.0;
 
     // Iterate through all of our samples.
 
-    std::vector<sample> samples;
     for (unsigned int i = 0; i < N; i++) {
         // Get the area under the curve.
         auto x = random_double(0, 2*pi);
@@ -42,11 +42,11 @@ int main() {
 
         // Store this sample.
         sample this_sample = {x, p_x};
-        samples.push_back(this_sample);
+        samples[i] = this_sample;
     }
 
     // Sort the samples by x.
-    std::sort(samples.begin(), samples.end(), compare_by_x);
+    std::sort(samples, samples + N, compare_by_x);
 
     // Find out the sample at which we have half of our area.
     double half_sum = sum / 2.0;
