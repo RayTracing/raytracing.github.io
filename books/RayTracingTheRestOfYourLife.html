@@ -3098,9 +3098,8 @@ Create a light in the middle of the ceiling:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // Light Sources
-        hittable_list lights;
-        auto m = shared_ptr<material>();
-        lights.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), m));
+        auto empty_material = shared_ptr<material>();
+        quad lights(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), empty_material);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         camera cam;
@@ -3638,9 +3637,8 @@ that.
         world.add(box2);
 
         // Light Sources
-        hittable_list lights;
-        auto m = shared_ptr<material>();
-        lights.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), m));
+        auto empty_material = shared_ptr<material>();
+        quad lights(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), empty_material);
 
         ...
     }
@@ -3809,9 +3807,8 @@ We can first try just sampling the sphere rather than the light:
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         // Light Sources
-        hittable_list lights;
-        auto m = shared_ptr<material>();
-        lights.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), m));
+        auto empty_material = shared_ptr<material>();
+        quad lights(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), empty_material);
 
         ...
     }
@@ -3867,17 +3864,18 @@ think both tactics would work fine, but I will go with instrumenting `hittable_l
     [Listing [density-mixture]: <kbd>[hittable_list.h]</kbd> Creating a mixture of densities]
 
 <div class='together'>
-We assemble a list to pass to `render()` from `main()`:
+We assemble a list of light sources to pass to `camera::render()`:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     int main() {
         ...
 
         // Light Sources
-        hittable_list lights;
-        auto m = shared_ptr<material>();
-        lights.add(make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), m));
+        auto empty_material = shared_ptr<material>();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        hittable_list lights;
+        lights.add(
+            make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), empty_material));
         lights.add(make_shared<sphere>(point3(190, 90, 190), 90, m));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
