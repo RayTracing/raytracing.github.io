@@ -14,7 +14,7 @@ Change Log -- Ray Tracing in One Weekend
 ### The Next Week
 
 ### The Rest of Your Life
-
+  - Change -- Simplified the `onb` class, and renamed or deleted methods (#1080)
 
 
 

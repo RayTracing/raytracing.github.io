@@ -87,9 +87,8 @@ class sphere : public hittable {
     vec3 random(const point3& origin) const override {
         vec3 direction = center1 - origin;
         auto distance_squared = direction.length_squared();
-        onb uvw;
-        uvw.build_from_w(direction);
-        return uvw.local(random_to_sphere(radius, distance_squared));
+        onb uvw(direction);
+        return uvw.transform(random_to_sphere(radius, distance_squared));
     }
 
   private:
