@@ -1130,13 +1130,13 @@ we get the inverse by solving for $r$ in terms of $y$:
 
     $$ r = \sqrt{4y} $$
 
-Which means the inverse of our CDF is defined as
+Which means the inverse of our CDF (which we'll call $ICD(x)$) is defined as
 
-    $$ P^{-1}(r) = \sqrt{4y} $$
+    $$ P^{-1}(r) = \operatorname{ICD}(r) = \sqrt{4y} $$
 
 Thus our random number generator with density $p(r)$ can be created with:
 
-    $$ f(d) = \sqrt{4 \cdot \operatorname{random\_double}()} $$
+    $$ \operatorname{ICD}(d) = \sqrt{4 \cdot \operatorname{random\_double}()} $$
 
 Note that this ranges from 0 to 2 as we hoped, and if we check our work, we replace
 `random_double()` with $1/4$ to get 1, and also replace with $1/2$ to get $\sqrt{2}$, just as
@@ -1155,7 +1155,8 @@ with a few different PDFs to get a better understanding:
 The last time that we tried to solve for the integral we used a Monte Carlo approach, uniformly
 sampling from the interval $[0, 2]$. We didn't know it at the time, but we were implicitly using a
 uniform PDF between 0 and 2. This means that we're using a PDF = $1/2$ over the range $[0,2]$, which
-means the CDF is $P(x) = x/2$, so $f(d) = 2d$. Knowing this, we can make this uniform PDF explicit:
+means the CDF is $P(x) = x/2$, so $\operatorname{ICD}(d) = 2d$. Knowing this, we can make this
+uniform PDF explicit:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #include "rtweekend.h"
@@ -1165,7 +1166,7 @@ means the CDF is $P(x) = x/2$, so $f(d) = 2d$. Knowing this, we can make this un
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    double f(double d) {
+    double icd(double d) {
         return 2.0 * d;
     }
 
@@ -1184,7 +1185,7 @@ means the CDF is $P(x) = x/2$, so $f(d) = 2d$. Knowing this, we can make this un
 
         for (int i = 0; i < N; i++) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            auto x = f(random_double());
+            auto x = icd(random_double());
             sum += x*x / pdf(x);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         }
@@ -1199,29 +1200,28 @@ means the CDF is $P(x) = x/2$, so $f(d) = 2d$. Knowing this, we can make this un
 </div>
 
 There are a couple of important things to emphasize. Every value of $x$ represents one sample of the
-function $x^2$ within the distribution $[0, 2]$. We use a function $f$ to randomly select samples
-from within this distribution. We were previously multiplying the average over the interval
-(`sum / N`) times the length of the interval (`b - a`) to arrive at the final answer. Here, we
-don't need to multiply by the interval length--that is, we no longer need to multiply the average
+function $x^2$ within the distribution $[0, 2]$. We use a function $\operatorname{ICD}$ to randomly
+select samples from within this distribution. We were previously multiplying the average over the
+interval (`sum / N`) times the length of the interval (`b - a`) to arrive at the final answer. Here,
+we don't need to multiply by the interval length--that is, we no longer need to multiply the average
 by $2$.
 
 We need to account for the nonuniformity of the PDF of $x$. Failing to account for this
 nonuniformity will introduce bias in our scene. Indeed, this bias is the source of our inaccurately
-bright image--if we account for nonuniformity, we will get accurate results. The PDF will "steer"
+bright image. Accounting for the nonuniformity will yield accurate results. The PDF will "steer"
 samples toward specific parts of the distribution, which will cause us to converge faster, but at
 the cost of introducing bias. To remove this bias, we need to down-weight where we sample more
 frequently, and to up-weight where we sample less frequently. For our new nonuniform random number
-generator, the PDF defines how much or how little we sample a specific portion.
-So the weighting function should be proportional to $1/\mathit{pdf}$.
-In fact it is _exactly_ $1/\mathit{pdf}$.
-This is why we divide `x*x` by `pdf(x)`.
+generator, the PDF defines how much or how little we sample a specific portion. So the weighting
+function should be proportional to $1/\mathit{pdf}$. In fact it is _exactly_ $1/\mathit{pdf}$. This
+is why we divide `x*x` by `pdf(x)`.
 
-We can try to solve for the integral using the linear PDF $p(r) = \frac{r}{2}$, for which we were
-able to solve for the CDF and its inverse. To do that, all we need to do is replace the functions
-$f = \sqrt{4d}$ and $pdf = x/2$.
+We can try to solve for the integral using the linear PDF, $p(r) = \frac{r}{2}$, for which we were
+able to solve for the CDF and its inverse, ICD. To do that, all we need to do is replace the
+functions $\operatorname{ICD}(d) = \sqrt{4d}$ and $p(x) = x/2$.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    double f(double d) {
+    double icd(double d) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         return std::sqrt(4.0 * d);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1243,7 +1243,7 @@ $f = \sqrt{4d}$ and $pdf = x/2$.
             if (z == 0.0)  // Ignore zero to avoid NaNs
                 continue;
 
-            auto x = f(z);
+            auto x = icd(z);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             sum += x*x / pdf(x);
         }
@@ -1290,13 +1290,13 @@ And we get the corresponding CDF:
 
 and
 
-    $$ P^{-1}(x) = f(d) = 8d^\frac{1}{3} $$
+    $$ P^{-1}(x) = \operatorname{ICD}(d) = 8d^\frac{1}{3} $$
 
 <div class='together'>
 For just one sample we get:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    double f(double d) {
+    double icd(double d) {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         return 8.0 * std::pow(d, 1.0/3.0);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1319,7 +1319,7 @@ For just one sample we get:
             if (z == 0.0)  // Ignore zero to avoid NaNs
                 continue;
 
-            auto x = f(z);
+            auto x = icd(z);
             sum += x*x / pdf(x);
         }
         std::cout << std::fixed << std::setprecision(12);
@@ -1342,17 +1342,19 @@ the parts of the distribution that are more _important_. This is why using a car
 nonuniform PDF is usually called _importance sampling_.
 
 In all of the examples given, we always converged to the correct answer of $8/3$. We got the same
-answer when we used both a uniform PDF and the "correct" PDF ($i.e. f(d)=8d^{\frac{1}{3}}$). While
-they both converged to the same answer, the uniform PDF took much longer. After all, we only needed
-a single sample from the PDF that perfectly matched the integral. This should make sense, as we were
-choosing to sample the important parts of the distribution more often, whereas the uniform PDF just
-sampled the whole distribution equally, without taking importance into account.
+answer when we used both a uniform PDF and the "correct" PDF (that is, $\operatorname{ICD}(d) =
+8d^{\frac{1}{3}}$). While they both converged to the same answer, the uniform PDF took much longer.
+After all, we only needed a single sample from the PDF that perfectly matched the integral. This
+should make sense, as we were choosing to sample the important parts of the distribution more often,
+whereas the uniform PDF just sampled the whole distribution equally, without taking importance into
+account.
 
 Indeed, this is the case for any PDF that you create--they will all converge eventually. This is
 just another part of the power of the Monte Carlo algorithm. Even the naive PDF where we solved for
 the 50% value and split the distribution into two halves: $[0, \sqrt{2}]$ and $[\sqrt{2}, 2]$. That
 PDF will converge. Hopefully you should have an intuition as to why that PDF will converge faster
-than a pure uniform PDF, but slower than the linear PDF ($i.e. f(d) = \sqrt{4d}$).
+than a pure uniform PDF, but slower than the linear PDF (that is, $\operatorname{ICD}(d) =
+\sqrt{4d}$).
 
 The perfect importance sampling is only possible when we already know the answer (we got $P$ by
 integrating $p$ analytically), but it’s a good exercise to make sure our code works.

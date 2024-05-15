@@ -15,7 +15,7 @@
 #include <iomanip>
 
 
-double f(double d) {
+double icd(double d) {
     return 8.0 * std::pow(d, 1.0/3.0);
 }
 
@@ -34,7 +34,7 @@ int main() {
         if (z == 0.0)  // Ignore zero to avoid NaNs
             continue;
 
-        auto x = f(z);
+        auto x = icd(z);
         sum += x*x / pdf(x);
     }
 
