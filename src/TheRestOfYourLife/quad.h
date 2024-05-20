@@ -51,7 +51,7 @@ class quad : public hittable {
         if (!ray_t.contains(t))
             return false;
 
-        // Determine the hit point lies within the planar shape using its plane coordinates.
+        // Determine if the hit point lies within the planar shape using its plane coordinates.
         auto intersection = r.at(t);
         vec3 planar_hitpt_vector = intersection - Q;
         auto alpha = dot(w, cross(planar_hitpt_vector, v));
