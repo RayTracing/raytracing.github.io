@@ -11,16 +11,6 @@ Getting the Books
 The _Ray Tracing in One Weekend_ series of books are now available to the public for free directly
 from the web.
 
-We are currently hosting both the older v3.2.3 version and the latest v4.0.0-alpha.2 versions in the
-same project. The older v3 version (really v3.2.3) is provided for readers who are in the middle of
-going through the series so you can maintain continuity. For new readers, or readers newly starting
-one of the books, we strongly recommend that you jump aboard the v4 train.
-
-### Version 3.2.3
-  - [Ray Tracing in One Weekend][web1-v3]
-  - [Ray Tracing: The Next Week][web2-v3]
-  - [Ray Tracing: The Rest of Your Life][web3-v3]
-
 ### Version 4.0.0-alpha.2
 
   - [Ray Tracing in One Weekend][web1]
@@ -83,13 +73,6 @@ The organization of this repository is meant to be simple and self-evident at a 
 
   - `src/<book>/` --
     Contains the final source code for each book.
-
-  - `v3/` --
-    All content (same general structure) for the v3.2.3 release (from December 2020).
-
-  - `v3/common` --
-    Contains v3 headers that are common to two or more v3 books. This is also where external headers
-    are stored.
 
 
 Source Code
@@ -235,6 +218,3 @@ _**please review the [CONTRIBUTING][] document for the most effective way to pro
 [web1]:            https://raytracing.github.io/books/RayTracingInOneWeekend.html
 [web2]:            https://raytracing.github.io/books/RayTracingTheNextWeek.html
 [web3]:            https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html
-[web1-v3]:         https://raytracing.github.io/v3/books/RayTracingInOneWeekend.html
-[web2-v3]:         https://raytracing.github.io/v3/books/RayTracingTheNextWeek.html
-[web3-v3]:         https://raytracing.github.io/v3/books/RayTracingTheRestOfYourLife.html
