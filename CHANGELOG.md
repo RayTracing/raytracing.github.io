@@ -1,21 +1,38 @@
-Change Log -- Ray Tracing in One Weekend
+Change Log / Ray Tracing in One Weekend
 ====================================================================================================
 
-# v4.0.0 (In Progress)
+# v4.0.0 (2024-07-28)
+
+From our last official v3.2.3 release (three and a half years ago!), this major release includes all
+changes in the v4.0.0-alpha.1 and v4.0.0-alpha.2 releases, plus the changes listed immediately
+below. Generally, this represents a large overhaul of all three books and their code, and will
+require large changes to any code you've based on the prior v3.2.3 version. Going forward, we plan
+to avoid such massive, long-running development branches, at the expense of more frequent minor and
+major releases.
+
+There's still a fair amount of work remaining on book three, which we'll work on after this release.
 
 ### Common
-  - Delete -- <description> (#XXXX)
-  - Change -- <description> (#XXXX)
-  - Fix    -- <description> (#XXXX)
-  - New    -- <description> (#XXXX)
-
-### In One Weekend
+  - New    -- Add explicit std:: namespacing almost everywhere (#1487)
+  - Change -- Use delegating constructors where helpful (#1489)
+  - Change -- Standardized our use of `begin`/`end` standard C++ iterators (#1551)
+  - Fix    -- CSS reformatting and fixes (#1567)
+  - Fix    -- Add workaround for image and figure captions using latest Markdeep versions (#1583)
+  - New    -- Add DOCTYPE declaration to all Markdeep documents (#1566)
 
 ### The Next Week
+  - Delete -- Remove debug output code from `constant_medium::hit()` function (#1495)
+  - Change -- Convert `perlin` class to use static arrays instead of dynamically allocated (#1483)
+  - Fix    -- Workaround Markdeep issue for code listings with tag-like tokens (#1463)
 
 ### The Rest of Your Life
-  - Change -- Simplified the `onb` class, and renamed or deleted methods (#1080)
-
+  - Change -- Simplified the `onb` class, and renamed or deleted functions (#1080)
+  - Change -- Many small updates following walkthrough of book 3 (#988, #1317)
+  - Change -- Use plain array for `estimate_halfway` program (#1523)
+  - Change -- Refactored the ONB class to remove unused methods and generally simplify (#1088)
+  - Change -- Use `ICD(d)` instead of `f(d)` for inverse cumulative distribution for clarity (#1537)
+  - Fix    -- Add missing signature updates for `material::scatter()` functions
+  - Fix    -- Avoid `hittable_list` of lights in book until code is ready (#1318)
 
 
 ----------------------------------------------------------------------------------------------------
@@ -123,7 +140,6 @@ Our current plan is to get the final v4.0.0 release out the door by SIGGRAPH 202
 ### The Rest of Your Life
   - Fix    -- Add missing backslash for LaTeX `operatorname` (#1311)
   - Fix    -- Fix LaTeX functions with underscore (#1330)
-
 
 
 ----------------------------------------------------------------------------------------------------
