@@ -11,7 +11,7 @@ Getting the Books
 The _Ray Tracing in One Weekend_ series of books are now available to the public for free directly
 from the web.
 
-### Version 4.0.0-alpha.2
+### Version 4.0.0
 
   - [Ray Tracing in One Weekend][web1]
   - [Ray Tracing: The Next Week][web2]
@@ -29,20 +29,12 @@ first**_.
 
 Project Status
 ---------------
-Ok, v4.0.0-alpha.2 is finally out the door, and we are now heads down on getting the final v4.0.0
-version complete and shipped by SIGGRAPH 2024, July 28. At present, that means we are largely
-focused on _Ray Tracing: The Rest of Your Life_ — the third book in the series.
+v4.0.0 has shipped! Three and a half years in the making, with massive changes to all three books
+and accompanying code.
 
-**v4.0.0-alpha.2 is released.** Books one and two are largely complete, and we're now focusing on
-book three. You can find it at the regular spot: https://raytracing.github.io. We are temporarily
-preserving the final version of v3.2.3 inside the repo, so you can just grab the latest and
-reference both versions.
-
-If you'd like to check out the latest updates and watch our progress, we're on the `dev` branch. You
-can also browse our release backlog to see what we're planning. Our relevant milestones are
-
-  - [v4.0.0](https://github.com/RayTracing/raytracing.github.io/milestone/16)
-  - [v4.0.0-release](https://github.com/RayTracing/raytracing.github.io/milestone/19)
+If you'd like to check out the latest updates and watch our progress, we're on the `dev-patch`,
+`dev-minor`, and `dev-major` branches. You can also browse our release backlog to see what we're
+planning.
 
 If you're interested in contributing, email us! You can find our contact info at the head of each
 book. Or just start [a new discussion][discussions] or [issue][issues].
@@ -95,15 +87,15 @@ represent ideal (or optimized) C++ code.
 
 ### Implementations in Other Languages
 The _Ray Tracing in One Weekend_ series has a long history of implementations in other programming
-languages (see [_Implementations in Other Languages_][implementations]), and across different
+languages (see [Implementations in Other Languages][implementations]), and across different
 operating systems. Feel free to add your own implementation to the list!
 
 ### Branches
-In general, ongoing development, with all of the latest changes, can be found in the `dev` branch,
-which may contain patch, minor and major changes, depending on the release in progress. We try to
-keep CHANGELOG.md up to date, so you can easily browse what's new in each development branch. We may
-from time to time use additional development branches, so stay up to date by reviewing the
-[CONTRIBUTING][] page.
+In general, ongoing development, with all of the latest changes, can be found in the `dev-patch`,
+`dev-minor`, and `dev-major` branches, minor and major changes, depending on the change level and
+release in progress. We try to keep CHANGELOG.md up to date, so you can easily browse what's new in
+each development branch. We may from time to time use additional development branches, so stay up to
+date by reviewing the [CONTRIBUTING][] page.
 
 The `release` branch contains the latest released (and live) assets. This is the branch from which
 GitHub pages serves up https://raytracing.github.io/.
@@ -211,10 +203,7 @@ _**please review the [CONTRIBUTING][] document for the most effective way to pro
 [ImageMagick]:     https://imagemagick.org/
 [implementations]: https://github.com/RayTracing/raytracing.github.io/wiki/Implementations
 [issues]:          https://github.com/RayTracing/raytracing.github.io/issues/
-[milestone 16]:    https://github.com/RayTracing/raytracing.github.io/milestone/16
-[milestone 19]:    https://github.com/RayTracing/raytracing.github.io/milestone/19
 [PRINTING.md]:     PRINTING.md
-[v3.2.3]:          https://github.com/RayTracing/raytracing.github.io/releases/tag/v3.2.3
 [web1]:            https://raytracing.github.io/books/RayTracingInOneWeekend.html
 [web2]:            https://raytracing.github.io/books/RayTracingTheNextWeek.html
 [web3]:            https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html

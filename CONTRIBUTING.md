@@ -13,10 +13,10 @@ improvements.
 Development Branches
 ---------------------
 We use `release` as our release branch. _Generally, changes should never go directly to the release
-branch_. All ongoing development work (and all of the latest changes) will be in the `dev` branch.
-However, we may want changes in other development branches (for example, in a `dev-patch` branch for
-a quick patch release). The appropriate target branch for any pull requests you want to make will be
-determined in the associated issue first (all pull requests should have an associated issue).
+branch_. All ongoing development work (and all of the latest changes) will be in the `dev-patch`,
+`dev-minor`, `dev-major`, or feature branches. The appropriate target branch for any pull requests
+you want to make will be determined in the associated issue first (all pull requests should have an
+associated issue).
 
 
 Issues
@@ -24,8 +24,10 @@ Issues
 The easiest way to help out is to log any issues you find in the books. Unclear passages, errors of
 all kinds, even better ways to present something -- just go to the [issues page][].
 
-1. First ensure that the issue is still outstanding in the current development branch (`dev`). Often
-   the issue has already been addressed or no longer applies to the latest in-development version.
+1. First ensure that the issue is still outstanding (check `dev-patch`, `dev-minor` or `dev-major`
+   as appropriate). Often the issue has already been addressed or no longer applies to the latest
+   in-development version. Admittedly, that's a bit of a hassle, but at least step two should help
+   you avoid duplicate issues.
 
 2. **Before creating a new issue**, please review existing issues to see if someone has already
    submitted the same one. Chances are you're not the first to encounter something, so a little
@@ -55,7 +57,7 @@ To contribute a change to the project, *please follow these steps*:
      for the release type and release schedule.
 
   4. Once you've received instructions to proceed with your change, create a new feature branch (or
-     fork) from the assigned development branch (usually `dev`).
+     fork) from the assigned development branch (usually `dev-patch`, `dev-minor`, or `dev-major`).
 
   5. Follow the existing code style.
 
@@ -82,7 +84,7 @@ To contribute a change to the project, *please follow these steps*:
        [issue #1262](https://github.com/RayTracing/raytracing.github.io/issues/1262) and
        [PR #1263](https://github.com/RayTracing/raytracing.github.io/pull/1263).
 
-  7. When ready, create your pull request (PR) and request a review from "rt-reviewers".
+  7. When ready, create your pull request (PR) and request a review from "RayTracing/reviewers".
 
   8. Congratulate yourself for having been part of the 1% of contributors who actually read and
      followed these guidelines.

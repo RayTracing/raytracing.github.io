@@ -13,7 +13,7 @@ may be a fix in the works for this.
 
 Pre-Printed Books
 ------------------
-I've gone back and created PDFs for each book for versions v2.0.0, v3.0.0, v3.2.3. You can find
+I've gone back and created PDFs for each book for versions since v2.0.0. You can find
 these in the assets section of each release on the [GitHub releases page][releases]. We will include
 PDFs for all books with all future releases.
 
