@@ -1826,7 +1826,7 @@ You should get a very similar result to before, only with slightly more noise, i
 see.
 
   ![<span class='num'>Image 4:</span> Cornell box, with imperfect PDF
-  ](../images/img-3.04-cornell-refactor2.jpg class='pixel')
+  ](../images/img-3.04-cornell-imperfect.jpg class='pixel')
 
 Make sure to return the PDF to the scattering PDF.
 
@@ -1878,7 +1878,6 @@ PDF:
             return true;
         }
 
-
         double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered)
         const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -1895,7 +1894,7 @@ our uniform PDF that was an imperfect match for Lambertian diffuse is actually a
 our uniform hemispherical diffuse. When rendering, we should get a slightly different image.
 
   ![<span class='num'>Image 5:</span> Cornell box, with uniform hemispherical sampling
-  ](../images/img-3.04-cornell-refactor2.jpg class='pixel')
+  ](../images/img-3.05-cornell-uniform-hemi.jpg class='pixel')
 
 It’s pretty close to our old picture, but there are differences that are not just noise. The front
 of the tall box is much more uniform in color. If you aren't sure what the best sampling pattern for
@@ -2409,7 +2408,7 @@ And here we add the accompanying changes to the camera class:
             ray scattered;
             color attenuation;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            double pdf_value; // TODO: What are we supposed to do with the returned PDF?
+            double pdf_value;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
 
@@ -2418,6 +2417,11 @@ And here we add the accompanying changes to the camera class:
             if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
                 return color_from_emission;
+
+            double scattering_pdf = rec.mat->scattering_pdf(r, rec, scattered);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            pdf_value = scattering_pdf;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             ...
         }
@@ -2550,7 +2554,7 @@ check that we got the math and concept right:
 
             ray scattered;
             color attenuation;
-            double pdf_value; // TODO: What are we supposed to do with the returned PDF?
+            double pdf_value;
             color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
 
             if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
@@ -2814,7 +2818,7 @@ We can try this cosine PDF in the `ray_color()` function:
 
             ray scattered;
             color attenuation;
-            double pdf_value; // TODO: What are we supposed to do with the returned PDF?
+            double pdf_value;
             color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
 
             if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
@@ -2885,6 +2889,8 @@ Now we can try sampling directions toward a `hittable`, like the light.
 
     ...
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     class hittable_pdf : public pdf {
       public:
         hittable_pdf(const hittable& objects, const point3& origin)
@@ -3050,7 +3056,7 @@ Add a `lights` parameter to the camera `render()` function:
 
             ray scattered;
             color attenuation;
-            double pdf_value; // TODO: What are we supposed to do with the returned PDF?
+            double pdf_value;
             color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
 
             if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
@@ -3058,7 +3064,7 @@ Add a `lights` parameter to the camera `render()` function:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            hittable_pdf light_pdf(light_ptr, rec.p);
+            hittable_pdf light_pdf(lights, rec.p);
             scattered = ray(rec.p, light_pdf.generate(), r.time());
             pdf_value = light_pdf.value(scattered.direction());
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3100,6 +3106,15 @@ Create a light in the middle of the ceiling:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         camera cam;
+
+        cam.aspect_ratio      = 1.0;
+        cam.image_width       = 600;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+        cam.samples_per_pixel = 10;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        cam.max_depth         = 50;
+        cam.background        = color(0,0,0);
+
         ...
 
 
@@ -3219,7 +3234,7 @@ plug it into `ray_color()`:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            auto p0 = make_shared<hittable_pdf>(light_ptr, rec.p);
+            auto p0 = make_shared<hittable_pdf>(lights, rec.p);
             auto p1 = make_shared<cosine_pdf>(rec.normal);
             mixture_pdf mixed_pdf(p0, p1);
 
@@ -3240,7 +3255,7 @@ plug it into `ray_color()`:
 </div>
 
 <div class='together'>
-1000 samples per pixel yields:
+Updating `main.cc` to 1000 samples per pixel (not listed) yields:
 
   ![<span class='num'>Image 11:</span> Cornell box, mixture density of cosine and light sampling
   ](../images/img-3.11-cosine-and-light.jpg class='pixel')
@@ -3326,6 +3341,15 @@ this ray is diffuse or specular. Fortunately, we have decided that we should onl
 
 <div class='together'>
 We can redesign `material` and stuff all the new arguments into a class like we did for `hittable`:
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    #include "rtweekend.h"
+
+    #include "onb.h"
+    #include "texture.h"
+
+    class hit_record;
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     class scatter_record {
@@ -3528,8 +3552,6 @@ and dielectric materials are easy to fix.
         color albedo;
         double fuzz;
     };
-
-    ...
 
     class dielectric : public material {
       public:
@@ -3735,6 +3757,8 @@ The sphere class needs the two PDF-related functions:
       public:
         ...
 
+        aabb bounding_box() const override { return bbox; }
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double pdf_value(const point3& origin, const vec3& direction) const override {
@@ -3836,6 +3860,8 @@ think both tactics would work fine, but I will go with instrumenting `hittable_l
       public:
         ...
 
+        aabb bounding_box() const override { return bbox; }
+
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         double pdf_value(const point3& origin, const vec3& direction) const override {
@@ -3872,7 +3898,7 @@ We assemble a list of light sources to pass to `camera::render()`:
         hittable_list lights;
         lights.add(
             make_shared<quad>(point3(343,554,332), vec3(-130,0,0), vec3(0,0,-105), empty_material));
-        lights.add(make_shared<sphere>(point3(190, 90, 190), 90, m));
+        lights.add(make_shared<sphere>(point3(190, 90, 190), 90, empty_material));
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         ...
