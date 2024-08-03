@@ -2,12 +2,14 @@ Change Log / Ray Tracing in One Weekend
 ====================================================================================================
 
 # v4.0.1 (in progress)
-
-### Common
   - Delete --
   - Change --
   - Fix    --
   - New    --
+
+### Common
+  - Fix    -- Big improvement to print version listing font size (#1595) and more compact line
+              height for code listings in both print and browser.
 
 ### In One Weekend
   - Fix    -- Fixed usage of the term "unit cube" for a cube of diameter two (#1555)
