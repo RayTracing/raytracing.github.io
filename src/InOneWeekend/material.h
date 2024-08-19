@@ -13,7 +13,7 @@
 
 #include "rtweekend.h"
 
-class hit_record;
+#include "hittable.h"
 
 
 class material {
