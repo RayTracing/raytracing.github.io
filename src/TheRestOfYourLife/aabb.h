@@ -49,6 +49,41 @@ class aabb {
         return x;
     }
 
+    aabb translate(const vec3& offset) const {
+        return aabb(x + offset.x(), y + offset.y(), z + offset.z());
+    }
+
+    aabb rotate_y(double angle) const {
+        auto radians = degrees_to_radians(angle);
+        double sin_theta = std::sin(radians);
+        double cos_theta = std::cos(radians);
+
+        point3 min( infinity,  infinity,  infinity);
+        point3 max(-infinity, -infinity, -infinity);
+
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                for (int k = 0; k < 2; k++) {
+                    double corner_x = i*x.max + (1-i)*x.min;
+                    double corner_y = j*y.max + (1-j)*y.min;
+                    double corner_z = k*z.max + (1-k)*z.min;
+
+                    double newx =  cos_theta*corner_x + sin_theta*corner_z;
+                    double newz = -sin_theta*corner_x + cos_theta*corner_z;
+
+                    vec3 tester(newx, corner_y, newz);
+
+                    for (int c = 0; c < 3; c++) {
+                        min[c] = std::fmin(min[c], tester[c]);
+                        max[c] = std::fmax(max[c], tester[c]);
+                    }
+                }
+            }
+        }
+
+        return aabb(min, max);
+    }
+
     bool hit(const ray& r, interval ray_t) const {
         const point3& ray_orig = r.origin();
         const vec3&   ray_dir  = r.direction();
@@ -99,14 +134,5 @@ class aabb {
 
 const aabb aabb::empty    = aabb(interval::empty,    interval::empty,    interval::empty);
 const aabb aabb::universe = aabb(interval::universe, interval::universe, interval::universe);
-
-aabb operator+(const aabb& bbox, const vec3& offset) {
-    return aabb(bbox.x + offset.x(), bbox.y + offset.y(), bbox.z + offset.z());
-}
-
-aabb operator+(const vec3& offset, const aabb& bbox) {
-    return bbox + offset;
-}
-
 
 #endif
