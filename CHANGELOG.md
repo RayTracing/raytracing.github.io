@@ -9,6 +9,8 @@ Change Log / Ray Tracing in One Weekend
   - Fix    --
   - New    --
 
+  - Change -- `aabb` class now handles transforms instead of `translate` and `rotate_y` (#819)
+
 ### In One Weekend
 
 ### The Next Week

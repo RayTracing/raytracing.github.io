@@ -3661,7 +3661,10 @@ make this happen.
     [Listing [translate-hit]: <kbd>[hittable.h]</kbd> Hittable translation hit function]
 
 <div class='together'>
-... and then flesh out the rest of the `translate` class:
+... and then flesh out the rest of the `translate` class. We need to remember to offset the bounding
+box, otherwise the incident ray might be looking in the wrong place and trivially reject the
+intersection. The expression `object->bounding_box().translate(offset)` will require additional
+support.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class translate : public hittable {
@@ -3670,7 +3673,7 @@ make this happen.
         translate(shared_ptr<hittable> object, const vec3& offset)
           : object(object), offset(offset)
         {
-            bbox = object->bounding_box() + offset;
+            bbox = object->bounding_box().translate(offset);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -3695,32 +3698,31 @@ make this happen.
 
 </div>
 
-We also need to remember to offset the bounding box, otherwise the incident ray might be looking in
-the wrong place and trivially reject the intersection. The expression `object->bounding_box() +
-offset` above requires some additional support.
+Now to implement the `aabb::translate()` function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class aabb {
         ...
-    };
 
-    const aabb aabb::empty    = aabb(interval::empty,    interval::empty,    interval::empty);
-    const aabb aabb::universe = aabb(interval::universe, interval::universe, interval::universe);
+        const interval& axis_interval(int n) const {
+            if (n == 1) return y;
+            if (n == 2) return z;
+            return x;
+        }
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    aabb operator+(const aabb& bbox, const vec3& offset) {
-        return aabb(bbox.x + offset.x(), bbox.y + offset.y(), bbox.z + offset.z());
-    }
+        aabb translate(const vec3& offset) const {
+            return aabb(x + offset.x(), y + offset.y(), z + offset.z());
+        }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-    aabb operator+(const vec3& offset, const aabb& bbox) {
-        return bbox + offset;
-    }
+        ...
+    };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [aabb-plus-offset]: <kbd>[aabb.h]</kbd> The aabb + offset operator]
+    [Listing [aabb-plus-offset]: <kbd>[aabb.h]</kbd> The aabb translation function]
 
-Since each dimension of an `aabb` is represented as an interval, we'll need to extend `interval`
-with an addition operator as well.
+which requires an interval plus scalar function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class interval {
@@ -3806,17 +3808,28 @@ rotating by $-\theta$.
   $$ z' = \sin(\theta) \cdot x + \cos(\theta) \cdot z $$
 
 <div class='together'>
-We can now create a class for y-rotation. Let's tackle the hit function first:
+We can now create a class for y-rotation.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+    ...
+
     class translate : public hittable {
         ...
     };
+
+    ...
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     class rotate_y : public hittable {
       public:
+        rotate_y(shared_ptr<hittable> object, double angle) : object(object) {
+            auto radians = degrees_to_radians(angle);
+            sin_theta = std::sin(radians);
+            cos_theta = std::cos(radians);
+
+            bbox = object->bounding_box().rotate_y(angle);
+        }
 
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
             // Change the ray from world space to object space
@@ -3850,24 +3863,42 @@ We can now create a class for y-rotation. Let's tackle the hit function first:
 
             return true;
         }
+
+        aabb bounding_box() const override { return bbox; }
+
+      private:
+        shared_ptr<hittable> object;
+        double sin_theta;
+        double cos_theta;
+        aabb bbox;
     };
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    ...
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [rot-y-hit]: <kbd>[hittable.h]</kbd> Hittable rotate-Y hit function]
+    [Listing [rot-y-hit]: <kbd>[hittable.h]</kbd> New hittable rotate-Y class]
 
 </div>
 
 <div class='together'>
-... and now for the rest of the class:
+This requires a new `aabb:rotate_y()` function, similar to the `aabb::translate()` function we wrote
+earlier.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    class rotate_y : public hittable {
+    class aabb : public hittable {
       public:
+        ...
+
+        aabb translate(const vec3& offset) const {
+            return aabb(x + offset.x(), y + offset.y(), z + offset.z());
+        }
+
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        rotate_y(shared_ptr<hittable> object, double angle) : object(object) {
+        aabb rotate_y(double angle) const {
             auto radians = degrees_to_radians(angle);
-            sin_theta = std::sin(radians);
-            cos_theta = std::cos(radians);
-            bbox = object->bounding_box();
+            double sin_theta = std::sin(radians);
+            double cos_theta = std::cos(radians);
 
             point3 min( infinity,  infinity,  infinity);
             point3 max(-infinity, -infinity, -infinity);
@@ -3875,14 +3906,14 @@ We can now create a class for y-rotation. Let's tackle the hit function first:
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 2; j++) {
                     for (int k = 0; k < 2; k++) {
-                        auto x = i*bbox.x.max + (1-i)*bbox.x.min;
-                        auto y = j*bbox.y.max + (1-j)*bbox.y.min;
-                        auto z = k*bbox.z.max + (1-k)*bbox.z.min;
+                        double corner_x = i*x.max + (1-i)*x.min;
+                        double corner_y = j*y.max + (1-j)*y.min;
+                        double corner_z = k*z.max + (1-k)*z.min;
 
-                        auto newx =  cos_theta*x + sin_theta*z;
-                        auto newz = -sin_theta*x + cos_theta*z;
+                        double newx =  cos_theta*corner_x + sin_theta*corner_z;
+                        double newz = -sin_theta*corner_x + cos_theta*corner_z;
 
-                        vec3 tester(newx, y, newz);
+                        vec3 tester(newx, corner_y, newz);
 
                         for (int c = 0; c < 3; c++) {
                             min[c] = std::fmin(min[c], tester[c]);
@@ -3892,27 +3923,14 @@ We can now create a class for y-rotation. Let's tackle the hit function first:
                 }
             }
 
-            bbox = aabb(min, max);
+            return aabb(min, max);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
-        bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-            ...
-        }
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        aabb bounding_box() const override { return bbox; }
-
-      private:
-        shared_ptr<hittable> object;
-        double sin_theta;
-        double cos_theta;
-        aabb bbox;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+        ...
     };
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [rot-y]: <kbd>[hittable.h]</kbd> Hittable rotate-Y class]
+    [Listing [rot-y]: <kbd>[aabb.h]</kbd> New aabb::rotate_y() function]
 
 </div>
 
