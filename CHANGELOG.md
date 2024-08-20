@@ -17,6 +17,7 @@ Change Log / Ray Tracing in One Weekend
   - Fix    -- Fixed broken highlighting on some code listings (#1600)
 
 ### The Next Week
+  - Fix    -- Add missing ellipsis in listing 2.62 (#1612)
 
 ### The Rest of Your Life
   - Fix    -- Fix typo of "arbitrary" (#1589)
