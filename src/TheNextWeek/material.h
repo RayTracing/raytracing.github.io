@@ -21,7 +21,7 @@ class material {
   public:
     virtual ~material() = default;
 
-    virtual color emitted(double u, double v, const point3& p) const {
+    virtual color emitted(const hit_record& rec) const {
         return color(0,0,0);
     }
 
@@ -119,8 +119,8 @@ class diffuse_light : public material {
     diffuse_light(shared_ptr<texture> tex) : tex(tex) {}
     diffuse_light(const color& emit) : tex(make_shared<solid_color>(emit)) {}
 
-    color emitted(double u, double v, const point3& p) const override {
-        return tex->value(u, v, p);
+    color emitted(const hit_record& rec) const override {
+        return tex->value(rec.u, rec.v, rec.p);
     }
 
   private:

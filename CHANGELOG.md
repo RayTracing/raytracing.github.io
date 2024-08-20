@@ -9,6 +9,8 @@ Change Log / Ray Tracing in One Weekend
   - Fix    --
   - New    --
 
+  - Change -- Changed `material::emitted()` function to use passed `hit_rec` values directly (#1605)
+
 ### In One Weekend
 
 ### The Next Week

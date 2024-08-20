@@ -1742,7 +1742,7 @@ And the `camera::ray_color` function gets a minor modification:
 
             ray scattered;
             color attenuation;
-            color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
+            color color_from_emission = rec.mat->emitted(rec);
 
             if (!rec.mat->scatter(r, rec, attenuation, scattered))
                 return color_from_emission;
@@ -1797,7 +1797,7 @@ a noisier image:
 
             ray scattered;
             color attenuation;
-            color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
+            color color_from_emission = rec.mat->emitted(rec);
 
             if (!rec.mat->scatter(r, rec, attenuation, scattered))
                 return color_from_emission;
@@ -2399,7 +2399,7 @@ And here we add the accompanying changes to the camera class:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             double pdf_value;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
+            color color_from_emission = rec.mat->emitted(rec);
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
@@ -2540,7 +2540,7 @@ check that we got the math and concept right:
             ray scattered;
             color attenuation;
             double pdf_value;
-            color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
+            color color_from_emission = rec.mat->emitted(rec);
 
             if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
                 return color_from_emission;
@@ -2614,9 +2614,7 @@ that by letting the `hittable::emitted()` function take extra information:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        virtual color emitted(
-            const ray& r_in, const hit_record& rec, double u, double v, const point3& p
-        ) const {
+        virtual color emitted(const ray& r_in, const hit_record& rec) const {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
             return color(0,0,0);
         }
@@ -2629,11 +2627,10 @@ that by letting the `hittable::emitted()` function take extra information:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        color emitted(const ray& r_in, const hit_record& rec, double u, double v, const point3& p)
-        const override {
+        color emitted(const ray& r_in, const hit_record& rec) const override {
             if (!rec.front_face)
                 return color(0,0,0);
-            return tex->value(u, v, p);
+            return tex->value(rec.u, rec.v, rec.p);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -2652,7 +2649,7 @@ that by letting the `hittable::emitted()` function take extra information:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
+            color color_from_emission = rec.mat->emitted(r, rec);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
             ...
@@ -2802,7 +2799,7 @@ We can try this cosine PDF in the `ray_color()` function:
             ray scattered;
             color attenuation;
             double pdf_value;
-            color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
+            color color_from_emission = rec.mat->emitted(r, rec);
 
             if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
                 return color_from_emission;
@@ -3040,7 +3037,7 @@ Add a `lights` parameter to the camera `render()` function:
             ray scattered;
             color attenuation;
             double pdf_value;
-            color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
+            color color_from_emission = rec.mat->emitted(r, rec);
 
             if (!rec.mat->scatter(r, rec, attenuation, scattered, pdf_value))
                 return color_from_emission;
@@ -3466,7 +3463,7 @@ And `ray_color()` changes are small:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             scatter_record srec;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            color color_from_emission = rec.mat->emitted(r, rec, rec.u, rec.v, rec.p);
+            color color_from_emission = rec.mat->emitted(r, rec);
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight

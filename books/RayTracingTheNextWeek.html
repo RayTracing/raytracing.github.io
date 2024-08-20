@@ -3202,8 +3202,8 @@ the ray what color it is and performs no reflection. It’s very simple:
         diffuse_light(shared_ptr<texture> tex) : tex(tex) {}
         diffuse_light(const color& emit) : tex(make_shared<solid_color>(emit)) {}
 
-        color emitted(double u, double v, const point3& p) const override {
-            return tex->value(u, v, p);
+        color emitted(const hit_record& rec) const override {
+            return tex->value(rec.u, rec.v, rec.p);
         }
 
       private:
@@ -3223,7 +3223,7 @@ class return black:
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        virtual color emitted(double u, double v, const point3& p) const {
+        virtual color emitted(const hit_record& rec) const {
             return color(0,0,0);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -3276,7 +3276,7 @@ the new `color_from_emission` value.
 
             ray scattered;
             color attenuation;
-            color color_from_emission = rec.mat->emitted(rec.u, rec.v, rec.p);
+            color color_from_emission = rec.mat->emitted(rec);
 
             if (!rec.mat->scatter(r, rec, attenuation, scattered))
                 return color_from_emission;
