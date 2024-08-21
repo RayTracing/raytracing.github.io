@@ -20,6 +20,7 @@ Change Log / Ray Tracing in One Weekend
 
 ### The Rest of Your Life
   - Fix    -- Fix typo of "arbitrary" (#1589)
+  - New    -- Added a bit more explanation of Buffon's needle problem (#1529)
 
 
 ----------------------------------------------------------------------------------------------------
