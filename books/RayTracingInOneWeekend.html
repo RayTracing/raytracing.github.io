@@ -2292,23 +2292,28 @@ the surface of a hemisphere. There are analytical methods of doing this, but the
 surprisingly complicated to understand, and quite a bit complicated to implement. Instead, we'll use
 what is typically the easiest algorithm: A rejection method. A rejection method works by repeatedly
 generating random samples until we produce a sample that meets the desired criteria. In other words,
-keep rejecting samples until you find a good one.
+keep rejecting bad samples until you find a good one.
 
 There are many equally valid ways of generating a random vector on a hemisphere using the rejection
 method, but for our purposes we will go with the simplest, which is:
 
-1. Generate a random vector inside of the unit sphere
-2. Normalize this vector
+1. Generate a random vector inside the unit sphere
+2. Normalize this vector to extend it to the sphere surface
 3. Invert the normalized vector if it falls onto the wrong hemisphere
 
 <div class='together'>
 First, we will use a rejection method to generate the random vector inside the unit sphere (that is,
 a sphere of radius 1). Pick a random point inside the cube enclosing the unit sphere (that is, where
-$x$, $y$, and $z$ are all in the range $[-1,+1]$). If this point lies outside (or on) the unit
-sphere, then generate a new one until we find one that lies inside the unit sphere.
+$x$, $y$, and $z$ are all in the range $[-1,+1]$). If this point lies outside the unit
+sphere, then generate a new one until we find one that lies inside or on the unit sphere.
 
-  ![Figure [sphere-vec]: Two vectors were rejected before finding a good one
+  ![Figure [sphere-vec]: Two vectors were rejected before finding a good one (pre-normalization)
   ](../images/fig-1.11-sphere-vec.jpg)
+
+  ![Figure [sphere-vec]: The accepted random vector is normalized to produce a unit vector
+  ](../images/fig-1.12-sphere-unit-vec.jpg)
+
+Here's our first draft of the function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
@@ -2319,49 +2324,45 @@ sphere, then generate a new one until we find one that lies inside the unit sphe
 
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    inline vec3 random_in_unit_sphere() {
+    inline vec3 random_unit_vector() {
         while (true) {
             auto p = vec3::random(-1,1);
-            if (p.length_squared() < 1)
-                return p;
+            auto lensq = p.length_squared();
+            if (lensq <= 1)
+                return p / sqrt(lensq);
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-in-unit-sphere]: <kbd>[vec3.h]</kbd> The random_in_unit_sphere() function]
+    [Listing [random-in-unit-sphere]: <kbd>[vec3.h]</kbd> The random_unit_vector() function, version one]
 
 </div>
 
-<div class='together'>
-Once we have a random vector in the unit sphere we need to normalize it to get a vector _on_ the
-unit sphere.
+Sadly, we have a small floating-point abstraction leak to deal with. Since floating-point numbers
+have finite precision, a very small value can underflow to zero when squared. So if all three
+coordinates are small enough (that is, very near the center of the sphere), the norm of the vector
+will be zero, and thus normalizing will yield the bogus vector $[\pm\infty, \pm\infty, \pm\infty]$.
+To fix this, we'll also reject points that lie inside this "black hole" around the center. With
+double precision (64-bit floats), we can safely support values greater than $10^{-160}$.
 
-  ![Figure [sphere-vec]: The accepted random vector is normalized to produce a unit vector
-  ](../images/fig-1.12-sphere-unit-vec.jpg)
+Here's our more robust function:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
-
-    inline vec3 random_in_unit_sphere() {
+    inline vec3 random_unit_vector() {
         while (true) {
             auto p = vec3::random(-1,1);
-            if (p.length_squared() < 1)
-                return p;
+            auto lensq = p.length_squared();
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            if (1e-160 < lensq && lensq <= 1)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+                return p / sqrt(lensq);
         }
     }
-
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-    inline vec3 random_unit_vector() {
-        return unit_vector(random_in_unit_sphere());
-    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-unit-vec]: <kbd>[vec3.h]</kbd> Random vector on the unit sphere]
-
-</div>
+    [Listing [random-in-unit-sphere]: <kbd>[vec3.h]</kbd> The random_unit_vector() function, version one]
 
 <div class='together'>
-And now that we have a random vector on the surface of the unit sphere, we can determine if it is on
-the correct hemisphere by comparing against the surface normal:
+Now that we have a random vector on the surface of the unit sphere, we can determine if it is on the
+correct hemisphere by comparing against the surface normal:
 
   ![Figure [normal-hor]: The normal vector tells us which hemisphere we need
   ](../images/fig-1.13-surface-normal.jpg)
@@ -2377,7 +2378,12 @@ the dot product is negative, then we need to invert the vector.
     ...
 
     inline vec3 random_unit_vector() {
-        return unit_vector(random_in_unit_sphere());
+        while (true) {
+            auto p = vec3::random(-1,1);
+            auto lensq = p.length_squared();
+            if (1e-160 < lensq && lensq <= 1)
+                return p / sqrt(lensq);
+        }
     }
 
 
