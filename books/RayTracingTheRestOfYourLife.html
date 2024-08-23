@@ -1558,15 +1558,20 @@ randomly generate.
 For a Lambertian surface we already implicitly implemented this formula for the special case where
 $pScatter(\, \ldots \,)$ is a cosine density. The $\operatorname{pScatter}(\, \ldots \,)$ of a
 Lambertian surface is proportional to $\cos(\theta_o)$, where $\theta_o$ is the angle relative to
-the surface normal. Let's solve for $C$ once more:
+the surface normal ($\theta_o \in [0,\pi]$). An angle of $0$ indicates an outgoing direction in the
+same direction as the surface normal, and an angle of $\pi$ indicates an outgoing direction exactly
+opposite the normal vector.
+
+Let's solve for $C$ once more:
 
     $$ \operatorname{pScatter}(\mathbf{x}, \omega_i, \omega_o, \lambda) = C \cdot \cos(\theta_o) $$
 
 All two dimensional PDFs need to integrate to one over the whole surface (remember that
-$\operatorname{pScatter}$ is a PDF). We set $\operatorname{pScatter}(\theta_o < 0) = 0$ so that we
-don't scatter below the horizon.
+$\operatorname{pScatter}$ is a PDF). We set
+$\operatorname{pScatter}(\frac{\pi}{2} < \theta_o \le \pi) = 0$ so that we don't scatter below the
+horizon. Given this, we only need to integrate $\theta \in [0, \frac{\pi}{2}]$.
 
-    $$ 1 = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} C \cdot \cos(\theta) dA $$
+    $$ 1 = \int_{\phi = 0}^{2 \pi} \int_{\theta = 0}^\frac{\pi}{2} C \cdot \cos(\theta) dA $$
 
 To integrate over the hemisphere, remember that in spherical coordinates:
 
@@ -1574,7 +1579,8 @@ To integrate over the hemisphere, remember that in spherical coordinates:
 
 So:
 
-    $$ 1 = C \cdot \int_{0}^{2 \pi} \int_{0}^{\pi / 2} \cos(\theta) \sin(\theta) d\theta d\phi $$
+    $$ 1 = C \cdot \int_0^{2 \pi} \int_0^\frac{\pi}{2}
+           \cos(\theta) \sin(\theta) d\theta d\phi $$
     $$ 1 = C \cdot 2 \pi \frac{1}{2} $$
     $$ 1 = C \cdot \pi $$
     $$ C = \frac{1}{\pi} $$
