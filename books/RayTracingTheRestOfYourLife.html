@@ -522,14 +522,28 @@ If we assume that we have all of the following:
 If we assume all of the above, then we could solve for the arithmetic mean--the average--of the list
 $Y$ with the following:
 
-    $$ \operatorname{average}(Y) = E[Y] = \frac{1}{N} \sum_{i=0}^{N-1} y_i $$
+    $$ \operatorname{average}(Y_i) = E[Y] = \frac{1}{N} \sum_{i=0}^{N-1} y_i $$
     $$ = \frac{1}{N} \sum_{i=0}^{N-1} f(x_i) $$
     $$ = E[F(X)] $$
 
-Where $E[Y]$ is referred to as the _expected value of_ $Y$. If the values of $x_i$ are chosen
-randomly from a continuous interval $[a,b]$ such that $ a \leq x_i \leq b $ for all values of $i$,
-then $E[F(X)]$ will approximate the average of the continuous function $f(x')$ over the the same
-interval $ a \leq x' \leq b $.
+Where $E[Y]$ is referred to as the _expected value of_ $Y$.
+
+Note the subtle difference between _average value_ and _expected value_ here:
+
+- A set may have many different subsets of selections from that set. Each subset has an _average
+  value_, which is the sum of all selections divided by the count of selections. Note that a given
+  item may occur zero times, one times, or multiple times in a subset.
+
+- A set has only one _expected value_: the sum of _all_ members of a set, divided by the total
+  number of items in that set. Put another way, the _expected value_ is the _average value_ of _all_
+  members of a set.
+
+It is important to note that as the number of random samples from a set increases, the average value
+of a set will converge to the expected value.
+
+If the values of $x_i$ are chosen randomly from a continuous interval $[a,b]$ such that $ a \leq x_i
+\leq b $ for all values of $i$, then $E[F(X)]$ will approximate the average of the continuous
+function $f(x')$ over the the same interval $ a \leq x' \leq b $.
 
     $$ E[f(x') | a \leq x' \leq b] \approx E[F(X) | X =
         \{\small x_i | a \leq x_i \leq b \normalsize \} ] $$
@@ -1558,15 +1572,20 @@ randomly generate.
 For a Lambertian surface we already implicitly implemented this formula for the special case where
 $pScatter(\, \ldots \,)$ is a cosine density. The $\operatorname{pScatter}(\, \ldots \,)$ of a
 Lambertian surface is proportional to $\cos(\theta_o)$, where $\theta_o$ is the angle relative to
-the surface normal. Let's solve for $C$ once more:
+the surface normal ($\theta_o \in [0,\pi]$). An angle of $0$ indicates an outgoing direction in the
+same direction as the surface normal, and an angle of $\pi$ indicates an outgoing direction exactly
+opposite the normal vector.
+
+Let's solve for $C$ once more:
 
     $$ \operatorname{pScatter}(\mathbf{x}, \omega_i, \omega_o, \lambda) = C \cdot \cos(\theta_o) $$
 
 All two dimensional PDFs need to integrate to one over the whole surface (remember that
-$\operatorname{pScatter}$ is a PDF). We set $\operatorname{pScatter}(\theta_o < 0) = 0$ so that we
-don't scatter below the horizon.
+$\operatorname{pScatter}$ is a PDF). We set
+$\operatorname{pScatter}(\frac{\pi}{2} < \theta_o \le \pi) = 0$ so that we don't scatter below the
+horizon. Given this, we only need to integrate $\theta \in [0, \frac{\pi}{2}]$.
 
-    $$ 1 = \int_{0}^{2 \pi} \int_{0}^{\pi / 2} C \cdot \cos(\theta) dA $$
+    $$ 1 = \int_{\phi = 0}^{2 \pi} \int_{\theta = 0}^\frac{\pi}{2} C \cdot \cos(\theta) dA $$
 
 To integrate over the hemisphere, remember that in spherical coordinates:
 
@@ -1574,7 +1593,8 @@ To integrate over the hemisphere, remember that in spherical coordinates:
 
 So:
 
-    $$ 1 = C \cdot \int_{0}^{2 \pi} \int_{0}^{\pi / 2} \cos(\theta) \sin(\theta) d\theta d\phi $$
+    $$ 1 = C \cdot \int_0^{2 \pi} \int_0^\frac{\pi}{2}
+           \cos(\theta) \sin(\theta) d\theta d\phi $$
     $$ 1 = C \cdot 2 \pi \frac{1}{2} $$
     $$ 1 = C \cdot \pi $$
     $$ C = \frac{1}{\pi} $$

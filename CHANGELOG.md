@@ -25,6 +25,8 @@ Change Log / Ray Tracing in One Weekend
   - Fix    -- Fix typo of "arbitrary" (#1589)
   - New    -- Added a bit more explanation of Buffon's needle problem (#1529)
   - Fix    -- Fix X-axis label for figure 3.08 (Approximating the nonuniform f()) (#1532)
+  - Fix    -- Corrected scatter angle theta range in section 3.5.3 (The Scattering PDF) (#1331)
+  - Fix    -- Clarify the distinction between average and expected value (#1535)
 
 
 ----------------------------------------------------------------------------------------------------
