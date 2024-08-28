@@ -176,56 +176,41 @@ Adding Moving Spheres
 ----------------------
 Now to create a moving object. I’ll update the sphere class so that its center moves linearly from
 `center1` at time=0 to `center2` at time=1. (It continues on indefinitely outside that time
-interval, so it really can be sampled at any time.)
+interval, so it really can be sampled at any time.) We'll do this by replacing the 3D center point
+with a 3D ray that describes the original position at time=0 and the displacement to the end
+position at time=1.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
       public:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         // Stationary Sphere
-        sphere(const point3& center, double radius, shared_ptr<material> mat)
-          : center1(center), radius(std::fmax(0,radius)), mat(mat), is_moving(false) {}
+        sphere(const point3& static_center, double radius, shared_ptr<material> mat)
+          : center(static_center, vec3(0,0,0)), radius(std::fmax(0,radius)), mat(mat) {}
 
         // Moving Sphere
         sphere(const point3& center1, const point3& center2, double radius,
                shared_ptr<material> mat)
-          : center1(center1), radius(std::fmax(0,radius)), mat(mat), is_moving(true)
-        {
-            center_vec = center2 - center1;
-        }
+          : center(center1, center2 - center1), radius(std::fmax(0,radius)), mat(mat) {}
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         ...
 
       private:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        point3 center1;
+        ray center;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
         double radius;
         shared_ptr<material> mat;
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-        bool is_moving;
-        vec3 center_vec;
 
-        point3 sphere_center(double time) const {
-            // Linearly interpolate from center1 to center2 according to time, where t=0 yields
-            // center1, and t=1 yields center2.
-            return center1 + time*center_vec;
-        }
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     };
-
     #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [moving-sphere]: <kbd>[sphere.h]</kbd> A moving sphere]
 
-An alternative to making special stationary spheres is to just make them all move, but stationary
-spheres have the same begin and end position. I’m on the fence about that trade-off between simpler
-code and more efficient stationary spheres, so let your design taste guide you.
-
 <div class='together'>
 The updated `sphere::hit()` function is almost identical to the old `sphere::hit()` function:
-`center` just needs to query a function `sphere_center(time)`:
+we just need to now determine the current position of the animated center:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     class sphere : public hittable {
@@ -233,13 +218,25 @@ The updated `sphere::hit()` function is almost identical to the old `sphere::hit
         ...
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-            point3 center = is_moving ? sphere_center(r.time()) : center1;
+            point3 current_center = center.at(r.time());
+            vec3 oc = current_center - r.origin();
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-            vec3 oc = center - r.origin();
             auto a = r.direction().length_squared();
             auto h = dot(r.direction(), oc);
             auto c = oc.length_squared() - radius*radius;
+
             ...
+
+            rec.t = root;
+            rec.p = r.at(rec.t);
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+            vec3 outward_normal = (rec.p - current_center) / radius;
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+            rec.set_face_normal(r, outward_normal);
+            get_sphere_uv(outward_normal, rec.u, rec.v);
+            rec.mat = mat;
+
+            return true;
         }
         ...
     };
@@ -711,12 +708,12 @@ For a stationary sphere, the `bounding_box` function is easy:
     class sphere : public hittable {
       public:
         // Stationary Sphere
-        sphere(const point3& center, double radius, shared_ptr<material> mat)
+        sphere(const point3& static_center, double radius, shared_ptr<material> mat)
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
-          : center1(center), radius(std::fmax(0,radius)), mat(mat), is_moving(false)
+          : center(static_center, vec3(0,0,0)), radius(std::fmax(0,radius)), mat(mat)
         {
             auto rvec = vec3(radius, radius, radius);
-            bbox = aabb(center1 - rvec, center1 + rvec);
+            bbox = aabb(static_center - rvec, static_center + rvec);
         }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
@@ -728,11 +725,9 @@ For a stationary sphere, the `bounding_box` function is easy:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
       private:
-        point3 center1;
+        ray center;
         double radius;
         shared_ptr<material> mat;
-        bool is_moving;
-        vec3 center_vec;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
         aabb bbox;
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -754,17 +749,15 @@ two boxes.
         // Moving Sphere
         sphere(const point3& center1, const point3& center2, double radius,
                shared_ptr<material> mat)
-          : center1(center1), radius(std::fmax(0,radius)), mat(mat), is_moving(true)
-        {
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+          : center(center1, center2 - center1), radius(std::fmax(0,radius)), mat(mat)
+        {
             auto rvec = vec3(radius, radius, radius);
-            aabb box1(center1 - rvec, center1 + rvec);
-            aabb box2(center2 - rvec, center2 + rvec);
+            aabb box1(center.at(0) - rvec, center.at(0) + rvec);
+            aabb box2(center.at(1) - rvec, center.at(1) + rvec);
             bbox = aabb(box1, box2);
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-
-            center_vec = _center2 - _center1;
         }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
         ...
     };
@@ -1649,7 +1642,7 @@ Update the `sphere::hit()` function to use this function to update the hit recor
 
             rec.t = root;
             rec.p = r.at(rec.t);
-            vec3 outward_normal = (rec.p - center) / radius;
+            vec3 outward_normal = (rec.p - current_center) / radius;
             rec.set_face_normal(r, outward_normal);
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
             get_sphere_uv(outward_normal, rec.u, rec.v);
