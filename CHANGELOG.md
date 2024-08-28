@@ -13,6 +13,7 @@ Change Log / Ray Tracing in One Weekend
   - Change -- Include hittable.h from material.h; drop `hit_record` forward declaration (#1609)
   - Fix    -- Slight improvement to `rotate_y::hit()` function (#1484)
   - Fix    -- Fixed possible bogus values from `random_unit_vector()` due to underflow (#1606)
+  - Change -- Refactor sphere to use ray representation for animate center (#1621)
 
 ### In One Weekend
   - Fix    -- Fixed usage of the term "unit cube" for a cube of diameter two (#1555, #1603)
