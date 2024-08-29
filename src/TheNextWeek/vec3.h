@@ -11,6 +11,7 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
+
 class vec3 {
   public:
     double e[3];

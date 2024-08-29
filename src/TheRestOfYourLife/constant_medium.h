@@ -11,8 +11,6 @@
 // along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 //==============================================================================================
 
-#include "rtweekend.h"
-
 #include "hittable.h"
 #include "material.h"
 #include "texture.h"

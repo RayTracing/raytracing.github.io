@@ -600,8 +600,6 @@ Now we have everything we need to implement the new AABB class.
     #ifndef AABB_H
     #define AABB_H
 
-    #include "rtweekend.h"
-
     class aabb {
       public:
         interval x, y, z;
@@ -674,11 +672,6 @@ we've designed our interval class, the math all works out.
 
 Finally, recall that some objects may be animated. Such objects should return their bounds over the
 entire range of motion, from time=0 to time=1.
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
-    #include "rtweekend.h"
-
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "aabb.h"
@@ -827,10 +820,6 @@ Creating Bounding Boxes of Lists of Objects
 Now we'll update the `hittable_list` object, computing the bounds of its children. We'll update the
 bounding box incrementally as each new child is added.
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "aabb.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -880,8 +869,6 @@ I am a fan of the one class design when feasible. Here is such a class:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     #ifndef BVH_H
     #define BVH_H
-
-    #include "rtweekend.h"
 
     #include "aabb.h"
     #include "hittable.h"
@@ -946,8 +933,6 @@ The following code uses three methods--`box_x_compare`, `box_y_compare_`, and `b
 we haven't yet defined.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-
     #include "aabb.h"
     #include "hittable.h"
     #include "hittable_list.h"
@@ -1228,8 +1213,6 @@ Constant Color Texture
     #ifndef TEXTURE_H
     #define TEXTURE_H
 
-    #include "rtweekend.h"
-
     class texture {
       public:
         virtual ~texture() = default;
@@ -1337,8 +1320,6 @@ To support procedural textures, we'll extend the `lambertian` class to work with
 colors:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-
     #include "hittable.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "texture.h"
@@ -1825,10 +1806,6 @@ write) an image loading library that provides similar functionality.
 <div class='together'>
 The `image_texture` class uses the `rtw_image` class:
 
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-
-
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "rtw_stb_image.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
@@ -1968,8 +1945,6 @@ code to make it all happen:
     #ifndef PERLIN_H
     #define PERLIN_H
 
-    #include "rtweekend.h"
-
     class perlin {
       public:
         perlin() {
@@ -2022,10 +1997,6 @@ code to make it all happen:
 
 <div class='together'>
 Now if we create an actual texture that takes these floats between 0 and 1 and creates grey colors:
-
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "perlin.h"
@@ -2623,8 +2594,6 @@ Now we're ready for the first sketch of the new `quad` class:
     #ifndef QUAD_H
     #define QUAD_H
 
-    #include "rtweekend.h"
-
     #include "hittable.h"
 
     class quad : public hittable {
@@ -2817,6 +2786,7 @@ our quadrilateral.
         }
 
         ...
+    }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [quad-plane2]: <kbd>[quad.h]</kbd> hit() method for the infinite plane]
 
@@ -2882,6 +2852,7 @@ The vector $\mathbf{w}$ is constant for a given quadrilateral, so we'll cache th
 
             set_bounding_box();
         }
+
         ...
 
       private:
@@ -3068,8 +3039,6 @@ test method from the hit method.
         vec3 normal;
         double D;
     };
-
-    #endif
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [quad-final]: <kbd>[quad.h]</kbd> Final quad class]
 
@@ -3522,8 +3491,6 @@ The Cornell Box usually has two blocks in it. These are rotated relative to the 
 create a function that returns a box, by creating a `hittable_list` of six rectangles:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-
     #include "hittable.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "hittable_list.h"
@@ -3989,8 +3956,6 @@ The resulting class is:
     #ifndef CONSTANT_MEDIUM_H
     #define CONSTANT_MEDIUM_H
 
-    #include "rtweekend.h"
-
     #include "hittable.h"
     #include "material.h"
     #include "texture.h"
@@ -4103,8 +4068,6 @@ If we replace the two blocks with smoke and fog (dark and light particles), and 
 bigger (and dimmer so it doesn’t blow out the scene) for faster convergence:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include "rtweekend.h"
-
     #include "bvh.h"
     #include "camera.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
