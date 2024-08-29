@@ -1432,10 +1432,10 @@ We'll also throw common useful constants and future utility functions in here. T
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [rtweekend-initial]: <kbd>[rtweekend.h]</kbd> The rtweekend.h common header]
 
-All main program files will include `rtweekend.h` first, so most other header files (where the bulk
-of our code will reside) can assume these definitions are already available. Headers included inside
-`rtweekend.h` still need to include any of their dependencies. We'll make some updates with this
-assumption in mind.
+Program files will include `rtweekend.h` first, so all other header files (where the bulk of our
+code will reside) can implicitly assume that `rtweekend.h` has already been included. Header files
+still need to explicitly include any other necessary header files. We'll make some updates with
+these assumptions in mind.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ delete
     #include <iostream>
@@ -1766,8 +1766,6 @@ Here's the skeleton of our new `camera` class:
     #ifndef CAMERA_H
     #define CAMERA_H
 
-    #include "rtweekend.h"
-
     #include "hittable.h"
 
     class camera {
@@ -2028,13 +2026,26 @@ addressed this issue with the `<random>` header (if imperfectly according to som
 want to use this, you can obtain a random number with the conditions we need as follows:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    #include <random>
+    ...
 
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
+    #include <random>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    ...
+
+
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     inline double random_double() {
         static std::uniform_real_distribution<double> distribution(0.0, 1.0);
         static std::mt19937 generator;
         return distribution(generator);
     }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+    ...
+
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [random-double-alt]: <kbd>[rtweekend.h]</kbd> random_double(), alternate implementation]
 
@@ -2795,8 +2806,6 @@ This suggests the abstract class:
     #ifndef MATERIAL_H
     #define MATERIAL_H
 
-    #include "rtweekend.h"
-
     #include "hittable.h"
 
     class material {
@@ -3064,9 +3073,6 @@ The metal material just reflects rays using that formula:
 We need to modify the `ray_color()` function for all of our changes:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    ...
-    #include "rtweekend.h"
-
     #include "hittable.h"
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ highlight
     #include "material.h"

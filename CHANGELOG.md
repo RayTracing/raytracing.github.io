@@ -2,10 +2,6 @@ Change Log / Ray Tracing in One Weekend
 ====================================================================================================
 
 # v4.0.1 (in progress)
-  - Delete --
-  - Change --
-  - Fix    --
-  - New    --
 
 ### Common
   - Fix    -- Big improvement to print version listing font size (#1595) and more compact line
@@ -14,6 +10,7 @@ Change Log / Ray Tracing in One Weekend
   - Fix    -- Slight improvement to `rotate_y::hit()` function (#1484)
   - Fix    -- Fixed possible bogus values from `random_unit_vector()` due to underflow (#1606)
   - Change -- Refactor sphere to use ray representation for animate center (#1621)
+  - Change -- All headers assume implicit rtweekend.h include (#1628)
 
 ### In One Weekend
   - Fix    -- Fixed usage of the term "unit cube" for a cube of diameter two (#1555, #1603)
