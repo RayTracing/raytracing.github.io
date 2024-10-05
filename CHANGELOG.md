@@ -1,11 +1,12 @@
 Change Log / Ray Tracing in One Weekend
 ====================================================================================================
 
-# v4.0.2 (2024-10-01)
+# v4.0.2 (in progress)
 
 ### Common
 
 ### In One Weekend
+  - Fix    -- Fix equation for refracted rays of non-unit length (#1644)
 
 ### The Next Week
 
