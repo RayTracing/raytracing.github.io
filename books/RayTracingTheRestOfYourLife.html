@@ -69,12 +69,12 @@ will eventually arrive at the correct result, but we can't make too many guarant
 will take to get there. The classic example of a Las Vegas algorithm is the _quicksort_ sorting
 algorithm. The quicksort algorithm will always complete with a fully sorted list, but, the time it
 takes to complete is random. Another good example of a Las Vegas algorithm is the code that we use
-to pick a random point in a unit sphere:
+to pick a random point in a unit disk:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline vec3 random_in_unit_sphere() {
+    inline vec3 random_in_unit_disk() {
         while (true) {
-            auto p = vec3::random(-1,1);
+            auto p = vec3(random_double(-1,1), random_double(-1,1), 0);
             if (p.length_squared() < 1)
                 return p;
         }
@@ -82,7 +82,7 @@ to pick a random point in a unit sphere:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [las-vegas-algo]: <kbd>[vec3.h]</kbd> A Las Vegas algorithm]
 
-This code will always eventually arrive at a random point in the unit sphere, but we can't say
+This code will always eventually arrive at a random point in the unit disk, but we can't say
 beforehand how long it'll take. It may take only 1 iteration, it may take 2, 3, 4, or even longer.
 Whereas, a Monte Carlo program will give a statistical estimate of an answer, and this estimate will
 get more and more accurate the longer you run it. Which means that at a certain point, we can just
