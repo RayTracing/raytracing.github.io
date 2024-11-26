@@ -11,6 +11,7 @@ Change Log / Ray Tracing in One Weekend
   - Fix    -- Typo "trigonometric qualities" -> "trigonometric identities"
 
 ### The Next Week
+  - Fix    -- Add delete blocks for code when updating randfloat -> randvec (#1660)
 
 ### The Rest of Your Life
 
