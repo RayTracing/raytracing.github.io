@@ -59,6 +59,10 @@ class vec3 {
         return (std::fabs(e[0]) < s) && (std::fabs(e[1]) < s) && (std::fabs(e[2]) < s);
     }
 
+    bool is_nan() const {
+        return std::isnan(e[0]) || std::isnan(e[1]) || std::isnan(e[2]);
+    }
+
     static vec3 random() {
         return vec3(random_double(), random_double(), random_double());
     }

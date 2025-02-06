@@ -44,7 +44,8 @@ int main() {
 
     // Glass Sphere
     auto glass = make_shared<dielectric>(1.5);
-    world.add(make_shared<sphere>(point3(190,90,190), 90, glass));
+    auto nonglass = make_shared<lambertian>(color(0.8, 0.2, 0.4));
+    world.add(make_shared<sphere>(point3(190,90,190), 90, nonglass));
 
     // Light Sources
     auto empty_material = shared_ptr<material>();
@@ -56,9 +57,9 @@ int main() {
     camera cam;
 
     cam.aspect_ratio      = 1.0;
-    cam.image_width       = 600;
-    cam.samples_per_pixel = 100;
-    cam.max_depth         = 50;
+    cam.image_width       = 400;
+    cam.samples_per_pixel = 1000;
+    cam.max_depth         = 10;
     cam.background        = color(0,0,0);
 
     cam.vfov     = 40;

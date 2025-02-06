@@ -76,11 +76,14 @@ class sphere : public hittable {
         if (!this->hit(ray(origin, direction), interval(0.001, infinity), rec))
             return 0;
 
-        auto dist_squared = (center.at(0) - origin).length_squared();
-        auto cos_theta_max = std::sqrt(1 - radius*radius/dist_squared);
+        auto cos_theta_max = sqrt(1 - radius*radius/(center.at(0) - origin).length_squared());
         auto solid_angle = 2*pi*(1-cos_theta_max);
 
-        return  1 / solid_angle;
+        if (std::isnan(solid_angle) || std::fabs(solid_angle) < 1e-3) {
+            return 0;
+        } else {
+            return  1 / solid_angle;
+        }
     }
 
     vec3 random(const point3& origin) const override {
