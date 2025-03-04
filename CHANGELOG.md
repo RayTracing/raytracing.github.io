@@ -14,6 +14,7 @@ Change Log / Ray Tracing in One Weekend
 ### The Next Week
 
 ### The Rest of Your Life
+  - Fix    -- Typo in equation in book 3, section 12.3 (#1686)
 
 
 ----------------------------------------------------------------------------------------------------
