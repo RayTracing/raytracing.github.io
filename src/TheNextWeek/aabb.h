@@ -56,29 +56,23 @@ class aabb {
         double sin_theta = std::sin(radians);
         double cos_theta = std::cos(radians);
 
-        point3 min( infinity,  infinity,  infinity);
-        point3 max(-infinity, -infinity, -infinity);
+        point3 min( infinity, y.min,  infinity);
+        point3 max(-infinity, y.max, -infinity);
 
         for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 2; j++) {
-                for (int k = 0; k < 2; k++) {
-                    double corner_x = i*x.max + (1-i)*x.min;
-                    double corner_y = j*y.max + (1-j)*y.min;
-                    double corner_z = k*z.max + (1-k)*z.min;
+            for (int k = 0; k < 2; k++) {
+                double corner_x = i*x.max + (1-i)*x.min;
+                double corner_z = k*z.max + (1-k)*z.min;
 
-                    double newx =  cos_theta*corner_x + sin_theta*corner_z;
-                    double newz = -sin_theta*corner_x + cos_theta*corner_z;
+                double newx =  cos_theta*corner_x + sin_theta*corner_z;
+                double newz = -sin_theta*corner_x + cos_theta*corner_z;
 
-                    vec3 tester(newx, corner_y, newz);
-
-                    for (int c = 0; c < 3; c++) {
-                        min[c] = std::fmin(min[c], tester[c]);
-                        max[c] = std::fmax(max[c], tester[c]);
-                    }
-                }
+                min[0] = std::fmin(min[0], newx);
+                max[0] = std::fmax(max[0], newx);
+                min[2] = std::fmin(min[2], newz);
+                max[2] = std::fmax(max[2], newz);
             }
         }
-
         return aabb(min, max);
     }
 
