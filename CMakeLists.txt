@@ -4,7 +4,7 @@
 # See README.md for guidance.
 #---------------------------------------------------------------------------------------------------
 
-cmake_minimum_required ( VERSION 3.1.0...3.27.0 )
+cmake_minimum_required ( VERSION 3.1.0...4.0.0 )
 
 project ( RTWeekend LANGUAGES CXX )
 
