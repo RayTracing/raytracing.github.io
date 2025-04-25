@@ -8,12 +8,12 @@
                                **Ray Tracing: The Rest of Your Life**
                    [Peter Shirley][], [Trevor David Black][], [Steve Hollasch][]
                                                 <br>
-                                     Version 4.0.2, 2024-10-01
-                                     Version 4.1.0, 2024-12-31
-                                     Version 5.0.0, 2025-XX-XX
+                                     Version 4.0.3, (XXYear)-(XXMonNum)-(XXDay)
+                                     Version 4.1.0, (XXYear)-(XXMonNum)-(XXDay)
+                                     Version 5.0.0, (XXYear)-(XXMonNum)-(XXDay)
                                       **DRAFT IN DEVELOPMENT**
                                                 <br>
-                      Copyright 2018-2024 Peter Shirley. All rights reserved.
+                      Copyright 2018-(XXYear) Peter Shirley. All rights reserved.
 
 
 
@@ -71,12 +71,12 @@ will eventually arrive at the correct result, but we can't make too many guarant
 will take to get there. The classic example of a Las Vegas algorithm is the _quicksort_ sorting
 algorithm. The quicksort algorithm will always complete with a fully sorted list, but, the time it
 takes to complete is random. Another good example of a Las Vegas algorithm is the code that we use
-to pick a random point in a unit sphere:
+to pick a random point in a unit disk:
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
-    inline vec3 random_in_unit_sphere() {
+    inline vec3 random_in_unit_disk() {
         while (true) {
-            auto p = vec3::random(-1,1);
+            auto p = vec3(random_double(-1,1), random_double(-1,1), 0);
             if (p.length_squared() < 1)
                 return p;
         }
@@ -84,7 +84,7 @@ to pick a random point in a unit sphere:
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     [Listing [las-vegas-algo]: <kbd>[vec3.h]</kbd> A Las Vegas algorithm]
 
-This code will always eventually arrive at a random point in the unit sphere, but we can't say
+This code will always eventually arrive at a random point in the unit disk, but we can't say
 beforehand how long it'll take. It may take only 1 iteration, it may take 2, 3, 4, or even longer.
 Whereas, a Monte Carlo program will give a statistical estimate of an answer, and this estimate will
 get more and more accurate the longer you run it. Which means that at a certain point, we can just
@@ -3191,7 +3191,7 @@ direction. The mixture density class is actually pretty straightforward:
         }
 
         double value(const vec3& direction) const override {
-            return 0.5 * p[0]->value(direction) + 0.5 *p[1]->value(direction);
+            return 0.5 * p[0]->value(direction) + 0.5 * p[1]->value(direction);
         }
 
         vec3 generate() const override {
@@ -3694,7 +3694,7 @@ use this to solve for $C$:
 
   $$ r_2 = 2\pi \cdot C \cdot (1-\cos(\theta)) $$
   $$ 1 = 2\pi \cdot C \cdot (1-\cos(\theta_{max})) $$
-  $$ C = \frac{1}{2\pi \cdot (1-\cos(\theta_{max})} $$
+  $$ C = \frac{1}{2\pi \cdot (1-\cos(\theta_{max}))} $$
 
 Which gives us an equality between $\theta$, $\theta_{max}$, and $r_2$:
 
@@ -4015,8 +4015,8 @@ Basic Data
   - **Title (series)**: “Ray Tracing in One Weekend Series”
   - **Title (book)**: “Ray Tracing: The Rest of Your Life”
   - **Author**: Peter Shirley, Trevor David Black, Steve Hollasch
-  - **Version/Edition**: (XXVersion)
-  - **Date**: XXYear-XXMonth-XXDay
+  - **Version/Edition**: v5.0.0
+  - **Date**: (XXYear)-(XXMonth)-(XXDay)
   - **URL (series)**: <https://raytracing.github.io/>
   - **URL (book)**: <https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html>
 
@@ -4037,13 +4037,13 @@ Snippets
 
   ### LaTeX and BibTex
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    ~\cite{ShirleyXXYearRTW3}
+    ~\cite{Shirley(XXYear)RTW3}
 
-    @misc{ShirleyXXYearRTW3,
+    @misc{Shirley(XXYear)RTW3,
        title = {Ray Tracing: The Rest of Your Life},
        author = {Peter Shirley, Trevor David Black, Steve Hollasch},
-       year = {XXYear},
-       month = {XXMonth},
+       year = {(XXYear)},
+       month = {(XXMonthName)},
        note = {\small \texttt{https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html}},
        url = {https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html}
     }
@@ -4053,13 +4053,13 @@ Snippets
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     \usepackage{biblatex}
 
-    ~\cite{ShirleyXXYearRTW3}
+    ~\cite{Shirley(XXYear)RTW3}
 
-    @online{ShirleyXXYearRTW3,
+    @online{Shirley(XXYear)RTW3,
        title = {Ray Tracing: The Rest of Your Life},
        author = {Peter Shirley, Trevor David Black, Steve Hollasch},
-       year = {XXYear},
-       month = {XXMonth},
+       year = {(XXYear)},
+       month = {(XXMonthName)},
        url = {https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html}
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

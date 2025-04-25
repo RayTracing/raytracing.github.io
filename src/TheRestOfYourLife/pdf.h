@@ -84,7 +84,7 @@ class mixture_pdf : public pdf {
     }
 
     double value(const vec3& direction) const override {
-        return 0.5 * p[0]->value(direction) + 0.5 *p[1]->value(direction);
+        return 0.5 * p[0]->value(direction) + 0.5 * p[1]->value(direction);
     }
 
     vec3 generate() const override {

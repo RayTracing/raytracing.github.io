@@ -32,7 +32,7 @@ Change Log / Ray Tracing in One Weekend
 
 
 ----------------------------------------------------------------------------------------------------
-# v4.0.2 (2024-10-01)
+# v4.0.3 (in progress)
 
 ### Common
 
@@ -41,6 +41,22 @@ Change Log / Ray Tracing in One Weekend
 ### The Next Week
 
 ### The Rest of Your Life
+
+
+----------------------------------------------------------------------------------------------------
+# v4.0.2 (2025-04-25)
+
+### Common
+  - Fix    -- Fixed some dangling references to `random_in_unit_sphere()` (#1637)
+  - Fix    -- Clarify `uniform_real_distribution` usage for `random_double()` (#1680)
+  - Update -- CMake minimum required version max now at 4.0.0.
+
+### In One Weekend
+  - Fix    -- Fix equation for refracted rays of non-unit length (#1644)
+  - Fix    -- Typo "trigonometric qualities" -> "trigonometric identities"
+
+### The Rest of Your Life
+  - Fix    -- Typo in equation in book 3, section 12.3 (#1686)
 
 
 ----------------------------------------------------------------------------------------------------

@@ -8,12 +8,12 @@
                                    **Ray Tracing in One Weekend**
                    [Peter Shirley][], [Trevor David Black][], [Steve Hollasch][]
                                                 <br>
-                                     Version 4.0.2, 2024-10-01
-                                     Version 4.1.0, 2024-12-31
-                                     Version 5.0.0, 2025-XX-XX
+                                     Version 4.0.3, (XXYear)-(XXMonNum)-(XXDay)
+                                     Version 4.1.0, (XXYear)-(XXMonNum)-(XXDay)
+                                     Version 5.0.0, (XXYear)-(XXMonNum)-(XXDay)
                                       **DRAFT IN DEVELOPMENT**
                                                 <br>
-                      Copyright 2018-2024 Peter Shirley. All rights reserved.
+                      Copyright 2018-(XXYear) Peter Shirley. All rights reserved.
 
 
 
@@ -2046,6 +2046,13 @@ want to use this, you can obtain a random number with the conditions we need as 
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
 
+    inline double random_double(double min, double max) {
+        // Returns a random real in [min,max).
+        return min + (max-min)*random_double();
+    }
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+
+
     ...
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2346,7 +2353,7 @@ Here's our first draft of the function:
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-in-unit-sphere]: <kbd>[vec3.h]</kbd> The random_unit_vector() function, version one]
+    [Listing [random-unit-vector-1]: <kbd>[vec3.h]</kbd> The random_unit_vector() function, version one]
 
 </div>
 
@@ -2371,11 +2378,11 @@ Here's our more robust function:
         }
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [Listing [random-in-unit-sphere]: <kbd>[vec3.h]</kbd> The random_unit_vector() function, version one]
+    [Listing [random-unit-vector-2]: <kbd>[vec3.h]</kbd> The random_unit_vector() function, version two]
 
 <div class='together'>
-Now that we have a random vector on the surface of the unit sphere, we can determine if it is on the
-correct hemisphere by comparing against the surface normal:
+Now that we have a random unit vector, we can determine if it is on the correct hemisphere by
+comparing against the surface normal:
 
   ![Figure [normal-hor]: The normal vector tells us which hemisphere we need
   ](../images/fig-1.13-surface-normal.jpg)
@@ -3312,7 +3319,7 @@ the parts of the ray that are perpendicular to $\mathbf{n'}$ and parallel to $\m
 
 If we solve for $\mathbf{R'}_{\bot}$ and $\mathbf{R'}_{\parallel}$ we get:
 
-  $$ \mathbf{R'}_{\bot} = \frac{\eta}{\eta'} (\mathbf{R} + \cos\theta \mathbf{n}) $$
+  $$ \mathbf{R'}_{\bot} = \frac{\eta}{\eta'} (\mathbf{R} + |\mathbf{R}| \cos(\theta) \mathbf{n}) $$
   $$ \mathbf{R'}_{\parallel} = -\sqrt{1 - |\mathbf{R'}_{\bot}|^2} \mathbf{n} $$
 
 You can go ahead and prove this for yourself if you want, but we will treat it as fact and move on.
@@ -3459,7 +3466,7 @@ perfect mirror when you are submerged -- if you're under water looking up, you c
 the water, but when you are close to the surface and looking sideways, the water surface looks like
 a mirror.
 
-We can solve for `sin_theta` using the trigonometric qualities:
+We can solve for `sin_theta` using the trigonometric identities:
 
   $$ \sin\theta  = \sqrt{1 - \cos^2\theta} $$
 
@@ -4044,7 +4051,7 @@ for a given shot.
 
 Since we'll be choosing random points from the defocus disk, we'll need a function to do that:
 `random_in_unit_disk()`. This function works using the same kind of method we use in
-`random_in_unit_sphere()`, just for two dimensions.
+`random_unit_vector()`, just for two dimensions.
 
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
     ...
@@ -4393,8 +4400,8 @@ Basic Data
   - **Title (series)**: “Ray Tracing in One Weekend Series”
   - **Title (book)**: “Ray Tracing in One Weekend”
   - **Author**: Peter Shirley, Trevor David Black, Steve Hollasch
-  - **Version/Edition**: XXVersion
-  - **Date**: XXYear-XXMonth-XXDay
+  - **Version/Edition**: v5.0.0
+  - **Date**: (XXYear)-(XXMonth)-(XXDay)
   - **URL (series)**: <https://raytracing.github.io/>
   - **URL (book)**: <https://raytracing.github.io/books/RayTracingInOneWeekend.html>
 
@@ -4415,13 +4422,13 @@ Snippets
 
   ### LaTeX and BibTex
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    ~\cite{ShirleyXXYearRTW1}
+    ~\cite{Shirley(XXYear)RTW1}
 
-    @misc{ShirleyXXYearRTW1,
+    @misc{Shirley(XXYear)RTW1,
        title = {Ray Tracing in One Weekend},
        author = {Peter Shirley, Trevor David Black, Steve Hollasch},
-       year = {XXYear},
-       month = {XXMonth},
+       year = {(XXYear)},
+       month = {(XXMonthName)},
        note = {\small \texttt{https://raytracing.github.io/books/RayTracingInOneWeekend.html}},
        url = {https://raytracing.github.io/books/RayTracingInOneWeekend.html}
     }
@@ -4431,13 +4438,13 @@ Snippets
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     \usepackage{biblatex}
 
-    ~\cite{ShirleyXXYearRTW1}
+    ~\cite{Shirley(XXYear)RTW1}
 
-    @online{ShirleyXXYearRTW1,
+    @online{Shirley(XXYear)RTW1,
        title = {Ray Tracing in One Weekend},
        author = {Peter Shirley, Trevor David Black, Steve Hollasch},
-       year = {XXYear},
-       month = {XXMonth},
+       year = {(XXYear)},
+       month = {(XXMonthName)},
        url = {https://raytracing.github.io/books/RayTracingInOneWeekend.html}
     }
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
