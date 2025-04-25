@@ -1,7 +1,19 @@
 Change Log / Ray Tracing in One Weekend
 ====================================================================================================
 
-# v4.0.2 (2025-04-24)
+# v4.0.3 (in progress)
+
+### Common
+
+### In One Weekend
+
+### The Next Week
+
+### The Rest of Your Life
+
+
+----------------------------------------------------------------------------------------------------
+# v4.0.2 (2025-04-25)
 
 ### Common
   - Fix    -- Fixed some dangling references to `random_in_unit_sphere()` (#1637)
