@@ -8,6 +8,7 @@ Change Log / Ray Tracing in One Weekend
 ### In One Weekend
 
 ### The Next Week
+  - Fix    -- Remove premature source line for call to `get_sphere_uv` (#1701)
 
 ### The Rest of Your Life
 
