@@ -11,6 +11,7 @@ Change Log / Ray Tracing in One Weekend
   - Fix    -- Remove premature source line for call to `get_sphere_uv` (#1701)
 
 ### The Rest of Your Life
+  - Fix    -- Fix ICD formula for solved PDF in Importance Sampling (#1622)
 
 
 ----------------------------------------------------------------------------------------------------
