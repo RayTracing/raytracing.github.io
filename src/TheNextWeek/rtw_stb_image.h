@@ -53,7 +53,6 @@ class rtw_image {
 
     ~rtw_image() {
         delete[] bdata;
-        STBI_FREE(fdata);
     }
 
     bool load(const std::string& filename) {
@@ -64,16 +63,18 @@ class rtw_image {
         // below, for the full height of the image.
 
         auto n = bytes_per_pixel; // Dummy out parameter: original components per pixel
-        fdata = stbi_loadf(filename.c_str(), &image_width, &image_height, &n, bytes_per_pixel);
+        float *fdata = stbi_loadf(filename.c_str(), &image_width, &image_height, &n, bytes_per_pixel);
         if (fdata == nullptr) return false;
 
         bytes_per_scanline = image_width * bytes_per_pixel;
-        convert_to_bytes();
+        convert_to_bytes(fdata);
+
+        STBI_FREE(fdata);
         return true;
     }
 
-    int width()  const { return (fdata == nullptr) ? 0 : image_width; }
-    int height() const { return (fdata == nullptr) ? 0 : image_height; }
+    int width()  const { return image_width; }
+    int height() const { return image_height; }
 
     const unsigned char* pixel_data(int x, int y) const {
         // Return the address of the three RGB bytes of the pixel at x,y. If there is no image
@@ -89,7 +90,6 @@ class rtw_image {
 
   private:
     const int      bytes_per_pixel = 3;
-    float         *fdata = nullptr;         // Linear floating point pixel data
     unsigned char *bdata = nullptr;         // Linear 8-bit pixel data
     int            image_width = 0;         // Loaded image width
     int            image_height = 0;        // Loaded image height
@@ -110,7 +110,7 @@ class rtw_image {
         return static_cast<unsigned char>(256.0 * value);
     }
 
-    void convert_to_bytes() {
+    void convert_to_bytes(float *fdata) {
         // Convert the linear floating point pixel data to bytes, storing the resulting byte
         // data in the `bdata` member.
 
