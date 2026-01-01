@@ -63,8 +63,13 @@ class rtw_image {
         // below, for the full height of the image.
 
         auto n = bytes_per_pixel; // Dummy out parameter: original components per pixel
-        float *fdata = stbi_loadf(filename.c_str(), &image_width, &image_height, &n, bytes_per_pixel);
-        if (fdata == nullptr) return false;
+        float *fdata =
+            stbi_loadf(filename.c_str(), &image_width, &image_height, &n, bytes_per_pixel);
+
+        if (fdata == nullptr) {
+            image_width = image_height = 0;
+            return false;
+        }
 
         bytes_per_scanline = image_width * bytes_per_pixel;
         convert_to_bytes(fdata);
