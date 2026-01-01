@@ -4,12 +4,12 @@ Change Log / Ray Tracing in One Weekend
 # v4.0.3 (in progress)
 
 ### Common
+  - Change -- Improve lifetime of float image data `fdata` in `rtw_image` class (#1723)
 
 ### In One Weekend
 
 ### The Next Week
   - Fix    -- Remove premature source line for call to `get_sphere_uv` (#1701)
-  - Change -- Improve lifetime of float image data `fdata` in `rtw_image` class (#1723)
 
 ### The Rest of Your Life
 
