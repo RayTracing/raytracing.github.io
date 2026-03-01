@@ -10,6 +10,8 @@ Change Log / Ray Tracing in One Weekend
 
 ### The Next Week
   - Fix    -- Remove premature source line for call to `get_sphere_uv` (#1701)
+  - Change -- Simplify `box()` face construction to use `min` and `max` points directly
+              without recombining coordinates (#1733)
 
 ### The Rest of Your Life
 
