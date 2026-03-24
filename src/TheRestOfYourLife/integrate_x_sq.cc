@@ -16,7 +16,7 @@
 
 
 double icd(double d) {
-    return 8.0 * std::pow(d, 1.0/3.0);
+    return 2.0 * std::pow(d, 1.0/3.0);
 }
 
 

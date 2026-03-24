@@ -14,6 +14,7 @@ Change Log / Ray Tracing in One Weekend
               without recombining coordinates (#1733)
 
 ### The Rest of Your Life
+  - Fix    -- Fix ICD formula for solved PDF in Importance Sampling (#1622)
 
 
 ----------------------------------------------------------------------------------------------------
