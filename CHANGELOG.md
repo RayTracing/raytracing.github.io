@@ -14,6 +14,7 @@ Change Log / Ray Tracing in One Weekend
               without recombining coordinates (#1733)
 
 ### The Rest of Your Life
+  - Fix    -- Typo: hittable::emitted() should be material::emitted() (#1736)
 
 
 ----------------------------------------------------------------------------------------------------
