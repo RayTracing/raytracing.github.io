@@ -7,6 +7,7 @@ Change Log / Ray Tracing in One Weekend
   - Change -- Improve lifetime of float image data `fdata` in `rtw_image` class (#1723)
 
 ### In One Weekend
+  - Fix    -- Fixed fuzz value for `material_right` to match the reference image
 
 ### The Next Week
   - Fix    -- Remove premature source line for call to `get_sphere_uv` (#1701)
